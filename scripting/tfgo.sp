@@ -15,9 +15,9 @@ static int g_balance[TF_MAXPLAYERS + 1] = 0;
 public Plugin myinfo = {
 	name = "Team Fortress: Global Offensive",
 	author = "Mikusch",
-	description = "My first plugin ever",
+	description = "A Team Fortress 2 gamemode inspired by Counter-Strike: Global Offensive",
 	version = "1.0",
-	url = "http://www.sourcemod.net/"
+	url = "https://github.com/Mikusch/tfgo"
 };
 
 public void OnPluginStart()
