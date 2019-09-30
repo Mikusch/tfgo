@@ -22,6 +22,7 @@ static bool g_buytimeActive;
 static int g_balance[TF_MAXPLAYERS + 1];
 
 static Handle g_buytimeTimer;
+static Handle g_hudSync;
 
 ConVar tfgo_buytime;
 
@@ -44,6 +45,8 @@ public void OnPluginStart()
 {
 	tfgo_buytime = CreateConVar("tfgo_buytime", "20", "How many seconds after round start players can buy items for", _, true, 5.0);
 	
+	g_hudSync = CreateHudSynchronizer();
+	
 	g_currencypackPlayerMap =  CreateTrie();
 	LoadTranslations("common.phrases.txt");
 	
@@ -53,6 +56,7 @@ public void OnPluginStart()
 	HookEvent("player_changeclass", Event_Player_ChangeClass);
 	HookEvent("arena_round_start", Event_Arena_Round_Start);
 	HookEvent("teamplay_round_start", Event_Teamplay_Round_Start);
+	HookEvent("arena_match_maxstreak", Event_Arena_Match_MaxStreak);
 	
 	tf_arena_max_streak = FindConVar("tf_arena_max_streak");
 	tf_arena_first_blood = FindConVar("tf_arena_first_blood");
@@ -69,10 +73,21 @@ public void OnPluginEnd()
 
 public void OnMapStart()
 {
+	PrecacheSound("mvm/mvm_money_vanish.wav");
+	
 	PrecacheModel("models/items/currencypack_large.mdl");
 	PrecacheModel("models/items/currencypack_medium.mdl");
 	PrecacheModel("models/items/currencypack_small.mdl");
 }
+
+public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool dontBroadcast)
+{
+	for (int i = 0; i < sizeof(g_balance); i++)
+	{
+		g_balance[i] = 0;
+	}
+}
+
 
 public Action Event_Player_Spawn(Event event, const char[] name, bool dontBroadcast)
 {
@@ -119,7 +134,12 @@ public void OnClientConnected(int client)
 
 public Action Destroy_Currency_Pack(Handle timer, int entity)
 {
-	RemoveEntity(entity);
+	if (IsValidEntity(entity)) {
+		float vec[3];
+		GetEntPropVector(entity, Prop_Send, "m_vecOrigin", vec);
+		EmitAmbientSound("mvm/mvm_money_vanish.wav", vec);
+		RemoveEntity(entity);
+	}
 }
 
 public Action Event_Teamplay_Round_Win(Event event, const char[] name, bool dontBroadcast)
@@ -130,10 +150,7 @@ public Action Event_Teamplay_Round_Win(Event event, const char[] name, bool dont
 
 public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
-	if (IsValidHandle(g_buytimeTimer))
-	{
-		CloseHandle(g_buytimeTimer);
-	}
+	CloseHandle(g_buytimeTimer);
 	char buytime[32];
 	tfgo_buytime.GetString(buytime, sizeof(buytime));
 	PrintToServer("buytime is %s", buytime);
@@ -206,24 +223,16 @@ public Action Cash_OnStartTouch(int entity, int client)
 	int iCashOwner;
 	g_currencypackPlayerMap.GetValue(key, iCashOwner);
 	
-	PrintToChat(client, "This cash belonged to %d", iCashOwner);
-	TFTeam team = TF2_GetClientTeam(client);
-	switch(team)
+	
+	if (TF2_GetClientTeam(iCashOwner) == TF2_GetClientTeam(client))
 	{
-		case TFTeam_Red:
-		{
-			
-		}
-		case TFTeam_Blue:
-		{
-			
-		}
+		// picked up own team's cash
 	}
 	
 	g_balance[client] += 100;
 	RemoveEntity(entity); // fix for money teleporting to world spawn after pickup
 	
-	PrintToChat(client, "You have picked up $%d!", 100, g_balance[client]);
+	PrintToChat(client, "You have picked up $%d and now have $%d!", 100, g_balance[client]);
 }
 
 // thanks 42 don't sue me pls
