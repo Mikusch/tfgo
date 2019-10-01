@@ -73,7 +73,7 @@ public Plugin myinfo =  {
 
 public void OnPluginStart()
 {
-	tfgo_buytime = CreateConVar("tfgo_buytime", "20", "How many seconds after round start players can buy items for", _, true, 5.0);
+	tfgo_buytime = CreateConVar("tfgo_buytime", "30", "How many seconds after round start players can buy items for", _, true, 5.0);
 	
 	g_hudSync = CreateHudSynchronizer();
 	
@@ -190,7 +190,6 @@ public Action Event_Teamplay_Round_Win(Event event, const char[] name, bool dont
 
 public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
-	CloseHandle(g_buytimeTimer);
 	char buytime[32];
 	tfgo_buytime.GetString(buytime, sizeof(buytime));
 	PrintToServer("buytime is %s", buytime);
