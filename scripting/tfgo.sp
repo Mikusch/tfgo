@@ -50,7 +50,7 @@ public Plugin myinfo =  {
 public void OnPluginStart()
 {
 	SDKInit();
-	tfgo_buytime = CreateConVar("tfgo_buytime", "30", "How many seconds after round start players can buy items for", _, true, 5.0);
+	tfgo_buytime = CreateConVar("tfgo_buytime", "30", "How many seconds after spawning players can buy items for", _, true, 5.0);
 	
 	g_hudSync = CreateHudSynchronizer();
 	
