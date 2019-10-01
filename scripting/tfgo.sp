@@ -92,9 +92,7 @@ public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool d
 public Action Event_Player_Spawn(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
-	TF2_RemoveWeaponSlot(client, 0);
-	TF2_RemoveWeaponSlot(client, 1);
-	TF2_RemoveWeaponSlot(client, 4);
+	RemoveWeapons(client);
 	
 	int weapon = GetPlayerWeaponSlot(client, 2);
 	EquipPlayerWeapon(client, weapon);
@@ -174,11 +172,19 @@ public Action Event_Player_ChangeClass(Event event, const char[] name, bool dont
 	return Plugin_Continue;
 }
 
-public void removePrimaryAndSecondary(int client) {
-	TF2_RemoveWeaponSlot(client, 0);
-	TF2_RemoveWeaponSlot(client, 1);
-	TF2_RemoveWeaponSlot(client, 3);
-	TF2_RemoveWeaponSlot(client, 4);
+void RemoveWeapons(int client) {
+	TF2_RemoveWeaponSlot(client, 0); // Primary
+	TF2_RemoveWeaponSlot(client, 1); // Secondary
+	
+	// special cases
+	switch(TF2_GetPlayerClass(client)) {
+		case TFClass_Spy: {
+			TF2_RemoveWeaponSlot(client, 4); // Invis Watch
+		}
+		case TFClass_Engineer: {
+			TF2_RemoveWeaponSlot(client, 3); // Construction PDA
+		}
+	}
 }
 
 public Action Prevent_Touch(int entity)
