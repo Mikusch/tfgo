@@ -28,7 +28,7 @@ stock Action Destroy_Currency_Pack(Handle timer, int entity)
 	if (IsValidEntity(entity)) {
 		float vec[3];
 		GetEntPropVector(entity, Prop_Send, "m_vecOrigin", vec);
-		EmitAmbientSound("mvm/mvm_money_vanish.wav", vec);
+		EmitAmbientSound("mvm/mvm_money_vanish.wav", vec, entity);
 		RemoveEntity(entity);
 	}
 }
