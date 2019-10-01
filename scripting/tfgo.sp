@@ -32,6 +32,7 @@ ConVar tf_arena_max_streak;
 ConVar tf_arena_first_blood;
 ConVar tf_arena_round_time;
 ConVar tf_arena_use_queue;
+ConVar tf_arena_preround_time;
 
 // SDK functions
 Handle g_hSDKEquipWearable = null;
@@ -68,6 +69,7 @@ public void OnPluginStart()
 	tf_arena_first_blood = FindConVar("tf_arena_first_blood");
 	tf_arena_round_time = FindConVar("tf_arena_round_time");
 	tf_arena_use_queue = FindConVar("tf_arena_use_queue");
+	tf_arena_preround_time = FindConVar("tf_arena_preround_time");
 	
 	Toggle_ConVars(true);
 }
@@ -106,16 +108,13 @@ public Action Event_Player_Spawn(Event event, const char[] name, bool dontBroadc
 	int weapon = GetPlayerWeaponSlot(client, 2);
 	EquipPlayerWeapon(client, weapon);
 	
-	SetHudTextParams(-1.0, 0.78, 60.0,0, 133, 67, 140, _, _, _,_);
-	ShowSyncHudText(client, g_hudSync, "$%d", g_balance[client]);
-	
 	return Plugin_Continue;
 }
 
 public Action Event_Player_Death(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
-
+	
 	if (g_dropCurrencyPacks)
 	{
 		CreateDeathCash(client);
@@ -141,10 +140,13 @@ public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool do
 {
 	g_dropCurrencyPacks = false;
 	
-	char buytime[32];
-	tfgo_buytime.GetString(buytime, sizeof(buytime));
-	PrintToServer("buytime is %s", buytime);
-	g_buytimeTimer = CreateTimer(StringToFloat(buytime), DisableBuyMenu);
+	for (int i = 1; i < MaxClients; i++)
+	{
+		SetHudTextParams(-1.0, 0.75, tfgo_buytime.FloatValue, 0, 133, 67, 140, _, _, _, _);
+		ShowSyncHudText(i, g_hudSync, "$%d", g_balance[i]);
+	}
+	
+	g_buytimeTimer = CreateTimer(tfgo_buytime.FloatValue, DisableBuyMenu);
 	PrintToChatAll("Buy time has started!");
 	g_buytimeActive = true;
 }
