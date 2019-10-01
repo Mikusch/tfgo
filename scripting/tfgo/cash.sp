@@ -5,6 +5,8 @@ stock bool g_dropCurrencyPacks;
 stock Handle g_destroyCurrencyPackTimer;
 stock StringMap g_currencypackPlayerMap;
 
+Handle g_hudSync;
+
 stock void CreateDeathCash(int client) {
 	int iCurrencyPack = EntIndexToEntRef(CreateEntityByName("item_currencypack_medium"));
 	if (DispatchSpawn(iCurrencyPack))
@@ -51,6 +53,11 @@ stock Action Cash_OnTouch(int entity, int client)
 		return Plugin_Handled;
 	}
 	
+	g_balance[client] += 100;
+	
+	SetHudTextParams(-1.0, 0.78, 60.0,0, 133, 67, 140, _, _, _,_); // 60.0 how long text should stay since last cash update
+	ShowSyncHudText(client, g_hudSync, "$%d", g_balance[client]);
+	
 	switch (TF2_GetPlayerClass(client))
 	{
 		case TFClass_Soldier:
@@ -75,7 +82,6 @@ stock Action Cash_OnTouch(int entity, int client)
 		}
 	}
 	
-	g_balance[client] += 100;
 	RemoveEntity(entity); // fix for money teleporting to world spawn after pickup
 	
 	PrintToChat(client, "You have picked up $%d and now have $%d!", 100, g_balance[client]);

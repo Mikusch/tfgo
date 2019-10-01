@@ -21,10 +21,10 @@
 #define TFGO_ELIMINATION_WIN_BONUS		2300
 #define TFGO_LOSS_BONUS 					2400
 
-static bool g_buytimeActive;
 
+
+static bool g_buytimeActive;
 static Handle g_buytimeTimer;
-static Handle g_hudSync;
 
 ConVar tfgo_buytime;
 
@@ -106,17 +106,22 @@ public Action Event_Player_Spawn(Event event, const char[] name, bool dontBroadc
 	int weapon = GetPlayerWeaponSlot(client, 2);
 	EquipPlayerWeapon(client, weapon);
 	
+	SetHudTextParams(-1.0, 0.78, 60.0,0, 133, 67, 140, _, _, _,_);
+	ShowSyncHudText(client, g_hudSync, "$%d", g_balance[client]);
+	
 	return Plugin_Continue;
 }
 
 public Action Event_Player_Death(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
-	
+
 	if (g_dropCurrencyPacks)
 	{
 		CreateDeathCash(client);
 	}
+	
+	// TODO restore previous weapons IF this death was a suicide
 	
 	return Plugin_Continue;
 }
@@ -128,12 +133,14 @@ public void OnClientConnected(int client)
 
 public Action Event_Teamplay_Round_Win(Event event, const char[] name, bool dontBroadcast)
 {
-	g_dropCurrencyPacks = false;
+	// TODO award round end money
 	return Plugin_Continue;
 }
 
 public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
+	g_dropCurrencyPacks = false;
+	
 	char buytime[32];
 	tfgo_buytime.GetString(buytime, sizeof(buytime));
 	PrintToServer("buytime is %s", buytime);
