@@ -5,6 +5,10 @@
 #include<sdktools>
 #include<sdkhooks>
 #include <tf2_stocks>
+#include <tf_econ_data>
+
+#include "tfgo/sound.sp"
+#include "tfgo/cash.sp"
 
 #define TF_MAXPLAYERS 	32
 
@@ -17,40 +21,8 @@
 #define TFGO_ELIMINATION_WIN_BONUS		2300
 #define TFGO_LOSS_BONUS 					2400
 
-char g_EngineerMvmCollectCredits[][PLATFORM_MAX_PATH] = 
-{
-	"vo/engineer_mvm_collect_credits01.mp3", 
-	"vo/engineer_mvm_collect_credits02.mp3", 
-	"vo/engineer_mvm_collect_credits03.mp3"
-};
-
-char g_HeavyMvmCollectCredits[][PLATFORM_MAX_PATH] = 
-{
-	"vo/heavy_mvm_collect_credits01.mp3", 
-	"vo/heavy_mvm_collect_credits02.mp3", 
-	"vo/heavy_mvm_collect_credits03.mp3", 
-	"vo/heavy_mvm_collect_credits04.mp3"
-};
-
-char g_MedicMvmCollectCredits[][PLATFORM_MAX_PATH] = 
-{
-	"vo/medic_mvm_collect_credits01.mp3", 
-	"vo/medic_mvm_collect_credits02.mp3", 
-	"vo/medic_mvm_collect_credits03.mp3", 
-	"vo/medic_mvm_collect_credits04.mp3"
-};
-
-char g_SoldierMvmCollectCredits[][PLATFORM_MAX_PATH] = 
-{
-	"vo/soldier_mvm_collect_credits01.mp3", 
-	"vo/soldier_mvm_collect_credits02.mp3"
-};
-
-static bool g_dropCurrencyPacks;
 static bool g_buytimeActive;
-static int g_balance[TF_MAXPLAYERS + 1];
 
-static Handle g_destroyCurrencyPackTimer;
 static Handle g_buytimeTimer;
 static Handle g_hudSync;
 
@@ -61,7 +33,10 @@ ConVar tf_arena_first_blood;
 ConVar tf_arena_round_time;
 ConVar tf_arena_use_queue;
 
-static StringMap g_currencypackPlayerMap;
+// SDK functions
+Handle g_hSDKEquipWearable = null;
+Handle g_hSDKRemoveWearable = null;
+Handle g_hSDKGetEquippedWearable = null;
 
 public Plugin myinfo =  {
 	name = "Team Fortress: Global Offensive", 
@@ -73,6 +48,7 @@ public Plugin myinfo =  {
 
 public void OnPluginStart()
 {
+	SDKInit();
 	tfgo_buytime = CreateConVar("tfgo_buytime", "30", "How many seconds after round start players can buy items for", _, true, 5.0);
 	
 	g_hudSync = CreateHudSynchronizer();
@@ -107,15 +83,6 @@ public void OnMapStart()
 	PrecacheModels();
 }
 
-void PrecacheSounds()
-{
-	PrecacheSound("mvm/mvm_money_vanish.wav");
-	for (int i = 0; i < sizeof(g_EngineerMvmCollectCredits); i++)PrecacheSound(g_EngineerMvmCollectCredits[i]);
-	for (int i = 0; i < sizeof(g_HeavyMvmCollectCredits); i++)PrecacheSound(g_HeavyMvmCollectCredits[i]);
-	for (int i = 0; i < sizeof(g_MedicMvmCollectCredits); i++)PrecacheSound(g_MedicMvmCollectCredits[i]);
-	for (int i = 0; i < sizeof(g_SoldierMvmCollectCredits); i++)PrecacheSound(g_SoldierMvmCollectCredits[i]);
-}
-
 void PrecacheModels()
 {
 	PrecacheModel("models/items/currencypack_large.mdl");
@@ -131,11 +98,10 @@ public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool d
 	}
 }
 
-
 public Action Event_Player_Spawn(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
-	RemoveWeapons(client);
+	SetStartingWeapons(client);
 	
 	int weapon = GetPlayerWeaponSlot(client, 2);
 	EquipPlayerWeapon(client, weapon);
@@ -149,37 +115,15 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	
 	if (g_dropCurrencyPacks)
 	{
-		int iCurrencyPack = EntIndexToEntRef(CreateEntityByName("item_currencypack_medium"));
-		if (DispatchSpawn(iCurrencyPack))
-		{
-			char key[32];
-			IntToString(iCurrencyPack, key, sizeof(key));
-			g_currencypackPlayerMap.SetValue(key, client);
-			SDKHook(iCurrencyPack, SDKHook_Touch, Cash_OnTouch);
-			SDKHook(iCurrencyPack, SDKHook_SpawnPost, Cash_OnSpawnPost);
-			float origin[3];
-			GetClientAbsOrigin(client, origin);
-			TeleportEntity(iCurrencyPack, origin, NULL_VECTOR, NULL_VECTOR);
-			CreateTimer(30.0, Destroy_Currency_Pack, iCurrencyPack);
-		}
+		CreateDeathCash(client);
 	}
-
+	
 	return Plugin_Continue;
 }
 
 public void OnClientConnected(int client)
 {
 	g_balance[client] = TFGO_STARTING_MONEY;
-}
-
-public Action Destroy_Currency_Pack(Handle timer, int entity)
-{
-	if (IsValidEntity(entity)) {
-		float vec[3];
-		GetEntPropVector(entity, Prop_Send, "m_vecOrigin", vec);
-		EmitAmbientSound("mvm/mvm_money_vanish.wav", vec); // TODO: sound plays even after round restart
-		RemoveEntity(entity);
-	}
 }
 
 public Action Event_Teamplay_Round_Win(Event event, const char[] name, bool dontBroadcast)
@@ -215,13 +159,21 @@ public Action Event_Player_ChangeClass(Event event, const char[] name, bool dont
 	return Plugin_Continue;
 }
 
-void RemoveWeapons(int client) {
+// called when a new client spawns or someone spawns after they died
+void SetStartingWeapons(int client) {
 	TF2_RemoveWeaponSlot(client, 0); // Primary
-	TF2_RemoveWeaponSlot(client, 1); // Secondary
+	//TF2_RemoveWeaponSlot(client, 1); // Secondary
 	
 	// special cases
 	switch (TF2_GetPlayerClass(client))
 	{
+		case TFClass_Scout:
+		{
+			//GivePlayerItem(client, const char[] item, int iSubType)
+			char buf[32];
+			TF2Econ_GetItemClassName(13, buf, sizeof(buf));
+			PrintToChatAll(buf);
+		}
 		case TFClass_Spy:
 		{
 			TF2_RemoveWeaponSlot(client, 4); // Invis Watch
@@ -231,17 +183,6 @@ void RemoveWeapons(int client) {
 			TF2_RemoveWeaponSlot(client, 3); // Construction PDA
 		}
 	}
-}
-
-public Action Prevent_Touch(int entity)
-{
-	return Plugin_Handled;
-}
-
-public void Cash_OnSpawnPost(int entity)
-{
-	// After the 2015 Halloween update, currency packs will not spawn if there's no nav mesh. This allows Cash to spawn on maps without a nav mesh!
-	SetEntProp(entity, Prop_Send, "m_bDistributed", true);
 }
 
 public void OnEntityCreated(int entity, const char[] classname)
@@ -266,51 +207,6 @@ public Action Player_ExitedSpawn(int entity, int client)
 	{
 		PrintToServer("%d left spawn", client);
 	}
-}
-
-public Action Cash_OnTouch(int entity, int client)
-{
-	char key[32];
-	IntToString(EntIndexToEntRef(entity), key, sizeof(key));
-	int iCashOwner;
-	g_currencypackPlayerMap.GetValue(key, iCashOwner);
-	
-	
-	if (TF2_GetClientTeam(iCashOwner) == TF2_GetClientTeam(client))
-	{
-		// disallow picking up your own team's cash
-		return Plugin_Handled;
-	}
-	
-	switch (TF2_GetPlayerClass(client))
-	{
-		case TFClass_Soldier:
-		{
-			int iRandom = GetRandomInt(0, sizeof(g_SoldierMvmCollectCredits) - 1);
-			EmitSoundToAll(g_SoldierMvmCollectCredits[iRandom], client, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
-		}
-		case TFClass_Engineer:
-		{
-			int iRandom = GetRandomInt(0, sizeof(g_EngineerMvmCollectCredits) - 1);
-			EmitSoundToAll(g_EngineerMvmCollectCredits[iRandom], client, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
-		}
-		case TFClass_Heavy:
-		{
-			int iRandom = GetRandomInt(0, sizeof(g_HeavyMvmCollectCredits) - 1);
-			EmitSoundToAll(g_HeavyMvmCollectCredits[iRandom], client, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
-		}
-		case TFClass_Medic:
-		{
-			int iRandom = GetRandomInt(0, sizeof(g_MedicMvmCollectCredits) - 1);
-			EmitSoundToAll(g_MedicMvmCollectCredits[iRandom], client, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
-		}
-	}
-	
-	g_balance[client] += 100;
-	RemoveEntity(entity); // fix for money teleporting to world spawn after pickup
-	
-	PrintToChat(client, "You have picked up $%d and now have $%d!", 100, g_balance[client]);
-	return Plugin_Continue;
 }
 
 void Toggle_ConVars(bool toggle)
@@ -342,3 +238,94 @@ void Toggle_ConVars(bool toggle)
 		tf_arena_round_time.IntValue = iArenaRoundTime;
 	}
 }
+
+stock void SDK_EquipWearable(int client, int iWearable)
+{
+	if (g_hSDKEquipWearable != null)
+		SDKCall(g_hSDKEquipWearable, client, iWearable);
+}
+stock void SDK_RemoveWearable(int client, int iWearable)
+{
+	if (g_hSDKRemoveWearable != null)
+		SDKCall(g_hSDKRemoveWearable, client, iWearable);
+}
+stock int SDK_GetEquippedWearable(int client, int iSlot)
+{
+	if (g_hSDKGetEquippedWearable != null)
+		return SDKCall(g_hSDKGetEquippedWearable, client, iSlot);
+	
+	return -1;
+}
+
+void SDKInit()
+{
+	Handle hGameData = LoadGameConfigFile("tfgo");
+	
+	// This function is used to equip wearables 
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBasePlayer::EquipWearable");
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+	g_hSDKEquipWearable = EndPrepSDKCall();
+	if (g_hSDKEquipWearable == null)
+		LogMessage("Failed to create call: CBasePlayer::EquipWearable!");
+	
+	// This function is used to remove a player wearable properly
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBasePlayer::RemoveWearable");
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+	g_hSDKRemoveWearable = EndPrepSDKCall();
+	if (g_hSDKRemoveWearable == null)
+		LogMessage("Failed to create call: CBasePlayer::RemoveWearable!");
+	
+	// This function is used to get wearable equipped in loadout slots
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::GetEquippedWearableForLoadoutSlot");
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
+	g_hSDKGetEquippedWearable = EndPrepSDKCall();
+	if (g_hSDKGetEquippedWearable == null)
+		LogMessage("Failed to create call: CTFPlayer::GetEquippedWearableForLoadoutSlot!");
+}
+
+stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, char[] sAttribs = "", char[] sText = "")
+{
+	char sClassname[256];
+	TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
+	TF2Econ_TranslateWeaponEntForClass(sClassname, sizeof(sClassname), TF2_GetPlayerClass(iClient));
+	
+	int iWeapon = CreateEntityByName(sClassname);
+	if (IsValidEntity(iWeapon))
+	{
+		SetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex", iIndex);
+		SetEntProp(iWeapon, Prop_Send, "m_bInitialized", 1);
+		
+		// Allow quality / level override by updating through the offset.
+		char netClass[64];
+		GetEntityNetClass(iWeapon, netClass, sizeof(netClass));
+		SetEntData(iWeapon, FindSendPropInfo(netClass, "m_iEntityQuality"), 6);
+		SetEntData(iWeapon, FindSendPropInfo(netClass, "m_iEntityLevel"), 1);
+		
+		SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", 6);
+		SetEntProp(iWeapon, Prop_Send, "m_iEntityLevel", 1);
+		
+		// Attribute shittery inbound
+		if (!StrEqual(sAttribs, ""))
+		{
+			char atts[32][32];
+			int iCount = ExplodeString(sAttribs, " ; ", atts, 32, 32);
+			if (iCount > 1)
+				for (int i = 0; i < iCount; i += 2)
+			TF2Attrib_SetByDefIndex(iWeapon, StringToInt(atts[i]), StringToFloat(atts[i + 1]));
+		}
+		
+		DispatchSpawn(iWeapon);
+		SetEntProp(iWeapon, Prop_Send, "m_bValidatedAttachedEntity", true);
+		
+		if (StrContains(sClassname, "tf_wearable") == 0)
+			SDK_EquipWearable(iClient, iWeapon);
+		else
+			EquipPlayerWeapon(iClient, iWeapon);
+	}
+	
+	return iWeapon;
+} 
