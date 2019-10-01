@@ -97,7 +97,6 @@ public Action Event_Player_Spawn(Event event, const char[] name, bool dontBroadc
 	int weapon = GetPlayerWeaponSlot(client, 2);
 	EquipPlayerWeapon(client, weapon);
 
-	
 	return Plugin_Continue;
 }
 
@@ -107,18 +106,18 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 		
 	if (g_dropCurrencyPacks)
 	{
-		int cpackSmall = CreateEntityByName("item_currencypack_medium");
-		if (DispatchSpawn(cpackSmall))
+		int iCurrencyPack = CreateEntityByName("item_currencypack_medium");
+		if (DispatchSpawn(iCurrencyPack))
 		{
 			char key[32];
-			IntToString(EntIndexToEntRef(cpackSmall), key, sizeof(key));
+			IntToString(EntIndexToEntRef(iCurrencyPack), key, sizeof(key));
 			g_currencypackPlayerMap.SetValue(key, client);
-			SDKHook(cpackSmall, SDKHook_StartTouch, Cash_OnStartTouch);
-			SDKHook(cpackSmall, SDKHook_SpawnPost, Cash_OnSpawnPost);
+			SDKHook(iCurrencyPack, SDKHook_StartTouch, Cash_OnStartTouch);
+			SDKHook(iCurrencyPack, SDKHook_SpawnPost, Cash_OnSpawnPost);
 			float origin[3];
 			GetClientAbsOrigin(client, origin);
-			TeleportEntity(cpackSmall, origin, NULL_VECTOR, NULL_VECTOR);
-			CreateTimer(30.0, Destroy_Currency_Pack, cpackSmall);
+			TeleportEntity(iCurrencyPack, origin, NULL_VECTOR, NULL_VECTOR);
+			CreateTimer(30.0, Destroy_Currency_Pack, iCurrencyPack);
 		}
 	}
 
@@ -177,11 +176,14 @@ void RemoveWeapons(int client) {
 	TF2_RemoveWeaponSlot(client, 1); // Secondary
 	
 	// special cases
-	switch(TF2_GetPlayerClass(client)) {
-		case TFClass_Spy: {
+	switch(TF2_GetPlayerClass(client))
+	{
+		case TFClass_Spy:
+		{
 			TF2_RemoveWeaponSlot(client, 4); // Invis Watch
 		}
-		case TFClass_Engineer: {
+		case TFClass_Engineer:
+		{
 			TF2_RemoveWeaponSlot(client, 3); // Construction PDA
 		}
 	}
