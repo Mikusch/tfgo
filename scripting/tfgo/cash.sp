@@ -1,7 +1,6 @@
 #define TF_MAXPLAYERS 32
 
 stock int g_iBalance[TF_MAXPLAYERS + 1];
-stock bool g_bDropCurrencyPacks;
 stock Handle g_hCurrencyPackDestroyTimer;
 stock StringMap g_sCurrencypackPlayerMap;
 
