@@ -67,9 +67,9 @@ public void OnPluginStart()
 	SDKInit();
 	tfgo_buytime = CreateConVar("tfgo_buytime", "30", "How many seconds after spawning players can buy items for", _, true, 5.0);
 	
-	g_hudSync = CreateHudSynchronizer();
+	g_hHudSync = CreateHudSynchronizer();
 	
-	g_currencypackPlayerMap = CreateTrie();
+	g_sCurrencypackPlayerMap = CreateTrie();
 	LoadTranslations("common.phrases.txt");
 	
 	HookEvent("player_spawn", Event_Player_Spawn);
@@ -131,7 +131,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	
-	if (g_dropCurrencyPacks)
+	if (g_bDropCurrencyPacks)
 	{
 		CreateDeathCash(client);
 	}
@@ -154,12 +154,12 @@ public Action Event_Teamplay_Round_Win(Event event, const char[] name, bool dont
 
 public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
-	g_dropCurrencyPacks = false;
+	g_bDropCurrencyPacks = false;
 	
 	for (int i = 1; i < MaxClients; i++)
 	{
 		SetHudTextParams(-1.0, 0.75, tfgo_buytime.FloatValue, 0, 133, 67, 140, _, _, _, _);
-		ShowSyncHudText(i, g_hudSync, "$%d", g_balance[i]);
+		ShowSyncHudText(i, g_hHudSync, "$%d", g_balance[i]);
 	}
 	
 	g_buytimeTimer = CreateTimer(tfgo_buytime.FloatValue, DisableBuyMenu);
@@ -169,7 +169,7 @@ public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool do
 
 public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
-	g_dropCurrencyPacks = true;
+	g_bDropCurrencyPacks = true;
 	return Plugin_Continue;
 }
 
