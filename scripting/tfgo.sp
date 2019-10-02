@@ -77,7 +77,7 @@ public Plugin myinfo =  {
 public void OnPluginStart()
 {
 	SDKInit();
-	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, 5.0);
+	tfgo_buytime = CreateConVar("tfgo_buytime", "30", "How many seconds after spawning players can buy items for", _, true, 5.0);
 	
 	g_hHudSync = CreateHudSynchronizer();
 	
@@ -166,12 +166,17 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 {
 	g_bRoundStarted = false;
 	
-	if (g_h10SecondWarningTimer != null) 
+	if (g_h10SecondWarningTimer != null)
 	{
 		KillTimer(g_h10SecondWarningTimer);
 		g_h10SecondWarningTimer = null;
+	} 
+	else if (g_hBuytimeTimer != null)
+	{
+		KillTimer(g_hBuytimeTimer);
+		g_hBuytimeTimer = null;
 	}
-
+	
 	StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/roundtenseccount.mp3");
 	
 	// TODO award round end money

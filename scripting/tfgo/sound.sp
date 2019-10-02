@@ -1,6 +1,6 @@
 #include <sdktools_sound>
 
-#define CSGO_ROUNDTENSECCOUNT_LENGTH	12.75
+#define CSGO_ROUNDTENSECCOUNT_LENGTH	12.7
 
 static char g_EngineerMvmCollectCredits[][PLATFORM_MAX_PATH] = 
 {
@@ -93,22 +93,22 @@ stock void PlayCashPickupVoiceLine(int iClient)
 		case TFClass_Soldier:
 		{
 			int iRandom = GetRandomInt(0, sizeof(g_SoldierMvmCollectCredits) - 1);
-			EmitSoundToAll(g_SoldierMvmCollectCredits[iRandom], iClient, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
+			EmitSoundToAll(g_SoldierMvmCollectCredits[iRandom], iClient, SNDCHAN_VOICE);
 		}
 		case TFClass_Engineer:
 		{
 			int iRandom = GetRandomInt(0, sizeof(g_EngineerMvmCollectCredits) - 1);
-			EmitSoundToAll(g_EngineerMvmCollectCredits[iRandom], iClient, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
+			EmitSoundToAll(g_EngineerMvmCollectCredits[iRandom], iClient, SNDCHAN_VOICE);
 		}
 		case TFClass_Heavy:
 		{
 			int iRandom = GetRandomInt(0, sizeof(g_HeavyMvmCollectCredits) - 1);
-			EmitSoundToAll(g_HeavyMvmCollectCredits[iRandom], iClient, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
+			EmitSoundToAll(g_HeavyMvmCollectCredits[iRandom], iClient, SNDCHAN_VOICE);
 		}
 		case TFClass_Medic:
 		{
 			int iRandom = GetRandomInt(0, sizeof(g_MedicMvmCollectCredits) - 1);
-			EmitSoundToAll(g_MedicMvmCollectCredits[iRandom], iClient, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
+			EmitSoundToAll(g_MedicMvmCollectCredits[iRandom], iClient, SNDCHAN_VOICE);
 		}
 	}
 }
