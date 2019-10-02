@@ -55,7 +55,7 @@ stock Action Cash_OnTouch(int entity, int iClient)
 	
 	g_iBalance[iClient] += 100;
 	
-	SetHudTextParams(-1.0, 0.75, 10.0, 0, 133, 67, 140, _, _, _, _); // 60.0 how long text should stay since last cash update
+	SetHudTextParams(-1.0, 0.75, 10.0, 0, 133, 67, 140); // 60.0 how long text should stay since last cash update
 	ShowSyncHudText(iClient, g_hHudSync, "$%d", g_iBalance[iClient]);
 	
 	switch (TF2_GetPlayerClass(iClient))
