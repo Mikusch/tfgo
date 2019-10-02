@@ -296,7 +296,8 @@ void SDKInit()
 		LogMessage("Failed to create call: CTFPlayer::GetEquippedWearableForLoadoutSlot!");
 }
 
-stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, char[] sAttribs = "", char[] sText = "")
+
+stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex)
 {
 	char sClassname[256];
 	TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
@@ -308,25 +309,6 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, char[] sAttribs = ""
 		SetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex", iIndex);
 		SetEntProp(iWeapon, Prop_Send, "m_bInitialized", 1);
 		
-		// Allow quality / level override by updating through the offset.
-		char netClass[64];
-		GetEntityNetClass(iWeapon, netClass, sizeof(netClass));
-		SetEntData(iWeapon, FindSendPropInfo(netClass, "m_iEntityQuality"), 6);
-		SetEntData(iWeapon, FindSendPropInfo(netClass, "m_iEntityLevel"), 1);
-		
-		SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", 6);
-		SetEntProp(iWeapon, Prop_Send, "m_iEntityLevel", 1);
-		
-		// Attribute shittery inbound
-		if (!StrEqual(sAttribs, ""))
-		{
-			char atts[32][32];
-			int iCount = ExplodeString(sAttribs, " ; ", atts, 32, 32);
-			if (iCount > 1)
-				for (int i = 0; i < iCount; i += 2)
-			TF2Attrib_SetByDefIndex(iWeapon, StringToInt(atts[i]), StringToFloat(atts[i + 1]));
-		}
-		
 		DispatchSpawn(iWeapon);
 		SetEntProp(iWeapon, Prop_Send, "m_bValidatedAttachedEntity", true);
 		
@@ -337,4 +319,4 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, char[] sAttribs = ""
 	}
 	
 	return iWeapon;
-} 
+}
