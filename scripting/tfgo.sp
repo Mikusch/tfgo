@@ -21,7 +21,19 @@
 #define TFGO_ELIMINATION_WIN_BONUS		2300
 #define TFGO_LOSS_BONUS 					2400
 
-
+// Default weapon index for each class and slot stolen from VSH-Rewrite
+int g_iDefaultWeaponIndex[][] = {
+	{-1, -1, -1, -1, -1, -1},	// Unknown
+	{13, 23, 0, -1, -1, -1},	// Scout
+	{14, 16, 3, -1, -1, -1},	// Sniper
+	{18, 10, 6, -1, -1, -1},	// Soldier
+	{19, 20, 1, -1, -1, -1},	// Demoman
+	{17, 29, 8, -1, -1, -1},	// Medic
+	{15, 11, 5, -1, -1, -1},	// Heavy
+	{21, 12, 2, -1, -1, -1},	// yro
+	{24, 735, 4, 27, 30, -1},	// Spy
+	{9, 22, 7, 25, 26, 28},		// Engineer
+};
 
 static bool g_buytimeActive;
 static Handle g_buytimeTimer;
@@ -64,6 +76,7 @@ public void OnPluginStart()
 	HookEvent("arena_round_start", Event_Arena_Round_Start);
 	HookEvent("teamplay_round_start", Event_Teamplay_Round_Start);
 	HookEvent("arena_match_maxstreak", Event_Arena_Match_MaxStreak);
+	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
 	
 	tf_arena_max_streak = FindConVar("tf_arena_max_streak");
 	tf_arena_first_blood = FindConVar("tf_arena_first_blood");
@@ -170,28 +183,9 @@ public Action Event_Player_ChangeClass(Event event, const char[] name, bool dont
 
 // called when a new client spawns or someone spawns after they died
 void SetStartingWeapons(int client) {
-	TF2_RemoveWeaponSlot(client, 0); // Primary
-	//TF2_RemoveWeaponSlot(client, 1); // Secondary
-	
-	// special cases
-	switch (TF2_GetPlayerClass(client))
-	{
-		case TFClass_Scout:
-		{
-			//GivePlayerItem(client, const char[] item, int iSubType)
-			char buf[32];
-			TF2Econ_GetItemClassName(13, buf, sizeof(buf));
-			PrintToChatAll(buf);
-		}
-		case TFClass_Spy:
-		{
-			TF2_RemoveWeaponSlot(client, 4); // Invis Watch
-		}
-		case TFClass_Engineer:
-		{
-			TF2_RemoveWeaponSlot(client, 3); // Construction PDA
-		}
-	}
+	TF2_RemoveItemInSlot(client, 0); // remove primary
+
+	// TODO: Set default secondary, except for Medic, Engineer and Spy
 }
 
 public void OnEntityCreated(int entity, const char[] classname)
@@ -253,11 +247,13 @@ stock void SDK_EquipWearable(int client, int iWearable)
 	if (g_hSDKEquipWearable != null)
 		SDKCall(g_hSDKEquipWearable, client, iWearable);
 }
+
 stock void SDK_RemoveWearable(int client, int iWearable)
 {
 	if (g_hSDKRemoveWearable != null)
 		SDKCall(g_hSDKRemoveWearable, client, iWearable);
 }
+
 stock int SDK_GetEquippedWearable(int client, int iSlot)
 {
 	if (g_hSDKGetEquippedWearable != null)
@@ -296,6 +292,17 @@ void SDKInit()
 		LogMessage("Failed to create call: CTFPlayer::GetEquippedWearableForLoadoutSlot!");
 }
 
+stock void TF2_RemoveItemInSlot(int client, int slot)
+{
+	TF2_RemoveWeaponSlot(client, slot);
+
+	int iWearable = SDK_GetEquippedWearable(client, slot);
+	if (iWearable > MaxClients)
+	{
+		SDK_RemoveWearable(client, iWearable);
+		AcceptEntityInput(iWearable, "Kill");
+	}
+}
 
 stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex)
 {
@@ -319,4 +326,10 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex)
 	}
 	
 	return iWeapon;
+}
+
+// Note: sent when a player gets a whole new set of items, aka touches a resupply locker / respawn cabinet or spawns in.
+public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool bDontBroadcast)
+{
+	// TODO
 }
