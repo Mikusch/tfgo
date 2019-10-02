@@ -1,10 +1,3 @@
-#define TF_MAXPLAYERS 32
-
-stock int g_iBalance[TF_MAXPLAYERS + 1];
-stock Handle g_hCurrencyPackDestroyTimer;
-stock StringMap g_sCurrencypackPlayerMap;
-
-Handle g_hHudSync;
 
 stock void CreateDeathCash(int iClient) {
 	int iCurrencyPack = EntIndexToEntRef(CreateEntityByName("item_currencypack_medium"));
@@ -57,32 +50,10 @@ stock Action Cash_OnTouch(int entity, int iClient)
 	SetHudTextParams(-1.0, 0.75, 10.0, 0, 133, 67, 140); // 60.0 how long text should stay since last cash update
 	ShowSyncHudText(iClient, g_hHudSync, "$%d", g_iBalance[iClient]);
 	
-	switch (TF2_GetPlayerClass(iClient))
-	{
-		case TFClass_Soldier:
-		{
-			int iRandom = GetRandomInt(0, sizeof(g_SoldierMvmCollectCredits) - 1);
-			EmitSoundToAll(g_SoldierMvmCollectCredits[iRandom], iClient, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
-		}
-		case TFClass_Engineer:
-		{
-			int iRandom = GetRandomInt(0, sizeof(g_EngineerMvmCollectCredits) - 1);
-			EmitSoundToAll(g_EngineerMvmCollectCredits[iRandom], iClient, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
-		}
-		case TFClass_Heavy:
-		{
-			int iRandom = GetRandomInt(0, sizeof(g_HeavyMvmCollectCredits) - 1);
-			EmitSoundToAll(g_HeavyMvmCollectCredits[iRandom], iClient, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
-		}
-		case TFClass_Medic:
-		{
-			int iRandom = GetRandomInt(0, sizeof(g_MedicMvmCollectCredits) - 1);
-			EmitSoundToAll(g_MedicMvmCollectCredits[iRandom], iClient, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
-		}
-	}
+	PlayCashPickupVoiceLine(iClient);
 	
 	RemoveEntity(entity); // fix for money teleporting to world spawn after pickup
 	
-	PrintToChat(client, "You have picked up $%d and now have $%d!", 100, g_balance[client]);
+	PrintToChat(iClient, "You have picked up $%d and now have $%d!", 100, g_iBalance[iClient]);
 	return Plugin_Continue;
 }
