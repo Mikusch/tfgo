@@ -38,8 +38,8 @@ int g_iDefaultWeaponIndex[][] = {
 // Weapons purchased using the buy menu
 int g_iPurchasedWeaponIndex[TF_MAXPLAYERS + 1][];
 
-static bool g_buytimeActive;
-static Handle g_buytimeTimer;
+bool g_bBuytimeActive;
+Handle g_hBuytimeTimer;
 bool g_bRoundStarted;
 bool g_bRoundActive;
 
@@ -169,20 +169,20 @@ public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool do
 		ShowSyncHudText(i, g_hHudSync, "$%d", g_balance[i]);
 	}
 	
-	g_buytimeTimer = CreateTimer(tfgo_buytime.FloatValue, DisableBuyMenu);
+	g_bBuytimeActive = true;
+	g_hBuytimeTimer = CreateTimer(tfgo_buytime.FloatValue, DisableBuyMenu);
 	PrintToChatAll("Buy time has started!");
-	g_buytimeActive = true;
+}
+
+public Action DisableBuyMenu(Handle timer) {
+	PrintToChatAll("Buy time is over!");
+	g_bBuytimeActive = false;
 }
 
 public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
 	g_bRoundActive = true;
 	return Plugin_Continue;
-}
-
-public Action DisableBuyMenu(Handle timer) {
-	PrintToChatAll("Buy time is over!");
-	g_buytimeActive = false;
 }
 
 public Action Event_Player_ChangeClass(Event event, const char[] name, bool dontBroadcast) {
