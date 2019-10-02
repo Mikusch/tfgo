@@ -64,6 +64,7 @@ public void OnPluginStart()
 	HookEvent("arena_round_start", Event_Arena_Round_Start);
 	HookEvent("teamplay_round_start", Event_Teamplay_Round_Start);
 	HookEvent("arena_match_maxstreak", Event_Arena_Match_MaxStreak);
+	HookEvent("teamplay_broadcast_audio", Event_Broadcast_Audio, EventHookMode_Pre);
 	
 	tf_arena_max_streak = FindConVar("tf_arena_max_streak");
 	tf_arena_first_blood = FindConVar("tf_arena_first_blood");
@@ -72,6 +73,26 @@ public void OnPluginStart()
 	tf_arena_preround_time = FindConVar("tf_arena_preround_time");
 	
 	Toggle_ConVars(true);
+}
+
+public Action Event_Broadcast_Audio(Event event, const char[] name, bool dontBroadcast)
+{
+	char strAudio[PLATFORM_MAX_PATH];
+	event.GetString("sound", strAudio, sizeof(strAudio));
+	int iTeam = event.GetInt("team");
+	
+	if (strcmp(strAudio, "Game.YourTeamWon") == 0)
+	{
+		EmitSoundToTeam(iTeam, "valve_csgo_01/wonround.mp3");
+		return Plugin_Handled;
+	}
+	else if (strcmp(strAudio, "Game.YourTeamLost") == 0 || strcmp(strAudio, "Game.Stalemate") == 0)
+	{
+		EmitSoundToTeam(iTeam, "valve_csgo_01/lostround.mp3");
+		return Plugin_Handled;
+	}
+	
+	return Plugin_Continue;
 }
 
 public void OnPluginEnd()
