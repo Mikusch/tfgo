@@ -1,23 +1,23 @@
 #define TF_MAXPLAYERS 32
 
-stock int g_balance[TF_MAXPLAYERS + 1];
-stock bool g_dropCurrencyPacks;
-stock Handle g_destroyCurrencyPackTimer;
-stock StringMap g_currencypackPlayerMap;
+stock int g_iBalance[TF_MAXPLAYERS + 1];
+stock bool g_bDropCurrencyPacks;
+stock Handle g_hCurrencyPackDestroyTimer;
+stock StringMap g_sCurrencypackPlayerMap;
 
-Handle g_hudSync;
+Handle g_hHudSync;
 
-stock void CreateDeathCash(int client) {
+stock void CreateDeathCash(int iClient) {
 	int iCurrencyPack = EntIndexToEntRef(CreateEntityByName("item_currencypack_medium"));
 	if (DispatchSpawn(iCurrencyPack))
 	{
 		char key[32];
 		IntToString(iCurrencyPack, key, sizeof(key));
-		g_currencypackPlayerMap.SetValue(key, client);
+		g_sCurrencypackPlayerMap.SetValue(key, iClient);
 		SDKHook(iCurrencyPack, SDKHook_Touch, Cash_OnTouch);
 		SDKHook(iCurrencyPack, SDKHook_SpawnPost, Cash_OnSpawnPost);
 		float origin[3];
-		GetClientAbsOrigin(client, origin);
+		GetClientAbsOrigin(iClient, origin);
 		TeleportEntity(iCurrencyPack, origin, NULL_VECTOR, NULL_VECTOR);
 		CreateTimer(30.0, Destroy_Currency_Pack, iCurrencyPack);
 	}
@@ -39,46 +39,46 @@ public void Cash_OnSpawnPost(int entity)
 	SetEntProp(entity, Prop_Send, "m_bDistributed", true);
 }
 
-stock Action Cash_OnTouch(int entity, int client)
+stock Action Cash_OnTouch(int entity, int iClient)
 {
 	char key[32];
 	IntToString(EntIndexToEntRef(entity), key, sizeof(key));
 	int iCashOwner;
-	g_currencypackPlayerMap.GetValue(key, iCashOwner);
+	g_sCurrencypackPlayerMap.GetValue(key, iCashOwner);
 	
 	
-	if (TF2_GetClientTeam(iCashOwner) == TF2_GetClientTeam(client))
+	if (TF2_GetClientTeam(iCashOwner) == TF2_GetClientTeam(iClient))
 	{
 		// disallow picking up your own team's cash
 		return Plugin_Handled;
 	}
 	
-	g_balance[client] += 100;
+	g_iBalance[iClient] += 100;
 	
 	SetHudTextParams(-1.0, 0.75, 10.0, 0, 133, 67, 140, _, _, _, _); // 60.0 how long text should stay since last cash update
-	ShowSyncHudText(client, g_hudSync, "$%d", g_balance[client]);
+	ShowSyncHudText(iClient, g_hHudSync, "$%d", g_iBalance[iClient]);
 	
-	switch (TF2_GetPlayerClass(client))
+	switch (TF2_GetPlayerClass(iClient))
 	{
 		case TFClass_Soldier:
 		{
 			int iRandom = GetRandomInt(0, sizeof(g_SoldierMvmCollectCredits) - 1);
-			EmitSoundToAll(g_SoldierMvmCollectCredits[iRandom], client, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
+			EmitSoundToAll(g_SoldierMvmCollectCredits[iRandom], iClient, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
 		}
 		case TFClass_Engineer:
 		{
 			int iRandom = GetRandomInt(0, sizeof(g_EngineerMvmCollectCredits) - 1);
-			EmitSoundToAll(g_EngineerMvmCollectCredits[iRandom], client, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
+			EmitSoundToAll(g_EngineerMvmCollectCredits[iRandom], iClient, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
 		}
 		case TFClass_Heavy:
 		{
 			int iRandom = GetRandomInt(0, sizeof(g_HeavyMvmCollectCredits) - 1);
-			EmitSoundToAll(g_HeavyMvmCollectCredits[iRandom], client, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
+			EmitSoundToAll(g_HeavyMvmCollectCredits[iRandom], iClient, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
 		}
 		case TFClass_Medic:
 		{
 			int iRandom = GetRandomInt(0, sizeof(g_MedicMvmCollectCredits) - 1);
-			EmitSoundToAll(g_MedicMvmCollectCredits[iRandom], client, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
+			EmitSoundToAll(g_MedicMvmCollectCredits[iRandom], iClient, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
 		}
 	}
 	
