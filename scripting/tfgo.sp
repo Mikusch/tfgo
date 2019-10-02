@@ -21,7 +21,7 @@
 #define TFGO_ELIMINATION_WIN_BONUS		2300
 #define TFGO_LOSS_BONUS 					2400
 
-// Default weapon index for each class and slot stolen from VSH-Rewrite
+// Default weapon index for each class and slot (stolen from VSH-Rewrite)
 int g_iDefaultWeaponIndex[][] = {
 	{-1, -1, -1, -1, -1, -1},	// Unknown
 	{13, 23, 0, -1, -1, -1},	// Scout
@@ -30,10 +30,13 @@ int g_iDefaultWeaponIndex[][] = {
 	{19, 20, 1, -1, -1, -1},	// Demoman
 	{17, 29, 8, -1, -1, -1},	// Medic
 	{15, 11, 5, -1, -1, -1},	// Heavy
-	{21, 12, 2, -1, -1, -1},	// yro
+	{21, 12, 2, -1, -1, -1},	// Pyro
 	{24, 735, 4, 27, 30, -1},	// Spy
 	{9, 22, 7, 25, 26, 28},		// Engineer
 };
+
+// Weapons purchased using the buy menu
+int g_iPurchasedWeaponIndex[TF_MAXPLAYERS + 1][];
 
 static bool g_buytimeActive;
 static Handle g_buytimeTimer;
