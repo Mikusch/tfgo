@@ -21,10 +21,27 @@
 #define TFGO_ELIMINATION_WIN_BONUS		2300
 #define TFGO_LOSS_BONUS 					2400
 
+// Default weapon index for each class and slot (stolen from VSH-Rewrite)
+int g_iDefaultWeaponIndex[][] = {
+	{-1, -1, -1, -1, -1, -1},	// Unknown
+	{13, 23, 0, -1, -1, -1},	// Scout
+	{14, 16, 3, -1, -1, -1},	// Sniper
+	{18, 10, 6, -1, -1, -1},	// Soldier
+	{19, 20, 1, -1, -1, -1},	// Demoman
+	{17, 29, 8, -1, -1, -1},	// Medic
+	{15, 11, 5, -1, -1, -1},	// Heavy
+	{21, 12, 2, -1, -1, -1},	// Pyro
+	{24, 735, 4, 27, 30, -1},	// Spy
+	{9, 22, 7, 25, 26, 28},		// Engineer
+};
 
+// Weapons purchased using the buy menu
+int g_iPurchasedWeaponIndex[TF_MAXPLAYERS + 1][];
 
-static bool g_buytimeActive;
-static Handle g_buytimeTimer;
+bool g_bBuytimeActive;
+Handle g_hBuytimeTimer;
+bool g_bRoundStarted;
+bool g_bRoundActive;
 
 ConVar tfgo_buytime;
 
@@ -52,9 +69,9 @@ public void OnPluginStart()
 	SDKInit();
 	tfgo_buytime = CreateConVar("tfgo_buytime", "30", "How many seconds after spawning players can buy items for", _, true, 5.0);
 	
-	g_hudSync = CreateHudSynchronizer();
+	g_hHudSync = CreateHudSynchronizer();
 	
-	g_currencypackPlayerMap = CreateTrie();
+	g_sCurrencypackPlayerMap = CreateTrie();
 	LoadTranslations("common.phrases.txt");
 	
 	HookEvent("player_spawn", Event_Player_Spawn);
@@ -65,7 +82,11 @@ public void OnPluginStart()
 	HookEvent("teamplay_round_start", Event_Teamplay_Round_Start);
 	HookEvent("arena_match_maxstreak", Event_Arena_Match_MaxStreak);
 	HookEvent("teamplay_broadcast_audio", Event_Broadcast_Audio, EventHookMode_Pre);
-	
+	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
+
+	AddCommandListener(Client_KillCommand, "kill");
+	AddCommandListener(Client_KillCommand, "explode");
+
 	tf_arena_max_streak = FindConVar("tf_arena_max_streak");
 	tf_arena_first_blood = FindConVar("tf_arena_first_blood");
 	tf_arena_round_time = FindConVar("tf_arena_round_time");
@@ -80,7 +101,7 @@ public Action Event_Broadcast_Audio(Event event, const char[] name, bool dontBro
 	char strAudio[PLATFORM_MAX_PATH];
 	event.GetString("sound", strAudio, sizeof(strAudio));
 	int iTeam = event.GetInt("team");
-	
+
 	if (strcmp(strAudio, "Game.YourTeamWon") == 0)
 	{
 		EmitSoundToTeam(iTeam, "valve_csgo_01/wonround.mp3");
@@ -91,7 +112,7 @@ public Action Event_Broadcast_Audio(Event event, const char[] name, bool dontBro
 		EmitSoundToTeam(iTeam, "valve_csgo_01/lostround.mp3");
 		return Plugin_Handled;
 	}
-	
+
 	return Plugin_Continue;
 }
 
@@ -136,7 +157,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	
-	if (g_dropCurrencyPacks)
+	if (g_bRoundActive)
 	{
 		CreateDeathCash(client);
 	}
@@ -153,34 +174,36 @@ public void OnClientConnected(int client)
 
 public Action Event_Teamplay_Round_Win(Event event, const char[] name, bool dontBroadcast)
 {
+	g_bRoundStarted = false;
 	// TODO award round end money
 	return Plugin_Continue;
 }
 
 public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
-	g_dropCurrencyPacks = false;
+	g_bRoundStarted = true;
+	g_bRoundActive = false;
 	
 	for (int i = 1; i < MaxClients; i++)
 	{
-		SetHudTextParams(-1.0, 0.75, tfgo_buytime.FloatValue, 0, 133, 67, 140, _, _, _, _);
-		ShowSyncHudText(i, g_hudSync, "$%d", g_balance[i]);
+		SetHudTextParams(-1.0, 0.75, tfgo_buytime.FloatValue, 0, 133, 67, 140);
+		ShowSyncHudText(i, g_hHudSync, "$%d", g_balance[i]);
 	}
 	
-	g_buytimeTimer = CreateTimer(tfgo_buytime.FloatValue, DisableBuyMenu);
+	g_bBuytimeActive = true;
+	g_hBuytimeTimer = CreateTimer(tfgo_buytime.FloatValue, DisableBuyMenu);
 	PrintToChatAll("Buy time has started!");
-	g_buytimeActive = true;
-}
-
-public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontBroadcast)
-{
-	g_dropCurrencyPacks = true;
-	return Plugin_Continue;
 }
 
 public Action DisableBuyMenu(Handle timer) {
 	PrintToChatAll("Buy time is over!");
-	g_buytimeActive = false;
+	g_bBuytimeActive = false;
+}
+
+public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontBroadcast)
+{
+	g_bRoundActive = true;
+	return Plugin_Continue;
 }
 
 public Action Event_Player_ChangeClass(Event event, const char[] name, bool dontBroadcast) {
@@ -191,28 +214,9 @@ public Action Event_Player_ChangeClass(Event event, const char[] name, bool dont
 
 // called when a new client spawns or someone spawns after they died
 void SetStartingWeapons(int client) {
-	TF2_RemoveWeaponSlot(client, 0); // Primary
-	//TF2_RemoveWeaponSlot(client, 1); // Secondary
-	
-	// special cases
-	switch (TF2_GetPlayerClass(client))
-	{
-		case TFClass_Scout:
-		{
-			//GivePlayerItem(client, const char[] item, int iSubType)
-			char buf[32];
-			TF2Econ_GetItemClassName(13, buf, sizeof(buf));
-			PrintToChatAll(buf);
-		}
-		case TFClass_Spy:
-		{
-			TF2_RemoveWeaponSlot(client, 4); // Invis Watch
-		}
-		case TFClass_Engineer:
-		{
-			TF2_RemoveWeaponSlot(client, 3); // Construction PDA
-		}
-	}
+	TF2_RemoveItemInSlot(client, 0); // remove primary
+
+	// TODO: Set default secondary, except for Medic, Engineer and Spy
 }
 
 public void OnEntityCreated(int entity, const char[] classname)
@@ -274,11 +278,13 @@ stock void SDK_EquipWearable(int client, int iWearable)
 	if (g_hSDKEquipWearable != null)
 		SDKCall(g_hSDKEquipWearable, client, iWearable);
 }
+
 stock void SDK_RemoveWearable(int client, int iWearable)
 {
 	if (g_hSDKRemoveWearable != null)
 		SDKCall(g_hSDKRemoveWearable, client, iWearable);
 }
+
 stock int SDK_GetEquippedWearable(int client, int iSlot)
 {
 	if (g_hSDKGetEquippedWearable != null)
@@ -317,7 +323,19 @@ void SDKInit()
 		LogMessage("Failed to create call: CTFPlayer::GetEquippedWearableForLoadoutSlot!");
 }
 
-stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, char[] sAttribs = "", char[] sText = "")
+stock void TF2_RemoveItemInSlot(int client, int slot)
+{
+	TF2_RemoveWeaponSlot(client, slot);
+
+	int iWearable = SDK_GetEquippedWearable(client, slot);
+	if (iWearable > MaxClients)
+	{
+		SDK_RemoveWearable(client, iWearable);
+		AcceptEntityInput(iWearable, "Kill");
+	}
+}
+
+stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex)
 {
 	char sClassname[256];
 	TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
@@ -328,26 +346,7 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, char[] sAttribs = ""
 	{
 		SetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex", iIndex);
 		SetEntProp(iWeapon, Prop_Send, "m_bInitialized", 1);
-		
-		// Allow quality / level override by updating through the offset.
-		char netClass[64];
-		GetEntityNetClass(iWeapon, netClass, sizeof(netClass));
-		SetEntData(iWeapon, FindSendPropInfo(netClass, "m_iEntityQuality"), 6);
-		SetEntData(iWeapon, FindSendPropInfo(netClass, "m_iEntityLevel"), 1);
-		
-		SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", 6);
-		SetEntProp(iWeapon, Prop_Send, "m_iEntityLevel", 1);
-		
-		// Attribute shittery inbound
-		if (!StrEqual(sAttribs, ""))
-		{
-			char atts[32][32];
-			int iCount = ExplodeString(sAttribs, " ; ", atts, 32, 32);
-			if (iCount > 1)
-				for (int i = 0; i < iCount; i += 2)
-			TF2Attrib_SetByDefIndex(iWeapon, StringToInt(atts[i]), StringToFloat(atts[i + 1]));
-		}
-		
+
 		DispatchSpawn(iWeapon);
 		SetEntProp(iWeapon, Prop_Send, "m_bValidatedAttachedEntity", true);
 		
@@ -358,4 +357,20 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, char[] sAttribs = ""
 	}
 	
 	return iWeapon;
-} 
+}
+
+// Note: sent when a player gets a whole new set of items, aka touches a resupply locker / respawn cabinet or spawns in.
+public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool bDontBroadcast)
+{
+	// TODO
+}
+
+public Action Client_KillCommand(int iClient, const char[] sCommand, int iArgs)
+{
+	if (g_bRoundStarted)
+	{
+		// TODO: Money Penalty for suicide during round
+	}
+
+	return Plugin_Continue;
+}
