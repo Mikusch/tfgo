@@ -40,6 +40,7 @@ int g_iPurchasedWeaponIndex[TF_MAXPLAYERS + 1][];
 
 static bool g_buytimeActive;
 static Handle g_buytimeTimer;
+bool g_bRoundStarted;
 
 ConVar tfgo_buytime;
 
@@ -80,6 +81,9 @@ public void OnPluginStart()
 	HookEvent("teamplay_round_start", Event_Teamplay_Round_Start);
 	HookEvent("arena_match_maxstreak", Event_Arena_Match_MaxStreak);
 	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
+	
+	AddCommandListener(Client_KillCommand, "kill");
+	AddCommandListener(Client_KillCommand, "explode");
 	
 	tf_arena_max_streak = FindConVar("tf_arena_max_streak");
 	tf_arena_first_blood = FindConVar("tf_arena_first_blood");
@@ -148,12 +152,14 @@ public void OnClientConnected(int client)
 
 public Action Event_Teamplay_Round_Win(Event event, const char[] name, bool dontBroadcast)
 {
+	g_bRoundStarted = false;
 	// TODO award round end money
 	return Plugin_Continue;
 }
 
 public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
+	g_bRoundStarted = true;
 	g_bDropCurrencyPacks = false;
 	
 	for (int i = 1; i < MaxClients; i++)
@@ -335,4 +341,14 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex)
 public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool bDontBroadcast)
 {
 	// TODO
+}
+
+public Action Client_KillCommand(int iClient, const char[] sCommand, int iArgs)
+{
+	if (g_bRoundStarted)
+	{
+		// TODO: Money Penalty for suicide during round
+	}
+
+	return Plugin_Continue;
 }
