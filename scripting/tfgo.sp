@@ -41,6 +41,7 @@ int g_iPurchasedWeaponIndex[TF_MAXPLAYERS + 1][];
 static bool g_buytimeActive;
 static Handle g_buytimeTimer;
 bool g_bRoundStarted;
+bool g_bRoundActive;
 
 ConVar tfgo_buytime;
 
@@ -135,7 +136,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	
-	if (g_bDropCurrencyPacks)
+	if (g_bRoundActive)
 	{
 		CreateDeathCash(client);
 	}
@@ -160,7 +161,7 @@ public Action Event_Teamplay_Round_Win(Event event, const char[] name, bool dont
 public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
 	g_bRoundStarted = true;
-	g_bDropCurrencyPacks = false;
+	g_bRoundActive = false;
 	
 	for (int i = 1; i < MaxClients; i++)
 	{
@@ -175,7 +176,7 @@ public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool do
 
 public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
-	g_bDropCurrencyPacks = true;
+	g_bRoundActive = true;
 	return Plugin_Continue;
 }
 
