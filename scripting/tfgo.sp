@@ -158,7 +158,7 @@ public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool do
 	
 	for (int i = 1; i < MaxClients; i++)
 	{
-		SetHudTextParams(-1.0, 0.75, tfgo_buytime.FloatValue, 0, 133, 67, 140, _, _, _, _);
+		SetHudTextParams(-1.0, 0.75, tfgo_buytime.FloatValue, 0, 133, 67, 140);
 		ShowSyncHudText(i, g_hHudSync, "$%d", g_balance[i]);
 	}
 	
