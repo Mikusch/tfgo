@@ -38,10 +38,9 @@ int g_iDefaultWeaponIndex[][] =  {
 	{ 9, 22, 7, 25, 26, 28 },  // Engineer
 };
 
-// Weapons purchased using the buy menu
-int g_iPurchasedWeaponIndex[TF_MAXPLAYERS + 1][];
 int g_iBalance[TF_MAXPLAYERS + 1];
 
+bool g_bWaitingForPlayers;
 bool g_bBuytimeActive;
 bool g_bRoundStarted;
 bool g_bRoundActive;
@@ -64,6 +63,51 @@ StringMap g_sCurrencypackPlayerMap;
 
 #include "tfgo/sound.sp"
 #include "tfgo/cash.sp"
+#include "tfgo/loadout.sp"
+
+// Weapons purchased using the buy menu
+int g_iPlayerLoadout[TF_MAXPLAYERS + 1][10][6];
+
+methodmap Loadout __nullable__
+{
+	public Loadout(int iClient)
+	{
+		return view_as<Loadout>(iClient);
+	}
+	
+	property int iClient
+	{
+		public get()
+		{
+			return view_as<int>(this);
+		}
+	}
+	
+	property int iBalance
+	{
+		public get()
+		{
+			return g_iBalance[this];
+		}
+		public set(int val)
+		{
+			g_iBalance[this] = val;
+		}
+	}
+	
+	public int GetEffectiveWeapon(TFClassType eClass, int iSlot)
+	{
+		int iWeapon = g_iPlayerLoadout[this][eClass][iSlot];
+		if (iWeapon == -1)
+		{
+			return g_iDefaultWeaponIndex[eClass][iSlot];
+		}
+		else
+		{
+			return iWeapon;
+		}
+	}
+}
 
 
 public Plugin myinfo =  {
@@ -76,6 +120,8 @@ public Plugin myinfo =  {
 
 public void OnPluginStart()
 {
+	// TODO: Choose a music kit for the entire game, only change on arena scramble
+	
 	SDKInit();
 	tfgo_buytime = CreateConVar("tfgo_buytime", "30", "How many seconds after spawning players can buy items for", _, true, 5.0);
 	
@@ -84,7 +130,6 @@ public void OnPluginStart()
 	g_sCurrencypackPlayerMap = CreateTrie();
 	LoadTranslations("common.phrases.txt");
 	
-	HookEvent("player_spawn", Event_Player_Spawn);
 	HookEvent("player_death", Event_Player_Death);
 	HookEvent("arena_win_panel", Event_Arena_Win_Panel);
 	HookEvent("player_changeclass", Event_Player_ChangeClass);
@@ -94,8 +139,8 @@ public void OnPluginStart()
 	HookEvent("teamplay_broadcast_audio", Event_Broadcast_Audio, EventHookMode_Pre);
 	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
 	
-	AddCommandListener(Client_KillCommand, "kill");
-	AddCommandListener(Client_KillCommand, "explode");
+	HookEvent("teamplay_waiting_begins", Event_Teamplay_Waiting_Begins);
+	HookEvent("teamplay_waiting_ends", Event_Teamplay_Waiting_Ends);
 	
 	tf_arena_max_streak = FindConVar("tf_arena_max_streak");
 	tf_arena_first_blood = FindConVar("tf_arena_first_blood");
@@ -132,17 +177,6 @@ public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool d
 	}
 }
 
-public Action Event_Player_Spawn(Event event, const char[] name, bool dontBroadcast)
-{
-	int client = GetClientOfUserId(event.GetInt("userid"));
-	SetStartingWeapons(client);
-	
-	int weapon = GetPlayerWeaponSlot(client, 2);
-	EquipPlayerWeapon(client, weapon);
-	
-	return Plugin_Continue;
-}
-
 public Action Event_Player_Death(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
@@ -150,6 +184,11 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	if (g_bRoundActive)
 	{
 		CreateDeathCash(client);
+		
+		if (event.GetInt( "customkill") == TF_CUSTOM_SUICIDE)
+		{
+			PrintToChat(client, "-$100 for suiciding");
+		}
 	}
 	
 	// TODO restore previous weapons IF this death was a suicide
@@ -159,7 +198,14 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 
 public void OnClientConnected(int client)
 {
-	g_iBalance[client] = TFGO_STARTING_MONEY;
+	Loadout loadout = new Loadout(client);
+	loadout.iBalance = 1000;
+	
+	// Give the player some music from the music kit while they wait
+	if (g_bWaitingForPlayers)
+	{
+		EmitSoundToClient(client, "valve_csgo_01/mainmenu.mp3");
+	}
 }
 
 public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBroadcast)
@@ -170,7 +216,7 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	{
 		KillTimer(g_h10SecondWarningTimer);
 		g_h10SecondWarningTimer = null;
-	} 
+	}
 	else if (g_hBuytimeTimer != null)
 	{
 		KillTimer(g_hBuytimeTimer);
@@ -221,12 +267,7 @@ public Action Event_Player_ChangeClass(Event event, const char[] name, bool dont
 	return Plugin_Continue;
 }
 
-// called when a new client spawns or someone spawns after they died
-void SetStartingWeapons(int client) {
-	TF2_RemoveItemInSlot(client, 0); // remove primary
-	
-	// TODO: Set default secondary, except for Medic, Engineer and Spy
-}
+
 
 public void OnEntityCreated(int entity, const char[] classname)
 {
@@ -371,16 +412,33 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex)
 // Note: sent when a player gets a whole new set of items, aka touches a resupply locker / respawn cabinet or spawns in.
 public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool bDontBroadcast)
 {
-	// TODO
+	int client = GetClientOfUserId(event.GetInt("userid"));
+	SetStartingWeapons(client, TF2_GetPlayerClass(client));
 }
 
-public Action Client_KillCommand(int iClient, const char[] sCommand, int iArgs)
+// called when a new client spawns or someone spawns after they died
+void SetStartingWeapons(int iClient, int iClass)
 {
-	if (g_bRoundStarted)
+	Loadout loadout = new Loadout(iClient);
+	
+	for (int i = 0; i++; i < 2)
 	{
-		PrintToChat(iClient, "-$100 for suiciding");
-		// TODO: Money Penalty for suicide during round
+		TF2_RemoveItemInSlot(iClient, i);
+		TF2_CreateAndEquipWeapon(iClient, loadout.GetEffectiveWeapon(iClass, i));
 	}
 	
-	return Plugin_Continue;
+	
+	// TODO: Set default secondary, except for Medic, Engineer and Spy
+}
+
+public Action Event_Teamplay_Waiting_Begins(Event event, const char[] sName, bool bDontBroadcast)
+{
+	g_bWaitingForPlayers = true;
+}
+
+public Action Event_Teamplay_Waiting_Ends(Event event, const char[] sName, bool bDontBroadcast)
+{
+	g_bWaitingForPlayers = false;
+	StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/mainmenu.mp3");
+	
 }
