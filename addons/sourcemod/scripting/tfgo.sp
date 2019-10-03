@@ -83,7 +83,6 @@ Handle g_hSDKGetEquippedWearable = null;
 
 #include "tfgo/sound.sp"
 #include "tfgo/cash.sp"
-#include "tfgo/loadout.sp"
 #include "tfgo/buymenu.sp"
 
 
