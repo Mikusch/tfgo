@@ -47,6 +47,7 @@ stock void PrecacheSounds()
 	PrecacheSound("valve_csgo_01/wonround.mp3");
 	PrecacheSound("valve_csgo_01/lostround.mp3");
 	PrecacheSound("valve_csgo_01/roundtenseccount.mp3");
+	PrecacheSound("valve_csgo_01/chooseteam.mp3");
 	for (int i = 0; i < sizeof(g_sStartRoundMusic); i++)PrecacheSound(g_sStartRoundMusic[i]);
 	for (int i = 0; i < sizeof(g_sStartActionMusic); i++)PrecacheSound(g_sStartActionMusic[i]);
 	for (int i = 0; i < sizeof(g_EngineerMvmCollectCredits); i++)PrecacheSound(g_EngineerMvmCollectCredits[i]);

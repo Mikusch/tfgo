@@ -7,26 +7,34 @@
 #include <tf2_stocks>
 #include <tf_econ_data>
 
+// TF2 stuff
 
 #define TF_MAXPLAYERS 32
 #define TF_TEAMS 3
+#define TF_WINREASON_CAPTURE  	1
+#define TF_WINREASON_ELIMINATION  2
+#define TF_CLASSES  9
+
 #define	 TFTeam_Unassigned 	0
 #define	 TFTeam_Spectator 	1
-#define  TFTeam_Red 			2
+#define  TFTeam_Red 		2
 #define  TFTeam_Blue 		3
-#define TF_CLASSES  9
+
+// Money stuff
 
 #define TFGO_MINLOSESTREAK 0
 #define TFGO_MAXLOSESTREAK 4
 
-#define TFGO_STARTING_MONEY				1000
-#define TFGO_KILL_REWARD_PRIMARY		50
-#define TFGO_KILL_REWARD_SECONDARY		150
-#define TFGO_KILL_REWARD_MELEE			450
-#define TFGO_MAX_MONEY 					16000
-#define TFGO_CAPTURE_WIN_BONUS			2700
-#define TFGO_ELIMINATION_WIN_BONUS		2300
-#define TFGO_LOSS_BONUS 					2400
+#define TFGO_STARTING_BALANCE			1000
+#define TFGO_MAX_BALANCE 				16000
+#define TFGO_CAPTURE_WIN_REWARD			3500
+#define TFGO_ELIMINATION_WIN_REWARD		3250
+
+int g_iLoseStreak[TF_TEAMS + 1] =  { 1, ... };
+int g_iLoseStreakCompensation[TFGO_MAXLOSESTREAK + 1] =  { 1400, 1900, 2400, 2900, 3400 };
+int g_iBalance[TF_MAXPLAYERS + 1] =  { TFGO_STARTING_BALANCE, ... };
+
+//
 
 Handle g_hHudSync;
 Handle g_hBuytimeTimer;
@@ -47,15 +55,14 @@ int g_iDefaultWeaponIndex[][] =  {
 	{ 9, 22, 7, 25, 26, 28 },  // Engineer
 };
 
-int g_iBalance[TF_MAXPLAYERS + 1];
-
-int g_iLoseStreak[TF_TEAMS + 1] = 1;
-int g_iLoseStreakReward[TFGO_MAXLOSESTREAK] =  { 3000, 4000, 5000, 6000 }; // TODO
-
 bool g_bWaitingForPlayers;
 bool g_bBuytimeActive;
 bool g_bRoundStarted;
 bool g_bRoundActive;
+
+StringMap g_sCurrencypackPlayerMap;
+
+// ConVars
 
 ConVar tfgo_buytime;
 
@@ -66,11 +73,10 @@ ConVar tf_arena_use_queue;
 ConVar tf_arena_preround_time;
 
 // SDK functions
+
 Handle g_hSDKEquipWearable = null;
 Handle g_hSDKRemoveWearable = null;
 Handle g_hSDKGetEquippedWearable = null;
-
-StringMap g_sCurrencypackPlayerMap;
 
 
 #include "tfgo/sound.sp"
@@ -80,11 +86,11 @@ StringMap g_sCurrencypackPlayerMap;
 // Weapons purchased using the buy menu
 int g_iPlayerLoadout[TF_MAXPLAYERS + 1][10][6];
 
-methodmap Loadout __nullable__
+methodmap TFGOPlayer __nullable__
 {
-	public Loadout(int iClient)
+	public TFGOPlayer(int iClient)
 	{
-		return view_as<Loadout>(iClient);
+		return view_as<TFGOPlayer>(iClient);
 	}
 	
 	property int iClient
@@ -145,10 +151,18 @@ methodmap TFGOTeam __nullable__
 			{
 				g_iLoseStreak[this] = TFGO_MINLOSESTREAK;
 			}
-			else 
+			else
 			{
 				g_iLoseStreak[this] = val;
 			}
+		}
+	}
+	
+	public void AddToTeamBalance(int money)
+	{
+		for (int iClient = 0; iClient <= MaxClients; iClient++)
+		{
+			g_iBalance[iClient] += money;
 		}
 	}
 }
@@ -182,7 +196,6 @@ public void OnPluginStart()
 	HookEvent("arena_match_maxstreak", Event_Arena_Match_MaxStreak);
 	HookEvent("teamplay_broadcast_audio", Event_Broadcast_Audio, EventHookMode_Pre);
 	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
-	
 	HookEvent("teamplay_waiting_begins", Event_Teamplay_Waiting_Begins);
 	HookEvent("teamplay_waiting_ends", Event_Teamplay_Waiting_Ends);
 	
@@ -215,10 +228,8 @@ void PrecacheModels()
 
 public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool dontBroadcast)
 {
-	for (int i = 0; i < sizeof(g_iBalance); i++)
-	{
-		g_iBalance[i] = 0;
-	}
+	int g_iBalance[TF_MAXPLAYERS + 1] =  { TFGO_STARTING_BALANCE, ... };
+	int g_iLoseStreak[TF_TEAMS + 1] =  { 1, ... };
 }
 
 public Action Event_Player_Death(Event event, const char[] name, bool dontBroadcast)
@@ -235,26 +246,40 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 		}
 	}
 	
-	// TODO restore previous weapons IF this death was a suicide
+	// TODO restore previous weapons IF this death was a suicide in the respawn room
 	
 	return Plugin_Continue;
 }
 
 public void OnClientConnected(int client)
 {
-	Loadout loadout = new Loadout(client);
-	loadout.iBalance = 1000;
+	TFGOPlayer tfgoPlayer = new TFGOPlayer(client);
+	tfgoPlayer.iBalance = TFGO_STARTING_BALANCE;
 	
 	// Give the player some music from the music kit while they wait
 	if (g_bWaitingForPlayers)
 	{
-		EmitSoundToClient(client, "valve_csgo_01/mainmenu.mp3");
+		EmitSoundToClient(client, "valve_csgo_01/chooseteam.mp3");
 	}
 }
 
 public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBroadcast)
 {
 	g_bRoundStarted = false;
+	
+	int iWinReason = event.GetInt("winreason");
+	switch (iWinReason)
+	{
+		case TF_WINREASON_CAPTURE:
+		{
+			PrintToChatAll("bonus for capping");
+		}
+		
+		case TF_WINREASON_ELIMINATION:
+		{
+			PrintToChatAll("no bonus for killing everyone");
+		}
+	}
 	
 	int iWinningTeam = event.GetInt("winning_team");
 	TFGOTeam winning_team = new TFGOTeam(iWinningTeam);
@@ -266,7 +291,6 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	else if (iWinningTeam == TFTeam_Blue)
 	{
 		losing_team = new TFGOTeam(iWinningTeam - 1);
-		
 	}
 	
 	losing_team.LoseStreak++;
@@ -288,7 +312,6 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	StopRoundActionMusic();
 	StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/roundtenseccount.mp3");
 	
-	// TODO award round end money
 	return Plugin_Continue;
 }
 
@@ -483,12 +506,12 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 // called when a new client spawns or someone spawns after they died
 void SetStartingWeapons(int iClient, int iClass)
 {
-	Loadout loadout = new Loadout(iClient);
+	TFGOPlayer tfgoPlayer = new TFGOPlayer(iClient);
 	
 	for (int i = 0; i++; i < 2)
 	{
 		TF2_RemoveItemInSlot(iClient, i);
-		TF2_CreateAndEquipWeapon(iClient, loadout.GetEffectiveWeapon(iClass, i));
+		TF2_CreateAndEquipWeapon(iClient, tfgoPlayer.GetEffectiveWeapon(iClass, i));
 	}
 	
 	
@@ -503,5 +526,5 @@ public Action Event_Teamplay_Waiting_Begins(Event event, const char[] sName, boo
 public Action Event_Teamplay_Waiting_Ends(Event event, const char[] sName, bool bDontBroadcast)
 {
 	g_bWaitingForPlayers = false;
-	StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/mainmenu.mp3");
+	StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/chooseteam.mp3");
 }
