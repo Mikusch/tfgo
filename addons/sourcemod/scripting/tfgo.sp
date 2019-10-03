@@ -30,6 +30,8 @@
 #define TFGO_CAPTURE_WIN_REWARD			3500
 #define TFGO_ELIMINATION_WIN_REWARD		3250
 
+#define CONFIG "configs/tfgo/tfgo.cfg"
+
 int g_iLoseStreak[TF_TEAMS + 1] =  { 1, ... };
 int g_iLoseStreakCompensation[TFGO_MAXLOSESTREAK + 1] =  { 1400, 1900, 2400, 2900, 3400 };
 int g_iBalance[TF_MAXPLAYERS + 1] =  { TFGO_STARTING_BALANCE, ... };
@@ -82,6 +84,8 @@ Handle g_hSDKGetEquippedWearable = null;
 #include "tfgo/sound.sp"
 #include "tfgo/cash.sp"
 #include "tfgo/loadout.sp"
+#include "tfgo/buymenu.sp"
+
 
 // Weapons purchased using the buy menu
 int g_iPlayerLoadout[TF_MAXPLAYERS + 1][10][6];
@@ -204,6 +208,9 @@ public void OnPluginStart()
 	tf_arena_round_time = FindConVar("tf_arena_round_time");
 	tf_arena_use_queue = FindConVar("tf_arena_use_queue");
 	tf_arena_preround_time = FindConVar("tf_arena_preround_time");
+	
+	Config_Init();
+	Config_Refresh();
 	
 	Toggle_ConVars(true);
 }
