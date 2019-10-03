@@ -8,7 +8,16 @@
 #include <tf_econ_data>
 
 
-#define TF_MAXPLAYERS 	32
+#define TF_MAXPLAYERS 32
+#define TF_TEAMS 3
+#define	 TFTeam_Unassigned 	0
+#define	 TFTeam_Spectator 	1
+#define  TFTeam_Red 			2
+#define  TFTeam_Blue 		3
+#define TF_CLASSES  9
+
+#define TFGO_MINLOSESTREAK 0
+#define TFGO_MAXLOSESTREAK 4
 
 #define TFGO_STARTING_MONEY				1000
 #define TFGO_KILL_REWARD_PRIMARY		50
@@ -39,6 +48,9 @@ int g_iDefaultWeaponIndex[][] =  {
 };
 
 int g_iBalance[TF_MAXPLAYERS + 1];
+
+int g_iLoseStreak[TF_TEAMS + 1] = 1;
+int g_iLoseStreakReward[TFGO_MAXLOSESTREAK] =  { 3000, 4000, 5000, 6000 }; // TODO
 
 bool g_bWaitingForPlayers;
 bool g_bBuytimeActive;
@@ -105,6 +117,38 @@ methodmap Loadout __nullable__
 		else
 		{
 			return iWeapon;
+		}
+	}
+}
+
+methodmap TFGOTeam __nullable__
+{
+	public TFGOTeam(int iTeam)
+	{
+		return view_as<TFGOTeam>(iTeam);
+	}
+	
+	property int LoseStreak
+	{
+		public get()
+		{
+			return g_iLoseStreak[this];
+		}
+		
+		public set(int val)
+		{
+			if (val > TFGO_MAXLOSESTREAK)
+			{
+				g_iLoseStreak[this] = TFGO_MAXLOSESTREAK;
+			}
+			else if (val < TFGO_MINLOSESTREAK)
+			{
+				g_iLoseStreak[this] = TFGO_MINLOSESTREAK;
+			}
+			else 
+			{
+				g_iLoseStreak[this] = val;
+			}
 		}
 	}
 }
@@ -185,7 +229,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	{
 		CreateDeathCash(client);
 		
-		if (event.GetInt( "customkill") == TF_CUSTOM_SUICIDE)
+		if (event.GetInt("customkill") == TF_CUSTOM_SUICIDE)
 		{
 			PrintToChat(client, "-$100 for suiciding");
 		}
@@ -212,6 +256,24 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 {
 	g_bRoundStarted = false;
 	
+	int iWinningTeam = event.GetInt("winning_team");
+	TFGOTeam winning_team = new TFGOTeam(iWinningTeam);
+	TFGOTeam losing_team;
+	if (iWinningTeam == TFTeam_Red)
+	{
+		losing_team = new TFGOTeam(iWinningTeam + 1);
+	}
+	else if (iWinningTeam == TFTeam_Blue)
+	{
+		losing_team = new TFGOTeam(iWinningTeam - 1);
+		
+	}
+	
+	losing_team.LoseStreak++;
+	winning_team.LoseStreak--;
+	PrintToChatAll("wining team losestreak %d", winning_team.LoseStreak);
+	PrintToChatAll("losing team losestreak %d", losing_team.LoseStreak);
+	
 	if (g_h10SecondWarningTimer != null)
 	{
 		KillTimer(g_h10SecondWarningTimer);
@@ -223,6 +285,7 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 		g_hBuytimeTimer = null;
 	}
 	
+	StopRoundActionMusic();
 	StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/roundtenseccount.mp3");
 	
 	// TODO award round end money
@@ -252,6 +315,7 @@ public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool do
 public Action DisableBuyMenu(Handle timer) {
 	PrintToChatAll("Buy time is over!");
 	g_bBuytimeActive = false;
+	g_hBuytimeTimer = null;
 }
 
 public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontBroadcast)
@@ -440,5 +504,4 @@ public Action Event_Teamplay_Waiting_Ends(Event event, const char[] sName, bool 
 {
 	g_bWaitingForPlayers = false;
 	StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/mainmenu.mp3");
-	
 }

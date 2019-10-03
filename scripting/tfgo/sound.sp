@@ -115,6 +115,7 @@ stock void PlayCashPickupVoiceLine(int iClient)
 
 stock Action Play10SecondWarning(Handle timer)
 {
+	StopRoundActionMusic(); // if it is still playing for whatever reason
 	EmitSoundToAll("valve_csgo_01/roundtenseccount.mp3");
 	g_h10SecondWarningTimer = null;
 }
@@ -132,18 +133,14 @@ stock void PlayRoundActionMusic()
 	for (int i = 0; i < sizeof(g_sStartRoundMusic); i++)StopSoundForAll(SNDCHAN_AUTO, g_sStartRoundMusic[i]);
 	int iRandom = GetRandomInt(0, sizeof(g_sStartActionMusic) - 1);
 	EmitSoundToAll(g_sStartActionMusic[iRandom]);
-	
-	DataPack pack;
-	CreateDataTimer(10.0, StopRoundActionMusic, pack);
-	pack.WriteString(g_sStartActionMusic[iRandom]);
 }
 
-public Action StopRoundActionMusic(Handle timer, DataPack pack)
+stock void StopRoundActionMusic()
 {
-	pack.Reset();
-	char sound[PLATFORM_MAX_PATH];
-	pack.ReadString(sound, sizeof(sound));
-	StopSoundForAll(SNDCHAN_AUTO, sound);
+	for (int i = 0; i < sizeof(g_sStartActionMusic); i++)
+	{
+		StopSoundForAll(SNDCHAN_AUTO, g_sStartActionMusic[i]);
+	}
 }
 
 stock void StopSoundForAll(int channel, const char[] sound)
