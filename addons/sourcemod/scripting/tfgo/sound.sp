@@ -43,6 +43,7 @@ static char g_sStartActionMusic[][PLATFORM_MAX_PATH] =  {
 
 stock void PrecacheSounds()
 {
+	PrecacheSound("mvm/mvm_money_pickup.wav");
 	PrecacheSound("mvm/mvm_money_vanish.wav");
 	PrecacheSound("valve_csgo_01/wonround.mp3");
 	PrecacheSound("valve_csgo_01/lostround.mp3");

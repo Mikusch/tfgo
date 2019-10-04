@@ -1,4 +1,7 @@
 #pragma semicolon 1
+
+#include <morecolors>
+
 #pragma newdecls required
 
 #include <sourcemod>
@@ -6,6 +9,7 @@
 #include <sdkhooks>
 #include <tf2_stocks>
 #include <tf_econ_data>
+
 
 // TF2 stuff
 
@@ -25,12 +29,10 @@
 #define TFGO_MINLOSESTREAK 0
 #define TFGO_MAXLOSESTREAK 4
 
-#define TFGO_STARTING_BALANCE			1000
+#define TFGO_STARTING_BALANCE			800
 #define TFGO_MAX_BALANCE 				16000
 #define TFGO_CAPTURE_WIN_REWARD			3500
 #define TFGO_ELIMINATION_WIN_REWARD		3250
-
-#define CONFIG "configs/tfgo/tfgo.cfg"
 
 int g_iLoseStreak[TF_TEAMS + 1] =  { 1, ... };
 int g_iLoseStreakCompensation[TFGO_MAXLOSESTREAK + 1] =  { 1400, 1900, 2400, 2900, 3400 };
@@ -62,8 +64,6 @@ bool g_bBuytimeActive;
 bool g_bRoundStarted;
 bool g_bRoundActive;
 
-StringMap g_sCurrencypackPlayerMap;
-
 // ConVars
 
 ConVar tfgo_buytime;
@@ -80,16 +80,10 @@ Handle g_hSDKEquipWearable = null;
 Handle g_hSDKRemoveWearable = null;
 Handle g_hSDKGetEquippedWearable = null;
 
-
-#include "tfgo/sound.sp"
-#include "tfgo/cash.sp"
-#include "tfgo/buymenu.sp"
-
-
 // Weapons purchased using the buy menu
 int g_iPlayerLoadout[TF_MAXPLAYERS + 1][10][6];
 
-methodmap TFGOPlayer __nullable__
+methodmap TFGOPlayer
 {
 	public TFGOPlayer(int iClient)
 	{
@@ -128,9 +122,21 @@ methodmap TFGOPlayer __nullable__
 			return iWeapon;
 		}
 	}
+	
+	public void AddToBalance(int value, char[] reason)
+	{
+		g_iBalance[this] += value;
+		CPrintToChat(view_as<int>(this), "{money}+$%d{default}: %s.", value, reason);
+	}
+	
+	public void RemoveFromBalance(int value, char[] reason)
+	{
+		g_iBalance[this] -= value;
+		CPrintToChat(view_as<int>(this), "{alert}-$%d{default}: %s.", value, reason);
+	}
 }
 
-methodmap TFGOTeam __nullable__
+methodmap TFGOTeam
 {
 	public TFGOTeam(int iTeam)
 	{
@@ -161,22 +167,31 @@ methodmap TFGOTeam __nullable__
 		}
 	}
 	
-	public void AddToTeamBalance(int money)
+	public void AddToTeamBalance(int money, const char[] reason)
 	{
-		for (int iClient = 0; iClient <= MaxClients; iClient++)
+		for (int iClient = 1; iClient <= MaxClients; iClient++)
 		{
-			g_iBalance[iClient] += money;
+			if (IsClientConnected(iClient) && view_as<int>(this) == GetClientTeam(iClient))
+			{
+				g_iBalance[iClient] += money;
+				CPrintToChat(iClient, "{money}+$%d{default}: %s.", money, reason);
+			}
 		}
 	}
 }
 
 
+#include "tfgo/sound.sp"
+#include "tfgo/cash.sp"
+#include "tfgo/buymenu.sp"
+
+
 public Plugin myinfo =  {
-	name = "Team Fortress: Global Offensive", 
+	name = "Team Fortress:Global Offensive", 
 	author = "Mikusch", 
-	description = "A Team Fortress 2 gamemode inspired by Counter-Strike: Global Offensive", 
+	description = "A Team Fortress2gamemode inspired by Counter-Strike: Global Offensive", 
 	version = "1.0", 
-	url = "https://github.com/Mikusch/tfgo"
+	url = "https: //github.com/Mikusch/tfgo"
 };
 
 public void OnPluginStart()
@@ -184,11 +199,12 @@ public void OnPluginStart()
 	// TODO: Choose a music kit for the entire game, only change on arena scramble
 	
 	SDKInit();
-	tfgo_buytime = CreateConVar("tfgo_buytime", "30", "How many seconds after spawning players can buy items for", _, true, 5.0);
 	
 	g_hHudSync = CreateHudSynchronizer();
 	
 	g_sCurrencypackPlayerMap = CreateTrie();
+	g_sCurrencypackValueMap = CreateTrie();
+	g_iCashToKillerMap = CreateTrie();
 	LoadTranslations("common.phrases.txt");
 	
 	HookEvent("player_death", Event_Player_Death);
@@ -207,9 +223,13 @@ public void OnPluginStart()
 	tf_arena_round_time = FindConVar("tf_arena_round_time");
 	tf_arena_use_queue = FindConVar("tf_arena_use_queue");
 	tf_arena_preround_time = FindConVar("tf_arena_preround_time");
+	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
 	
 	Config_Init();
 	Config_Refresh();
+	
+	CAddColor("alert", 0xEA4141);
+	CAddColor("money", 0xA2FE47);
 	
 	Toggle_ConVars(true);
 }
@@ -234,21 +254,28 @@ void PrecacheModels()
 
 public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool dontBroadcast)
 {
-	int g_iBalance[TF_MAXPLAYERS + 1] =  { TFGO_STARTING_BALANCE, ... };
-	int g_iLoseStreak[TF_TEAMS + 1] =  { 1, ... };
+	for (int i = 0; i < sizeof(g_iBalance); i++)g_iBalance[i] = TFGO_STARTING_BALANCE;
+	for (int i = 0; i < sizeof(g_iLoseStreak); i++)g_iLoseStreak[i] = TFGO_STARTING_BALANCE;
 }
 
 public Action Event_Player_Death(Event event, const char[] name, bool dontBroadcast)
 {
-	int client = GetClientOfUserId(event.GetInt("userid"));
-	
+	int victim = GetClientOfUserId(event.GetInt("userid"));
+	int attacker = GetClientOfUserId(event.GetInt("attacker"));
+	int customKill = event.GetInt("customkill");
 	if (g_bRoundActive)
 	{
-		CreateDeathCash(client);
-		
-		if (event.GetInt("customkill") == TF_CUSTOM_SUICIDE)
+		if (customKill == TF_CUSTOM_SUICIDE && attacker == victim)
 		{
-			PrintToChat(client, "-$100 for suiciding");
+			TFGOPlayer(victim).RemoveFromBalance(300, "Penalty for suiciding");
+		} 
+		else if (customKill == TF_CUSTOM_HEADSHOT)
+		{
+			SpawnCash(attacker, victim, 100, true);
+		}
+		else
+		{
+			SpawnCash(attacker, victim, 100);
 		}
 	}
 	
@@ -259,7 +286,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 
 public void OnClientConnected(int client)
 {
-	TFGOPlayer tfgoPlayer = new TFGOPlayer(client);
+	TFGOPlayer tfgoPlayer = TFGOPlayer(client);
 	tfgoPlayer.iBalance = TFGO_STARTING_BALANCE;
 	
 	// Give the player some music from the music kit while they wait
@@ -273,36 +300,37 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 {
 	g_bRoundStarted = false;
 	
+	int iWinningTeam = event.GetInt("winning_team");
+	TFGOTeam winning_team = TFGOTeam(iWinningTeam);
+	TFGOTeam losing_team;
+	if (iWinningTeam == TFTeam_Red)
+	{
+		losing_team = TFGOTeam(iWinningTeam + 1);
+	}
+	else if (iWinningTeam == TFTeam_Blue)
+	{
+		losing_team = TFGOTeam(iWinningTeam - 1);
+	}
+	
+	// adjust lose streak
+	losing_team.LoseStreak++;
+	winning_team.LoseStreak--;
+	
+	// add round end rewards
 	int iWinReason = event.GetInt("winreason");
 	switch (iWinReason)
 	{
 		case TF_WINREASON_CAPTURE:
 		{
-			PrintToChatAll("bonus for capping");
+			winning_team.AddToTeamBalance(TFGO_CAPTURE_WIN_REWARD, "Team award for capturing all control points");
 		}
-		
 		case TF_WINREASON_ELIMINATION:
 		{
-			PrintToChatAll("no bonus for killing everyone");
+			winning_team.AddToTeamBalance(TFGO_ELIMINATION_WIN_REWARD, "Team award for eliminating the enemy team");
 		}
 	}
-	
-	int iWinningTeam = event.GetInt("winning_team");
-	TFGOTeam winning_team = new TFGOTeam(iWinningTeam);
-	TFGOTeam losing_team;
-	if (iWinningTeam == TFTeam_Red)
-	{
-		losing_team = new TFGOTeam(iWinningTeam + 1);
-	}
-	else if (iWinningTeam == TFTeam_Blue)
-	{
-		losing_team = new TFGOTeam(iWinningTeam - 1);
-	}
-	
-	losing_team.LoseStreak++;
-	winning_team.LoseStreak--;
-	PrintToChatAll("wining team losestreak %d", winning_team.LoseStreak);
-	PrintToChatAll("losing team losestreak %d", losing_team.LoseStreak);
+	int compensation = g_iLoseStreakCompensation[losing_team.LoseStreak];
+	losing_team.AddToTeamBalance(compensation, "Income for losing");
 	
 	if (g_h10SecondWarningTimer != null)
 	{
@@ -337,14 +365,12 @@ public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool do
 			ShowSyncHudText(iClient, g_hHudSync, "$%d", g_iBalance[iClient]);
 		}
 	}
-	
-	PrintToChatAll("Buy time has started!");
 }
 
 public Action DisableBuyMenu(Handle timer) {
-	PrintToChatAll("Buy time is over!");
 	g_bBuytimeActive = false;
 	g_hBuytimeTimer = null;
+	CPrintToChatAll("{alert}Alert: {default}The %d second buy period has expired", tfgo_buytime.IntValue);
 }
 
 public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontBroadcast)
@@ -374,7 +400,7 @@ public Action Entity_StartTouch_RespawnRoom(int entity, int client)
 {
 	if (client <= MaxClients && IsClientConnected(client) && g_bBuytimeActive)
 	{
-		PrintToServer("%d entered spawn", client);
+		// TODO: auto-open buy menu
 	}
 }
 
@@ -382,7 +408,8 @@ public Action Entity_EndTouch_RespawnRoom(int entity, int client)
 {
 	if (client <= MaxClients && IsClientConnected(client) && g_bBuytimeActive)
 	{
-		PrintToServer("%d left spawn", client);
+		// TODO: auto-close buy menu
+		CPrintToChat(client, "{alert}Alert: {default}You have left the buy zone");
 	}
 }
 
@@ -405,7 +432,7 @@ void Toggle_ConVars(bool toggle)
 		tf_arena_max_streak.IntValue = 8;
 		
 		iArenaRoundTime = tf_arena_round_time.IntValue;
-		tf_arena_round_time.IntValue = 30;
+		tf_arena_round_time.IntValue = 135;
 	}
 	else
 	{
@@ -512,7 +539,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 // called when a new client spawns or someone spawns after they died
 void SetStartingWeapons(int iClient, int iClass)
 {
-	TFGOPlayer tfgoPlayer = new TFGOPlayer(iClient);
+	TFGOPlayer tfgoPlayer = TFGOPlayer(iClient);
 	
 	for (int i = 0; i++; i < 2)
 	{
