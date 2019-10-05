@@ -24,7 +24,7 @@
 #define  TFTeam_Red 		2
 #define  TFTeam_Blue 		3
 
-// Money stuff
+// TFGO stuff
 
 #define TFGO_MINLOSESTREAK 0
 #define TFGO_MAXLOSESTREAK 4
@@ -42,7 +42,9 @@ int g_iBalance[TF_MAXPLAYERS + 1] =  { TFGO_STARTING_BALANCE, ... };
 
 Handle g_hHudSync;
 Handle g_hBuytimeTimer;
-Handle g_h10SecondWarningTimer;
+Handle g_h10SecondRoundTimer;
+Handle g_h10SecondBombTimer;
+Handle g_hBombExplosionTimer;
 Handle g_hCurrencyPackDestroyTimer;
 
 // Default weapon index for each class and slot (stolen from VSH-Rewrite)
@@ -65,6 +67,8 @@ bool g_bBuytimeActive;
 bool g_bRoundStarted;
 bool g_bRoundActive;
 bool g_bBombPlanted;
+int g_iBombSiteCP;
+int g_iBombPlanterTeam;
 
 // ConVars
 ConVar tfgo_buytime;
@@ -218,6 +222,7 @@ public void OnPluginStart()
 	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
 	HookEvent("teamplay_waiting_begins", Event_Teamplay_Waiting_Begins);
 	HookEvent("teamplay_waiting_ends", Event_Teamplay_Waiting_Ends);
+	HookEvent("teamplay_point_captured", Event_Teamplay_Point_Captured);
 	
 	tf_arena_max_streak = FindConVar("tf_arena_max_streak");
 	tf_arena_first_blood = FindConVar("tf_arena_first_blood");
@@ -252,8 +257,11 @@ void PrecacheModels()
 	PrecacheModel("models/items/currencypack_large.mdl");
 	PrecacheModel("models/items/currencypack_medium.mdl");
 	PrecacheModel("models/items/currencypack_small.mdl");
+	PrecacheModel("models/props_td/atom_bomb.mdl");
 }
 
+// Prevent round from ending
+// Called every frame after the round is supposed to  end
 public MRESReturn Hook_SetWinningTeam(Handle hParams)
 {
 	if (g_bBombPlanted)
@@ -346,12 +354,13 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	int compensation = g_iLoseStreakCompensation[losing_team.LoseStreak];
 	losing_team.AddToTeamBalance(compensation, "Income for losing");
 	
-	if (g_h10SecondWarningTimer != null)
+	if (g_h10SecondRoundTimer != null)
 	{
-		KillTimer(g_h10SecondWarningTimer);
-		g_h10SecondWarningTimer = null;
+		KillTimer(g_h10SecondRoundTimer);
+		g_h10SecondRoundTimer = null;
 	}
-	else if (g_hBuytimeTimer != null)
+	
+	if (g_hBuytimeTimer != null)
 	{
 		KillTimer(g_hBuytimeTimer);
 		g_hBuytimeTimer = null;
@@ -381,7 +390,8 @@ public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool do
 	}
 }
 
-public Action DisableBuyMenu(Handle timer) {
+public Action DisableBuyMenu(Handle timer)
+{
 	g_bBuytimeActive = false;
 	g_hBuytimeTimer = null;
 	CPrintToChatAll("{alert}Alert: {default}The %d second buy period has expired", tfgo_buytime.IntValue);
@@ -390,7 +400,7 @@ public Action DisableBuyMenu(Handle timer) {
 public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
 	g_bRoundActive = true;
-	g_h10SecondWarningTimer = CreateTimer(tf_arena_round_time.FloatValue - CSGO_ROUNDTENSECCOUNT_LENGTH, Play10SecondWarning);
+	g_h10SecondRoundTimer = CreateTimer(tf_arena_round_time.FloatValue - CSGO_ROUNDTENSECCOUNT_LENGTH, Play10SecondWarning);
 	PlayRoundActionMusic();
 }
 
@@ -584,4 +594,74 @@ public Action Event_Teamplay_Waiting_Ends(Event event, const char[] sName, bool 
 {
 	g_bWaitingForPlayers = false;
 	StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/chooseteam.mp3");
+}
+
+public Action Event_Teamplay_Point_Captured(Event event, const char[] sName, bool bDontBroadcast)
+{
+	if (g_bBombPlanted)
+	{
+		if (g_iBombSiteCP == event.GetInt("cp") && g_iBombPlanterTeam != event.GetInt("team"))
+		{
+			g_bBombPlanted = false; // this causes the game to end due to the SetWinningTeam hook
+			PrintToChatAll("bomb was defused!");
+		}
+	}
+	else
+	{
+		g_bBombPlanted = true;
+		g_iBombSiteCP = event.GetInt("cp");
+		g_iBombPlanterTeam = event.GetInt("team");
+		char cappers[64];
+		event.GetString("cappers", cappers, sizeof(cappers));
+		int firstCapper = cappers[0];
+		
+		// spawn bomb
+		float origin[3];
+		GetClientAbsOrigin(firstCapper, origin);
+		float angles[3];
+		GetClientAbsAngles(firstCapper, angles);
+		int bombProp = EntIndexToEntRef(CreateEntityByName("prop_dynamic_override"));
+		SetEntityModel(bombProp, "models/props_td/atom_bomb.mdl");
+		EmitAmbientSound("mvm/sentrybuster/mvm_sentrybuster_loop.wav", origin, bombProp);
+		DispatchKeyValue(bombProp, "Skin", "1");
+		DispatchSpawn(bombProp);
+		TeleportEntity(bombProp, origin, angles, NULL_VECTOR);
+		
+		// set round time to 45 seconds
+		int team_round_timer = FindEntityByClassname(TF_MAXPLAYERS + 1, "team_round_timer");
+		if (team_round_timer > -1)
+		{
+			SetVariantInt(45);
+			AcceptEntityInput(team_round_timer, "SetTime");
+		}
+		
+		if (g_h10SecondBombTimer != null)
+		{
+			KillTimer(g_h10SecondBombTimer);
+			g_h10SecondBombTimer = null;
+		}
+		
+		g_h10SecondBombTimer = CreateTimer(45.0 - 10.0, Play10SecondBombWarning);
+		g_hBombExplosionTimer = CreateTimer(45.0, DetonateBomb, bombProp);
+		
+		
+		if (g_h10SecondRoundTimer != null)
+		{
+			KillTimer(g_h10SecondRoundTimer);
+			g_h10SecondRoundTimer = null;
+		}
+		
+		StopRoundActionMusic();
+		StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/roundtenseccount.mp3");
+		EmitSoundToAll("valve_csgo_01/bombplanted.mp3");
+	}
+}
+
+public Action DetonateBomb(Handle timer, int bomb)
+{
+	StopSoundForAll(SNDCHAN_AUTO, "mvm/sentrybuster/mvm_sentrybuster_loop.wav"); // TODO this shit doesn't stop
+	EmitSoundToAll("mvm/mvm_bomb_explode.wav", bomb, _, SNDLEVEL_ROCKET); // TODO this shit doesn't play
+	RemoveEntity(bomb); // But this does happen...?
+	// TODO
+	//g_iBombPlanterTeam
 }
