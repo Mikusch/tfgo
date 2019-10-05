@@ -23,6 +23,11 @@
 				"linux"		"432"
 				"windows"	"431"
 			}
+            "SetWinningTeam"
+            {
+                "windows"   "160"
+                "linux"     "161"
+            }
 		}
 	}
 }

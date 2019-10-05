@@ -9,7 +9,7 @@
 #include <sdkhooks>
 #include <tf2_stocks>
 #include <tf_econ_data>
-
+#include <dhooks>
 
 // TF2 stuff
 
@@ -59,13 +59,14 @@ int g_iDefaultWeaponIndex[][] =  {
 	{ 9, 22, 7, 25, 26, 28 },  // Engineer
 };
 
+// Game state
 bool g_bWaitingForPlayers;
 bool g_bBuytimeActive;
 bool g_bRoundStarted;
 bool g_bRoundActive;
+bool g_bBombPlanted;
 
 // ConVars
-
 ConVar tfgo_buytime;
 
 ConVar tf_arena_max_streak;
@@ -75,10 +76,10 @@ ConVar tf_arena_use_queue;
 ConVar tf_arena_preround_time;
 
 // SDK functions
-
-Handle g_hSDKEquipWearable = null;
-Handle g_hSDKRemoveWearable = null;
-Handle g_hSDKGetEquippedWearable = null;
+Handle g_hSDKEquipWearable;
+Handle g_hSDKRemoveWearable;
+Handle g_hSDKGetEquippedWearable;
+Handle g_hSetWinningTeam;
 
 // Weapons purchased using the buy menu
 int g_iPlayerLoadout[TF_MAXPLAYERS + 1][10][6];
@@ -197,6 +198,7 @@ public Plugin myinfo =  {
 public void OnPluginStart()
 {
 	// TODO: Choose a music kit for the entire game, only change on arena scramble
+	LoadTranslations("common.phrases.txt");
 	
 	SDKInit();
 	
@@ -205,7 +207,6 @@ public void OnPluginStart()
 	g_sCurrencypackPlayerMap = CreateTrie();
 	g_sCurrencypackValueMap = CreateTrie();
 	g_iCashToKillerMap = CreateTrie();
-	LoadTranslations("common.phrases.txt");
 	
 	HookEvent("player_death", Event_Player_Death);
 	HookEvent("arena_win_panel", Event_Arena_Win_Panel);
@@ -241,6 +242,7 @@ public void OnPluginEnd()
 
 public void OnMapStart()
 {
+	DHookGamerules(g_hSetWinningTeam, false);
 	PrecacheSounds();
 	PrecacheModels();
 }
@@ -250,6 +252,18 @@ void PrecacheModels()
 	PrecacheModel("models/items/currencypack_large.mdl");
 	PrecacheModel("models/items/currencypack_medium.mdl");
 	PrecacheModel("models/items/currencypack_small.mdl");
+}
+
+public MRESReturn Hook_SetWinningTeam(Handle hParams)
+{
+	if (g_bBombPlanted)
+	{
+		return MRES_Supercede;
+	}
+	else
+	{
+		return MRES_Ignored;
+	}
 }
 
 public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool dontBroadcast)
@@ -268,7 +282,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 		if (customKill == TF_CUSTOM_SUICIDE && attacker == victim)
 		{
 			TFGOPlayer(victim).RemoveFromBalance(300, "Penalty for suiciding");
-		} 
+		}
 		else if (customKill == TF_CUSTOM_HEADSHOT)
 		{
 			SpawnCash(attacker, victim, 100, true);
@@ -386,11 +400,10 @@ public Action Event_Player_ChangeClass(Event event, const char[] name, bool dont
 	return Plugin_Continue;
 }
 
-
-
 public void OnEntityCreated(int entity, const char[] classname)
 {
-	if (strcmp(classname, "func_respawnroom") == 0) {
+	if (strcmp(classname, "func_respawnroom") == 0)
+	{
 		SDKHook(entity, SDKHook_StartTouch, Entity_StartTouch_RespawnRoom);
 		SDKHook(entity, SDKHook_EndTouch, Entity_EndTouch_RespawnRoom);
 	}
@@ -467,6 +480,15 @@ void SDKInit()
 {
 	Handle hGameData = LoadGameConfigFile("tfgo");
 	
+	int offset = GameConfGetOffset(hGameData, "SetWinningTeam");
+	g_hSetWinningTeam = DHookCreate(offset, HookType_GameRules, ReturnType_Void, ThisPointer_Ignore, Hook_SetWinningTeam);
+	DHookAddParam(g_hSetWinningTeam, HookParamType_Int);
+	DHookAddParam(g_hSetWinningTeam, HookParamType_Int);
+	DHookAddParam(g_hSetWinningTeam, HookParamType_Bool);
+	DHookAddParam(g_hSetWinningTeam, HookParamType_Bool);
+	DHookAddParam(g_hSetWinningTeam, HookParamType_Bool);
+	DHookAddParam(g_hSetWinningTeam, HookParamType_Bool);
+	
 	// This function is used to equip wearables 
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBasePlayer::EquipWearable");
@@ -491,6 +513,8 @@ void SDKInit()
 	g_hSDKGetEquippedWearable = EndPrepSDKCall();
 	if (g_hSDKGetEquippedWearable == null)
 		LogMessage("Failed to create call: CTFPlayer::GetEquippedWearableForLoadoutSlot!");
+	
+	delete hGameData;
 }
 
 stock void TF2_RemoveItemInSlot(int client, int slot)
