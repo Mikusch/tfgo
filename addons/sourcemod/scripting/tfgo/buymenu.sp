@@ -1,108 +1,147 @@
-#include <tf2_stocks> // TODO REMOVE THIS SHIT SOMEHOW
-#include <sourcemod>
-
 #define CONFIG_FILE "tfgo.cfg"
 #define MAXLEN_CONFIG_VALUE 256
 
-// TF2 Class names, ordered from TFClassType
-char g_strClassName[TFClassType][] =  {
-	"Unknown", 
-	"Scout", 
-	"Sniper", 
-	"Soldier", 
-	"Demoman", 
-	"Medic", 
-	"Heavy", 
-	"Pyro", 
-	"Spy", 
-	"Engineer", 
-};
-
-// TF2 Slot names
-char g_strSlotName[][] =  {
-	"Primary", 
-	"Secondary", 
-	"Melee", 
-	"PDA1", 
-	"PDA2", 
-	"Building"
-};
-
-methodmap ConfigClass < StringMap
+enum struct TFGOWeapon
 {
-	public ConfigClass()
+	/**
+	* The item definition index of this weapon
+	**/
+	int index;
+	
+	/**
+	* The price of this weapon in the buy menu
+	* If this value is -1, the weapon won't show up in the buy menu
+	*/
+	int cost;
+	
+	/**
+	* How much money this weapon should grant upon a successful kill
+	*/
+	int killReward;
+}
+
+methodmap KillRewardMap < StringMap
+{
+	public KillRewardMap()
 	{
-		return view_as<ConfigClass>(new StringMap());
+		return view_as<KillRewardMap>(CreateTrie());
 	}
 	
-	public void LoadSection(KeyValues kv, TFClassType nClass, int iSlot)
+	public void Populate(KeyValues kv)
 	{
-		PrintToServer("ahaha %b", kv.JumpToKey("class", false));
-		if (kv.JumpToKey("class", false)) //Jump to "class"
+		if (kv.JumpToKey("KillRewards", false))
 		{
-			if (kv.JumpToKey(g_strClassName[nClass], false)) //Jump to TF2 class name
+			if (kv.GotoFirstSubKey(false)) // Go to the first key of weapon index
 			{
-				if (kv.JumpToKey(g_strSlotName[iSlot], false)) //Jump to slot name
+				do // Loop through each weapon index
 				{
-					if (kv.GotoFirstSubKey(false)) //Go to first subkeys (desp, attrib etc)
-					{
-						do //Loop through each subkeys from that slot
-						{
-							char sSubkey[MAXLEN_CONFIG_VALUE], sValue[MAXLEN_CONFIG_VALUE];
-							
-							kv.GetSectionName(sSubkey, sizeof(sSubkey)); //Subkey (class, attrib etc)
-							kv.GetString(NULL_STRING, sValue, sizeof(sValue), ""); //Value of that subkey
-											PrintToServer(sValue);
-							TrimString(sSubkey);
-							TrimString(sValue);
-							
-							this.SetString(sSubkey, sValue);
-						}
-						while (kv.GotoNextKey(false));
-					}
-					kv.GoBack();
+					char weaponClass[MAXLEN_CONFIG_VALUE];
+					kv.GetSectionName(weaponClass, sizeof(weaponClass)); // weapon class
+					this.SetValue(weaponClass, kv.GetNum(NULL_STRING, 100));
 				}
+				while (kv.GotoNextKey(false));
+				kv.GoBack();
+				
+			}
+			kv.GoBack();
+		}
+	}
+}
+
+KillRewardMap g_hKillRewardMap;
+
+methodmap WeaponList < ArrayList
+{
+	public WeaponList()
+	{
+		return view_as<WeaponList>(new ArrayList(2)); // 0 for int index, 1 for TFGOWeapon
+	}
+	
+	public void Populate(KeyValues kv)
+	{
+		if (kv.JumpToKey("Weapons", false)) //Jump to "Weapons"
+		{
+			if (kv.GotoFirstSubKey(false)) // Go to the first key of weapon index
+			{
+				do // Loop through each weapon index
+				{
+					char sIndex[MAXLEN_CONFIG_VALUE];
+					kv.GetSectionName(sIndex, sizeof(sIndex)); // Index of the weapon
+					
+					// Set weapon data
+					TFGOWeapon weapon;
+					weapon.index = StringToInt(sIndex);
+					weapon.cost = kv.GetNum("cost", -1);
+					
+					int killReward = kv.GetNum("kill_reward", -1);
+					if (killReward < 0)
+					{
+						char key[255];
+						TF2Econ_GetItemClassName(weapon.index, key, sizeof(key));
+						g_hKillRewardMap.GetValue(key, killReward);
+					}
+					weapon.killReward = killReward;
+					PrintToServer("%d %d", weapon.index, weapon.killReward);
+					
+					int length = this.Length;
+					this.Resize(length + 1);
+					this.Set(length, StringToInt(sIndex), 0);
+					this.SetArray(length, weapon, sizeof(weapon));
+				}
+				while (kv.GotoNextKey(false));
 				kv.GoBack();
 			}
 			kv.GoBack();
 		}
-		kv.GoBack();
 	}
 	
-	//Return clip size class slot should have on spawn, -1 if not specified
-	public int GetCost()
+	
+	public void GetWeaponInfoForIndex(int weaponIndex, TFGOWeapon buf)
 	{
-		char sValue[MAXLEN_CONFIG_VALUE];
-		if (this.GetString("cost", sValue, sizeof(sValue)))
-			return StringToInt(sValue);
-		
-		else return -1;
+		int listIndex = this.FindValue(weaponIndex, 0);
+		if (listIndex >= 0)
+		{
+			this.GetArray(listIndex, buf);
+		}
 	}
 };
 
-ConfigClass g_ConfigClass[10][5 + 1]; //Double array of StringMap
+WeaponList g_ConfigIndex; //ArrayList of StringMap, should use enum struct once 1.10 reaches stable
+
+
 
 void Config_Init()
 {
-	for (int iClass = 1; iClass < sizeof(g_ConfigClass); iClass++)
-	for (int iSlot = 0; iSlot < sizeof(g_ConfigClass[]); iSlot++)
-	g_ConfigClass[iClass][iSlot] = new ConfigClass();
-}
-
-void Config_Refresh()
-{
-	for (int iClass = 1; iClass < sizeof(g_ConfigClass); iClass++)
-		for (int iSlot = 0; iSlot < sizeof(g_ConfigClass[]); iSlot++)
-			g_ConfigClass[iClass][iSlot].Clear();
+	if (g_ConfigIndex == null)
+	{
+		g_ConfigIndex = new WeaponList();
+	}
+	else
+	{
+		g_ConfigIndex.Clear();
+	}
+	
+	if (g_hKillRewardMap == null)
+	{
+		g_hKillRewardMap = new KillRewardMap();
+	}
+	else
+	{
+		g_hKillRewardMap.Clear();
+	}
 	
 	KeyValues kv = new KeyValues("Config");
-	kv.ImportFromFile("tfgo/configs/tfgo.cfg");
-	if (kv == null)return;
+	char path[255];
+	BuildPath(Path_SM, path, sizeof(path), "configs/tfgo/tfgo.cfg");
+	if (!kv.ImportFromFile(path))return;
 	
-	//Load each class and slots
-	for (int iClass = 1; iClass < sizeof(g_ConfigClass); iClass++)
-		for (int iSlot = 0; iSlot < sizeof(g_ConfigClass[]); iSlot++) 
-			g_ConfigClass[iClass][iSlot].LoadSection(kv, view_as<TFClassType>(iClass), iSlot);
+	//Load every indexs
+	g_hKillRewardMap.Populate(kv);
+	g_ConfigIndex.Populate(kv);
+	
+	TFGOWeapon weapon;
+	g_ConfigIndex.GetWeaponInfoForIndex(730, weapon);
+	PrintToServer("%d costs %d and grants %d on kill", weapon.index, weapon.cost, weapon.killReward);
 	
 	delete kv;
 } 
