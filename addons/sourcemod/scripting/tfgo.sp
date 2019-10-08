@@ -1,15 +1,14 @@
 #pragma semicolon 1
 
 #include <morecolors>
-
-#pragma newdecls required
-
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
 #include <tf2_stocks>
 #include <tf_econ_data>
 #include <dhooks>
+
+#pragma newdecls required
 
 // TF2 stuff
 
@@ -19,17 +18,13 @@
 #define TF_WINREASON_ELIMINATION  2
 #define TF_CLASSES  9
 
-#define	 TFTeam_Unassigned 	0
-#define	 TFTeam_Spectator 	1
-#define  TFTeam_Red 		2
-#define  TFTeam_Blue 		3
-
 // TFGO stuff
 
 #define TFGO_MINLOSESTREAK 0
 #define TFGO_MAXLOSESTREAK 4
 
 #define TFGO_STARTING_BALANCE			800
+#define TFGO_MIN_BALANCE 				0
 #define TFGO_MAX_BALANCE 				16000
 #define TFGO_CAPTURE_WIN_REWARD			3500
 #define TFGO_ELIMINATION_WIN_REWARD		3250
@@ -43,23 +38,23 @@ int g_iBalance[TF_MAXPLAYERS + 1] =  { TFGO_STARTING_BALANCE, ... };
 Handle g_hHudSync;
 Handle g_hBuytimeTimer;
 Handle g_h10SecondRoundTimer;
-Handle g_h10SecondBombTimer;
-Handle g_hBombExplosionTimer;
-Handle g_hCurrencyPackDestroyTimer;
 
-// Default weapon index for each class and slot (stolen from VSH-Rewrite)
+// Default weapon loadout for each class and slot
 int g_iDefaultWeaponIndex[][] =  {
 	{ -1, -1, -1, -1, -1, -1 },  // Unknown
-	{ 13, 23, 0, -1, -1, -1 },  // Scout
-	{ 14, 16, 3, -1, -1, -1 },  // Sniper
-	{ 18, 10, 6, -1, -1, -1 },  // Soldier
-	{ 19, 20, 1, -1, -1, -1 },  // Demoman
-	{ 17, 29, 8, -1, -1, -1 },  // Medic
-	{ 15, 11, 5, -1, -1, -1 },  // Heavy
-	{ 21, 12, 2, -1, -1, -1 },  // Pyro
-	{ 24, 735, 4, 27, 30, -1 },  // Spy
-	{ 9, 22, 7, 25, 26, 28 },  // Engineer
+	{ -1, 23, -1, -1, -1, -1 },  // Scout
+	{ -1, 16, -1, -1, -1, -1 },  // Sniper
+	{ -1, 10, -1, -1, -1, -1 },  // Soldier
+	{ 19, -1, -1, -1, -1, -1 },  // Demoman
+	{ 17, -1, -1, -1, -1, -1 },  // Medic
+	{ -1, 11, -1, -1, -1, -1 },  // Heavy
+	{ -1, 12, -1, -1, -1, -1 },  // Pyro
+	{ -1, -1, 4, 27, 30, -1 },  // Spy
+	{ -1, 22, -1, -1, 26, 28 } // Engineer
 };
+
+int g_iLoadoutWeaponIndex[TF_MAXPLAYERS + 1][10][6];
+
 
 // Game state
 bool g_bWaitingForPlayers;
@@ -67,8 +62,6 @@ bool g_bBuytimeActive;
 bool g_bRoundStarted;
 bool g_bRoundActive;
 bool g_bBombPlanted;
-int g_iBombSiteCP;
-int g_iBombPlanterTeam;
 
 // ConVars
 ConVar tfgo_buytime;
@@ -85,17 +78,14 @@ Handle g_hSDKRemoveWearable;
 Handle g_hSDKGetEquippedWearable;
 Handle g_hSetWinningTeam;
 
-// Weapons purchased using the buy menu
-int g_iPlayerLoadout[TF_MAXPLAYERS + 1][10][6];
-
 methodmap TFGOPlayer
 {
-	public TFGOPlayer(int iClient)
+	public TFGOPlayer(int client)
 	{
-		return view_as<TFGOPlayer>(iClient);
+		return view_as<TFGOPlayer>(client);
 	}
 	
-	property int iClient
+	property int Client
 	{
 		public get()
 		{
@@ -103,7 +93,10 @@ methodmap TFGOPlayer
 		}
 	}
 	
-	property int iBalance
+	/**
+	 * This is the player's money
+	 */
+	property int Balance
 	{
 		public get()
 		{
@@ -111,41 +104,97 @@ methodmap TFGOPlayer
 		}
 		public set(int val)
 		{
+			if (val > TFGO_MAX_BALANCE)
+			{
+				val = TFGO_MAX_BALANCE;
+			}
+			else if (val < TFGO_MIN_BALANCE)
+			{
+				val = TFGO_MIN_BALANCE;
+			}
 			g_iBalance[this] = val;
 		}
 	}
 	
-	public int GetEffectiveWeapon(TFClassType eClass, int iSlot)
+	public void ShowMoneyHudDisplay(float time)
 	{
-		int iWeapon = g_iPlayerLoadout[this][eClass][iSlot];
-		if (iWeapon == -1)
+		SetHudTextParams(-1.0, 0.75, time, 0, 133, 67, 140);
+		ShowSyncHudText(this.Client, g_hHudSync, "$%d", this.Balance);
+	}
+	
+	/**
+	 * Adds balance to this client and displays a
+	 * chat message notifying them of the amount earned.
+	 * 
+	 * @param val		the amount to add
+	 * @param reason	(optional) the reason for this operation
+	 */
+	public void AddToBalance(int val, const char[] reason = "")
+	{
+		this.Balance += val;
+		if (strlen(reason) > 0)
 		{
-			return g_iDefaultWeaponIndex[eClass][iSlot];
+			CPrintToChat(this.Client, "{money}+$%d{default}: %s.", val, reason);
 		}
 		else
 		{
-			return iWeapon;
+			CPrintToChat(this.Client, "{money}+$%d{default}", val);
 		}
+		
+		this.ShowMoneyHudDisplay(15.0);
 	}
 	
-	public void AddToBalance(int value, char[] reason)
+	/**
+	 * Removes balance from this client and displays a
+	 * chat message notifying them of the amount removed.
+	 * 
+	 * @param val		the amount to add
+	 * @param reason	(optional) the reason for this operation
+	 */
+	public void RemoveFromBalance(int val, const char[] reason = "")
 	{
-		g_iBalance[this] += value;
-		CPrintToChat(view_as<int>(this), "{money}+$%d{default}: %s.", value, reason);
+		this.Balance -= val;
+		if (strlen(reason) > 0)
+		{
+			CPrintToChat(this.Client, "{alert}-$%d{default}: %s.", val, reason);
+		}
+		else
+		{
+			CPrintToChat(this.Client, "{alert}-$%d{default}", val);
+		}
+		
+		this.ShowMoneyHudDisplay(15.0);
 	}
 	
-	public void RemoveFromBalance(int value, char[] reason)
+	public int GetWeaponFromLoadout(TFClassType class, int slot)
 	{
-		g_iBalance[this] -= value;
-		CPrintToChat(view_as<int>(this), "{alert}-$%d{default}: %s.", value, reason);
+		int defindex = g_iLoadoutWeaponIndex[this][class][slot];
+		PrintToServer("class %d, slot %d, index %d",class, slot ,defindex);
+		if (defindex == -1)
+		{
+			return g_iDefaultWeaponIndex[class][slot];
+		}
+		else
+		{
+			return defindex;
+		}
 	}
 }
 
 methodmap TFGOTeam
 {
-	public TFGOTeam(int iTeam)
+	
+	public TFGOTeam(TFTeam team)
 	{
-		return view_as<TFGOTeam>(iTeam);
+		return view_as<TFGOTeam>(view_as<int>(team));
+	}
+	
+	property TFTeam Team
+	{
+		public get()
+		{
+			return view_as<TFTeam>(this);
+		}
 	}
 	
 	property int LoseStreak
@@ -172,29 +221,51 @@ methodmap TFGOTeam
 		}
 	}
 	
-	public void AddToTeamBalance(int money, const char[] reason)
+	/**
+	 * Adds balance to every client in this team and displays
+	 * a chat message notifying them of the amount earned.
+	 * 
+	 * @param val		the amount to add
+	 * @param reason	(optional) the reason for this operation
+	 */
+	public void AddToTeamBalance(int val, const char[] reason = "")
 	{
-		for (int iClient = 1; iClient <= MaxClients; iClient++)
+		for (int i = 1; i <= MaxClients; i++)
 		{
-			if (IsClientConnected(iClient) && view_as<int>(this) == GetClientTeam(iClient))
+			if (IsClientInGame(i) && TF2_GetClientTeam(i) == this.Team)
 			{
-				g_iBalance[iClient] += money;
-				CPrintToChat(iClient, "{money}+$%d{default}: %s.", money, reason);
+				TFGOPlayer(i).AddToBalance(val, reason);
+			}
+		}
+	}
+	
+	/**
+	 * Removes balance from every client in this team and displays
+	 * a chat message notifying them of the amount removed.
+	 * 
+	 * @param val		the amount to add
+	 * @param reason	(optional) the reason for this operation
+	 */
+	public void RemoveFromTeamBalance(int val, const char[] reason = "")
+	{
+		for (int i = 1; i <= MaxClients; i++)
+		{
+			if (IsClientInGame(i) && TF2_GetClientTeam(i) == this.Team)
+			{
+				TFGOPlayer(i).RemoveFromBalance(val, reason);
 			}
 		}
 	}
 }
 
-
 #include "tfgo/sound.sp"
-#include "tfgo/cash.sp"
 #include "tfgo/buymenu.sp"
 
 
 public Plugin myinfo =  {
-	name = "Team Fortress:Global Offensive", 
+	name = "Team Fortress: Global Offensive", 
 	author = "Mikusch", 
-	description = "A Team Fortress2gamemode inspired by Counter-Strike: Global Offensive", 
+	description = "A Team Fortress2 gamemode inspired by Counter-Strike: Global Offensive", 
 	version = "1.0", 
 	url = "https: //github.com/Mikusch/tfgo"
 };
@@ -204,25 +275,27 @@ public void OnPluginStart()
 	// TODO: Choose a music kit for the entire game, only change on arena scramble
 	LoadTranslations("common.phrases.txt");
 	
-	SDKInit();
+	for (int client = 0; client <=  sizeof(g_iLoadoutWeaponIndex[]); client++)
+		for (int class = 0; class <= sizeof(g_iLoadoutWeaponIndex[][]); class++)
+			for (int slot = 0; slot <=sizeof(g_iLoadoutWeaponIndex[][][]); slot++)
+				g_iLoadoutWeaponIndex[client][class][slot] = -1;
+	
+	SDK_Init();
 	
 	g_hHudSync = CreateHudSynchronizer();
 	
-	g_sCurrencypackPlayerMap = CreateTrie();
-	g_sCurrencypackValueMap = CreateTrie();
-	g_iCashToKillerMap = CreateTrie();
+	//g_sCurrencypackPlayerMap = CreateTrie();
+	//g_sCurrencypackValueMap = CreateTrie();
+	//g_iCashToKillerMap = CreateTrie();
 	
 	HookEvent("player_death", Event_Player_Death);
 	HookEvent("arena_win_panel", Event_Arena_Win_Panel);
-	HookEvent("player_changeclass", Event_Player_ChangeClass);
 	HookEvent("arena_round_start", Event_Arena_Round_Start);
 	HookEvent("teamplay_round_start", Event_Teamplay_Round_Start);
 	HookEvent("arena_match_maxstreak", Event_Arena_Match_MaxStreak);
 	HookEvent("teamplay_broadcast_audio", Event_Broadcast_Audio, EventHookMode_Pre);
-	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
 	HookEvent("teamplay_waiting_begins", Event_Teamplay_Waiting_Begins);
 	HookEvent("teamplay_waiting_ends", Event_Teamplay_Waiting_Ends);
-	HookEvent("teamplay_point_captured", Event_Teamplay_Point_Captured);
 	
 	tf_arena_max_streak = FindConVar("tf_arena_max_streak");
 	tf_arena_first_blood = FindConVar("tf_arena_first_blood");
@@ -231,13 +304,15 @@ public void OnPluginStart()
 	tf_arena_preround_time = FindConVar("tf_arena_preround_time");
 	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
 	
-	Config_Init();
-	Config_Refresh();
-	
 	CAddColor("alert", 0xEA4141);
 	CAddColor("money", 0xA2FE47);
 	
 	Toggle_ConVars(true);
+}
+
+public void OnAllPluginsLoaded()
+{
+	Config_Init();
 }
 
 public void OnPluginEnd()
@@ -252,6 +327,20 @@ public void OnMapStart()
 	PrecacheModels();
 }
 
+public void OnEntityCreated(int entity, const char[] classname)
+{
+	if (strcmp(classname, "trigger_capture_area") == 0)
+	{
+		//SDKHook(entity, SDKHook_Touch, Hook_EnterCaptureArea);
+		//SDKHook(entity, SDKHook_EndTouch, Hook_LeaveCaptureArea);
+	}
+	else if (strcmp(classname, "func_respawnroom") == 0)
+	{
+		SDKHook(entity, SDKHook_StartTouch, Entity_StartTouch_RespawnRoom);
+		SDKHook(entity, SDKHook_EndTouch, Entity_EndTouch_RespawnRoom);
+	}
+}
+
 void PrecacheModels()
 {
 	PrecacheModel("models/items/currencypack_large.mdl");
@@ -264,6 +353,9 @@ void PrecacheModels()
 // Called every frame after the round is supposed to  end
 public MRESReturn Hook_SetWinningTeam(Handle hParams)
 {
+	int team = DHookGetParam(hParams, 1);
+	int winReason = DHookGetParam(hParams, 2);
+	PrintToServer("team: %d, winreason: %d", team, winReason);
 	if (g_bBombPlanted)
 	{
 		return MRES_Supercede;
@@ -282,22 +374,27 @@ public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool d
 
 public Action Event_Player_Death(Event event, const char[] name, bool dontBroadcast)
 {
-	int victim = GetClientOfUserId(event.GetInt("userid"));
-	int attacker = GetClientOfUserId(event.GetInt("attacker"));
-	int customKill = event.GetInt("customkill");
+	TFGOPlayer attacker = TFGOPlayer(GetClientOfUserId(event.GetInt("attacker")));
+	TFGOPlayer victim = TFGOPlayer(GetClientOfUserId(event.GetInt("userid")));
+	int weaponDefIndex = event.GetInt("weapon_def_index");
+	int customkill = event.GetInt("customkill");
+	
 	if (g_bRoundActive)
 	{
-		if (customKill == TF_CUSTOM_SUICIDE && attacker == victim)
+		if (customkill == TF_CUSTOM_SUICIDE && attacker == victim)
 		{
-			TFGOPlayer(victim).RemoveFromBalance(300, "Penalty for suiciding");
-		}
-		else if (customKill == TF_CUSTOM_HEADSHOT)
-		{
-			SpawnCash(attacker, victim, 100, true);
+			attacker.RemoveFromBalance(300, "Penalty for suiciding");
 		}
 		else
 		{
-			SpawnCash(attacker, victim, 100);
+			char weaponName[255];
+			TF2Econ_GetItemName(weaponDefIndex, weaponName, sizeof(weaponName));
+			char msg[255];
+			Format(msg, sizeof(msg), "Award for neutralizing an enemy with %s", weaponName);
+			
+			TFGOWeapon weapon;
+			GetWeaponInfoForIndex(weaponDefIndex, weapon);
+			attacker.AddToBalance(weapon.killReward, msg);
 		}
 	}
 	
@@ -308,8 +405,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 
 public void OnClientConnected(int client)
 {
-	TFGOPlayer tfgoPlayer = TFGOPlayer(client);
-	tfgoPlayer.iBalance = TFGO_STARTING_BALANCE;
+	TFGOPlayer(client).Balance = TFGO_STARTING_BALANCE;
 	
 	// Give the player some music from the music kit while they wait
 	if (g_bWaitingForPlayers)
@@ -322,21 +418,21 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 {
 	g_bRoundStarted = false;
 	
-	int iWinningTeam = event.GetInt("winning_team");
-	TFGOTeam winning_team = TFGOTeam(iWinningTeam);
-	TFGOTeam losing_team;
-	if (iWinningTeam == TFTeam_Red)
+	TFGOTeam winningTeam = TFGOTeam(view_as<TFTeam>(event.GetInt("winning_team")));
+	
+	TFGOTeam losingTeam;
+	if (winningTeam.Team == TFTeam_Red)
 	{
-		losing_team = TFGOTeam(iWinningTeam + 1);
+		losingTeam = TFGOTeam(TFTeam_Blue);
 	}
-	else if (iWinningTeam == TFTeam_Blue)
+	else if (winningTeam.Team == TFTeam_Blue)
 	{
-		losing_team = TFGOTeam(iWinningTeam - 1);
+		losingTeam = TFGOTeam(TFTeam_Red);
 	}
 	
 	// adjust lose streak
-	losing_team.LoseStreak++;
-	winning_team.LoseStreak--;
+	losingTeam.LoseStreak++;
+	winningTeam.LoseStreak--;
 	
 	// add round end rewards
 	int iWinReason = event.GetInt("winreason");
@@ -344,15 +440,15 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	{
 		case TF_WINREASON_CAPTURE:
 		{
-			winning_team.AddToTeamBalance(TFGO_CAPTURE_WIN_REWARD, "Team award for capturing all control points");
+			winningTeam.AddToTeamBalance(TFGO_CAPTURE_WIN_REWARD, "Team award for capturing all control points");
 		}
 		case TF_WINREASON_ELIMINATION:
 		{
-			winning_team.AddToTeamBalance(TFGO_ELIMINATION_WIN_REWARD, "Team award for eliminating the enemy team");
+			winningTeam.AddToTeamBalance(TFGO_ELIMINATION_WIN_REWARD, "Team award for eliminating the enemy team");
 		}
 	}
-	int compensation = g_iLoseStreakCompensation[losing_team.LoseStreak];
-	losing_team.AddToTeamBalance(compensation, "Income for losing");
+	int compensation = g_iLoseStreakCompensation[losingTeam.LoseStreak];
+	losingTeam.AddToTeamBalance(compensation, "Income for losing");
 	
 	if (g_h10SecondRoundTimer != null)
 	{
@@ -368,8 +464,6 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	
 	StopRoundActionMusic();
 	StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/roundtenseccount.mp3");
-	
-	return Plugin_Continue;
 }
 
 public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
@@ -384,8 +478,7 @@ public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool do
 	{
 		if (IsClientInGame(iClient))
 		{
-			SetHudTextParams(-1.0, 0.75, tfgo_buytime.FloatValue, 0, 133, 67, 140);
-			ShowSyncHudText(iClient, g_hHudSync, "$%d", g_iBalance[iClient]);
+			TFGOPlayer(iClient).ShowMoneyHudDisplay(tfgo_buytime.FloatValue);
 		}
 	}
 }
@@ -394,28 +487,36 @@ public Action DisableBuyMenu(Handle timer)
 {
 	g_bBuytimeActive = false;
 	g_hBuytimeTimer = null;
+	// TODO only show this while in it
 	CPrintToChatAll("{alert}Alert: {default}The %d second buy period has expired", tfgo_buytime.IntValue);
 }
 
 public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
 	g_bRoundActive = true;
-	g_h10SecondRoundTimer = CreateTimer(tf_arena_round_time.FloatValue - CSGO_ROUNDTENSECCOUNT_LENGTH, Play10SecondWarning);
-	PlayRoundActionMusic();
-}
-
-public Action Event_Player_ChangeClass(Event event, const char[] name, bool dontBroadcast) {
-	// during setup time, refund money if player had weapons and changed class
-	int client = GetClientOfUserId(event.GetInt("userid"));
-	return Plugin_Continue;
-}
-
-public void OnEntityCreated(int entity, const char[] classname)
-{
-	if (strcmp(classname, "func_respawnroom") == 0)
+	g_h10SecondRoundTimer = CreateTimer(tf_arena_round_time.FloatValue - 12.7, Play10SecondWarning);
+	
+	for (int i = 1; i <= MaxClients; i++)
 	{
-		SDKHook(entity, SDKHook_StartTouch, Entity_StartTouch_RespawnRoom);
-		SDKHook(entity, SDKHook_EndTouch, Entity_EndTouch_RespawnRoom);
+		if (IsClientInGame(i))
+		{
+			TFGOPlayer player = TFGOPlayer(i);
+			TFClassType class = TF2_GetPlayerClass(i);
+			
+			for (int slot = 0; slot <= 5; slot++)
+			{
+				if (slot != 2) // don't modify melee
+				{
+					PrintToServer("%d", g_iLoadoutWeaponIndex[i][class][slot]);
+					TF2_RemoveItemInSlot(i, slot);
+					int defindex = player.GetWeaponFromLoadout(class, slot);
+					if (defindex != -1)
+					{
+						TF2_CreateAndEquipWeapon(i, defindex);
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -455,7 +556,7 @@ void Toggle_ConVars(bool toggle)
 		tf_arena_max_streak.IntValue = 8;
 		
 		iArenaRoundTime = tf_arena_round_time.IntValue;
-		tf_arena_round_time.IntValue = 135;
+		tf_arena_round_time.IntValue = 30; // 135
 	}
 	else
 	{
@@ -486,11 +587,12 @@ stock int SDK_GetEquippedWearable(int client, int iSlot)
 	return -1;
 }
 
-void SDKInit()
+void SDK_Init()
 {
 	Handle hGameData = LoadGameConfigFile("tfgo");
+	int offset;
 	
-	int offset = GameConfGetOffset(hGameData, "SetWinningTeam");
+	offset = GameConfGetOffset(hGameData, "SetWinningTeam");
 	g_hSetWinningTeam = DHookCreate(offset, HookType_GameRules, ReturnType_Void, ThisPointer_Ignore, Hook_SetWinningTeam);
 	DHookAddParam(g_hSetWinningTeam, HookParamType_Int);
 	DHookAddParam(g_hSetWinningTeam, HookParamType_Int);
@@ -563,28 +665,6 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex)
 	return iWeapon;
 }
 
-// Note: sent when a player gets a whole new set of items, aka touches a resupply locker / respawn cabinet or spawns in.
-public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool bDontBroadcast)
-{
-	int client = GetClientOfUserId(event.GetInt("userid"));
-	SetStartingWeapons(client, TF2_GetPlayerClass(client));
-}
-
-// called when a new client spawns or someone spawns after they died
-void SetStartingWeapons(int iClient, int iClass)
-{
-	TFGOPlayer tfgoPlayer = TFGOPlayer(iClient);
-	
-	for (int i = 0; i++; i < 2)
-	{
-		TF2_RemoveItemInSlot(iClient, i);
-		TF2_CreateAndEquipWeapon(iClient, tfgoPlayer.GetEffectiveWeapon(iClass, i));
-	}
-	
-	
-	// TODO: Set default secondary, except for Medic, Engineer and Spy
-}
-
 public Action Event_Teamplay_Waiting_Begins(Event event, const char[] sName, bool bDontBroadcast)
 {
 	g_bWaitingForPlayers = true;
@@ -596,72 +676,32 @@ public Action Event_Teamplay_Waiting_Ends(Event event, const char[] sName, bool 
 	StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/chooseteam.mp3");
 }
 
-public Action Event_Teamplay_Point_Captured(Event event, const char[] sName, bool bDontBroadcast)
+stock int TF2_SpawnParticle(char[] sParticle, float vecOrigin[3] = NULL_VECTOR, float flAngles[3] = NULL_VECTOR, bool bActivate = true, int iEntity = 0, int iControlPoint = 0)
 {
-	if (g_bBombPlanted)
+	int iParticle = CreateEntityByName("info_particle_system");
+	TeleportEntity(iParticle, vecOrigin, flAngles, NULL_VECTOR);
+	DispatchKeyValue(iParticle, "effect_name", sParticle);
+	DispatchSpawn(iParticle);
+	
+	if (0 < iEntity && IsValidEntity(iEntity))
 	{
-		if (g_iBombSiteCP == event.GetInt("cp") && g_iBombPlanterTeam != event.GetInt("team"))
-		{
-			g_bBombPlanted = false; // this causes the game to end due to the SetWinningTeam hook
-			PrintToChatAll("bomb was defused!");
-		}
+		SetVariantString("!activator");
+		AcceptEntityInput(iParticle, "SetParent", iEntity);
 	}
-	else
+	
+	if (0 < iControlPoint && IsValidEntity(iControlPoint))
 	{
-		g_bBombPlanted = true;
-		g_iBombSiteCP = event.GetInt("cp");
-		g_iBombPlanterTeam = event.GetInt("team");
-		char cappers[64];
-		event.GetString("cappers", cappers, sizeof(cappers));
-		int firstCapper = cappers[0];
-		
-		// spawn bomb
-		float origin[3];
-		GetClientAbsOrigin(firstCapper, origin);
-		float angles[3];
-		GetClientAbsAngles(firstCapper, angles);
-		int bombProp = EntIndexToEntRef(CreateEntityByName("prop_dynamic_override"));
-		SetEntityModel(bombProp, "models/props_td/atom_bomb.mdl");
-		EmitAmbientSound("mvm/sentrybuster/mvm_sentrybuster_loop.wav", origin, bombProp);
-		DispatchKeyValue(bombProp, "Skin", "1");
-		DispatchSpawn(bombProp);
-		TeleportEntity(bombProp, origin, angles, NULL_VECTOR);
-		
-		// set round time to 45 seconds
-		int team_round_timer = FindEntityByClassname(TF_MAXPLAYERS + 1, "team_round_timer");
-		if (team_round_timer > -1)
-		{
-			SetVariantInt(45);
-			AcceptEntityInput(team_round_timer, "SetTime");
-		}
-		
-		if (g_h10SecondBombTimer != null)
-		{
-			KillTimer(g_h10SecondBombTimer);
-			g_h10SecondBombTimer = null;
-		}
-		
-		g_h10SecondBombTimer = CreateTimer(45.0 - 10.0, Play10SecondBombWarning);
-		g_hBombExplosionTimer = CreateTimer(45.0, DetonateBomb, bombProp);
-		
-		
-		if (g_h10SecondRoundTimer != null)
-		{
-			KillTimer(g_h10SecondRoundTimer);
-			g_h10SecondRoundTimer = null;
-		}
-		
-		StopRoundActionMusic();
-		StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/roundtenseccount.mp3");
-		EmitSoundToAll("valve_csgo_01/bombplanted.mp3");
+		//Array netprop, but really only need element 0 anyway
+		SetEntPropEnt(iParticle, Prop_Send, "m_hControlPointEnts", iControlPoint, 0);
+		SetEntProp(iParticle, Prop_Send, "m_iControlPointParents", iControlPoint, _, 0);
 	}
-}
-
-public Action DetonateBomb(Handle timer, int bomb)
-{
-	StopSoundForAll(SNDCHAN_AUTO, "mvm/sentrybuster/mvm_sentrybuster_loop.wav"); // TODO this shit doesn't stop
-	EmitSoundToAll("mvm/mvm_bomb_explode.wav", bomb, _, SNDLEVEL_ROCKET); // TODO this shit doesn't play
-	RemoveEntity(bomb); // But this does happen...?
-	// TODO
-	//g_iBombPlanterTeam
+	
+	if (bActivate)
+	{
+		ActivateEntity(iParticle);
+		AcceptEntityInput(iParticle, "Start");
+	}
+	
+	//Return ref of entity
+	return EntIndexToEntRef(iParticle);
 }

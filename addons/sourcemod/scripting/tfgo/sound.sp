@@ -1,7 +1,5 @@
 #include <sdktools_sound>
 
-#define CSGO_ROUNDTENSECCOUNT_LENGTH	12.7
-
 static char g_EngineerMvmCollectCredits[][PLATFORM_MAX_PATH] = 
 {
 	"vo/engineer_mvm_collect_credits01.mp3", 
@@ -48,7 +46,11 @@ stock void PrecacheSounds()
 	PrecacheSound("valve_csgo_01/wonround.mp3");
 	PrecacheSound("valve_csgo_01/lostround.mp3");
 	PrecacheSound("valve_csgo_01/roundtenseccount.mp3");
+	PrecacheSound("valve_csgo_01/bombtenseccount.mp3");
 	PrecacheSound("valve_csgo_01/chooseteam.mp3");
+	PrecacheSound("valve_csgo_01/bombplanted.mp3");
+	PrecacheSound("mvm/sentrybuster/mvm_sentrybuster_loop.wav");
+	PrecacheSound("mvm/mvm_bomb_explode.wav");
 	for (int i = 0; i < sizeof(g_sStartRoundMusic); i++)PrecacheSound(g_sStartRoundMusic[i]);
 	for (int i = 0; i < sizeof(g_sStartActionMusic); i++)PrecacheSound(g_sStartActionMusic[i]);
 	for (int i = 0; i < sizeof(g_EngineerMvmCollectCredits); i++)PrecacheSound(g_EngineerMvmCollectCredits[i]);
@@ -83,6 +85,13 @@ public Action Event_Broadcast_Audio(Event event, const char[] name, bool dontBro
 	{
 		EmitSoundToTeam(iTeam, "valve_csgo_01/lostround.mp3");
 		return Plugin_Handled;
+	} 
+	else if (strcmp(sound, "Announcer.AM_RoundStartRandom") == 0)
+	{
+		for (int i = 0; i < sizeof(g_sStartRoundMusic); i++)StopSoundForAll(SNDCHAN_AUTO, g_sStartRoundMusic[i]);
+		int iRandom = GetRandomInt(0, sizeof(g_sStartActionMusic) - 1);
+		EmitSoundToAll(g_sStartActionMusic[iRandom]);
+		return Plugin_Continue;
 	}
 	
 	return Plugin_Continue;
@@ -119,8 +128,16 @@ stock Action Play10SecondWarning(Handle timer)
 {
 	StopRoundActionMusic(); // if it is still playing for whatever reason
 	EmitSoundToAll("valve_csgo_01/roundtenseccount.mp3");
-	g_h10SecondWarningTimer = null;
+	g_h10SecondRoundTimer = null;
 }
+
+stock Action Play10SecondBombWarning(Handle timer)
+{
+	StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/bombplanted.mp3");
+	EmitSoundToAll("valve_csgo_01/bombtenseccount.mp3");
+	g_h10SecondBombTimer = null;
+}
+
 
 stock void PlayRoundStartMusic()
 {
@@ -128,13 +145,6 @@ stock void PlayRoundStartMusic()
 	StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/lostround.mp3");
 	int iRandom = GetRandomInt(0, sizeof(g_sStartRoundMusic) - 1);
 	EmitSoundToAll(g_sStartRoundMusic[iRandom]);
-}
-
-stock void PlayRoundActionMusic()
-{
-	for (int i = 0; i < sizeof(g_sStartRoundMusic); i++)StopSoundForAll(SNDCHAN_AUTO, g_sStartRoundMusic[i]);
-	int iRandom = GetRandomInt(0, sizeof(g_sStartActionMusic) - 1);
-	EmitSoundToAll(g_sStartActionMusic[iRandom]);
 }
 
 stock void StopRoundActionMusic()
@@ -149,7 +159,7 @@ stock void StopSoundForAll(int channel, const char[] sound)
 {
 	for (int i = 1; i <= MaxClients; i++)
 	{
-		if (i <= MaxClients && IsClientInGame(i))
+		if (i <= MaxClients && IsClientConnected(i))
 		{
 			StopSound(i, channel, sound);
 		}

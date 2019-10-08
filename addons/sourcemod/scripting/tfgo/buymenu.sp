@@ -54,7 +54,7 @@ methodmap WeaponList < ArrayList
 {
 	public WeaponList()
 	{
-		return view_as<WeaponList>(new ArrayList(2)); // 0 for int index, 1 for TFGOWeapon
+		return view_as<WeaponList>(new ArrayList(3)); // 0 for int index, 1 for TFGOWeapon
 	}
 	
 	public void Populate(KeyValues kv)
@@ -73,7 +73,7 @@ methodmap WeaponList < ArrayList
 					weapon.index = StringToInt(sIndex);
 					weapon.cost = kv.GetNum("cost", -1);
 					
-					int killReward = kv.GetNum("kill_reward", -1);
+					int killReward = kv.GetNum("kill_reward_override", -1);
 					if (killReward < 0)
 					{
 						char key[255];
@@ -81,7 +81,6 @@ methodmap WeaponList < ArrayList
 						g_hKillRewardMap.GetValue(key, killReward);
 					}
 					weapon.killReward = killReward;
-					PrintToServer("%d %d", weapon.index, weapon.killReward);
 					
 					int length = this.Length;
 					this.Resize(length + 1);
@@ -106,29 +105,22 @@ methodmap WeaponList < ArrayList
 	}
 };
 
-WeaponList g_ConfigIndex; //ArrayList of StringMap, should use enum struct once 1.10 reaches stable
+WeaponList g_ConfigIndex;
 
 
+public void GetWeaponInfoForIndex(int weaponIndex, TFGOWeapon buf)
+{
+	g_ConfigIndex.GetWeaponInfoForIndex(weaponIndex, buf);
+}
 
 void Config_Init()
 {
-	if (g_ConfigIndex == null)
-	{
-		g_ConfigIndex = new WeaponList();
-	}
-	else
-	{
-		g_ConfigIndex.Clear();
-	}
-	
 	if (g_hKillRewardMap == null)
-	{
 		g_hKillRewardMap = new KillRewardMap();
-	}
-	else
-	{
-		g_hKillRewardMap.Clear();
-	}
+	
+	if (g_ConfigIndex == null)
+		g_ConfigIndex = new WeaponList();
+
 	
 	KeyValues kv = new KeyValues("Config");
 	char path[255];
@@ -138,10 +130,6 @@ void Config_Init()
 	//Load every indexs
 	g_hKillRewardMap.Populate(kv);
 	g_ConfigIndex.Populate(kv);
-	
-	TFGOWeapon weapon;
-	g_ConfigIndex.GetWeaponInfoForIndex(730, weapon);
-	PrintToServer("%d costs %d and grants %d on kill", weapon.index, weapon.cost, weapon.killReward);
 	
 	delete kv;
 } 
