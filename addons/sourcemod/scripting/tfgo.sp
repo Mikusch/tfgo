@@ -78,6 +78,29 @@ Handle g_hSDKRemoveWearable;
 Handle g_hSDKGetEquippedWearable;
 Handle g_hSetWinningTeam;
 
+// Configs
+enum struct TFGOWeapon
+{
+	/**
+	* The item definition index of this weapon
+	**/
+	int index;
+	
+	/**
+	* The price of this weapon in the buy menu
+	* If this value is -1, the weapon won't show up in the buy menu
+	*/
+	int cost;
+	
+	/**
+	* How much money this weapon should grant upon a successful kill
+	*/
+	int killReward;
+}
+
+ArrayList weaponList;
+StringMap killRewardMap;
+
 methodmap TFGOPlayer
 {
 	public TFGOPlayer(int client)
@@ -392,9 +415,10 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 			char msg[255];
 			Format(msg, sizeof(msg), "Award for neutralizing an enemy with %s", weaponName);
 			
-			TFGOWeapon weapon;
-			GetWeaponInfoForIndex(weaponDefIndex, weapon);
-			attacker.AddToBalance(weapon.killReward, msg);
+			char weaponclass[255];
+			TF2Econ_GetItemClassName(weaponDefIndex, weaponclass, sizeof(weaponclass));
+
+			attacker.AddToBalance(GetEffectiveKillReward(weaponDefIndex), msg);
 		}
 	}
 	
