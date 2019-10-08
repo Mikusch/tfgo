@@ -13,7 +13,7 @@ public void PopulateWeaponList(KeyValues kv)
 				kv.GetSectionName(sIndex, sizeof(sIndex)); // Index of the weapon
 				
 				// Set weapon data
-				TFGOWeapon weapon;
+				TFGOWeaponEntry weapon;
 				weapon.index = StringToInt(sIndex);
 				weapon.cost = kv.GetNum("cost", -1);
 				weapon.killReward = kv.GetNum("kill_reward_override", -1);
@@ -47,28 +47,6 @@ void PopulateKillRewardMap(KeyValues kv)
 			
 		}
 		kv.GoBack();
-	}
-}
-
-int GetEffectiveKillReward(int defindex)
-{
-	int index = weaponList.FindValue(defindex, 0);
-	
-	TFGOWeapon weapon;
-	weaponList.GetArray(index, weapon, sizeof(weapon));
-	
-	if (weapon.killReward < 0)
-	{
-		char key[255];
-		TF2Econ_GetItemClassName(defindex, key, sizeof(key));
-		
-		int killReward;
-		killRewardMap.GetValue(key, killReward);
-		return killReward;
-	}
-	else
-	{
-		return weapon.killReward;
 	}
 }
 

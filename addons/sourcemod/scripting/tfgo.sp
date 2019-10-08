@@ -14,8 +14,8 @@
 
 #define TF_MAXPLAYERS 32
 #define TF_TEAMS 3
-#define TF_WINREASON_CAPTURE  	1
 #define TF_WINREASON_ELIMINATION  2
+#define TF_WINREASON_CAPTURE  	4
 #define TF_CLASSES  9
 
 // TFGO stuff
@@ -55,6 +55,8 @@ int g_iDefaultWeaponIndex[][] =  {
 
 int g_iLoadoutWeaponIndex[TF_MAXPLAYERS + 1][10][6];
 
+ArrayList weaponList;
+StringMap killRewardMap;
 
 // Game state
 bool g_bWaitingForPlayers;
@@ -79,27 +81,54 @@ Handle g_hSDKGetEquippedWearable;
 Handle g_hSetWinningTeam;
 
 // Configs
-enum struct TFGOWeapon
+enum struct TFGOWeaponEntry
 {
-	/**
-	* The item definition index of this weapon
-	**/
 	int index;
-	
-	/**
-	* The price of this weapon in the buy menu
-	* If this value is -1, the weapon won't show up in the buy menu
-	*/
 	int cost;
-	
-	/**
-	* How much money this weapon should grant upon a successful kill
-	*/
 	int killReward;
 }
 
-ArrayList weaponList;
-StringMap killRewardMap;
+// TODO: This is kinda crappy right now because it uses two data structures to get simple information
+// But it works for now, so I will attempt to change it later
+methodmap TFGOWeapon
+{
+	public TFGOWeapon(int defindex)
+	{
+		return view_as<TFGOWeapon>(defindex);
+	}
+	
+	property int DefIndex
+	{
+		public get()
+		{
+			return view_as<int>(this);
+		}
+	}
+	
+	property int Cost
+	{
+		public get()
+		{
+			int index = weaponList.FindValue(this, 0);
+			TFGOWeaponEntry weapon;
+			weaponList.GetArray(index, weapon, sizeof(weapon));
+			return weapon.cost;
+		}
+	}
+	
+	property int KillReward
+	{
+		public get()
+		{
+				char key[255];
+				TF2Econ_GetItemClassName(this.DefIndex, key, sizeof(key));
+				
+				int reward;
+				killRewardMap.GetValue(key, reward);
+				return reward;
+		}
+	}
+}
 
 methodmap TFGOPlayer
 {
@@ -192,7 +221,7 @@ methodmap TFGOPlayer
 	public int GetWeaponFromLoadout(TFClassType class, int slot)
 	{
 		int defindex = g_iLoadoutWeaponIndex[this][class][slot];
-		PrintToServer("class %d, slot %d, index %d",class, slot ,defindex);
+		PrintToServer("class %d, slot %d, index %d", class, slot, defindex);
 		if (defindex == -1)
 		{
 			return g_iDefaultWeaponIndex[class][slot];
@@ -298,10 +327,10 @@ public void OnPluginStart()
 	// TODO: Choose a music kit for the entire game, only change on arena scramble
 	LoadTranslations("common.phrases.txt");
 	
-	for (int client = 0; client <=  sizeof(g_iLoadoutWeaponIndex[]); client++)
-		for (int class = 0; class <= sizeof(g_iLoadoutWeaponIndex[][]); class++)
-			for (int slot = 0; slot <=sizeof(g_iLoadoutWeaponIndex[][][]); slot++)
-				g_iLoadoutWeaponIndex[client][class][slot] = -1;
+	for (int client = 0; client <= sizeof(g_iLoadoutWeaponIndex[]); client++)
+	for (int class = 0; class <= sizeof(g_iLoadoutWeaponIndex[][]); class++)
+	for (int slot = 0; slot <= sizeof(g_iLoadoutWeaponIndex[][][]); slot++)
+	g_iLoadoutWeaponIndex[client][class][slot] = -1;
 	
 	SDK_Init();
 	
@@ -399,7 +428,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 {
 	TFGOPlayer attacker = TFGOPlayer(GetClientOfUserId(event.GetInt("attacker")));
 	TFGOPlayer victim = TFGOPlayer(GetClientOfUserId(event.GetInt("userid")));
-	int weaponDefIndex = event.GetInt("weapon_def_index");
+	int defindex = event.GetInt("weapon_def_index");
 	int customkill = event.GetInt("customkill");
 	
 	if (g_bRoundActive)
@@ -411,14 +440,14 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 		else
 		{
 			char weaponName[255];
-			TF2Econ_GetItemName(weaponDefIndex, weaponName, sizeof(weaponName));
+			TF2Econ_GetItemName(defindex, weaponName, sizeof(weaponName));
 			char msg[255];
 			Format(msg, sizeof(msg), "Award for neutralizing an enemy with %s", weaponName);
 			
 			char weaponclass[255];
-			TF2Econ_GetItemClassName(weaponDefIndex, weaponclass, sizeof(weaponclass));
-
-			attacker.AddToBalance(GetEffectiveKillReward(weaponDefIndex), msg);
+			TF2Econ_GetItemClassName(defindex, weaponclass, sizeof(weaponclass));
+			
+			attacker.AddToBalance(TFGOWeapon(defindex).KillReward, msg);
 		}
 	}
 	
@@ -459,8 +488,8 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	winningTeam.LoseStreak--;
 	
 	// add round end rewards
-	int iWinReason = event.GetInt("winreason");
-	switch (iWinReason)
+	int winReason = event.GetInt("winreason");
+	switch (winReason)
 	{
 		case TF_WINREASON_CAPTURE:
 		{
