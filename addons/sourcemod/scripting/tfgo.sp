@@ -32,6 +32,8 @@
 int g_iLoseStreak[TF_TEAMS + 1] =  { 1, ... };
 int g_iLoseStreakCompensation[TFGO_MAXLOSESTREAK + 1] =  { 1400, 1900, 2400, 2900, 3400 };
 int g_iBalance[TF_MAXPLAYERS + 1] =  { TFGO_STARTING_BALANCE, ... };
+Menu activeBuyMenus[TF_MAXPLAYERS + 1];
+bool g_bInBuyZone[TF_MAXPLAYERS + 1] =  { true, ... }; // initialized to true to allow buymenu on maps without func_respawnroom
 
 //
 
@@ -60,7 +62,7 @@ StringMap killRewardMap;
 
 // Game state
 bool g_bWaitingForPlayers;
-bool g_bBuytimeActive;
+bool g_bBuyTimeActive;
 bool g_bRoundStarted;
 bool g_bRoundActive;
 bool g_bBombPlanted;
@@ -168,6 +170,30 @@ methodmap TFGOPlayer
 		}
 	}
 	
+	property Menu ActiveBuymenu
+	{
+		public get()
+		{
+			return activeBuyMenus[this];
+		}
+		public set(Menu val)
+		{
+			activeBuyMenus[this] = val;
+		}
+	}
+	
+	property bool InBuyZone
+	{
+		public get()
+		{
+			return g_bInBuyZone[this];
+		}
+		public set(bool val)
+		{
+			g_bInBuyZone[this] = val;
+		}
+	}
+	
 	public void ShowMoneyHudDisplay(float time)
 	{
 		SetHudTextParams(-1.0, 0.75, time, 0, 133, 67, 140);
@@ -229,6 +255,31 @@ methodmap TFGOPlayer
 		else
 		{
 			return defindex;
+		}
+	}
+	
+	public void PurchaseItem(int defindex)
+	{
+		if (g_bBuyTimeActive)
+		{
+			TFGOWeapon weapon = TFGOWeapon(defindex);
+			
+			this.Balance -= weapon.Cost;
+			// TODO: Add purchased weapon to loadout
+			
+			char name[255];
+			TF2Econ_GetItemName(defindex, name, sizeof(name));
+			PrintToChat(this.Client, "You have purchased %s for $%d.", name, weapon.Cost);
+			
+			float vec[3];
+			GetClientAbsOrigin(this.Client, vec);
+			EmitAmbientSound("mvm/mvm_bought_upgrade.wav", vec);
+			
+			this.ShowMoneyHudDisplay(15.0); // TODO calculate time left on buy menu
+		}
+		else
+		{
+			PrintToChat(this.Client, "Nice try, but the buy time has expired.");
 		}
 	}
 }
@@ -326,6 +377,7 @@ public void OnPluginStart()
 {
 	// TODO: Choose a music kit for the entire game, only change on arena scramble
 	LoadTranslations("common.phrases.txt");
+	LoadTranslations("tfgo.phrases.txt");
 	
 	for (int client = 0; client <= sizeof(g_iLoadoutWeaponIndex[]); client++)
 	for (int class = 0; class <= sizeof(g_iLoadoutWeaponIndex[][]); class++)
@@ -526,25 +578,38 @@ public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool do
 {
 	g_bRoundStarted = true;
 	g_bRoundActive = false;
-	g_bBuytimeActive = true;
-	g_hBuytimeTimer = CreateTimer(tfgo_buytime.FloatValue, DisableBuyMenu);
+	g_bBuyTimeActive = true;
+	g_hBuytimeTimer = CreateTimer(tfgo_buytime.FloatValue, OnBuyTimeExpire);
 	PlayRoundStartMusic();
 	
-	for (int iClient = 1; iClient < MaxClients; iClient++)
+	for (int client = 1; client < MaxClients; client++)
 	{
-		if (IsClientInGame(iClient))
+		if (IsClientInGame(client))
 		{
-			ShowBuyMenu(iClient, 1); // TODO: Display main buy menu first
-			TFGOPlayer(iClient).ShowMoneyHudDisplay(tfgo_buytime.FloatValue);
+			ShowMainBuyMenu(client);
+			TFGOPlayer(client).ShowMoneyHudDisplay(tfgo_buytime.FloatValue);
 		}
 	}
 }
 
-public Action DisableBuyMenu(Handle timer)
+public Action OnBuyTimeExpire(Handle timer)
 {
-	g_bBuytimeActive = false;
+	g_bBuyTimeActive = false;
 	g_hBuytimeTimer = null;
-	// TODO only show this while in it
+	
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientInGame(client))
+		{
+			TFGOPlayer player = TFGOPlayer(client);
+			if (player.ActiveBuymenu != null)
+			{
+				player.ActiveBuymenu.Cancel(); // TODO causes invalid handle errors (why...)
+			}
+		}
+	}
+	
+	// TODO only show this while in buyzone
 	CPrintToChatAll("{alert}Alert: {default}The %d second buy period has expired", tfgo_buytime.IntValue);
 }
 
@@ -579,18 +644,25 @@ public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontB
 
 public Action Entity_StartTouch_RespawnRoom(int entity, int client)
 {
-	if (client <= MaxClients && IsClientConnected(client) && g_bBuytimeActive)
+	if (client <= MaxClients && IsClientConnected(client))
 	{
-		// TODO: auto-open buy menu
+		TFGOPlayer(client).InBuyZone = true;
+		ShowMainBuyMenu(client);
 	}
 }
 
 public Action Entity_EndTouch_RespawnRoom(int entity, int client)
 {
-	if (client <= MaxClients && IsClientConnected(client) && g_bBuytimeActive)
+	if (client <= MaxClients && IsClientConnected(client))
 	{
-		// TODO: auto-close buy menu
-		CPrintToChat(client, "{alert}Alert: {default}You have left the buy zone");
+		TFGOPlayer player = TFGOPlayer(client);
+		player.InBuyZone = false;
+		player.ActiveBuymenu.Cancel();
+		
+		if (g_bBuyTimeActive)
+		{
+			CPrintToChat(client, "{alert}Alert: {default}You have left the buy zone");
+		}
 	}
 }
 
@@ -613,7 +685,7 @@ void Toggle_ConVars(bool toggle)
 		tf_arena_max_streak.IntValue = 8;
 		
 		iArenaRoundTime = tf_arena_round_time.IntValue;
-		tf_arena_round_time.IntValue = 30; // 135
+		tf_arena_round_time.IntValue = 135; // 135
 	}
 	else
 	{

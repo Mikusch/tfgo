@@ -1,0 +1,35 @@
+"Phrases"
+{
+	"#buymenu_title"
+	{
+		"en"	"Welcome to the buy menu!\nYou currently have $%d."
+	}
+	"#buymenu_item_primary"
+	{
+		"en"	"Primary Weapon"
+	}
+	"#buymenu_item_secondary"
+	{
+		"en"	"Secondary Weapon"
+	}
+	"#buymenu_item_pda"
+	{
+		"en"	"PDA"
+	}
+	"#buymenu_item_pda2"
+	{
+		"en"	"PDA"
+	}
+	"#buymenu_item_building"
+	{
+		"en"	"Building"
+	}
+	"#buymenu_item_building_spy"
+	{
+		"en"	"Sappers"
+	}
+	"#buymenu_item_pda2_spy"
+	{
+		"en"	"Invis Watch"
+	}
+}
