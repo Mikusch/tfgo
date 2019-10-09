@@ -1,34 +1,5 @@
 #include <sdktools_sound>
 
-static char g_EngineerMvmCollectCredits[][PLATFORM_MAX_PATH] = 
-{
-	"vo/engineer_mvm_collect_credits01.mp3", 
-	"vo/engineer_mvm_collect_credits02.mp3", 
-	"vo/engineer_mvm_collect_credits03.mp3"
-};
-
-static char g_HeavyMvmCollectCredits[][PLATFORM_MAX_PATH] = 
-{
-	"vo/heavy_mvm_collect_credits01.mp3", 
-	"vo/heavy_mvm_collect_credits02.mp3", 
-	"vo/heavy_mvm_collect_credits03.mp3", 
-	"vo/heavy_mvm_collect_credits04.mp3"
-};
-
-static char g_MedicMvmCollectCredits[][PLATFORM_MAX_PATH] = 
-{
-	"vo/medic_mvm_collect_credits01.mp3", 
-	"vo/medic_mvm_collect_credits02.mp3", 
-	"vo/medic_mvm_collect_credits03.mp3", 
-	"vo/medic_mvm_collect_credits04.mp3"
-};
-
-static char g_SoldierMvmCollectCredits[][PLATFORM_MAX_PATH] = 
-{
-	"vo/soldier_mvm_collect_credits01.mp3", 
-	"vo/soldier_mvm_collect_credits02.mp3"
-};
-
 static char g_sStartRoundMusic[][PLATFORM_MAX_PATH] =  {
 	"valve_csgo_01/startround_01.mp3", 
 	"valve_csgo_01/startround_02.mp3", 
@@ -51,12 +22,9 @@ stock void PrecacheSounds()
 	PrecacheSound("valve_csgo_01/bombplanted.mp3");
 	PrecacheSound("mvm/sentrybuster/mvm_sentrybuster_loop.wav");
 	PrecacheSound("mvm/mvm_bomb_explode.wav");
+	PrecacheSound("mvm/mvm_bought_upgrade.wav");
 	for (int i = 0; i < sizeof(g_sStartRoundMusic); i++)PrecacheSound(g_sStartRoundMusic[i]);
 	for (int i = 0; i < sizeof(g_sStartActionMusic); i++)PrecacheSound(g_sStartActionMusic[i]);
-	for (int i = 0; i < sizeof(g_EngineerMvmCollectCredits); i++)PrecacheSound(g_EngineerMvmCollectCredits[i]);
-	for (int i = 0; i < sizeof(g_HeavyMvmCollectCredits); i++)PrecacheSound(g_HeavyMvmCollectCredits[i]);
-	for (int i = 0; i < sizeof(g_MedicMvmCollectCredits); i++)PrecacheSound(g_MedicMvmCollectCredits[i]);
-	for (int i = 0; i < sizeof(g_SoldierMvmCollectCredits); i++)PrecacheSound(g_SoldierMvmCollectCredits[i]);
 }
 
 stock void EmitSoundToTeam(int iTeam, const char[] sound)
@@ -85,7 +53,7 @@ public Action Event_Broadcast_Audio(Event event, const char[] name, bool dontBro
 	{
 		EmitSoundToTeam(iTeam, "valve_csgo_01/lostround.mp3");
 		return Plugin_Handled;
-	} 
+	}
 	else if (strcmp(sound, "Announcer.AM_RoundStartRandom") == 0)
 	{
 		for (int i = 0; i < sizeof(g_sStartRoundMusic); i++)StopSoundForAll(SNDCHAN_AUTO, g_sStartRoundMusic[i]);
@@ -95,33 +63,6 @@ public Action Event_Broadcast_Audio(Event event, const char[] name, bool dontBro
 	}
 	
 	return Plugin_Continue;
-}
-
-stock void PlayCashPickupVoiceLine(int iClient)
-{
-	switch (TF2_GetPlayerClass(iClient))
-	{
-		case TFClass_Soldier:
-		{
-			int iRandom = GetRandomInt(0, sizeof(g_SoldierMvmCollectCredits) - 1);
-			EmitSoundToAll(g_SoldierMvmCollectCredits[iRandom], iClient, SNDCHAN_VOICE);
-		}
-		case TFClass_Engineer:
-		{
-			int iRandom = GetRandomInt(0, sizeof(g_EngineerMvmCollectCredits) - 1);
-			EmitSoundToAll(g_EngineerMvmCollectCredits[iRandom], iClient, SNDCHAN_VOICE);
-		}
-		case TFClass_Heavy:
-		{
-			int iRandom = GetRandomInt(0, sizeof(g_HeavyMvmCollectCredits) - 1);
-			EmitSoundToAll(g_HeavyMvmCollectCredits[iRandom], iClient, SNDCHAN_VOICE);
-		}
-		case TFClass_Medic:
-		{
-			int iRandom = GetRandomInt(0, sizeof(g_MedicMvmCollectCredits) - 1);
-			EmitSoundToAll(g_MedicMvmCollectCredits[iRandom], iClient, SNDCHAN_VOICE);
-		}
-	}
 }
 
 stock Action Play10SecondWarning(Handle timer)
