@@ -120,12 +120,12 @@ methodmap TFGOWeapon
 	{
 		public get()
 		{
-				char key[255];
-				TF2Econ_GetItemClassName(this.DefIndex, key, sizeof(key));
-				
-				int reward;
-				killRewardMap.GetValue(key, reward);
-				return reward;
+			char key[255];
+			TF2Econ_GetItemClassName(this.DefIndex, key, sizeof(key));
+			
+			int reward;
+			killRewardMap.GetValue(key, reward);
+			return reward;
 		}
 	}
 }
@@ -311,8 +311,8 @@ methodmap TFGOTeam
 }
 
 #include "tfgo/sound.sp"
+#include "tfgo/config.sp"
 #include "tfgo/buymenu.sp"
-
 
 public Plugin myinfo =  {
 	name = "Team Fortress: Global Offensive", 
@@ -474,13 +474,16 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	TFGOTeam winningTeam = TFGOTeam(view_as<TFTeam>(event.GetInt("winning_team")));
 	
 	TFGOTeam losingTeam;
-	if (winningTeam.Team == TFTeam_Red)
+	switch (winningTeam.Team)
 	{
-		losingTeam = TFGOTeam(TFTeam_Blue);
-	}
-	else if (winningTeam.Team == TFTeam_Blue)
-	{
-		losingTeam = TFGOTeam(TFTeam_Red);
+		case TFTeam_Red:
+		{
+			losingTeam = TFGOTeam(TFTeam_Blue);
+		}
+		case TFTeam_Blue:
+		{
+			losingTeam = TFGOTeam(TFTeam_Red);
+		}
 	}
 	
 	// adjust lose streak
@@ -531,6 +534,7 @@ public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool do
 	{
 		if (IsClientInGame(iClient))
 		{
+			ShowBuyMenu(iClient, 1); // TODO: Display main buy menu first
 			TFGOPlayer(iClient).ShowMoneyHudDisplay(tfgo_buytime.FloatValue);
 		}
 	}

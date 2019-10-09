@@ -1,72 +1,59 @@
-#define CONFIG_FILE "tfgo.cfg"
-#define MAXLEN_CONFIG_VALUE 256
 
-public void PopulateWeaponList(KeyValues kv)
+public void ShowBuyMenu(int client, int slot)
 {
-	if (kv.JumpToKey("Weapons", false)) //Jump to "Weapons"
+	Menu menu = new Menu(MenuHandler1);
+	TFGOPlayer player = TFGOPlayer(client);
+	
+	menu.SetTitle("Welcome to the buy menu!\nYou currently have $%d.",player.Balance);
+	
+	for (int i = 0; i < weaponList.Length; i++)
 	{
-		if (kv.GotoFirstSubKey(false)) // Go to the first key of weapon index
+		TFGOWeaponEntry weapon;
+		weaponList.GetArray(i, weapon, sizeof(weapon));
+		if (TF2Econ_GetItemSlot(weapon.index, TF2_GetPlayerClass(client)) == slot) // primary
 		{
-			do // Loop through each weapon index
-			{
-				char sIndex[MAXLEN_CONFIG_VALUE];
-				kv.GetSectionName(sIndex, sizeof(sIndex)); // Index of the weapon
-				
-				// Set weapon data
-				TFGOWeaponEntry weapon;
-				weapon.index = StringToInt(sIndex);
-				weapon.cost = kv.GetNum("cost", -1);
-				weapon.killReward = kv.GetNum("kill_reward_override", -1);
-				
-				int length = weaponList.Length;
-				weaponList.Resize(length + 1);
-				weaponList.Set(length, StringToInt(sIndex), 0);
-				weaponList.SetArray(length, weapon, sizeof(weapon));
-			}
-			while (kv.GotoNextKey(false));
-			kv.GoBack();
-		}
-		kv.GoBack();
-	}
-}
-
-void PopulateKillRewardMap(KeyValues kv)
-{
-	if (kv.JumpToKey("KillRewards", false))
-	{
-		if (kv.GotoFirstSubKey(false)) // Go to the first key of weapon index
-		{
-			do // Loop through each weapon index
-			{
-				char weaponClass[MAXLEN_CONFIG_VALUE];
-				kv.GetSectionName(weaponClass, sizeof(weaponClass)); // weapon class
-				killRewardMap.SetValue(weaponClass, kv.GetNum(NULL_STRING, 100));
-			}
-			while (kv.GotoNextKey(false));
-			kv.GoBack();
+			char info[255];
+			IntToString(weapon.index, info, sizeof(info));
 			
+			char display[255];
+			char weaponName[255];
+			TF2Econ_GetItemName(weapon.index, weaponName, sizeof(weaponName));
+			Format(display, sizeof(display), "%s ($%d)", weaponName, weapon.cost);
+			
+
+			if (weapon.cost > player.Balance)
+			{
+					menu.AddItem(info, display, ITEMDRAW_DISABLED);
+			}
+			else
+			{
+					menu.AddItem(info, display);
+			}
 		}
-		kv.GoBack();
 	}
+	
+	menu.ExitButton = false;
+	menu.Display(client, tfgo_buytime.IntValue);
+	
 }
 
-void Config_Init()
+public int MenuHandler1(Menu menu, MenuAction action, int param1, int param2)
 {
-	if (killRewardMap == null)
-		killRewardMap = CreateTrie();
-	
-	if (weaponList == null)
-		weaponList = new ArrayList(3);
-	
-	
-	KeyValues kv = new KeyValues("Config");
-	char path[255];
-	BuildPath(Path_SM, path, sizeof(path), "configs/tfgo/tfgo.cfg");
-	if (!kv.ImportFromFile(path))return;
-	
-	//Load every indexs
-	PopulateKillRewardMap(kv);
-	PopulateWeaponList(kv);
-	
-	delete kv;
+	/* If an option was selected, tell the client about the item. */
+	if (action == MenuAction_Select)
+	{
+		char info[32];
+		bool found = menu.GetItem(param2, info, sizeof(info));
+		PrintToConsole(param1, "You selected item: %d (found? %d info: %s)", param2, found, info);
+	}
+	/* If the menu was cancelled, print a message to the server about it. */
+	else if (action == MenuAction_Cancel)
+	{
+		PrintToServer("Client %d's menu was cancelled.  Reason: %d", param1, param2);
+	}
+	/* If the menu has ended, destroy it */
+	else if (action == MenuAction_End)
+	{
+		delete menu;
+	}
 } 
