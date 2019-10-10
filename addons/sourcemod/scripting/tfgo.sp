@@ -11,16 +11,14 @@
 #pragma newdecls required
 
 // TF2 stuff
-
 #define TF_MAXPLAYERS 32
-#define TF_TEAMS 3
+#define TF_NUMTEAMS 3
+#define TF_NUMCLASSES  9
 #define TF_WINREASON_CAPTURE_01 1
 #define TF_WINREASON_ELIMINATION  2
 #define TF_WINREASON_CAPTURE_02  	4
-#define TF_CLASSES  9
 
 // TFGO stuff
-
 #define TFGO_MINLOSESTREAK 0
 #define TFGO_MAXLOSESTREAK 4
 
@@ -30,18 +28,22 @@
 #define TFGO_CAPTURE_WIN_REWARD			3500
 #define TFGO_ELIMINATION_WIN_REWARD		3250
 
-int g_iLoseStreak[TF_TEAMS + 1] =  { 1, ... };
+int g_iLoseStreak[TF_NUMTEAMS + 1] =  { 1, ... };
 int g_iLoseStreakCompensation[TFGO_MAXLOSESTREAK + 1] =  { 1400, 1900, 2400, 2900, 3400 };
 int g_iBalance[TF_MAXPLAYERS + 1] =  { TFGO_STARTING_BALANCE, ... };
-Menu g_hActiveBuyMenus[TF_MAXPLAYERS + 1];
 
-//
-
+// Timers
 Handle g_hHudSync;
 Handle g_hBuytimeTimer;
 Handle g_h10SecondRoundTimer;
 
-// Default weapon loadout for each class and slot
+// Other handles
+Menu g_hActiveBuyMenus[TF_MAXPLAYERS + 1];
+
+/**
+Pre-defined default weapons for each slot
+-1 indicates the weapon in this slot should not be changed
+**/
 int g_iDefaultWeaponIndex[][] =  {
 	{ -1, -1, -1, -1, -1, -1 },  //Unknown
 	{ -1, 23, -1, -1, -1, -1 },  //Scout
@@ -55,6 +57,10 @@ int g_iDefaultWeaponIndex[][] =  {
 	{ 9, 22, -1, -1, 26, 28 } //Engineer
 };
 
+/**
+If set to false, the weapon in the slot will be removed
+Weapons that have not been assigned a default and are set to "true" in this map can be freely chosen
+**/
 int g_bSlotsToKeep[][] =  {
 	{ false, false, false, false, false, false },  //Unknown
 	{ false, false, true, false, false, false },  //Scout
@@ -68,10 +74,7 @@ int g_bSlotsToKeep[][] =  {
 	{ false, false, true, false, false, false } //Engineer
 };
 
-int g_iLoadoutWeaponIndex[TF_MAXPLAYERS + 1][10][6];
-
-ArrayList weaponList;
-StringMap killRewardMap;
+int g_iLoadoutWeaponIndex[TF_MAXPLAYERS + 1][9 + 1][6 + 1];
 
 // Game state
 bool g_bWaitingForPlayers;
@@ -88,6 +91,7 @@ ConVar tf_arena_first_blood;
 ConVar tf_arena_round_time;
 ConVar tf_arena_use_queue;
 ConVar tf_arena_preround_time;
+ConVar mp_bonusroundtime;
 
 // SDK functions
 Handle g_hSDKEquipWearable;
@@ -95,7 +99,8 @@ Handle g_hSDKRemoveWearable;
 Handle g_hSDKGetEquippedWearable;
 Handle g_hSetWinningTeam;
 
-// Configs
+// TODO: This is kinda crappy right now because it uses two data structures to get simple information
+// But it works for now, so I will just leave it now and attempt to change it later
 enum struct TFGOWeaponEntry
 {
 	int index;
@@ -103,8 +108,12 @@ enum struct TFGOWeaponEntry
 	int killReward;
 }
 
-// TODO: This is kinda crappy right now because it uses two data structures to get simple information
-// But it works for now, so I will attempt to change it later
+// Config data
+ArrayList weaponList;
+StringMap killRewardMap;
+
+
+// methodmaps
 methodmap TFGOWeapon
 {
 	public TFGOWeapon(int defindex)
@@ -245,38 +254,59 @@ methodmap TFGOPlayer
 		this.ShowMoneyHudDisplay(15.0);
 	}
 	
+	/**
+	* Purchases an item for this player and adds it to the loadout
+	**/
 	public void PurchaseItem(int defindex)
 	{
 		if (g_bBuyTimeActive)
 		{
 			TFGOWeapon weapon = TFGOWeapon(defindex);
+			TFClassType class = TF2_GetPlayerClass(this.Client);
+			int slot = TF2Econ_GetItemSlot(defindex, class);
 			
-			this.Balance -= weapon.Cost;
-			// TODO: Add purchased weapon to loadout
-			// and do not charge user for buying the same weapon he has already - instead switch to it
-			
-			char name[255];
-			TF2Econ_GetItemName(defindex, name, sizeof(name));
-			PrintToChat(this.Client, "You have purchased %s for $%d.", name, weapon.Cost);
-			
-			float vec[3];
-			GetClientAbsOrigin(this.Client, vec);
-			EmitAmbientSound("mvm/mvm_bought_upgrade.wav", vec);
-			
-			this.ShowMoneyHudDisplay(15.0); // TODO calculate time left on buy menu
+			// player doesn't own weapon yet, charge them and grant it
+			if (g_iLoadoutWeaponIndex[this][class][slot] != defindex)
+			{
+				// force-remove previous weapon and equip new one
+				TF2_RemoveItemInSlot(this.Client, slot);
+				TF2_CreateAndEquipWeapon(this.Client, defindex);
+				g_iLoadoutWeaponIndex[this][class][slot] = defindex;
+				this.Balance -= weapon.Cost;
+
+				char name[255];
+				TF2Econ_GetItemName(defindex, name, sizeof(name));
+				PrintToChat(this.Client, "You have purchased %s for $%d.", name, weapon.Cost);
+				
+				float vec[3];
+				GetClientAbsOrigin(this.Client, vec);
+				EmitAmbientSound("mvm/mvm_bought_upgrade.wav", vec);
+				
+				this.ShowMoneyHudDisplay(15.0);
+			}
+			else // player owns this weapon already, switch to it
+			{
+				TF2_CreateAndEquipWeapon(this.Client, defindex);
+			}
 		}
 		else
 		{
-			PrintToChat(this.Client, "Nice try, but the buy time has expired.");
+			PrintToChat(this.Client, "The weapon has not been purchased because the buy time has expired.");
 		}
 	}
 	
+	/**
+	* Gets a weapon from the player's loadout.
+	* Can return default weapons.
+	*
+	* @return a valid defindex or -1 if no weapon for the slot has been found
+	**/
 	public int GetWeaponFromLoadout(TFClassType class, int slot)
 	{
 		int defindex = g_iLoadoutWeaponIndex[this][class][slot];
-		PrintToServer("class %d, slot %d, index %d", class, slot, defindex);
 		if (defindex <= 0)
 		{
+			// no weapon found, return the default
 			return g_iDefaultWeaponIndex[class][slot];
 		}
 		else
@@ -285,22 +315,36 @@ methodmap TFGOPlayer
 		}
 	}
 	
-	public void GrantWeapons()
+	/**
+	* Restores previously purchased weapons and equips them
+	**/
+	public void ApplyLoadout()
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Client);
 		
 		for (int slot = 0; slot <= 5; slot++)
 		{
-			PrintToServer("%d", g_iLoadoutWeaponIndex[this][class][slot]);
-			if (!g_bSlotsToKeep[class][slot]) {
-				TF2_RemoveItemInSlot(this.Client, slot);
-			}
+			// -1 = no weapon in loadout and no specified default
 			int defindex = this.GetWeaponFromLoadout(class, slot);
 			if (defindex != -1)
 			{
 				TF2_CreateAndEquipWeapon(this.Client, defindex);
 			}
+			else if (!g_bSlotsToKeep[class][slot])
+			{
+				TF2_RemoveItemInSlot(this.Client, slot);
+			}
 		}
+	}
+	
+	/**
+	* Clears all purchased weapons for all classes
+	**/
+	public void ClearLoadout()
+	{
+		for (int class = 0; class < sizeof(g_iLoadoutWeaponIndex[][]); class++)
+		for (int slot = 0; slot < sizeof(g_iLoadoutWeaponIndex[][][]); slot++)
+		g_iLoadoutWeaponIndex[this.Client][class][slot] = -1;
 	}
 }
 
@@ -417,15 +461,17 @@ public void OnPluginStart()
 	HookEvent("arena_round_start", Event_Arena_Round_Start);
 	HookEvent("teamplay_round_start", Event_Teamplay_Round_Start);
 	HookEvent("arena_match_maxstreak", Event_Arena_Match_MaxStreak);
-	HookEvent("teamplay_broadcast_audio", Event_Broadcast_Audio, EventHookMode_Pre);
+	HookEvent("teamplay_broadcast_audio", Event_Pre_Broadcast_Audio, EventHookMode_Pre);
 	HookEvent("teamplay_waiting_begins", Event_Teamplay_Waiting_Begins);
 	HookEvent("teamplay_waiting_ends", Event_Teamplay_Waiting_Ends);
+	HookEvent("post_inventory_application", Event_Post_Inventory_Application);
 	
 	tf_arena_max_streak = FindConVar("tf_arena_max_streak");
 	tf_arena_first_blood = FindConVar("tf_arena_first_blood");
 	tf_arena_round_time = FindConVar("tf_arena_round_time");
 	tf_arena_use_queue = FindConVar("tf_arena_use_queue");
 	tf_arena_preround_time = FindConVar("tf_arena_preround_time");
+	mp_bonusroundtime = FindConVar("mp_bonusroundtime");
 	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
 	
 	CAddColor("alert", 0xEA4141);
@@ -502,6 +548,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	TFGOPlayer victim = TFGOPlayer(GetClientOfUserId(event.GetInt("userid")));
 	int defindex = event.GetInt("weapon_def_index");
 	int customkill = event.GetInt("customkill");
+	int assister = event.GetInt("assister");
 	
 	if (g_bRoundActive)
 	{
@@ -519,7 +566,15 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 			char weaponclass[255];
 			TF2Econ_GetItemClassName(defindex, weaponclass, sizeof(weaponclass));
 			
-			attacker.AddToBalance(TFGOWeapon(defindex).KillReward, msg);
+			TFGOWeapon weapon = TFGOWeapon(defindex);
+			attacker.AddToBalance(weapon.KillReward, msg);
+			if (assister != -1)
+			{
+				char attackerName[255];
+				GetClientName(attacker.Client, attackerName, sizeof(attackerName));
+				Format(msg, sizeof(msg), "Award for assisting %s in neutralizing an enemy", attackerName);
+				TFGOPlayer(GetClientOfUserId(assister)).AddToBalance(weapon.KillReward / 2, msg);
+			}
 		}
 	}
 	
@@ -531,7 +586,6 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 public void OnClientConnected(int client)
 {
 	TFGOPlayer(client).Balance = TFGO_STARTING_BALANCE;
-	
 	// Give the player some music from the music kit while they wait
 	if (g_bWaitingForPlayers)
 	{
@@ -543,8 +597,8 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 {
 	g_bRoundStarted = false;
 	
+	// Determine winning/losing team
 	TFGOTeam winningTeam = TFGOTeam(view_as<TFTeam>(event.GetInt("winning_team")));
-	
 	TFGOTeam losingTeam;
 	switch (winningTeam.Team)
 	{
@@ -558,7 +612,7 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 		}
 	}
 	
-	// add round end rewards
+	// Add round end team awards
 	int winReason = event.GetInt("winreason");
 	switch (winReason)
 	{
@@ -578,38 +632,61 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	int compensation = g_iLoseStreakCompensation[losingTeam.LoseStreak];
 	losingTeam.AddToTeamBalance(compensation, "Income for losing");
 	
-	// adjust lose streak
+	// Adjust team lose streaks
 	losingTeam.LoseStreak++;
 	winningTeam.LoseStreak--;
 	
+	// Reset timers
 	if (g_h10SecondRoundTimer != null)
 	{
 		KillTimer(g_h10SecondRoundTimer);
 		g_h10SecondRoundTimer = null;
 	}
-	
 	if (g_hBuytimeTimer != null)
 	{
 		KillTimer(g_hBuytimeTimer);
 		g_hBuytimeTimer = null;
 	}
 	
+	// Everyone who survives the post-victory time gets to keep their weapons
+	CreateTimer(mp_bonusroundtime.FloatValue - 0.1, SaveWeaponsForAlivePlayers);
+	
+	// Play sounds
 	StopRoundActionMusic();
 	StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/roundtenseccount.mp3");
+}
+
+public Action SaveWeaponsForAlivePlayers(Handle timer)
+{
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientInGame(client) && IsPlayerAlive(client))
+		{
+			for (int slot = 0; slot <= 5; slot++)
+			{
+				int defindex = GetPlayerWeaponSlot(client, slot);
+				PrintToServer("%d still had %d", client, defindex);
+			}
+		}
+	}
+}
+
+public Action Event_Post_Inventory_Application(Event event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(event.GetInt("userid"));
+		if (IsClientInGame(client))
+		{
+			ShowMainBuyMenu(client);
+			TFGOPlayer player = TFGOPlayer(client); 
+			player.ShowMoneyHudDisplay(tfgo_buytime.FloatValue);
+			player.ApplyLoadout();
+		}
 }
 
 public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
 	g_bRoundActive = true;
 	g_h10SecondRoundTimer = CreateTimer(tf_arena_round_time.FloatValue - 12.7, Play10SecondWarning);
-	
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if (IsClientInGame(i))
-		{
-			TFGOPlayer(i).GrantWeapons();
-		}
-	}
 }
 
 public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)

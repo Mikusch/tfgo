@@ -38,7 +38,7 @@ stock void EmitSoundToTeam(int iTeam, const char[] sound)
 	}
 }
 
-public Action Event_Broadcast_Audio(Event event, const char[] name, bool dontBroadcast)
+public Action Event_Pre_Broadcast_Audio(Event event, const char[] name, bool dontBroadcast)
 {
 	char sound[PLATFORM_MAX_PATH];
 	event.GetString("sound", sound, sizeof(sound));

@@ -1,4 +1,5 @@
 
+// TODO: Proper use of translation files
 public void ShowMainBuyMenu(int client)
 {
 	if (!g_bBuyTimeActive)return;
@@ -11,20 +12,20 @@ public void ShowMainBuyMenu(int client)
 	{
 		case TFClass_Engineer:
 		{
-			menu.AddItem("0", "Primary Weapons");
-			menu.AddItem("1", "Secondary Weapons");
-			menu.AddItem("5", "PDA");
+			menu.AddItem("0", "primary");
+			menu.AddItem("1", "secondary");
+			menu.AddItem("5", "pda");
 		}
 		case TFClass_Spy:
 		{
-			menu.AddItem("2", "Knives");
-			menu.AddItem("6", "Invis Watches");
-			menu.AddItem("4", "Sappers");
+			menu.AddItem("2", "melee");
+			menu.AddItem("6", "pda2");
+			menu.AddItem("4", "building");
 		}
 		default:
 		{
-			menu.AddItem("0", "Primary Weapons");
-			menu.AddItem("1", "Secondary Weapons");
+			menu.AddItem("0", "primary");
+			menu.AddItem("1", "secondary");
 		}
 	}
 	
