@@ -14,8 +14,9 @@
 
 #define TF_MAXPLAYERS 32
 #define TF_TEAMS 3
+#define TF_WINREASON_CAPTURE_01 1
 #define TF_WINREASON_ELIMINATION  2
-#define TF_WINREASON_CAPTURE  	4
+#define TF_WINREASON_CAPTURE_02  	4
 #define TF_CLASSES  9
 
 // TFGO stuff
@@ -32,8 +33,7 @@
 int g_iLoseStreak[TF_TEAMS + 1] =  { 1, ... };
 int g_iLoseStreakCompensation[TFGO_MAXLOSESTREAK + 1] =  { 1400, 1900, 2400, 2900, 3400 };
 int g_iBalance[TF_MAXPLAYERS + 1] =  { TFGO_STARTING_BALANCE, ... };
-Menu activeBuyMenus[TF_MAXPLAYERS + 1];
-bool g_bInBuyZone[TF_MAXPLAYERS + 1] =  { true, ... }; // initialized to true to allow buymenu on maps without func_respawnroom
+Menu g_hActiveBuyMenus[TF_MAXPLAYERS + 1];
 
 //
 
@@ -43,16 +43,29 @@ Handle g_h10SecondRoundTimer;
 
 // Default weapon loadout for each class and slot
 int g_iDefaultWeaponIndex[][] =  {
-	{ -1, -1, -1, -1, -1, -1 },  // Unknown
-	{ -1, 23, -1, -1, -1, -1 },  // Scout
-	{ -1, 16, -1, -1, -1, -1 },  // Sniper
-	{ -1, 10, -1, -1, -1, -1 },  // Soldier
-	{ 19, -1, -1, -1, -1, -1 },  // Demoman
-	{ 17, -1, -1, -1, -1, -1 },  // Medic
-	{ -1, 11, -1, -1, -1, -1 },  // Heavy
-	{ -1, 12, -1, -1, -1, -1 },  // Pyro
-	{ -1, -1, 4, 27, 30, -1 },  // Spy
-	{ -1, 22, -1, -1, 26, 28 } // Engineer
+	{ -1, -1, -1, -1, -1, -1 },  //Unknown
+	{ -1, 23, -1, -1, -1, -1 },  //Scout
+	{ -1, 16, -1, -1, -1, -1 },  //Sniper
+	{ -1, 10, -1, -1, -1, -1 },  //Soldier
+	{ 19, -1, -1, -1, -1, -1 },  //Demoman
+	{ 17, -1, -1, -1, -1, -1 },  //Medic
+	{ -1, 11, -1, -1, -1, -1 },  //Heavy
+	{ -1, 12, -1, -1, -1, -1 },  //Pyro
+	{ -1, -1, -1, 27, 30, -1 },  //Spy
+	{ 9, 22, -1, -1, 26, 28 } //Engineer
+};
+
+int g_bSlotsToKeep[][] =  {
+	{ false, false, false, false, false, false },  //Unknown
+	{ false, false, true, false, false, false },  //Scout
+	{ false, false, true, false, false, false },  //Sniper
+	{ false, false, true, false, false, false },  //Soldier
+	{ false, false, true, false, false, false },  //Demoman
+	{ false, false, true, false, false, false },  //Medic
+	{ false, false, true, false, false, false },  //Heavy
+	{ false, false, true, false, false, false },  //Pyro
+	{ true, false, false, false, false, false },  //Spy
+	{ false, false, true, false, false, false } //Engineer
 };
 
 int g_iLoadoutWeaponIndex[TF_MAXPLAYERS + 1][10][6];
@@ -170,33 +183,21 @@ methodmap TFGOPlayer
 		}
 	}
 	
-	property Menu ActiveBuymenu
+	property Menu ActiveBuyMenu
 	{
 		public get()
 		{
-			return activeBuyMenus[this];
+			return g_hActiveBuyMenus[this];
 		}
 		public set(Menu val)
 		{
-			activeBuyMenus[this] = val;
-		}
-	}
-	
-	property bool InBuyZone
-	{
-		public get()
-		{
-			return g_bInBuyZone[this];
-		}
-		public set(bool val)
-		{
-			g_bInBuyZone[this] = val;
+			g_hActiveBuyMenus[this] = val;
 		}
 	}
 	
 	public void ShowMoneyHudDisplay(float time)
 	{
-		SetHudTextParams(-1.0, 0.75, time, 0, 133, 67, 140);
+		SetHudTextParams(-1.0, 0.675, time, 0, 133, 67, 140);
 		ShowSyncHudText(this.Client, g_hHudSync, "$%d", this.Balance);
 	}
 	
@@ -244,20 +245,6 @@ methodmap TFGOPlayer
 		this.ShowMoneyHudDisplay(15.0);
 	}
 	
-	public int GetWeaponFromLoadout(TFClassType class, int slot)
-	{
-		int defindex = g_iLoadoutWeaponIndex[this][class][slot];
-		PrintToServer("class %d, slot %d, index %d", class, slot, defindex);
-		if (defindex == -1)
-		{
-			return g_iDefaultWeaponIndex[class][slot];
-		}
-		else
-		{
-			return defindex;
-		}
-	}
-	
 	public void PurchaseItem(int defindex)
 	{
 		if (g_bBuyTimeActive)
@@ -266,6 +253,7 @@ methodmap TFGOPlayer
 			
 			this.Balance -= weapon.Cost;
 			// TODO: Add purchased weapon to loadout
+			// and do not charge user for buying the same weapon he has already - instead switch to it
 			
 			char name[255];
 			TF2Econ_GetItemName(defindex, name, sizeof(name));
@@ -280,6 +268,38 @@ methodmap TFGOPlayer
 		else
 		{
 			PrintToChat(this.Client, "Nice try, but the buy time has expired.");
+		}
+	}
+	
+	public int GetWeaponFromLoadout(TFClassType class, int slot)
+	{
+		int defindex = g_iLoadoutWeaponIndex[this][class][slot];
+		PrintToServer("class %d, slot %d, index %d", class, slot, defindex);
+		if (defindex <= 0)
+		{
+			return g_iDefaultWeaponIndex[class][slot];
+		}
+		else
+		{
+			return defindex;
+		}
+	}
+	
+	public void GrantWeapons()
+	{
+		TFClassType class = TF2_GetPlayerClass(this.Client);
+		
+		for (int slot = 0; slot <= 5; slot++)
+		{
+			PrintToServer("%d", g_iLoadoutWeaponIndex[this][class][slot]);
+			if (!g_bSlotsToKeep[class][slot]) {
+				TF2_RemoveItemInSlot(this.Client, slot);
+			}
+			int defindex = this.GetWeaponFromLoadout(class, slot);
+			if (defindex != -1)
+			{
+				TF2_CreateAndEquipWeapon(this.Client, defindex);
+			}
 		}
 	}
 }
@@ -379,9 +399,9 @@ public void OnPluginStart()
 	LoadTranslations("common.phrases.txt");
 	LoadTranslations("tfgo.phrases.txt");
 	
-	for (int client = 0; client <= sizeof(g_iLoadoutWeaponIndex[]); client++)
-	for (int class = 0; class <= sizeof(g_iLoadoutWeaponIndex[][]); class++)
-	for (int slot = 0; slot <= sizeof(g_iLoadoutWeaponIndex[][][]); slot++)
+	for (int client = 0; client < sizeof(g_iLoadoutWeaponIndex[]); client++)
+	for (int class = 0; class < sizeof(g_iLoadoutWeaponIndex[][]); class++)
+	for (int slot = 0; slot < sizeof(g_iLoadoutWeaponIndex[][][]); slot++)
 	g_iLoadoutWeaponIndex[client][class][slot] = -1;
 	
 	SDK_Init();
@@ -538,15 +558,15 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 		}
 	}
 	
-	// adjust lose streak
-	losingTeam.LoseStreak++;
-	winningTeam.LoseStreak--;
-	
 	// add round end rewards
 	int winReason = event.GetInt("winreason");
 	switch (winReason)
 	{
-		case TF_WINREASON_CAPTURE:
+		case TF_WINREASON_CAPTURE_01:
+		{
+			winningTeam.AddToTeamBalance(TFGO_CAPTURE_WIN_REWARD, "Team award for capturing the control point");
+		}
+		case TF_WINREASON_CAPTURE_02:
 		{
 			winningTeam.AddToTeamBalance(TFGO_CAPTURE_WIN_REWARD, "Team award for capturing all control points");
 		}
@@ -557,6 +577,10 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	}
 	int compensation = g_iLoseStreakCompensation[losingTeam.LoseStreak];
 	losingTeam.AddToTeamBalance(compensation, "Income for losing");
+	
+	// adjust lose streak
+	losingTeam.LoseStreak++;
+	winningTeam.LoseStreak--;
 	
 	if (g_h10SecondRoundTimer != null)
 	{
@@ -574,12 +598,27 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/roundtenseccount.mp3");
 }
 
+public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontBroadcast)
+{
+	g_bRoundActive = true;
+	g_h10SecondRoundTimer = CreateTimer(tf_arena_round_time.FloatValue - 12.7, Play10SecondWarning);
+	
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (IsClientInGame(i))
+		{
+			TFGOPlayer(i).GrantWeapons();
+		}
+	}
+}
+
 public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
 	g_bRoundStarted = true;
 	g_bRoundActive = false;
 	g_bBuyTimeActive = true;
 	g_hBuytimeTimer = CreateTimer(tfgo_buytime.FloatValue, OnBuyTimeExpire);
+	
 	PlayRoundStartMusic();
 	
 	for (int client = 1; client < MaxClients; client++)
@@ -602,9 +641,10 @@ public Action OnBuyTimeExpire(Handle timer)
 		if (IsClientInGame(client))
 		{
 			TFGOPlayer player = TFGOPlayer(client);
-			if (player.ActiveBuymenu != null)
+			
+			if (player.ActiveBuyMenu != null)
 			{
-				player.ActiveBuymenu.Cancel(); // TODO causes invalid handle errors (why...)
+				player.ActiveBuyMenu.Cancel();
 			}
 		}
 	}
@@ -613,41 +653,14 @@ public Action OnBuyTimeExpire(Handle timer)
 	CPrintToChatAll("{alert}Alert: {default}The %d second buy period has expired", tfgo_buytime.IntValue);
 }
 
-public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontBroadcast)
-{
-	g_bRoundActive = true;
-	g_h10SecondRoundTimer = CreateTimer(tf_arena_round_time.FloatValue - 12.7, Play10SecondWarning);
-	
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if (IsClientInGame(i))
-		{
-			TFGOPlayer player = TFGOPlayer(i);
-			TFClassType class = TF2_GetPlayerClass(i);
-			
-			for (int slot = 0; slot <= 5; slot++)
-			{
-				if (slot != 2) // don't modify melee
-				{
-					PrintToServer("%d", g_iLoadoutWeaponIndex[i][class][slot]);
-					TF2_RemoveItemInSlot(i, slot);
-					int defindex = player.GetWeaponFromLoadout(class, slot);
-					if (defindex != -1)
-					{
-						TF2_CreateAndEquipWeapon(i, defindex);
-					}
-				}
-			}
-		}
-	}
-}
-
 public Action Entity_StartTouch_RespawnRoom(int entity, int client)
 {
 	if (client <= MaxClients && IsClientConnected(client))
 	{
-		TFGOPlayer(client).InBuyZone = true;
-		ShowMainBuyMenu(client);
+		if (GetEntProp(entity, Prop_Data, "m_iTeamNum") == GetClientTeam(client))
+		{
+			ShowMainBuyMenu(client);
+		}
 	}
 }
 
@@ -655,13 +668,18 @@ public Action Entity_EndTouch_RespawnRoom(int entity, int client)
 {
 	if (client <= MaxClients && IsClientConnected(client))
 	{
-		TFGOPlayer player = TFGOPlayer(client);
-		player.InBuyZone = false;
-		player.ActiveBuymenu.Cancel();
-		
-		if (g_bBuyTimeActive)
+		if (GetEntProp(entity, Prop_Data, "m_iTeamNum") == GetClientTeam(client))
 		{
-			CPrintToChat(client, "{alert}Alert: {default}You have left the buy zone");
+			TFGOPlayer player = TFGOPlayer(client);
+			if (player.ActiveBuyMenu != null)
+			{
+				player.ActiveBuyMenu.Cancel();
+			}
+			
+			if (g_bBuyTimeActive)
+			{
+				CPrintToChat(client, "{alert}Alert: {default}You have left the buy zone");
+			}
 		}
 	}
 }
