@@ -9,6 +9,23 @@ static char g_sStartActionMusic[][PLATFORM_MAX_PATH] =  {
 	"valve_csgo_01/startaction_01.mp3"
 };
 
+static char g_sBombPlantedAnnouncerAlerts[][PLATFORM_MAX_PATH] =  {
+	"vo/mvm_bomb_alerts01.mp3", 
+	"vo/mvm_bomb_alerts02.mp3"
+};
+
+static char g_sBombPlantedEngineerAlerts[][PLATFORM_MAX_PATH] =  {
+	
+};
+
+static char g_sBombPlantedMedicAlerts[][PLATFORM_MAX_PATH] =  {
+	
+};
+
+static char g_sBombPlantedHeavyAlerts[][PLATFORM_MAX_PATH] =  {
+	
+};
+
 stock void PrecacheSounds()
 {
 	PrecacheSound("mvm/mvm_money_pickup.wav");
@@ -25,6 +42,12 @@ stock void PrecacheSounds()
 	PrecacheSound("vo/announcer_time_added.mp3");
 	for (int i = 0; i < sizeof(g_sStartRoundMusic); i++)PrecacheSound(g_sStartRoundMusic[i]);
 	for (int i = 0; i < sizeof(g_sStartActionMusic); i++)PrecacheSound(g_sStartActionMusic[i]);
+	for (int i = 0; i < sizeof(g_sBombPlantedAnnouncerAlerts); i++)PrecacheSound(g_sBombPlantedAnnouncerAlerts[i]);
+}
+
+public void PlayAnnouncerBombAlert()
+{
+	EmitSoundToAll(g_sBombPlantedAnnouncerAlerts[GetRandomInt(0, sizeof(g_sBombPlantedAnnouncerAlerts) - 1)]);
 }
 
 stock void EmitSoundToTeam(int iTeam, const char[] sound)
@@ -40,22 +63,24 @@ stock void EmitSoundToTeam(int iTeam, const char[] sound)
 
 public Action Event_Pre_Broadcast_Audio(Event event, const char[] name, bool dontBroadcast)
 {
+	// Cancel various sounds that could still be playing here
 	StopRoundActionMusic();
+	StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/bombplanted.mp3");
 	StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/roundtenseccount.mp3");
 	StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/bombtenseccount.mp3");
 	
 	char sound[PLATFORM_MAX_PATH];
 	event.GetString("sound", sound, sizeof(sound));
-	int iTeam = event.GetInt("team");
+	int team = event.GetInt("team");
 	
 	if (strcmp(sound, "Game.YourTeamWon") == 0)
 	{
-		EmitSoundToTeam(iTeam, "valve_csgo_01/wonround.mp3");
+		EmitSoundToTeam(team, "valve_csgo_01/wonround.mp3");
 		return Plugin_Handled;
 	}
 	else if (strcmp(sound, "Game.YourTeamLost") == 0 || strcmp(sound, "Game.Stalemate") == 0)
 	{
-		EmitSoundToTeam(iTeam, "valve_csgo_01/lostround.mp3");
+		EmitSoundToTeam(team, "valve_csgo_01/lostround.mp3");
 		return Plugin_Handled;
 	}
 	else if (strcmp(sound, "Announcer.AM_RoundStartRandom") == 0)
@@ -97,20 +122,6 @@ stock void StopRoundActionMusic()
 	for (int i = 0; i < sizeof(g_sStartActionMusic); i++)
 	{
 		StopSoundForAll(SNDCHAN_AUTO, g_sStartActionMusic[i]);
-	}
-}
-
-stock void StopRoundActionMusicForTeam(int team)
-{
-	for (int client = 1; client <= MaxClients; client++)
-	{
-		if (IsClientInGame(client) && GetClientTeam(client) == team)
-		{
-			for (int i = 0; i < sizeof(g_sStartActionMusic); i++)
-			{
-				StopSound(client, SNDCHAN_AUTO, g_sStartActionMusic[i]);
-			}
-		}
 	}
 }
 

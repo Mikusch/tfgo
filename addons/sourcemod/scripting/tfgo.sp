@@ -14,9 +14,8 @@
 #define TF_MAXPLAYERS 32
 #define TF_NUMTEAMS 3
 #define TF_NUMCLASSES  9
-#define TF_WINREASON_CAPTURE_01 1
+#define TF_WINREASON_CAPTURE 1
 #define TF_WINREASON_ELIMINATION  2
-#define TF_WINREASON_CAPTURE_02  	4
 
 // TFGO stuff
 #define TFGO_MINLOSESTREAK 0
@@ -86,6 +85,7 @@ bool g_bBuyTimeActive;
 bool g_bRoundStarted;
 bool g_bRoundActive;
 bool g_bBombPlanted;
+int g_iBombPlanterTeam;
 float g_iRoundStartTime; // because team_round_timer in arena doesn't support AddTime
 
 // ConVars
@@ -506,12 +506,7 @@ public void OnMapStart()
 
 public void OnEntityCreated(int entity, const char[] classname)
 {
-	if (strcmp(classname, "trigger_capture_area") == 0)
-	{
-		//SDKHook(entity, SDKHook_Touch, Hook_EnterCaptureArea);
-		//SDKHook(entity, SDKHook_EndTouch, Hook_LeaveCaptureArea);
-	}
-	else if (strcmp(classname, "func_respawnroom") == 0)
+	if (strcmp(classname, "func_respawnroom") == 0)
 	{
 		SDKHook(entity, SDKHook_StartTouch, Entity_StartTouch_RespawnRoom);
 		SDKHook(entity, SDKHook_EndTouch, Entity_EndTouch_RespawnRoom);
@@ -532,7 +527,7 @@ public MRESReturn Hook_SetWinningTeam(Handle hParams)
 {
 	int team = DHookGetParam(hParams, 1);
 	int winReason = DHookGetParam(hParams, 2);
-	PrintToServer("team: %d, winreason: %d is bomb planted: %b", team, winReason, g_bBombPlanted);
+	//PrintToServer("team: %d, winreason: %d is bomb planted: %b", team, winReason, g_bBombPlanted);
 	if (g_bBombPlanted)
 	{
 		return MRES_Supercede;
@@ -547,7 +542,7 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 {
 	if (!g_bBombPlanted) // planted
 	{
-		int team = event.GetInt("team");
+		g_iBombPlanterTeam = event.GetInt("team");
 		
 		int game_end = FindEntityByClassname(-1, "game_end");
 		if (game_end > -1)
@@ -555,47 +550,37 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 			AcceptEntityInput(game_end, "Kill");
 		}
 		
-		StopRoundActionMusicForTeam(team);
-		EmitSoundToTeam(team, "valve_csgo_01/bombplanted.mp3");
-		g_h10SecondBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 10.0, Play10SecBombWarning);
+		StopRoundActionMusic();
+		StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/bombtenseccount.mp3");
+		EmitSoundToAll("valve_csgo_01/bombplanted.mp3");
+		PlayAnnouncerBombAlert();
+		
+		g_h10SecondBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 10.0, Play10SecondBombWarning);
 		g_hBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME, DetonateBomb);
 		
 		int team_round_timer = FindEntityByClassname(-1, "team_round_timer");
 		if (team_round_timer > -1)
 		{
-			// ceil to avoid stalemates from time running out before timer can fire
+			// Ceil to avoid stalemates from time running out before timer can fire
 			SetVariantInt(RoundToCeil(GetGameTime() - g_iRoundStartTime) + 45);
 			AcceptEntityInput(team_round_timer, "SetTime");
-			EmitSoundToTeam(team, "vo/announcer_time_added.mp3");
-		}
-		
-		if (g_h10SecondRoundTimer != null)
-		{
-			KillTimer(g_h10SecondRoundTimer);
-			g_h10SecondRoundTimer = null;
 		}
 	}
 	else // defused
 	{
-		if (g_hBombTimer != null)
-		{
-			KillTimer(g_hBombTimer);
-			g_hBombTimer = null;
-		}
 		if (g_h10SecondBombTimer != null)
 		{
 			KillTimer(g_h10SecondBombTimer);
 			g_h10SecondBombTimer = null;
 		}
+		if (g_hBombTimer != null)
+		{
+			KillTimer(g_hBombTimer);
+			g_hBombTimer = null;
+		}
 	}
 	
 	g_bBombPlanted = !g_bBombPlanted;
-}
-
-public Action Play10SecBombWarning(Handle timer)
-{
-	StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/bombplanted.mp3");
-	EmitSoundToAll("valve_csgo_01/bombtenseccount.mp3");
 }
 
 public Action DetonateBomb(Handle timer)
@@ -645,6 +630,18 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 		}
 	}
 	
+	if (g_bBombPlanted)
+	{
+		int victimTeam = GetClientTeam(GetClientOfUserId(event.GetInt("userid")));
+		PrintToServer("alive team count in %d: %d", victimTeam, GetAliveTeamCount(victimTeam));
+		if (g_iBombPlanterTeam != victimTeam && GetAliveTeamCount(victimTeam) - 1 <= 0) // -1 because it doesn't work properly in player_death
+		{
+			// End the round if every member of the non-planting team died
+			// TODO: the planting team still loses even if the bomb does detonate
+			g_bBombPlanted = false;
+		}
+	}
+	
 	// TODO restore previous weapons IF this death was a suicide in the respawn room
 	
 	return Plugin_Continue;
@@ -683,14 +680,24 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	int winReason = event.GetInt("winreason");
 	switch (winReason)
 	{
-		case TF_WINREASON_CAPTURE_01:
+		case TF_WINREASON_CAPTURE:
 		{
-			winningTeam.AddToTeamBalance(TFGO_CAPTURE_WIN_REWARD, "Team award for capturing the control point");
+			if (g_iBombPlanterTeam == event.GetInt("winning_team"))
+			{
+				winningTeam.AddToTeamBalance(TFGO_CAPTURE_WIN_REWARD, "Team award for detonating bomb");
+			}
+			else
+			{
+				winningTeam.AddToTeamBalance(TFGO_CAPTURE_WIN_REWARD, "Team award for defusing bomb");
+			}
 		}
-		case TF_WINREASON_CAPTURE_02:
+		/*
+		TODO: A map with multiple CPs triggers winreason 4 but the bomb planting logic doesn't support this yet
+		case 4:
 		{
 			winningTeam.AddToTeamBalance(TFGO_CAPTURE_WIN_REWARD, "Team award for capturing all control points");
 		}
+		*/
 		case TF_WINREASON_ELIMINATION:
 		{
 			winningTeam.AddToTeamBalance(TFGO_ELIMINATION_WIN_REWARD, "Team award for eliminating the enemy team");
@@ -704,15 +711,15 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	winningTeam.LoseStreak--;
 	
 	// Reset timers
-	if (g_h10SecondRoundTimer != null)
-	{
-		KillTimer(g_h10SecondRoundTimer);
-		g_h10SecondRoundTimer = null;
-	}
 	if (g_hBuytimeTimer != null)
 	{
 		KillTimer(g_hBuytimeTimer);
 		g_hBuytimeTimer = null;
+	}
+	if (g_h10SecondRoundTimer != null)
+	{
+		KillTimer(g_h10SecondRoundTimer);
+		g_h10SecondRoundTimer = null;
 	}
 	
 	// Everyone who survives the post-victory time gets to keep their weapons
@@ -732,6 +739,16 @@ public Action SaveWeaponsForAlivePlayers(Handle timer)
 			}
 		}
 	}
+}
+
+stock int GetAliveTeamCount(int team)
+{
+	int number = 0;
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (IsClientInGame(i) && IsPlayerAlive(i) && GetClientTeam(i) == team)number++;
+	}
+	return number;
 }
 
 public Action Event_Post_Inventory_Application(Event event, const char[] name, bool dontBroadcast)
