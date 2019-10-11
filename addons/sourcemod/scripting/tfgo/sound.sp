@@ -19,9 +19,10 @@ stock void PrecacheSounds()
 	PrecacheSound("valve_csgo_01/bombtenseccount.mp3");
 	PrecacheSound("valve_csgo_01/chooseteam.mp3");
 	PrecacheSound("valve_csgo_01/bombplanted.mp3");
-	PrecacheSound("mvm/sentrybuster/mvm_sentrybuster_loop.wav");
+	//PrecacheSound("mvm/sentrybuster/mvm_sentrybuster_loop.wav");
 	PrecacheSound("mvm/mvm_bomb_explode.wav");
 	PrecacheSound("mvm/mvm_bought_upgrade.wav");
+	PrecacheSound("vo/announcer_time_added.mp3");
 	for (int i = 0; i < sizeof(g_sStartRoundMusic); i++)PrecacheSound(g_sStartRoundMusic[i]);
 	for (int i = 0; i < sizeof(g_sStartActionMusic); i++)PrecacheSound(g_sStartActionMusic[i]);
 }
@@ -96,6 +97,20 @@ stock void StopRoundActionMusic()
 	for (int i = 0; i < sizeof(g_sStartActionMusic); i++)
 	{
 		StopSoundForAll(SNDCHAN_AUTO, g_sStartActionMusic[i]);
+	}
+}
+
+stock void StopRoundActionMusicForTeam(int team)
+{
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientInGame(client) && GetClientTeam(client) == team)
+		{
+			for (int i = 0; i < sizeof(g_sStartActionMusic); i++)
+			{
+				StopSound(client, SNDCHAN_AUTO, g_sStartActionMusic[i]);
+			}
+		}
 	}
 }
 

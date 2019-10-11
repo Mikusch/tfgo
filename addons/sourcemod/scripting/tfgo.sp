@@ -28,6 +28,8 @@
 #define TFGO_CAPTURE_WIN_REWARD			3500
 #define TFGO_ELIMINATION_WIN_REWARD		3250
 
+#define TFGO_BOMB_DETONATION_TIME		45.0
+
 int g_iLoseStreak[TF_NUMTEAMS + 1] =  { 1, ... };
 int g_iLoseStreakCompensation[TFGO_MAXLOSESTREAK + 1] =  { 1400, 1900, 2400, 2900, 3400 };
 int g_iBalance[TF_MAXPLAYERS + 1] =  { TFGO_STARTING_BALANCE, ... };
@@ -84,6 +86,7 @@ bool g_bBuyTimeActive;
 bool g_bRoundStarted;
 bool g_bRoundActive;
 bool g_bBombPlanted;
+float g_iRoundStartTime; // because team_round_timer in arena doesn't support AddTime
 
 // ConVars
 ConVar tfgo_buytime;
@@ -529,7 +532,7 @@ public MRESReturn Hook_SetWinningTeam(Handle hParams)
 {
 	int team = DHookGetParam(hParams, 1);
 	int winReason = DHookGetParam(hParams, 2);
-	PrintToServer("team: %d, winreason: %d", team, winReason);
+	PrintToServer("team: %d, winreason: %d is bomb planted: %b", team, winReason, g_bBombPlanted);
 	if (g_bBombPlanted)
 	{
 		return MRES_Supercede;
@@ -544,16 +547,26 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 {
 	if (!g_bBombPlanted) // planted
 	{
-		StopRoundActionMusic();
-		EmitSoundToAll("valve_csgo_01/bombplanted.mp3");
-		g_h10SecondBombTimer = CreateTimer(45.0 - 10.0, Play10SecBombWarning);
-		g_hBombTimer = CreateTimer(45.0, DetonateBomb);
+		int team = event.GetInt("team");
+		
+		int game_end = FindEntityByClassname(-1, "game_end");
+		if (game_end > -1)
+		{
+			AcceptEntityInput(game_end, "Kill");
+		}
+		
+		StopRoundActionMusicForTeam(team);
+		EmitSoundToTeam(team, "valve_csgo_01/bombplanted.mp3");
+		g_h10SecondBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 10.0, Play10SecBombWarning);
+		g_hBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME, DetonateBomb);
 		
 		int team_round_timer = FindEntityByClassname(-1, "team_round_timer");
 		if (team_round_timer > -1)
 		{
-			SetVariantInt(45);
+			// ceil to avoid stalemates from time running out before timer can fire
+			SetVariantInt(RoundToCeil(GetGameTime() - g_iRoundStartTime) + 45);
 			AcceptEntityInput(team_round_timer, "SetTime");
+			EmitSoundToTeam(team, "vo/announcer_time_added.mp3");
 		}
 		
 		if (g_h10SecondRoundTimer != null)
@@ -736,6 +749,7 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
 	g_bRoundActive = true;
+	g_iRoundStartTime = GetGameTime();
 	g_h10SecondRoundTimer = CreateTimer(tf_arena_round_time.FloatValue - 12.7, Play10SecondWarning);
 }
 
