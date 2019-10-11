@@ -1,4 +1,3 @@
-#include <sdktools_sound>
 
 static char g_sStartRoundMusic[][PLATFORM_MAX_PATH] =  {
 	"valve_csgo_01/startround_01.mp3", 
@@ -40,6 +39,10 @@ stock void EmitSoundToTeam(int iTeam, const char[] sound)
 
 public Action Event_Pre_Broadcast_Audio(Event event, const char[] name, bool dontBroadcast)
 {
+	StopRoundActionMusic();
+	StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/roundtenseccount.mp3");
+	StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/bombtenseccount.mp3");
+	
 	char sound[PLATFORM_MAX_PATH];
 	event.GetString("sound", sound, sizeof(sound));
 	int iTeam = event.GetInt("team");

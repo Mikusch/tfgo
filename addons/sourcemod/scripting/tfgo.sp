@@ -36,6 +36,8 @@ int g_iBalance[TF_MAXPLAYERS + 1] =  { TFGO_STARTING_BALANCE, ... };
 Handle g_hHudSync;
 Handle g_hBuytimeTimer;
 Handle g_h10SecondRoundTimer;
+Handle g_hBombTimer;
+Handle g_h10SecondBombTimer;
 
 // Other handles
 Menu g_hActiveBuyMenus[TF_MAXPLAYERS + 1];
@@ -98,6 +100,7 @@ Handle g_hSDKEquipWearable;
 Handle g_hSDKRemoveWearable;
 Handle g_hSDKGetEquippedWearable;
 Handle g_hSetWinningTeam;
+Handle g_hSDKGetMaxAmmo;
 
 // TODO: This is kinda crappy right now because it uses two data structures to get simple information
 // But it works for now, so I will just leave it now and attempt to change it later
@@ -273,7 +276,7 @@ methodmap TFGOPlayer
 				TF2_CreateAndEquipWeapon(this.Client, defindex);
 				g_iLoadoutWeaponIndex[this][class][slot] = defindex;
 				this.Balance -= weapon.Cost;
-
+				
 				char name[255];
 				TF2Econ_GetItemName(defindex, name, sizeof(name));
 				PrintToChat(this.Client, "You have purchased %s for $%d.", name, weapon.Cost);
@@ -465,6 +468,7 @@ public void OnPluginStart()
 	HookEvent("teamplay_waiting_begins", Event_Teamplay_Waiting_Begins);
 	HookEvent("teamplay_waiting_ends", Event_Teamplay_Waiting_Ends);
 	HookEvent("post_inventory_application", Event_Post_Inventory_Application);
+	HookEvent("teamplay_point_captured", Event_Teamplay_Point_Captured);
 	
 	tf_arena_max_streak = FindConVar("tf_arena_max_streak");
 	tf_arena_first_blood = FindConVar("tf_arena_first_blood");
@@ -534,6 +538,56 @@ public MRESReturn Hook_SetWinningTeam(Handle hParams)
 	{
 		return MRES_Ignored;
 	}
+}
+
+public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool dontBroadcast)
+{
+	if (!g_bBombPlanted) // planted
+	{
+		StopRoundActionMusic();
+		EmitSoundToAll("valve_csgo_01/bombplanted.mp3");
+		g_h10SecondBombTimer = CreateTimer(45.0 - 10.0, Play10SecBombWarning);
+		g_hBombTimer = CreateTimer(45.0, DetonateBomb);
+		
+		int team_round_timer = FindEntityByClassname(-1, "team_round_timer");
+		if (team_round_timer > -1)
+		{
+			SetVariantInt(45);
+			AcceptEntityInput(team_round_timer, "SetTime");
+		}
+		
+		if (g_h10SecondRoundTimer != null)
+		{
+			KillTimer(g_h10SecondRoundTimer);
+			g_h10SecondRoundTimer = null;
+		}
+	}
+	else // defused
+	{
+		if (g_hBombTimer != null)
+		{
+			KillTimer(g_hBombTimer);
+			g_hBombTimer = null;
+		}
+		if (g_h10SecondBombTimer != null)
+		{
+			KillTimer(g_h10SecondBombTimer);
+			g_h10SecondBombTimer = null;
+		}
+	}
+	
+	g_bBombPlanted = !g_bBombPlanted;
+}
+
+public Action Play10SecBombWarning(Handle timer)
+{
+	StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/bombplanted.mp3");
+	EmitSoundToAll("valve_csgo_01/bombtenseccount.mp3");
+}
+
+public Action DetonateBomb(Handle timer)
+{
+	g_bBombPlanted = false;
 }
 
 public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool dontBroadcast)
@@ -650,10 +704,6 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	
 	// Everyone who survives the post-victory time gets to keep their weapons
 	CreateTimer(mp_bonusroundtime.FloatValue - 0.1, SaveWeaponsForAlivePlayers);
-	
-	// Play sounds
-	StopRoundActionMusic();
-	StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/roundtenseccount.mp3");
 }
 
 public Action SaveWeaponsForAlivePlayers(Handle timer)
@@ -674,13 +724,13 @@ public Action SaveWeaponsForAlivePlayers(Handle timer)
 public Action Event_Post_Inventory_Application(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
-		if (IsClientInGame(client))
-		{
-			ShowMainBuyMenu(client);
-			TFGOPlayer player = TFGOPlayer(client); 
-			player.ShowMoneyHudDisplay(tfgo_buytime.FloatValue);
-			player.ApplyLoadout();
-		}
+	if (IsClientInGame(client))
+	{
+		ShowMainBuyMenu(client);
+		TFGOPlayer player = TFGOPlayer(client);
+		player.ShowMoneyHudDisplay(tfgo_buytime.FloatValue);
+		player.ApplyLoadout();
+	}
 }
 
 public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontBroadcast)
@@ -767,6 +817,7 @@ void Toggle_ConVars(bool toggle)
 	static bool bArenaUseQueue;
 	static int iArenaMaxStreak;
 	static int iArenaRoundTime;
+	static int iBonusRoundtime;
 	
 	if (toggle)
 	{
@@ -780,7 +831,10 @@ void Toggle_ConVars(bool toggle)
 		tf_arena_max_streak.IntValue = 8;
 		
 		iArenaRoundTime = tf_arena_round_time.IntValue;
-		tf_arena_round_time.IntValue = 135; // 135
+		tf_arena_round_time.IntValue = 135;
+		
+		iBonusRoundtime = mp_bonusroundtime.IntValue;
+		mp_bonusroundtime.IntValue = 7;
 	}
 	else
 	{
@@ -788,6 +842,7 @@ void Toggle_ConVars(bool toggle)
 		tf_arena_use_queue.BoolValue = bArenaUseQueue;
 		tf_arena_max_streak.IntValue = iArenaMaxStreak;
 		tf_arena_round_time.IntValue = iArenaRoundTime;
+		mp_bonusroundtime.IntValue = iBonusRoundtime;
 	}
 }
 
@@ -850,6 +905,16 @@ void SDK_Init()
 	if (g_hSDKGetEquippedWearable == null)
 		LogMessage("Failed to create call: CTFPlayer::GetEquippedWearableForLoadoutSlot!");
 	
+	//This function is used to get weapon max ammo
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::GetMaxAmmo");
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+	g_hSDKGetMaxAmmo = EndPrepSDKCall();
+	if (g_hSDKGetMaxAmmo == null)
+		LogMessage("Failed to create call: CTFPlayer::GetMaxAmmo!");
+	
 	delete hGameData;
 }
 
@@ -865,16 +930,23 @@ stock void TF2_RemoveItemInSlot(int client, int slot)
 	}
 }
 
-stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex)
+stock int SDK_GetMaxAmmo(int iClient, int iSlot)
+{
+	if (g_hSDKGetMaxAmmo != null)
+		return SDKCall(g_hSDKGetMaxAmmo, iClient, iSlot, -1);
+	return -1;
+}
+
+stock int TF2_CreateAndEquipWeapon(int iClient, int defindex)
 {
 	char sClassname[256];
-	TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
+	TF2Econ_GetItemClassName(defindex, sClassname, sizeof(sClassname));
 	TF2Econ_TranslateWeaponEntForClass(sClassname, sizeof(sClassname), TF2_GetPlayerClass(iClient));
 	
 	int iWeapon = CreateEntityByName(sClassname);
 	if (IsValidEntity(iWeapon))
 	{
-		SetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex", iIndex);
+		SetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex", defindex);
 		SetEntProp(iWeapon, Prop_Send, "m_bInitialized", 1);
 		
 		DispatchSpawn(iWeapon);
@@ -884,6 +956,44 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex)
 			SDK_EquipWearable(iClient, iWeapon);
 		else
 			EquipPlayerWeapon(iClient, iWeapon);
+	}
+	
+	// TODO: Test following code
+	
+	if (StrContains(sClassname, "tf_wearable") == 0)
+	{
+		if (GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") <= MaxClients)
+		{
+			//Looks like player's active weapon got replaced into wearable, fix that by using melee
+			int iMelee = GetPlayerWeaponSlot(iClient, TFWeaponSlot_Melee);
+			SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iMelee);
+		}
+	}
+	else
+	{
+		SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iWeapon);
+	}
+	
+	//Set ammo as weapon's max ammo
+	if (HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType")) //Wearables dont have ammo netprop
+	{
+		int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
+		if (iAmmoType > -1)
+		{
+			//We want to set gas passer ammo empty, because thats how normal gas passer works
+			int iMaxAmmo;
+			if (defindex == 1180)
+			{
+				iMaxAmmo = 0;
+				SetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", 0.0, 1);
+			}
+			else
+			{
+				iMaxAmmo = SDK_GetMaxAmmo(iClient, iAmmoType);
+			}
+			
+			SetEntProp(iClient, Prop_Send, "m_iAmmo", iMaxAmmo, _, iAmmoType);
+		}
 	}
 	
 	return iWeapon;
