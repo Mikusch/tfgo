@@ -12,19 +12,19 @@ public void ShowMainBuyMenu(int client)
 	{
 		case TFClass_Engineer:
 		{
-			menu.AddItem("0", "primary");
-			menu.AddItem("1", "secondary");
-			menu.AddItem("5", "pda");
+			menu.AddItem("0", "Primary Weapon");
+			menu.AddItem("1", "Secondary Weapon");
+			menu.AddItem("5", "PDA");
 		}
 		case TFClass_Spy:
 		{
-			menu.AddItem("0", "Secondary");
-			menu.AddItem("2", "Melee");
+			menu.AddItem("0", "Secondary Weapon");
+			menu.AddItem("2", "Melee Weapon");
 		}
 		default:
 		{
-			menu.AddItem("0", "primary");
-			menu.AddItem("1", "secondary");
+			menu.AddItem("0", "Primary Weapon");
+			menu.AddItem("1", "Secondary Weapon");
 		}
 	}
 	
