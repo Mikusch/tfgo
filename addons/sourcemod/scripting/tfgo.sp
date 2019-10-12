@@ -237,8 +237,8 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 		}
 		
 		StopRoundActionMusic();
-		StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/bombtenseccount.mp3");
-		EmitSoundToAll("valve_csgo_01/bombplanted.mp3");
+		StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/bombtenseccount.mp3");
+		EmitSoundToAll("tfgo/music/valve_csgo_01/bombplanted.mp3");
 		PlayAnnouncerBombAlert();
 		
 		g_h10SecondBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 10.0, Play10SecondBombWarning);
@@ -339,7 +339,7 @@ public void OnClientConnected(int client)
 	// Give the player some music from the music kit while they wait
 	if (g_bWaitingForPlayers)
 	{
-		EmitSoundToClient(client, "valve_csgo_01/chooseteam.mp3");
+		EmitSoundToClient(client, "tfgo/music/valve_csgo_01/chooseteam.mp3");
 	}
 }
 
@@ -724,7 +724,7 @@ public Action Event_Teamplay_Waiting_Begins(Event event, const char[] sName, boo
 public Action Event_Teamplay_Waiting_Ends(Event event, const char[] sName, bool bDontBroadcast)
 {
 	g_bWaitingForPlayers = false;
-	StopSoundForAll(SNDCHAN_AUTO, "valve_csgo_01/chooseteam.mp3");
+	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/chooseteam.mp3");
 }
 
 stock int TF2_SpawnParticle(char[] sParticle, float vecOrigin[3] = NULL_VECTOR, float flAngles[3] = NULL_VECTOR, bool bActivate = true, int iEntity = 0, int iControlPoint = 0)
