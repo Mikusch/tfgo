@@ -18,9 +18,8 @@ public void ShowMainBuyMenu(int client)
 		}
 		case TFClass_Spy:
 		{
-			menu.AddItem("2", "melee");
-			menu.AddItem("6", "pda2");
-			menu.AddItem("4", "building");
+			menu.AddItem("0", "Secondary");
+			menu.AddItem("2", "Melee");
 		}
 		default:
 		{

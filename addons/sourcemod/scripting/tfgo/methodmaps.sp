@@ -36,6 +36,11 @@ methodmap TFGOWeapon
 			return reward;
 		}
 	}
+	
+	public bool IsInBuyMenu()
+	{
+		return weaponList.FindValue(this, 0) != -1;
+	}
 }
 
 methodmap TFGOPlayer
@@ -129,39 +134,33 @@ methodmap TFGOPlayer
 	**/
 	public void PurchaseItem(int defindex)
 	{
-		if (g_bBuyTimeActive)
+		if (!g_bBuyTimeActive)return;
+		
+		TFGOWeapon weapon = TFGOWeapon(defindex);
+		TFClassType class = TF2_GetPlayerClass(this.Client);
+		int slot = TF2Econ_GetItemSlot(defindex, class);
+		
+		// player doesn't own weapon yet, charge them and grant it
+		if (g_iLoadoutWeaponIndex[this][class][slot] != defindex)
 		{
-			TFGOWeapon weapon = TFGOWeapon(defindex);
-			TFClassType class = TF2_GetPlayerClass(this.Client);
-			int slot = TF2Econ_GetItemSlot(defindex, class);
+			TF2_CreateAndEquipWeapon(this.Client, defindex);
 			
-			// player doesn't own weapon yet, charge them and grant it
-			if (g_iLoadoutWeaponIndex[this][class][slot] != defindex)
-			{
-				// force-remove previous weapon and equip new one
-				TF2_RemoveItemInSlot(this.Client, slot);
-				TF2_CreateAndEquipWeapon(this.Client, defindex);
-				g_iLoadoutWeaponIndex[this][class][slot] = defindex;
-				this.Balance -= weapon.Cost;
-				
-				char name[255];
-				TF2Econ_GetItemName(defindex, name, sizeof(name));
-				PrintToChat(this.Client, "You have purchased %s for $%d.", name, weapon.Cost);
-				
-				float vec[3];
-				GetClientAbsOrigin(this.Client, vec);
-				EmitAmbientSound("mvm/mvm_bought_upgrade.wav", vec);
-				
-				this.ShowMoneyHudDisplay(15.0);
-			}
-			else // player owns this weapon already, switch to it
-			{
-				TF2_CreateAndEquipWeapon(this.Client, defindex);
-			}
+			g_iLoadoutWeaponIndex[this][class][slot] = defindex;
+			this.Balance -= weapon.Cost;
+			
+			char name[255];
+			TF2Econ_GetItemName(defindex, name, sizeof(name));
+			PrintToChat(this.Client, "You have purchased %s for $%d.", name, weapon.Cost);
+			
+			float vec[3];
+			GetClientAbsOrigin(this.Client, vec);
+			EmitAmbientSound("mvm/mvm_bought_upgrade.wav", vec);
+			
+			this.ShowMoneyHudDisplay(15.0);
 		}
-		else
+		else // player owns this weapon already, switch to it
 		{
-			PrintToChat(this.Client, "The weapon has not been purchased because the buy time has expired.");
+			TF2_CreateAndEquipWeapon(this.Client, defindex);
 		}
 	}
 	
@@ -174,7 +173,7 @@ methodmap TFGOPlayer
 	public int GetWeaponFromLoadout(TFClassType class, int slot)
 	{
 		int defindex = g_iLoadoutWeaponIndex[this][class][slot];
-		if (defindex <= 0)
+		if (defindex == -1)
 		{
 			// no weapon found, return the default
 			return g_iDefaultWeaponIndex[class][slot];
@@ -192,7 +191,7 @@ methodmap TFGOPlayer
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Client);
 		
-		for (int slot = 0; slot <= 5; slot++)
+		for (int slot = 0; slot < sizeof(g_iLoadoutWeaponIndex[][]) - 1; slot++)
 		{
 			// -1 = no weapon in loadout and no specified default
 			int defindex = this.GetWeaponFromLoadout(class, slot);
@@ -207,13 +206,19 @@ methodmap TFGOPlayer
 		}
 	}
 	
+	public void AddToLoadout(int defindex)
+	{
+		TFClassType class = TF2_GetPlayerClass(this.Client);
+		g_iLoadoutWeaponIndex[this.Client][view_as<int>(class)][TF2Econ_GetItemSlot(defindex, class)] = defindex;
+	}
+	
 	/**
 	* Clears all purchased weapons for all classes
 	**/
 	public void ClearLoadout()
 	{
-		for (int class = 0; class < sizeof(g_iLoadoutWeaponIndex[][]); class++)
-		for (int slot = 0; slot < sizeof(g_iLoadoutWeaponIndex[][][]); slot++)
+		for (int class = 0; class < sizeof(g_iLoadoutWeaponIndex[]); class++)
+		for (int slot = 0; slot < sizeof(g_iLoadoutWeaponIndex[][]); slot++)
 		g_iLoadoutWeaponIndex[this.Client][class][slot] = -1;
 	}
 }

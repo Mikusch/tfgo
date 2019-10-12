@@ -56,8 +56,50 @@ stock void TF2_RemoveItemInSlot(int client, int slot)
 	}
 }
 
-stock int TF2_CreateAndEquipWeapon(int iClient, int defindex)
+stock int TF2_GetItemInSlot(int client, int slot)
 {
+	int weapon = GetPlayerWeaponSlot(client, slot);
+	if (weapon <= -1)
+		return -1;
+	else
+		return GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
+}
+
+// Stolen from SZF
+stock void TF2_CreateAndEquipWeapon(int iClient, int defindex)
+{
+	TFClassType nClass = TF2_GetPlayerClass(iClient);
+	int iSlot = TF2Econ_GetItemSlot(defindex, nClass);
+	
+	//Remove sniper scope and slowdown cond if have one, otherwise can cause client crashes
+	if (TF2_IsPlayerInCondition(iClient, TFCond_Zoomed))
+	{
+		TF2_RemoveCondition(iClient, TFCond_Zoomed);
+		TF2_RemoveCondition(iClient, TFCond_Slowed);
+	}
+	
+	//Force crit reset
+	int iRevengeCrits = GetEntProp(iClient, Prop_Send, "m_iRevengeCrits");
+	if (iRevengeCrits > 0)
+	{
+		SetEntProp(iClient, Prop_Send, "m_iRevengeCrits", 0);
+		TF2_RemoveCondition(iClient, TFCond_Kritzkrieged);
+	}
+	
+	//If player already have item in his inv, remove it before we generate new weapon for him, otherwise some weapons can glitch out...
+	int iEntity = GetPlayerWeaponSlot(iClient, iSlot);
+	if (iEntity > MaxClients && IsValidEdict(iEntity))
+		TF2_RemoveWeaponSlot(iClient, iSlot);
+	
+	//Remove wearable if have one
+	int iWearable = SDK_GetEquippedWearable(iClient, iSlot);
+	if (iWearable > MaxClients)
+	{
+		SDK_RemoveWearable(iClient, iWearable);
+		AcceptEntityInput(iWearable, "Kill");
+	}
+	
+	//Generate and equip weapon
 	char sClassname[256];
 	TF2Econ_GetItemClassName(defindex, sClassname, sizeof(sClassname));
 	TF2Econ_TranslateWeaponEntForClass(sClassname, sizeof(sClassname), TF2_GetPlayerClass(iClient));
@@ -77,7 +119,6 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int defindex)
 			EquipPlayerWeapon(iClient, iWeapon);
 	}
 	
-	// TODO: Test following code
 	
 	if (StrContains(sClassname, "tf_wearable") == 0)
 	{
@@ -114,10 +155,7 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int defindex)
 			SetEntProp(iClient, Prop_Send, "m_iAmmo", iMaxAmmo, _, iAmmoType);
 		}
 	}
-	
-	return iWeapon;
 }
-
 
 // SDK stocks
 

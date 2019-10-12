@@ -27,7 +27,7 @@
 #define TFGO_CAPTURE_WIN_REWARD			3500
 #define TFGO_ELIMINATION_WIN_REWARD		3250
 #define TFGO_CAPPER_BONUS				150
-#define TFGO_SUICIDE_PENALTY			-300
+#define TFGO_SUICIDE_PENALTY			-250
 
 #define TFGO_BOMB_DETONATION_TIME		45.0
 
@@ -58,8 +58,8 @@ int g_iDefaultWeaponIndex[][] =  {
 	{ 17, -1, -1, -1, -1, -1 },  //Medic
 	{ -1, 11, -1, -1, -1, -1 },  //Heavy
 	{ -1, 12, -1, -1, -1, -1 },  //Pyro
-	{ -1, -1, -1, 27, 30, -1 },  //Spy
-	{ 9, 22, -1, -1, 26, 28 } //Engineer
+	{ 24, -1, -1, -1, -1, -1 },  //Spy
+	{ 9, 22, -1, -1, -1, -1 } //Engineer
 };
 
 /**
@@ -75,8 +75,8 @@ int g_bSlotsToKeep[][] =  {
 	{ false, false, true, false, false, false },  //Medic
 	{ false, false, true, false, false, false },  //Heavy
 	{ false, false, true, false, false, false },  //Pyro
-	{ true, false, false, false, false, false },  //Spy
-	{ false, false, true, false, false, false } //Engineer
+	{ false, false, false, true, true, true },  //Spy
+	{ false, false, true, false, true, true } //Engineer
 };
 
 int g_iLoadoutWeaponIndex[TF_MAXPLAYERS + 1][TF_NUMCLASSES + 1][TF_NUMSLOTS + 1];
@@ -142,9 +142,9 @@ public void OnPluginStart()
 	LoadTranslations("common.phrases.txt");
 	LoadTranslations("tfgo.phrases.txt");
 	
-	for (int client = 0; client < sizeof(g_iLoadoutWeaponIndex[]); client++)
-	for (int class = 0; class < sizeof(g_iLoadoutWeaponIndex[][]); class++)
-	for (int slot = 0; slot < sizeof(g_iLoadoutWeaponIndex[][][]); slot++)
+	for (int client = 0; client < sizeof(g_iLoadoutWeaponIndex); client++)
+	for (int class = 0; class < sizeof(g_iLoadoutWeaponIndex[]); class++)
+	for (int slot = 0; slot < sizeof(g_iLoadoutWeaponIndex[][]); slot++)
 	g_iLoadoutWeaponIndex[client][class][slot] = -1;
 	
 	SDK_Init();
@@ -246,6 +246,16 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 			TFGOPlayer(capper).AddToBalance(TFGO_CAPPER_BONUS, "Award for planting bomb");
 		}
 		
+		// Spawn bomb prop
+		float pos[3];
+		float ang[3];
+		GetClientAbsOrigin(cappers[0], pos);
+		GetClientAbsAngles(cappers[0], ang);
+		int bomb = CreateEntityByName("prop_dynamic_override");
+		SetEntityModel(bomb, "models/props_td/atom_bomb.mdl");
+		DispatchSpawn(bomb);
+		TeleportEntity(bomb, pos, ang, NULL_VECTOR);
+		
 		// We need to kill this or the server will force a map change on cap
 		int game_end;
 		while ((game_end = FindEntityByClassname(game_end, "game_end")) > -1)
@@ -254,7 +264,6 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 		}
 		
 		// Superceding SetWinningTeam causes arena mode to create a game_text entity announcing the winning team
-		
 		int game_text;
 		while ((game_text = FindEntityByClassname(game_text, "game_text")) > -1)
 		{
@@ -272,15 +281,7 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 			}
 		}
 		
-		StopRoundActionMusic();
-		StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/bombtenseccount.mp3");
-		EmitSoundToAll("tfgo/music/valve_csgo_01/bombplanted.mp3");
-		PlayAnnouncerBombAlert();
-		ShoutBombWarnings();
-		
-		g_h10SecondBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 10.0, Play10SecondBombWarning);
-		g_hBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME, DetonateBomb);
-		
+		// Add time
 		int team_round_timer = FindEntityByClassname(-1, "team_round_timer");
 		if (team_round_timer > -1)
 		{
@@ -288,6 +289,20 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 			SetVariantInt(RoundToCeil(GetGameTime() - g_iRoundStartTime) + 45);
 			AcceptEntityInput(team_round_timer, "SetTime"); // AddTime does not work for arena mode
 		}
+		
+		// Set up timers
+		g_h10SecondBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 10.0, Play10SecondBombWarning);
+		g_hBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME, DetonateBomb);
+		
+		if (g_h10SecondRoundTimer != null)
+			delete g_h10SecondRoundTimer;
+		
+		// Play Sounds
+		StopRoundActionMusic();
+		StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/bombtenseccount.mp3");
+		EmitSoundToAll("tfgo/music/valve_csgo_01/bombplanted.mp3");
+		PlayAnnouncerBombAlert();
+		ShoutBombWarnings();
 	}
 	else // defused
 	{
@@ -351,7 +366,6 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	if (g_bBombPlanted)
 	{
 		int victimTeam = GetClientTeam(GetClientOfUserId(event.GetInt("userid")));
-		PrintToServer("alive team count in %d: %d", victimTeam, GetAliveTeamCount(victimTeam));
 		if (g_iBombPlanterTeam != victimTeam && GetAliveTeamCount(victimTeam) - 1 <= 0) // -1 because it doesn't work properly in player_death
 		{
 			// End the round if every member of the non-planting team died
@@ -360,9 +374,23 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 		}
 	}
 	
+	if (victim.ActiveBuyMenu != null)
+	{
+		victim.ActiveBuyMenu.Cancel();
+	}
+	victim.ClearLoadout();
+	
 	// TODO restore previous weapons IF this death was a suicide in the respawn room
 	
 	return Plugin_Continue;
+}
+
+public void OnClientDisconnect(int client)
+{
+	if (g_bBombPlanted)
+	{
+		// TODO team alive check to  end the round during bomb plant
+	}
 }
 
 public void OnClientConnected(int client)
@@ -435,6 +463,9 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	if (g_h10SecondRoundTimer != null)
 		delete g_h10SecondRoundTimer;
 	
+	if (g_h10SecondBombTimer != null)
+		delete g_h10SecondBombTimer;
+	
 	// Everyone who survives the post-victory time gets to keep their weapons
 	CreateTimer(mp_bonusroundtime.FloatValue - 0.1, SaveWeaponsForAlivePlayers);
 }
@@ -445,10 +476,17 @@ public Action SaveWeaponsForAlivePlayers(Handle timer)
 	{
 		if (IsClientInGame(client) && IsPlayerAlive(client))
 		{
-			for (int slot = 0; slot <= 5; slot++)
+			for (int slot = 0; slot < TF_NUMSLOTS; slot++)
 			{
-				int defindex = GetPlayerWeaponSlot(client, slot);
-				PrintToServer("%d still had %d", client, defindex);
+				int defindex = TF2_GetItemInSlot(client, slot);
+				if (defindex > -1)
+				{
+					TFGOWeapon weapon = TFGOWeapon(defindex);
+					if (weapon.IsInBuyMenu())
+					{
+						TFGOPlayer(client).AddToLoadout(defindex);
+					}
+				}
 			}
 		}
 	}
@@ -464,6 +502,8 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 		player.ShowMoneyHudDisplay(tfgo_buytime.FloatValue);
 		player.ApplyLoadout();
 	}
+	
+	return Plugin_Handled;
 }
 
 public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontBroadcast)
