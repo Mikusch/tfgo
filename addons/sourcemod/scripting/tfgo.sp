@@ -247,15 +247,16 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 		}
 		
 		// We need to kill this or the server will force a map change on cap
-		int game_end = FindEntityByClassname(-1, "game_end");
-		if (game_end > -1)
+		int game_end;
+		while ((game_end = FindEntityByClassname(game_end, "game_end")) > -1)
 		{
 			AcceptEntityInput(game_end, "Kill");
 		}
 		
 		// Superceding SetWinningTeam causes arena mode to create a game_text entity announcing the winning team
-		int game_text = FindEntityByClassname(-1, "game_text");
-		if (game_text > -1)
+		
+		int game_text;
+		while ((game_text = FindEntityByClassname(game_text, "game_text")) > -1)
 		{
 			char m_iszMessage[256];
 			GetEntPropString(game_text, Prop_Data, "m_iszMessage", m_iszMessage, sizeof(m_iszMessage));
