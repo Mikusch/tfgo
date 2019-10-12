@@ -88,7 +88,6 @@ bool g_bRoundStarted;
 bool g_bRoundActive;
 bool g_bBombPlanted;
 int g_iBombPlanterTeam;
-float g_iRoundStartTime;
 
 // ConVars
 ConVar tfgo_buytime;
@@ -285,14 +284,13 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 		int team_round_timer = FindEntityByClassname(-1, "team_round_timer");
 		if (team_round_timer > -1)
 		{
-			// Ceil to avoid stalemates from time running out before timer can fire
-			SetVariantInt(RoundToCeil(GetGameTime() - g_iRoundStartTime) + 45);
-			AcceptEntityInput(team_round_timer, "SetTime"); // AddTime does not work for arena mode
+			SetVariantInt(45 + 1);
+			AcceptEntityInput(team_round_timer, "SetTime");
 		}
 		
 		// Set up timers
 		g_h10SecondBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 10.0, Play10SecondBombWarning);
-		g_hBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME, DetonateBomb);
+		g_hBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME, DetonateBomb, EntIndexToEntRef(bomb));
 		
 		if (g_h10SecondRoundTimer != null)
 			delete g_h10SecondRoundTimer;
@@ -316,9 +314,14 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 	g_bBombPlanted = !g_bBombPlanted;
 }
 
-public Action DetonateBomb(Handle timer)
+public Action DetonateBomb(Handle timer, int bombProp)
 {
 	g_bBombPlanted = false;
+	
+	float vec[3];
+	GetEntPropVector(bombProp, Prop_Send, "m_vecOrigin", vec);
+	int tf_generic_bomb = TF2_Explode(_, vec, 9999.0, 750.0, "mvm_hatch_destroy", "mvm/mvm_bomb_explode.wav");
+	RemoveEntity(bombProp);
 }
 
 public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool dontBroadcast)
@@ -335,7 +338,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	int customkill = event.GetInt("customkill");
 	int assister = event.GetInt("assister");
 	
-	if (g_bRoundActive)
+	if (g_bRoundActive && attacker.Client >= 1)
 	{
 		if (customkill == TF_CUSTOM_SUICIDE && attacker == victim)
 		{
@@ -509,7 +512,6 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
 	g_bRoundActive = true;
-	g_iRoundStartTime = GetGameTime();
 	g_h10SecondRoundTimer = CreateTimer(tf_arena_round_time.FloatValue - 12.7, Play10SecondWarning);
 }
 

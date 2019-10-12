@@ -14,34 +14,24 @@ stock int IntAbs(int num)
 	return num;
 }
 
-stock int TF2_SpawnParticle(char[] sParticle, float vecOrigin[3] = NULL_VECTOR, float flAngles[3] = NULL_VECTOR, bool bActivate = true, int iEntity = 0, int iControlPoint = 0)
+// Taken from VSH Rewrite
+stock int TF2_Explode(int iAttacker = -1, float flPos[3], float flDamage, float flRadius, const char[] strParticle, const char[] strSound)
 {
-	int iParticle = CreateEntityByName("info_particle_system");
-	TeleportEntity(iParticle, vecOrigin, flAngles, NULL_VECTOR);
-	DispatchKeyValue(iParticle, "effect_name", sParticle);
-	DispatchSpawn(iParticle);
-	
-	if (0 < iEntity && IsValidEntity(iEntity))
-	{
-		SetVariantString("!activator");
-		AcceptEntityInput(iParticle, "SetParent", iEntity);
-	}
-	
-	if (0 < iControlPoint && IsValidEntity(iControlPoint))
-	{
-		//Array netprop, but really only need element 0 anyway
-		SetEntPropEnt(iParticle, Prop_Send, "m_hControlPointEnts", iControlPoint, 0);
-		SetEntProp(iParticle, Prop_Send, "m_iControlPointParents", iControlPoint, _, 0);
-	}
-	
-	if (bActivate)
-	{
-		ActivateEntity(iParticle);
-		AcceptEntityInput(iParticle, "Start");
-	}
-	
-	//Return ref of entity
-	return EntIndexToEntRef(iParticle);
+	int iBomb = CreateEntityByName("tf_generic_bomb");
+	DispatchKeyValueVector(iBomb, "origin", flPos);
+	DispatchKeyValueFloat(iBomb, "damage", flDamage);
+	DispatchKeyValueFloat(iBomb, "radius", flRadius);
+	DispatchKeyValue(iBomb, "health", "1");
+	DispatchKeyValue(iBomb, "explode_particle", strParticle);
+	DispatchKeyValue(iBomb, "sound", strSound);
+	DispatchSpawn(iBomb);
+
+	if (iAttacker == -1)
+		AcceptEntityInput(iBomb, "Detonate");
+	else
+		SDKHooks_TakeDamage(iBomb, 0, iAttacker, 9999.0);
+		
+	return iBomb;
 }
 
 stock void TF2_RemoveItemInSlot(int client, int slot)
