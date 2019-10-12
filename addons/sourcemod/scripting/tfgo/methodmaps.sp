@@ -95,8 +95,9 @@ methodmap TFGOPlayer
 	}
 	
 	/**
-	 * Adds balance to this client and displays a
-	 * chat message notifying them of the amount earned.
+	 * Adds to the balance of this client and displays a chat message notifying them of the amount earned.
+	 *
+	 * Passing a negative value will remove balance instead.
 	 * 
 	 * @param val		the amount to add
 	 * @param reason	(optional) the reason for this operation
@@ -104,35 +105,20 @@ methodmap TFGOPlayer
 	public void AddToBalance(int val, const char[] reason = "")
 	{
 		this.Balance += val;
-		if (strlen(reason) > 0)
+		if (val >= 0)
 		{
-			CPrintToChat(this.Client, "{money}+$%d{default}: %s.", val, reason);
+			if (strlen(reason) > 0)
+				CPrintToChat(this.Client, "{money}+$%d{default}: %s.", val, reason);
+			else
+				CPrintToChat(this.Client, "{money}+$%d{default}", val);
 		}
 		else
 		{
-			CPrintToChat(this.Client, "{money}+$%d{default}", val);
-		}
-		
-		this.ShowMoneyHudDisplay(15.0);
-	}
-	
-	/**
-	 * Removes balance from this client and displays a
-	 * chat message notifying them of the amount removed.
-	 * 
-	 * @param val		the amount to add
-	 * @param reason	(optional) the reason for this operation
-	 */
-	public void RemoveFromBalance(int val, const char[] reason = "")
-	{
-		this.Balance -= val;
-		if (strlen(reason) > 0)
-		{
-			CPrintToChat(this.Client, "{alert}-$%d{default}: %s.", val, reason);
-		}
-		else
-		{
-			CPrintToChat(this.Client, "{alert}-$%d{default}", val);
+			val = IntAbs(val);
+			if (strlen(reason) > 0)
+				CPrintToChat(this.Client, "{alert}-$%d{default}: %s.", val, reason);
+			else
+				CPrintToChat(this.Client, "{alert}-$%d{default}", val);
 		}
 		
 		this.ShowMoneyHudDisplay(15.0);
@@ -286,24 +272,6 @@ methodmap TFGOTeam
 			if (IsClientInGame(i) && TF2_GetClientTeam(i) == this.Team)
 			{
 				TFGOPlayer(i).AddToBalance(val, reason);
-			}
-		}
-	}
-	
-	/**
-	 * Removes balance from every client in this team and displays
-	 * a chat message notifying them of the amount removed.
-	 * 
-	 * @param val		the amount to add
-	 * @param reason	(optional) the reason for this operation
-	 */
-	public void RemoveFromTeamBalance(int val, const char[] reason = "")
-	{
-		for (int i = 1; i <= MaxClients; i++)
-		{
-			if (IsClientInGame(i) && TF2_GetClientTeam(i) == this.Team)
-			{
-				TFGOPlayer(i).RemoveFromBalance(val, reason);
 			}
 		}
 	}

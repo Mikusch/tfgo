@@ -27,7 +27,7 @@
 #define TFGO_CAPTURE_WIN_REWARD			3500
 #define TFGO_ELIMINATION_WIN_REWARD		3250
 #define TFGO_CAPPER_BONUS				150
-#define TFGO_SUICIDE_PENALTY			300
+#define TFGO_SUICIDE_PENALTY			-300
 
 #define TFGO_BOMB_DETONATION_TIME		45.0
 
@@ -240,12 +240,10 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 		// Award capture bonus to cappers
 		char[] cappers = new char[MaxClients];
 		event.GetString("cappers", cappers, MaxClients);
-		for (int i = 1; i < MaxClients; i++)
+		for (int i = 0; i < strlen(cappers); i++)
 		{
-			if (cappers[i] == i)
-			{
-				TFGOPlayer(cappers[i]).AddToBalance(TFGO_CAPPER_BONUS, "Award for planting bomb");
-			}
+			int capper = cappers[i];
+			TFGOPlayer(capper).AddToBalance(TFGO_CAPPER_BONUS, "Award for planting bomb");
 		}
 		
 		// We need to kill this or the server will force a map change on cap
@@ -261,11 +259,11 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 		{
 			char m_iszMessage[256];
 			GetEntPropString(game_text, Prop_Data, "m_iszMessage", m_iszMessage, sizeof(m_iszMessage));
-
+			
 			char message[256];
 			GetTeamName(event.GetInt("team"), message, sizeof(message));
 			StrCat(message, sizeof(message), " Wins the Game!");
-
+			
 			// To not mess with any other game_text entities
 			if (strcmp(m_iszMessage, message) == 0)
 			{
@@ -294,7 +292,7 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 	{
 		if (g_h10SecondBombTimer != null)
 			delete g_h10SecondBombTimer;
-
+		
 		if (g_hBombTimer != null)
 			delete g_hBombTimer;
 	}
@@ -325,7 +323,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	{
 		if (customkill == TF_CUSTOM_SUICIDE && attacker == victim)
 		{
-			attacker.RemoveFromBalance(TFGO_SUICIDE_PENALTY, "Penalty for suiciding");
+			attacker.AddToBalance(TFGO_SUICIDE_PENALTY, "Penalty for suiciding");
 		}
 		else
 		{
@@ -432,7 +430,7 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	// Reset timers
 	if (g_hBuytimeTimer != null)
 		delete g_hBuytimeTimer;
-		
+	
 	if (g_h10SecondRoundTimer != null)
 		delete g_h10SecondRoundTimer;
 	

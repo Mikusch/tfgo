@@ -8,6 +8,12 @@ stock int GetAliveTeamCount(int team)
 	return number;
 }
 
+stock int IntAbs(int num)
+{
+	if (num < 0)return num * -1;
+	return num;
+}
+
 stock int TF2_SpawnParticle(char[] sParticle, float vecOrigin[3] = NULL_VECTOR, float flAngles[3] = NULL_VECTOR, bool bActivate = true, int iEntity = 0, int iControlPoint = 0)
 {
 	int iParticle = CreateEntityByName("info_particle_system");
