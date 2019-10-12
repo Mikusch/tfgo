@@ -11,21 +11,23 @@
 #pragma newdecls required
 
 // TF2 stuff
-#define TF_MAXPLAYERS 32
-#define TF_NUMTEAMS 3
-#define TF_NUMCLASSES  9
-#define TF_WINREASON_CAPTURE 1
-#define TF_WINREASON_ELIMINATION  2
+#define TF_MAXPLAYERS					32
+#define TF_NUMTEAMS						3
+#define TF_NUMCLASSES					9
+#define TF_NUMSLOTS						6
+#define TF_ARENA_WINREASON_CAPTURE		1
+#define TF_ARENA_WINREASON_ELIMINATION	2
 
 // TFGO stuff
-#define TFGO_MINLOSESTREAK 0
-#define TFGO_MAXLOSESTREAK 4
-
+#define TFGO_MINLOSESTREAK				0
+#define TFGO_MAXLOSESTREAK				4
 #define TFGO_STARTING_BALANCE			800
-#define TFGO_MIN_BALANCE 				0
-#define TFGO_MAX_BALANCE 				16000
+#define TFGO_MIN_BALANCE				0
+#define TFGO_MAX_BALANCE				16000
 #define TFGO_CAPTURE_WIN_REWARD			3500
 #define TFGO_ELIMINATION_WIN_REWARD		3250
+#define TFGO_CAPPER_BONUS				150
+#define TFGO_SUICIDE_PENALTY			300
 
 #define TFGO_BOMB_DETONATION_TIME		45.0
 
@@ -37,8 +39,8 @@ int g_iBalance[TF_MAXPLAYERS + 1] =  { TFGO_STARTING_BALANCE, ... };
 Handle g_hHudSync;
 Handle g_hBuytimeTimer;
 Handle g_h10SecondRoundTimer;
-Handle g_hBombTimer;
 Handle g_h10SecondBombTimer;
+Handle g_hBombTimer;
 
 // Other handles
 Menu g_hActiveBuyMenus[TF_MAXPLAYERS + 1];
@@ -62,7 +64,7 @@ int g_iDefaultWeaponIndex[][] =  {
 
 /**
 If set to false, the weapon in the slot will be removed
-Weapons that have not been assigned a default and are set to "true" in this map can be freely chosen
+Weapons that have not been assigned a default and are set to "true" in this array can be freely chosen
 **/
 int g_bSlotsToKeep[][] =  {
 	{ false, false, false, false, false, false },  //Unknown
@@ -77,7 +79,7 @@ int g_bSlotsToKeep[][] =  {
 	{ false, false, true, false, false, false } //Engineer
 };
 
-int g_iLoadoutWeaponIndex[TF_MAXPLAYERS + 1][9 + 1][6 + 1];
+int g_iLoadoutWeaponIndex[TF_MAXPLAYERS + 1][TF_NUMCLASSES + 1][TF_NUMSLOTS + 1];
 
 // Game state
 bool g_bWaitingForPlayers;
@@ -86,7 +88,7 @@ bool g_bRoundStarted;
 bool g_bRoundActive;
 bool g_bBombPlanted;
 int g_iBombPlanterTeam;
-float g_iRoundStartTime; // because team_round_timer in arena doesn't support AddTime
+float g_iRoundStartTime;
 
 // ConVars
 ConVar tfgo_buytime;
@@ -118,10 +120,13 @@ enum struct TFGOWeaponEntry
 ArrayList weaponList;
 StringMap killRewardMap;
 
+
+#include "tfgo/stocks.sp"
 #include "tfgo/methodmaps.sp"
 #include "tfgo/sound.sp"
 #include "tfgo/config.sp"
 #include "tfgo/buymenu.sp"
+
 
 public Plugin myinfo =  {
 	name = "Team Fortress: Global Offensive", 
@@ -145,10 +150,6 @@ public void OnPluginStart()
 	SDK_Init();
 	
 	g_hHudSync = CreateHudSynchronizer();
-	
-	//g_sCurrencypackPlayerMap = CreateTrie();
-	//g_sCurrencypackValueMap = CreateTrie();
-	//g_iCashToKillerMap = CreateTrie();
 	
 	HookEvent("player_death", Event_Player_Death);
 	HookEvent("arena_win_panel", Event_Arena_Win_Panel);
@@ -177,6 +178,7 @@ public void OnPluginStart()
 
 public void OnAllPluginsLoaded()
 {
+	// Reading config requires TF2 econ data dependency to be loaded
 	Config_Init();
 }
 
@@ -190,6 +192,12 @@ public void OnMapStart()
 	DHookGamerules(g_hSetWinningTeam, false);
 	PrecacheSounds();
 	PrecacheModels();
+	
+	int func_respawnroom = FindEntityByClassname(-1, "func_respawnroom");
+	if (func_respawnroom <= -1)
+	{
+		LogMessage("This map is missing a func_respawnroom entity; cannot define a buy zone");
+	}
 }
 
 public void OnEntityCreated(int entity, const char[] classname)
@@ -228,18 +236,48 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 	if (!g_bBombPlanted) // planted
 	{
 		g_iBombPlanterTeam = event.GetInt("team");
-		// TODO: Cappers get $150 bonus
 		
+		// Award capture bonus to cappers
+		char[] cappers = new char[MaxClients];
+		event.GetString("cappers", cappers, MaxClients);
+		for (int i = 1; i < MaxClients; i++)
+		{
+			if (cappers[i] == i)
+			{
+				TFGOPlayer(cappers[i]).AddToBalance(TFGO_CAPPER_BONUS, "Award for planting bomb");
+			}
+		}
+		
+		// We need to kill this or the server will force a map change on cap
 		int game_end = FindEntityByClassname(-1, "game_end");
 		if (game_end > -1)
 		{
 			AcceptEntityInput(game_end, "Kill");
 		}
 		
+		// Superceding SetWinningTeam causes arena mode to create a game_text entity announcing the winning team
+		int game_text = FindEntityByClassname(-1, "game_text");
+		if (game_text > -1)
+		{
+			char m_iszMessage[256];
+			GetEntPropString(game_text, Prop_Data, "m_iszMessage", m_iszMessage, sizeof(m_iszMessage));
+
+			char message[256];
+			GetTeamName(event.GetInt("team"), message, sizeof(message));
+			StrCat(message, sizeof(message), " Wins the Game!");
+
+			// To not mess with any other game_text entities
+			if (strcmp(m_iszMessage, message) == 0)
+			{
+				AcceptEntityInput(game_text, "Kill");
+			}
+		}
+		
 		StopRoundActionMusic();
 		StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/bombtenseccount.mp3");
 		EmitSoundToAll("tfgo/music/valve_csgo_01/bombplanted.mp3");
 		PlayAnnouncerBombAlert();
+		ShoutBombWarnings();
 		
 		g_h10SecondBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 10.0, Play10SecondBombWarning);
 		g_hBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME, DetonateBomb);
@@ -255,15 +293,10 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 	else // defused
 	{
 		if (g_h10SecondBombTimer != null)
-		{
-			KillTimer(g_h10SecondBombTimer);
 			delete g_h10SecondBombTimer;
-		}
+
 		if (g_hBombTimer != null)
-		{
-			KillTimer(g_hBombTimer);
 			delete g_hBombTimer;
-		}
 	}
 	
 	g_bBombPlanted = !g_bBombPlanted;
@@ -292,7 +325,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	{
 		if (customkill == TF_CUSTOM_SUICIDE && attacker == victim)
 		{
-			attacker.RemoveFromBalance(300, "Penalty for suiciding");
+			attacker.RemoveFromBalance(TFGO_SUICIDE_PENALTY, "Penalty for suiciding");
 		}
 		else
 		{
@@ -366,7 +399,7 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	int winReason = event.GetInt("winreason");
 	switch (winReason)
 	{
-		case TF_WINREASON_CAPTURE:
+		case TF_ARENA_WINREASON_CAPTURE:
 		{
 			if (g_iBombPlanterTeam == event.GetInt("winning_team"))
 			{
@@ -384,7 +417,7 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 			winningTeam.AddToTeamBalance(TFGO_CAPTURE_WIN_REWARD, "Team award for capturing all control points");
 		}
 		*/
-		case TF_WINREASON_ELIMINATION:
+		case TF_ARENA_WINREASON_ELIMINATION:
 		{
 			winningTeam.AddToTeamBalance(TFGO_ELIMINATION_WIN_REWARD, "Team award for eliminating the enemy team");
 		}
@@ -398,15 +431,10 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	
 	// Reset timers
 	if (g_hBuytimeTimer != null)
-	{
-		KillTimer(g_hBuytimeTimer);
 		delete g_hBuytimeTimer;
-	}
+		
 	if (g_h10SecondRoundTimer != null)
-	{
-		KillTimer(g_h10SecondRoundTimer);
 		delete g_h10SecondRoundTimer;
-	}
 	
 	// Everyone who survives the post-victory time gets to keep their weapons
 	CreateTimer(mp_bonusroundtime.FloatValue - 0.1, SaveWeaponsForAlivePlayers);
@@ -425,16 +453,6 @@ public Action SaveWeaponsForAlivePlayers(Handle timer)
 			}
 		}
 	}
-}
-
-stock int GetAliveTeamCount(int team)
-{
-	int number = 0;
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if (IsClientInGame(i) && IsPlayerAlive(i) && GetClientTeam(i) == team)number++;
-	}
-	return number;
 }
 
 public Action Event_Post_Inventory_Application(Event event, const char[] name, bool dontBroadcast)
@@ -495,6 +513,17 @@ public Action OnBuyTimeExpire(Handle timer)
 	
 	// TODO only show this while in buyzone
 	CPrintToChatAll("{alert}Alert: {default}The %d second buy period has expired", tfgo_buytime.IntValue);
+}
+
+public Action Event_Teamplay_Waiting_Begins(Event event, const char[] sName, bool bDontBroadcast)
+{
+	g_bWaitingForPlayers = true;
+}
+
+public Action Event_Teamplay_Waiting_Ends(Event event, const char[] sName, bool bDontBroadcast)
+{
+	g_bWaitingForPlayers = false;
+	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/chooseteam.mp3");
 }
 
 public Action Entity_StartTouch_RespawnRoom(int entity, int client)
@@ -563,32 +592,12 @@ void Toggle_ConVars(bool toggle)
 	}
 }
 
-stock void SDK_EquipWearable(int client, int iWearable)
-{
-	if (g_hSDKEquipWearable != null)
-		SDKCall(g_hSDKEquipWearable, client, iWearable);
-}
-
-stock void SDK_RemoveWearable(int client, int iWearable)
-{
-	if (g_hSDKRemoveWearable != null)
-		SDKCall(g_hSDKRemoveWearable, client, iWearable);
-}
-
-stock int SDK_GetEquippedWearable(int client, int iSlot)
-{
-	if (g_hSDKGetEquippedWearable != null)
-		return SDKCall(g_hSDKGetEquippedWearable, client, iSlot);
-	
-	return -1;
-}
-
 void SDK_Init()
 {
-	Handle hGameData = LoadGameConfigFile("tfgo");
+	Handle config = LoadGameConfigFile("tfgo");
 	int offset;
 	
-	offset = GameConfGetOffset(hGameData, "SetWinningTeam");
+	offset = GameConfGetOffset(config, "SetWinningTeam");
 	g_hSetWinningTeam = DHookCreate(offset, HookType_GameRules, ReturnType_Void, ThisPointer_Ignore, Hook_SetWinningTeam);
 	DHookAddParam(g_hSetWinningTeam, HookParamType_Int);
 	DHookAddParam(g_hSetWinningTeam, HookParamType_Int);
@@ -596,163 +605,39 @@ void SDK_Init()
 	DHookAddParam(g_hSetWinningTeam, HookParamType_Bool);
 	DHookAddParam(g_hSetWinningTeam, HookParamType_Bool);
 	DHookAddParam(g_hSetWinningTeam, HookParamType_Bool);
+	if (g_hSetWinningTeam == null)
+		LogMessage("Failed to create DHook: SetWinningTeam");
 	
-	// This function is used to equip wearables 
 	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBasePlayer::EquipWearable");
+	PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "CBasePlayer::EquipWearable");
 	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
 	g_hSDKEquipWearable = EndPrepSDKCall();
 	if (g_hSDKEquipWearable == null)
-		LogMessage("Failed to create call: CBasePlayer::EquipWearable!");
+		LogMessage("Failed to create call: CBasePlayer::EquipWearable");
 	
-	// This function is used to remove a player wearable properly
 	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBasePlayer::RemoveWearable");
+	PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "CBasePlayer::RemoveWearable");
 	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
 	g_hSDKRemoveWearable = EndPrepSDKCall();
 	if (g_hSDKRemoveWearable == null)
-		LogMessage("Failed to create call: CBasePlayer::RemoveWearable!");
+		LogMessage("Failed to create call: CBasePlayer::RemoveWearable");
 	
-	// This function is used to get wearable equipped in loadout slots
 	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::GetEquippedWearableForLoadoutSlot");
+	PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CTFPlayer::GetEquippedWearableForLoadoutSlot");
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
 	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
 	g_hSDKGetEquippedWearable = EndPrepSDKCall();
 	if (g_hSDKGetEquippedWearable == null)
-		LogMessage("Failed to create call: CTFPlayer::GetEquippedWearableForLoadoutSlot!");
+		LogMessage("Failed to create call: CTFPlayer::GetEquippedWearableForLoadoutSlot");
 	
-	//This function is used to get weapon max ammo
 	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::GetMaxAmmo");
+	PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CTFPlayer::GetMaxAmmo");
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
 	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
 	g_hSDKGetMaxAmmo = EndPrepSDKCall();
 	if (g_hSDKGetMaxAmmo == null)
-		LogMessage("Failed to create call: CTFPlayer::GetMaxAmmo!");
+		LogMessage("Failed to create call: CTFPlayer::GetMaxAmmo");
 	
-	delete hGameData;
-}
-
-stock void TF2_RemoveItemInSlot(int client, int slot)
-{
-	TF2_RemoveWeaponSlot(client, slot);
-	
-	int iWearable = SDK_GetEquippedWearable(client, slot);
-	if (iWearable > MaxClients)
-	{
-		SDK_RemoveWearable(client, iWearable);
-		AcceptEntityInput(iWearable, "Kill");
-	}
-}
-
-stock int SDK_GetMaxAmmo(int iClient, int iSlot)
-{
-	if (g_hSDKGetMaxAmmo != null)
-		return SDKCall(g_hSDKGetMaxAmmo, iClient, iSlot, -1);
-	return -1;
-}
-
-stock int TF2_CreateAndEquipWeapon(int iClient, int defindex)
-{
-	char sClassname[256];
-	TF2Econ_GetItemClassName(defindex, sClassname, sizeof(sClassname));
-	TF2Econ_TranslateWeaponEntForClass(sClassname, sizeof(sClassname), TF2_GetPlayerClass(iClient));
-	
-	int iWeapon = CreateEntityByName(sClassname);
-	if (IsValidEntity(iWeapon))
-	{
-		SetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex", defindex);
-		SetEntProp(iWeapon, Prop_Send, "m_bInitialized", 1);
-		
-		DispatchSpawn(iWeapon);
-		SetEntProp(iWeapon, Prop_Send, "m_bValidatedAttachedEntity", true);
-		
-		if (StrContains(sClassname, "tf_wearable") == 0)
-			SDK_EquipWearable(iClient, iWeapon);
-		else
-			EquipPlayerWeapon(iClient, iWeapon);
-	}
-	
-	// TODO: Test following code
-	
-	if (StrContains(sClassname, "tf_wearable") == 0)
-	{
-		if (GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") <= MaxClients)
-		{
-			//Looks like player's active weapon got replaced into wearable, fix that by using melee
-			int iMelee = GetPlayerWeaponSlot(iClient, TFWeaponSlot_Melee);
-			SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iMelee);
-		}
-	}
-	else
-	{
-		SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iWeapon);
-	}
-	
-	//Set ammo as weapon's max ammo
-	if (HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType")) //Wearables dont have ammo netprop
-	{
-		int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
-		if (iAmmoType > -1)
-		{
-			//We want to set gas passer ammo empty, because thats how normal gas passer works
-			int iMaxAmmo;
-			if (defindex == 1180)
-			{
-				iMaxAmmo = 0;
-				SetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", 0.0, 1);
-			}
-			else
-			{
-				iMaxAmmo = SDK_GetMaxAmmo(iClient, iAmmoType);
-			}
-			
-			SetEntProp(iClient, Prop_Send, "m_iAmmo", iMaxAmmo, _, iAmmoType);
-		}
-	}
-	
-	return iWeapon;
-}
-
-public Action Event_Teamplay_Waiting_Begins(Event event, const char[] sName, bool bDontBroadcast)
-{
-	g_bWaitingForPlayers = true;
-}
-
-public Action Event_Teamplay_Waiting_Ends(Event event, const char[] sName, bool bDontBroadcast)
-{
-	g_bWaitingForPlayers = false;
-	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/chooseteam.mp3");
-}
-
-stock int TF2_SpawnParticle(char[] sParticle, float vecOrigin[3] = NULL_VECTOR, float flAngles[3] = NULL_VECTOR, bool bActivate = true, int iEntity = 0, int iControlPoint = 0)
-{
-	int iParticle = CreateEntityByName("info_particle_system");
-	TeleportEntity(iParticle, vecOrigin, flAngles, NULL_VECTOR);
-	DispatchKeyValue(iParticle, "effect_name", sParticle);
-	DispatchSpawn(iParticle);
-	
-	if (0 < iEntity && IsValidEntity(iEntity))
-	{
-		SetVariantString("!activator");
-		AcceptEntityInput(iParticle, "SetParent", iEntity);
-	}
-	
-	if (0 < iControlPoint && IsValidEntity(iControlPoint))
-	{
-		//Array netprop, but really only need element 0 anyway
-		SetEntPropEnt(iParticle, Prop_Send, "m_hControlPointEnts", iControlPoint, 0);
-		SetEntProp(iParticle, Prop_Send, "m_iControlPointParents", iControlPoint, _, 0);
-	}
-	
-	if (bActivate)
-	{
-		ActivateEntity(iParticle);
-		AcceptEntityInput(iParticle, "Start");
-	}
-	
-	//Return ref of entity
-	return EntIndexToEntRef(iParticle);
+	delete config;
 }

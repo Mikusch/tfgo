@@ -15,21 +15,45 @@ static char g_sBombPlantedAnnouncerAlerts[][PLATFORM_MAX_PATH] =  {
 };
 
 static char g_sBombPlantedEngineerAlerts[][PLATFORM_MAX_PATH] =  {
-	
-};
-
-static char g_sBombPlantedMedicAlerts[][PLATFORM_MAX_PATH] =  {
-	
+	"vo/engineer_mvm_bomb_see01.mp3", 
+	"vo/engineer_mvm_bomb_see02.mp3", 
+	"vo/engineer_mvm_bomb_see03.mp3"
 };
 
 static char g_sBombPlantedHeavyAlerts[][PLATFORM_MAX_PATH] =  {
-	
+	"vo/heavy_mvm_bomb_see01.mp3"
+};
+
+static char g_sBombPlantedMedicAlerts[][PLATFORM_MAX_PATH] =  {
+	"vo/medic_mvm_bomb_see01.mp3", 
+	"vo/medic_mvm_bomb_see02.mp3", 
+	"vo/medic_mvm_bomb_see03.mp3"
+};
+
+static char g_sBombPlantedSoldierAlerts[][PLATFORM_MAX_PATH] =  {
+	"vo/soldier_mvm_bomb_see01.mp3", 
+	"vo/soldier_mvm_bomb_see02.mp3", 
+	"vo/soldier_mvm_bomb_see03.mp3", 
+};
+
+static char g_sBombDefusedEngineerResponses[][PLATFORM_MAX_PATH] =  {
+	"vo/engineer_mvm_bomb_destroyed02.mp3"
+};
+
+static char g_sBombDefusedHeavyResponses[][PLATFORM_MAX_PATH] =  {
+	"vo/heavy_mvm_bomb_destroyed01.mp3"
+};
+
+static char g_sBombDefusedMedicResponses[][PLATFORM_MAX_PATH] =  {
+	"vo/medic_mvm_bomb_destroyed01.mp3"
+};
+
+static char g_sBombDefusedSoldierResponses[][PLATFORM_MAX_PATH] =  {
+	"vo/soldier_mvm_bomb_destroyed02.mp3"
 };
 
 stock void PrecacheSounds()
 {
-	PrecacheSound("mvm/mvm_money_pickup.wav");
-	PrecacheSound("mvm/mvm_money_vanish.wav");
 	PrecacheSound("tfgo/music/valve_csgo_01/wonround.mp3");
 	PrecacheSound("tfgo/music/valve_csgo_01/lostround.mp3");
 	PrecacheSound("tfgo/music/valve_csgo_01/roundtenseccount.mp3");
@@ -37,6 +61,7 @@ stock void PrecacheSounds()
 	PrecacheSound("tfgo/music/valve_csgo_01/chooseteam.mp3");
 	PrecacheSound("tfgo/music/valve_csgo_01/bombplanted.mp3");
 	//PrecacheSound("mvm/sentrybuster/mvm_sentrybuster_loop.wav");
+	PrecacheSound("mvm/mvm_bomb_warning.wav");
 	PrecacheSound("mvm/mvm_bomb_explode.wav");
 	PrecacheSound("mvm/mvm_bought_upgrade.wav");
 	PrecacheSound("vo/announcer_time_added.mp3");
@@ -50,13 +75,42 @@ public void PlayAnnouncerBombAlert()
 	EmitSoundToAll(g_sBombPlantedAnnouncerAlerts[GetRandomInt(0, sizeof(g_sBombPlantedAnnouncerAlerts) - 1)]);
 }
 
-stock void EmitSoundToTeam(int iTeam, const char[] sound)
+public void ShoutBombWarnings()
 {
-	for (int i = 1; i <= MaxClients; i++)
+	for (int client = 1; client <= MaxClients; client++)
 	{
-		if (IsClientInGame(i) && GetClientTeam(i) == iTeam)
+		if (IsClientInGame(client) && GetClientTeam(client) != g_iBombPlanterTeam)
 		{
-			EmitSoundToClient(i, sound);
+			switch (TF2_GetPlayerClass(client))
+			{
+				case TFClass_Engineer:
+				{
+					EmitSoundToAll(g_sBombPlantedEngineerAlerts[GetRandomInt(0, sizeof(g_sBombPlantedEngineerAlerts) - 1)], _, SNDCHAN_VOICE);
+				}
+				case TFClass_Heavy:
+				{
+					EmitSoundToAll(g_sBombPlantedHeavyAlerts[GetRandomInt(0, sizeof(g_sBombPlantedHeavyAlerts) - 1)], _, SNDCHAN_VOICE);
+				}
+				case TFClass_Medic:
+				{
+					EmitSoundToAll(g_sBombPlantedMedicAlerts[GetRandomInt(0, sizeof(g_sBombPlantedMedicAlerts) - 1)], _, SNDCHAN_VOICE);
+				}
+				case TFClass_Soldier:
+				{
+					EmitSoundToAll(g_sBombPlantedSoldierAlerts[GetRandomInt(0, sizeof(g_sBombPlantedSoldierAlerts) - 1)], _, SNDCHAN_VOICE);
+				}
+			}
+		}
+	}
+}
+
+stock void EmitSoundToTeam(int team, const char[] sound)
+{
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientInGame(client) && GetClientTeam(client) == team)
+		{
+			EmitSoundToClient(client, sound);
 		}
 	}
 }
