@@ -66,14 +66,6 @@ stock void TF2_CreateAndEquipWeapon(int iClient, int defindex)
 		TF2_RemoveCondition(iClient, TFCond_Slowed);
 	}
 	
-	//Force crit reset
-	int iRevengeCrits = GetEntProp(iClient, Prop_Send, "m_iRevengeCrits");
-	if (iRevengeCrits > 0)
-	{
-		SetEntProp(iClient, Prop_Send, "m_iRevengeCrits", 0);
-		TF2_RemoveCondition(iClient, TFCond_Kritzkrieged);
-	}
-	
 	//If player already have item in his inv, remove it before we generate new weapon for him, otherwise some weapons can glitch out...
 	int iEntity = GetPlayerWeaponSlot(iClient, iSlot);
 	if (iEntity > MaxClients && IsValidEdict(iEntity))
@@ -143,6 +135,53 @@ stock void TF2_CreateAndEquipWeapon(int iClient, int defindex)
 			SetEntProp(iClient, Prop_Send, "m_iAmmo", iMaxAmmo, _, iAmmoType);
 		}
 	}
+}
+
+stock void ShowGameMessage(const char[] message, const char[] icon, float time=5.0, int displayToTeam=0, int teamColor=0)
+{
+	int msg = CreateEntityByName("game_text_tf");
+	if(msg > MaxClients)
+	{
+		DispatchKeyValue(msg, "message", message);
+		switch(displayToTeam)
+		{
+			case 2: DispatchKeyValue(msg, "display_to_team", "2");
+			case 3: DispatchKeyValue(msg, "display_to_team", "3");
+			default: DispatchKeyValue(msg, "display_to_team", "0");
+		}
+		switch(teamColor)
+		{
+			case 2: DispatchKeyValue(msg, "background", "2");
+			case 3: DispatchKeyValue(msg, "background", "3");
+			default: DispatchKeyValue(msg, "background", "0");
+		}
+		DispatchKeyValue(msg, "icon", icon);
+		DispatchSpawn(msg);
+
+		AcceptEntityInput(msg, "Display");
+
+		SetEntPropFloat(msg, Prop_Data, "m_flAnimTime", GetEngineTime()+time);
+
+		CreateTimer(0.5, Timer_ShowGameMessage, EntIndexToEntRef(msg), TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
+	}
+}
+
+Action Timer_ShowGameMessage(Handle timer, int ref)
+{
+	int msg = EntRefToEntIndex(ref);
+	if(msg > MaxClients)
+	{
+		if(GetEngineTime() > GetEntPropFloat(msg, Prop_Data, "m_flAnimTime"))
+		{
+			AcceptEntityInput(msg, "Kill");
+			return Plugin_Stop;
+		}
+
+		AcceptEntityInput(msg, "Display");
+		return Plugin_Continue;
+	}
+
+	return Plugin_Stop;
 }
 
 // SDK stocks

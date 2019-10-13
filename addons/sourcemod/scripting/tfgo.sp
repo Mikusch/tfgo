@@ -282,6 +282,11 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 		EmitSoundToAll("tfgo/music/valve_csgo_01/bombplanted.mp3");
 		PlayAnnouncerBombAlert();
 		ShoutBombWarnings();
+		
+		// Show text on screen
+		char message[256] = "The bomb has been planted.\n%d seconds to detonation.";
+		Format(message, sizeof(message), message, RoundFloat(TFGO_BOMB_DETONATION_TIME));
+		ShowGameMessage(message, "ico_time_60");
 	}
 	else // defused
 	{
@@ -532,8 +537,12 @@ public Action OnBuyTimeExpire(Handle timer)
 		}
 	}
 	
-	// TODO only show this while in buyzone
-	CPrintToChatAll("{alert}Alert: {default}The %d second buy period has expired", tfgo_buytime.IntValue);
+	if (!g_bBombPlanted)
+	{
+		char message[256] = "The %d second buy period has expired";
+		Format(message, sizeof(message), message, tfgo_buytime.IntValue);
+		ShowGameMessage(message, "ico_notify_ten_seconds");
+	}
 }
 
 public Action Event_Teamplay_Waiting_Begins(Event event, const char[] sName, bool bDontBroadcast)
