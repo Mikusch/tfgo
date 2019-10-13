@@ -54,13 +54,19 @@ static char g_sBombDefusedSoldierResponses[][PLATFORM_MAX_PATH] =  {
 
 stock void PrecacheSounds()
 {
+	AddFileToDownloadsTable ("sound/tfgo/music/valve_csgo_01/wonround.mp3");
+	AddFileToDownloadsTable ("sound/tfgo/music/valve_csgo_01/lostround.mp3");
+	AddFileToDownloadsTable ("sound/tfgo/music/valve_csgo_01/roundtenseccount.mp3");
+	AddFileToDownloadsTable ("sound/tfgo/music/valve_csgo_01/bombtenseccount.mp3");
+	AddFileToDownloadsTable ("sound/tfgo/music/valve_csgo_01/chooseteam.mp3");
+	AddFileToDownloadsTable ("sound/tfgo/music/valve_csgo_01/bombplanted.mp3");
+	
 	PrecacheSound("tfgo/music/valve_csgo_01/wonround.mp3");
 	PrecacheSound("tfgo/music/valve_csgo_01/lostround.mp3");
 	PrecacheSound("tfgo/music/valve_csgo_01/roundtenseccount.mp3");
 	PrecacheSound("tfgo/music/valve_csgo_01/bombtenseccount.mp3");
 	PrecacheSound("tfgo/music/valve_csgo_01/chooseteam.mp3");
 	PrecacheSound("tfgo/music/valve_csgo_01/bombplanted.mp3");
-	//PrecacheSound("mvm/sentrybuster/mvm_sentrybuster_loop.wav");
 	PrecacheSound("mvm/mvm_bomb_warning.wav");
 	PrecacheSound("mvm/mvm_bomb_explode.wav");
 	PrecacheSound("mvm/mvm_bought_upgrade.wav");
