@@ -248,13 +248,13 @@ methodmap TFGOTeam
 		
 		public set(int val)
 		{
-			if (val > TFGO_MAXLOSESTREAK)
+			if (val > TFGO_MAX_LOSESTREAK)
 			{
-				g_iLoseStreak[this] = TFGO_MAXLOSESTREAK;
+				g_iLoseStreak[this] = TFGO_MAX_LOSESTREAK;
 			}
-			else if (val < TFGO_MINLOSESTREAK)
+			else if (val < TFGO_MIN_LOSESTREAK)
 			{
-				g_iLoseStreak[this] = TFGO_MINLOSESTREAK;
+				g_iLoseStreak[this] = TFGO_MIN_LOSESTREAK;
 			}
 			else
 			{

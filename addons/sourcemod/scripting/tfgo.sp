@@ -19,8 +19,9 @@
 #define TF_ARENA_WINREASON_ELIMINATION	2
 
 // TFGO stuff
-#define TFGO_MINLOSESTREAK				0
-#define TFGO_MAXLOSESTREAK				4
+#define TFGO_MIN_LOSESTREAK				0
+#define TFGO_MAX_LOSESTREAK				4
+#define TFGO_STARTING_LOSESTREAK		1
 #define TFGO_STARTING_BALANCE			800
 #define TFGO_MIN_BALANCE				0
 #define TFGO_MAX_BALANCE				16000
@@ -31,8 +32,8 @@
 
 #define TFGO_BOMB_DETONATION_TIME		45.0
 
-int g_iLoseStreak[TF_NUMTEAMS + 1] =  { 1, ... };
-int g_iLoseStreakCompensation[TFGO_MAXLOSESTREAK + 1] =  { 1400, 1900, 2400, 2900, 3400 };
+int g_iLoseStreak[TF_NUMTEAMS + 1] =  { TFGO_STARTING_LOSESTREAK, ... };
+int g_iLoseStreakCompensation[TFGO_MAX_LOSESTREAK + 1] =  { 1400, 1900, 2400, 2900, 3400 };
 int g_iBalance[TF_MAXPLAYERS + 1] =  { TFGO_STARTING_BALANCE, ... };
 
 // Timers
@@ -312,10 +313,17 @@ public Action DetonateBomb(Handle timer, int bombProp)
 	RemoveEntity(bombProp);
 }
 
+// Reset the game
 public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool dontBroadcast)
 {
-	for (int i = 0; i < sizeof(g_iBalance); i++)g_iBalance[i] = TFGO_STARTING_BALANCE;
-	for (int i = 0; i < sizeof(g_iLoseStreak); i++)g_iLoseStreak[i] = TFGO_STARTING_BALANCE;
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		TFGOPlayer player = TFGOPlayer(client);
+		player.Balance = TFGO_STARTING_BALANCE;
+		player.ClearLoadout();
+	}
+	
+	for (int i = 0; i < sizeof(g_iLoseStreak); i++)g_iLoseStreak[i] = TFGO_STARTING_LOSESTREAK;
 }
 
 public Action Event_Player_Spawn(Event event, const char[] name, bool dontBroadcast)
