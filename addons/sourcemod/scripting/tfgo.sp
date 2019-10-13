@@ -213,94 +213,96 @@ public MRESReturn Hook_SetWinningTeam(Handle hParams)
 
 public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool dontBroadcast)
 {
-	if (!g_bBombPlanted) // planted
+	char[] cappers = new char[MaxClients];
+	event.GetString("cappers", cappers, MaxClients);
+	
+	if (!g_bBombPlanted)
 	{
-		g_iBombPlanterTeam = event.GetInt("team");
-		
-		// Award capture bonus to cappers
-		char[] cappers = new char[MaxClients];
-		event.GetString("cappers", cappers, MaxClients);
-		for (int i = 0; i < strlen(cappers); i++)
-		{
-			int capper = cappers[i];
-			TFGOPlayer(capper).AddToBalance(TFGO_CAPPER_BONUS, "Award for planting bomb");
-			
-			// TODO: Bandaid solution for the game making the planting team lose if they all die
-			TF2_AddCondition(capper, TFCond_HalloweenInHell);
-		}
-		
-		// Spawn bomb prop
-		float pos[3];
-		float ang[3];
-		GetClientAbsOrigin(cappers[0], pos);
-		GetClientAbsAngles(cappers[0], ang);
-		int bomb = CreateEntityByName("prop_dynamic_override");
-		SetEntityModel(bomb, "models/props_td/atom_bomb.mdl");
-		DispatchSpawn(bomb);
-		TeleportEntity(bomb, pos, ang, NULL_VECTOR);
-		
-		// We need to kill this or the server will force a map change on cap
-		int game_end;
-		while ((game_end = FindEntityByClassname(game_end, "game_end")) > -1)
-		{
-			AcceptEntityInput(game_end, "Kill");
-		}
-		
-		// Superceding SetWinningTeam causes arena mode to create a game_text entity announcing the winning team
-		int game_text;
-		while ((game_text = FindEntityByClassname(game_text, "game_text")) > -1)
-		{
-			char m_iszMessage[256];
-			GetEntPropString(game_text, Prop_Data, "m_iszMessage", m_iszMessage, sizeof(m_iszMessage));
-			
-			char message[256];
-			GetTeamName(event.GetInt("team"), message, sizeof(message));
-			StrCat(message, sizeof(message), " Wins the Game!");
-			
-			// To not mess with any other game_text entities
-			if (strcmp(m_iszMessage, message) == 0)
-			{
-				AcceptEntityInput(game_text, "Kill");
-			}
-		}
-		
-		// Add time
-		int team_round_timer = FindEntityByClassname(-1, "team_round_timer");
-		if (team_round_timer > -1)
-		{
-			SetVariantInt(RoundFloat(TFGO_BOMB_DETONATION_TIME) + 1);
-			AcceptEntityInput(team_round_timer, "SetTime");
-		}
-		
-		// Set up timers
-		g_h10SecondBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 10.0, Play10SecondBombWarning);
-		g_hBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME, DetonateBomb, EntIndexToEntRef(bomb));
-		
-		if (g_h10SecondRoundTimer != null)
-			delete g_h10SecondRoundTimer;
-		
-		// Play Sounds
-		StopRoundActionMusic();
-		StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/roundtenseccount.mp3");
-		EmitSoundToAll("tfgo/music/valve_csgo_01/bombplanted.mp3");
-		PlayAnnouncerBombAlert();
-		ShoutBombWarnings();
-		
-		// Show text on screen
-		char message[256] = "The bomb has been planted.\n%d seconds to detonation.";
-		Format(message, sizeof(message), message, RoundFloat(TFGO_BOMB_DETONATION_TIME));
-		ShowGameMessage(message, "ico_time_60");
+		PlantBomb(event.GetInt("team"), cappers);
 	}
-	else // defused
+	else
 	{
-		if (g_h10SecondBombTimer != null)
-			delete g_h10SecondBombTimer;
-		
-		if (g_hBombTimer != null)
-			delete g_hBombTimer;
+		DefuseBomb(cappers);
 	}
 	
 	g_bBombPlanted = !g_bBombPlanted;
+}
+
+void PlantBomb(int team, const char[] cappers)
+{
+	g_iBombPlanterTeam = team;
+	
+	// Award capture bonus to cappers
+	for (int i = 0; i < strlen(cappers); i++)
+	{
+		int capper = cappers[i];
+		TFGOPlayer(capper).AddToBalance(TFGO_CAPPER_BONUS, "Award for planting bomb");
+		
+		// TODO: Bandaid solution for the game making the planting team lose if they all die
+		TF2_AddCondition(capper, TFCond_HalloweenInHell);
+	}
+	
+	// Spawn bomb prop
+	float pos[3];
+	float ang[3];
+	GetClientAbsOrigin(cappers[0], pos);
+	GetClientAbsAngles(cappers[0], ang);
+	int bomb = CreateEntityByName("prop_dynamic_override");
+	SetEntityModel(bomb, "models/props_td/atom_bomb.mdl");
+	DispatchSpawn(bomb);
+	TeleportEntity(bomb, pos, ang, NULL_VECTOR);
+	
+	// We need to kill this or the server will force a map change on cap
+	int game_end;
+	while ((game_end = FindEntityByClassname(game_end, "game_end")) > -1)
+	{
+		AcceptEntityInput(game_end, "Kill");
+	}
+	
+	// Superceding SetWinningTeam causes arena mode to create a game_text entity announcing the winning team
+	int game_text;
+	while ((game_text = FindEntityByClassname(game_text, "game_text")) > -1)
+	{
+		char m_iszMessage[256];
+		GetEntPropString(game_text, Prop_Data, "m_iszMessage", m_iszMessage, sizeof(m_iszMessage));
+		
+		char message[256];
+		GetTeamName(team, message, sizeof(message));
+		StrCat(message, sizeof(message), " Wins the Game!");
+		
+		// To not mess with any other game_text entities
+		if (strcmp(m_iszMessage, message) == 0)
+		{
+			AcceptEntityInput(game_text, "Kill");
+		}
+	}
+	
+	// Add time
+	int team_round_timer = FindEntityByClassname(-1, "team_round_timer");
+	if (team_round_timer > -1)
+	{
+		SetVariantInt(RoundFloat(TFGO_BOMB_DETONATION_TIME) + 1);
+		AcceptEntityInput(team_round_timer, "SetTime");
+	}
+	
+	// Set up timers
+	g_h10SecondBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 10.0, Play10SecondBombWarning);
+	g_hBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME, DetonateBomb, EntIndexToEntRef(bomb));
+	
+	if (g_h10SecondRoundTimer != null)
+		delete g_h10SecondRoundTimer;
+	
+	// Play Sounds
+	StopRoundActionMusic();
+	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/roundtenseccount.mp3");
+	EmitSoundToAll("tfgo/music/valve_csgo_01/bombplanted.mp3");
+	PlayAnnouncerBombAlert();
+	ShoutBombWarnings();
+	
+	// Show text on screen
+	char message[256] = "The bomb has been planted.\n%d seconds to detonation.";
+	Format(message, sizeof(message), message, RoundFloat(TFGO_BOMB_DETONATION_TIME));
+	ShowGameMessage(message, "ico_time_60");
 }
 
 public Action DetonateBomb(Handle timer, int bombProp)
@@ -311,6 +313,17 @@ public Action DetonateBomb(Handle timer, int bombProp)
 	GetEntPropVector(bombProp, Prop_Send, "m_vecOrigin", vec);
 	TF2_Explode(_, vec, 500.0, 788.0, "mvm_hatch_destroy", "mvm/mvm_bomb_explode.wav");
 	RemoveEntity(bombProp);
+}
+
+void DefuseBomb(const char[] cappers)
+{
+	// TODO: Award defusers
+	
+	if (g_h10SecondBombTimer != null)
+		delete g_h10SecondBombTimer;
+	
+	if (g_hBombTimer != null)
+		delete g_hBombTimer;
 }
 
 // Reset the game
