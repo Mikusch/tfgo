@@ -130,6 +130,7 @@ public void OnPluginStart()
 	
 	g_hHudSync = CreateHudSynchronizer();
 	
+	HookEvent("player_spawn", Event_Player_Spawn);
 	HookEvent("player_death", Event_Player_Death);
 	HookEvent("arena_win_panel", Event_Arena_Win_Panel);
 	HookEvent("arena_round_start", Event_Arena_Round_Start);
@@ -315,6 +316,22 @@ public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool d
 {
 	for (int i = 0; i < sizeof(g_iBalance); i++)g_iBalance[i] = TFGO_STARTING_BALANCE;
 	for (int i = 0; i < sizeof(g_iLoseStreak); i++)g_iLoseStreak[i] = TFGO_STARTING_BALANCE;
+}
+
+public Action Event_Player_Spawn(Event event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(event.GetInt("userid"));
+	TFClassType class = TF2_GetPlayerClass(client);
+	if (class == TFClass_Engineer || class == TFClass_Spy)
+	{
+		TFClassType randomClass = TF2_GetRandomClass();
+		while (randomClass == TFClass_Engineer || randomClass == TFClass_Spy)
+		{
+			randomClass = TF2_GetRandomClass();
+		}
+		TF2_SetPlayerClass(client, randomClass);
+		TF2_RespawnPlayer(client);
+	}
 }
 
 public Action Event_Player_Death(Event event, const char[] name, bool dontBroadcast)

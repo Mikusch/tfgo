@@ -53,6 +53,11 @@ stock int TF2_GetItemInSlot(int client, int slot)
 		return GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
 }
 
+stock TFClassType TF2_GetRandomClass()
+{
+	return view_as<TFClassType>(GetRandomInt(view_as<int>(TFClass_Scout), view_as<int>(TFClass_Engineer)));
+}
+
 // Stolen from SZF
 stock void TF2_CreateAndEquipWeapon(int iClient, int defindex)
 {
