@@ -222,6 +222,9 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 		{
 			int capper = cappers[i];
 			TFGOPlayer(capper).AddToBalance(TFGO_CAPPER_BONUS, "Award for planting bomb");
+			
+			// TODO: Bandaid solution for the game making the planting team lose if they all die
+			TF2_AddCondition(capper, TFCond_HalloweenInHell);
 		}
 		
 		// Spawn bomb prop
