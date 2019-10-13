@@ -281,7 +281,7 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 		
 		// Play Sounds
 		StopRoundActionMusic();
-		StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/bombtenseccount.mp3");
+		StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/roundtenseccount.mp3");
 		EmitSoundToAll("tfgo/music/valve_csgo_01/bombplanted.mp3");
 		PlayAnnouncerBombAlert();
 		ShoutBombWarnings();
