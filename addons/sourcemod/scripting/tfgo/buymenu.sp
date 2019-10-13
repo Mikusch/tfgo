@@ -75,15 +75,15 @@ public void ShowBuyMenu(int client, int slot)
 	{
 		TFGOWeaponEntry weapon;
 		weaponList.GetArray(i, weapon, sizeof(weapon));
-		if (TF2Econ_GetItemSlot(weapon.index, TF2_GetPlayerClass(client)) == slot)
+		if (TF2Econ_GetItemSlot(weapon.DefIndex, TF2_GetPlayerClass(client)) == slot)
 		{
 			char info[255];
-			IntToString(weapon.index, info, sizeof(info));
+			IntToString(weapon.DefIndex, info, sizeof(info));
 			
 			char display[255];
 			char weaponName[255];
-			TF2Econ_GetItemName(weapon.index, weaponName, sizeof(weaponName));
-			Format(display, sizeof(display), "%s ($%d)", weaponName, weapon.cost);
+			TF2Econ_GetItemName(weapon.DefIndex, weaponName, sizeof(weaponName));
+			Format(display, sizeof(display), "%s ($%d)", weaponName, weapon.Cost);
 			
 			menu.AddItem(info, display);
 		}

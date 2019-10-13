@@ -88,18 +88,16 @@ Handle g_hSDKGetEquippedWearable;
 Handle g_hSetWinningTeam;
 Handle g_hSDKGetMaxAmmo;
 
-// TODO: This is kinda crappy right now because it uses two data structures to get simple information
-// But it works for now, so I will just leave it now and attempt to change it later
+// TODO: Allow for more customization of single weapons (attributes etc.)
 enum struct TFGOWeaponEntry
 {
-	int index;
-	int cost;
-	int killReward;
+	int DefIndex;
+	int Cost;
 }
 
 // Config data
 ArrayList weaponList;
-StringMap killRewardMap;
+StringMap killAwardMap;
 
 
 #include "tfgo/stocks.sp"

@@ -20,7 +20,7 @@ methodmap TFGOWeapon
 			int index = weaponList.FindValue(this, 0);
 			TFGOWeaponEntry weapon;
 			weaponList.GetArray(index, weapon, sizeof(weapon));
-			return weapon.cost;
+			return weapon.Cost;
 		}
 	}
 	
@@ -32,7 +32,7 @@ methodmap TFGOWeapon
 			TF2Econ_GetItemClassName(this.DefIndex, key, sizeof(key));
 			
 			int reward;
-			killRewardMap.GetValue(key, reward);
+			killAwardMap.GetValue(key, reward);
 			return reward;
 		}
 	}
