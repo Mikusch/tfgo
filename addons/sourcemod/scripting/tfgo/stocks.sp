@@ -15,7 +15,7 @@ stock int IntAbs(int num)
 }
 
 // Taken from VSH Rewrite
-stock int TF2_Explode(int iAttacker = -1, float flPos[3], float flDamage, float flRadius, const char[] strParticle, const char[] strSound)
+stock void TF2_Explode(int iAttacker = -1, float flPos[3], float flDamage, float flRadius, const char[] strParticle, const char[] strSound)
 {
 	int iBomb = CreateEntityByName("tf_generic_bomb");
 	DispatchKeyValueVector(iBomb, "origin", flPos);
@@ -30,8 +30,6 @@ stock int TF2_Explode(int iAttacker = -1, float flPos[3], float flDamage, float 
 		AcceptEntityInput(iBomb, "Detonate");
 	else
 		SDKHooks_TakeDamage(iBomb, 0, iAttacker, 9999.0);
-		
-	return iBomb;
 }
 
 stock void TF2_RemoveItemInSlot(int client, int slot)

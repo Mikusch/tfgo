@@ -25,6 +25,7 @@ public void ShowMainBuyMenu(int client)
 		{
 			menu.AddItem("0", "Primary Weapon");
 			menu.AddItem("1", "Secondary Weapon");
+			menu.AddItem("2", "Melee Weapon");
 		}
 	}
 	

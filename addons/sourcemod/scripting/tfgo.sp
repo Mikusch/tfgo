@@ -26,8 +26,8 @@
 #define TFGO_MAX_BALANCE				16000
 #define TFGO_CAPTURE_WIN_REWARD			3500
 #define TFGO_ELIMINATION_WIN_REWARD		3250
-#define TFGO_CAPPER_BONUS				150
-#define TFGO_SUICIDE_PENALTY			-250
+#define TFGO_CAPPER_BONUS				300
+#define TFGO_SUICIDE_PENALTY			-300
 
 #define TFGO_BOMB_DETONATION_TIME		45.0
 
@@ -50,33 +50,16 @@ Pre-defined default weapons for each slot
 -1 indicates the weapon in this slot should not be changed
 **/
 int g_iDefaultWeaponIndex[][] =  {
-	{ -1, -1, -1, -1, -1, -1 },  //Unknown
-	{ -1, 23, -1, -1, -1, -1 },  //Scout
-	{ -1, 16, -1, -1, -1, -1 },  //Sniper
-	{ -1, 10, -1, -1, -1, -1 },  //Soldier
-	{ 19, -1, -1, -1, -1, -1 },  //Demoman
-	{ 17, -1, -1, -1, -1, -1 },  //Medic
-	{ -1, 11, -1, -1, -1, -1 },  //Heavy
-	{ -1, 12, -1, -1, -1, -1 },  //Pyro
-	{ 24, -1, -1, -1, -1, -1 },  //Spy
-	{ 9, 22, -1, -1, -1, -1 } //Engineer
-};
-
-/**
-If set to false, the weapon in the slot will be removed
-Weapons that have not been assigned a default and are set to "true" in this array can be freely chosen
-**/
-int g_bSlotsToKeep[][] =  {
-	{ false, false, false, false, false, false },  //Unknown
-	{ false, false, true, false, false, false },  //Scout
-	{ false, false, true, false, false, false },  //Sniper
-	{ false, false, true, false, false, false },  //Soldier
-	{ false, false, true, false, false, false },  //Demoman
-	{ false, false, true, false, false, false },  //Medic
-	{ false, false, true, false, false, false },  //Heavy
-	{ false, false, true, false, false, false },  //Pyro
-	{ false, false, false, true, true, true },  //Spy
-	{ false, false, true, false, true, true } //Engineer
+	{ -1, -1, 30758, -1, -1, -1 },  //Unknown
+	{ -1, 23, 30758, -1, -1, -1 },  //Scout
+	{ -1, 16, 30758, -1, -1, -1 },  //Sniper
+	{ -1, 10, 30758, -1, -1, -1 },  //Soldier
+	{ 19, -1, 30758, -1, -1, -1 },  //Demoman
+	{ 17, -1, 30758, -1, -1, -1 },  //Medic
+	{ -1, 11, 30758, -1, -1, -1 },  //Heavy
+	{ -1, 12, 30758, -1, -1, -1 },  //Pyro
+	{ 24, -1, 30758, -1, -1, -1 },  //Spy
+	{ 9, 22, 30758, -1, -1, -1 } //Engineer
 };
 
 int g_iLoadoutWeaponIndex[TF_MAXPLAYERS + 1][TF_NUMCLASSES + 1][TF_NUMSLOTS + 1];
@@ -84,15 +67,14 @@ int g_iLoadoutWeaponIndex[TF_MAXPLAYERS + 1][TF_NUMCLASSES + 1][TF_NUMSLOTS + 1]
 // Game state
 bool g_bWaitingForPlayers;
 bool g_bBuyTimeActive;
-bool g_bRoundStarted;
 bool g_bRoundActive;
+bool g_bRoundInBonusTime;
 bool g_bBombPlanted;
 int g_iBombPlanterTeam;
 
 // ConVars
 ConVar tfgo_buytime;
 
-ConVar tf_arena_max_streak;
 ConVar tf_arena_first_blood;
 ConVar tf_arena_round_time;
 ConVar tf_arena_use_queue;
@@ -161,7 +143,6 @@ public void OnPluginStart()
 	HookEvent("post_inventory_application", Event_Post_Inventory_Application);
 	HookEvent("teamplay_point_captured", Event_Teamplay_Point_Captured);
 	
-	tf_arena_max_streak = FindConVar("tf_arena_max_streak");
 	tf_arena_first_blood = FindConVar("tf_arena_first_blood");
 	tf_arena_round_time = FindConVar("tf_arena_round_time");
 	tf_arena_use_queue = FindConVar("tf_arena_use_queue");
@@ -320,7 +301,7 @@ public Action DetonateBomb(Handle timer, int bombProp)
 	
 	float vec[3];
 	GetEntPropVector(bombProp, Prop_Send, "m_vecOrigin", vec);
-	int tf_generic_bomb = TF2_Explode(_, vec, 9999.0, 750.0, "mvm_hatch_destroy", "mvm/mvm_bomb_explode.wav");
+	TF2_Explode(_, vec, 500.0, 788.0, "mvm_hatch_destroy", "mvm/mvm_bomb_explode.wav");
 	RemoveEntity(bombProp);
 }
 
@@ -338,33 +319,34 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	int customkill = event.GetInt("customkill");
 	int assister = event.GetInt("assister");
 	
-	if (g_bRoundActive && attacker.Client >= 1)
+	if (customkill == TF_CUSTOM_SUICIDE && attacker == victim)
 	{
-		if (customkill == TF_CUSTOM_SUICIDE && attacker == victim)
+		// TODO compensate random alive enemy player for this suicide ($300)
+		if (g_bRoundActive)victim.AddToBalance(TFGO_SUICIDE_PENALTY, "Penalty for suiciding");
+	}
+	else if (attacker.Client >= 1 && attacker.Client <= 32)
+	{
+		char weaponName[255];
+		TF2Econ_GetItemName(defindex, weaponName, sizeof(weaponName));
+		char msg[255];
+		Format(msg, sizeof(msg), "Award for neutralizing an enemy with %s", weaponName);
+		
+		char weaponclass[255];
+		TF2Econ_GetItemClassName(defindex, weaponclass, sizeof(weaponclass));
+		
+		TFGOWeapon weapon = TFGOWeapon(defindex);
+		attacker.AddToBalance(weapon.KillReward, msg);
+		if (assister != -1)
 		{
-			attacker.AddToBalance(TFGO_SUICIDE_PENALTY, "Penalty for suiciding");
-		}
-		else
-		{
-			char weaponName[255];
-			TF2Econ_GetItemName(defindex, weaponName, sizeof(weaponName));
-			char msg[255];
-			Format(msg, sizeof(msg), "Award for neutralizing an enemy with %s", weaponName);
-			
-			char weaponclass[255];
-			TF2Econ_GetItemClassName(defindex, weaponclass, sizeof(weaponclass));
-			
-			TFGOWeapon weapon = TFGOWeapon(defindex);
-			attacker.AddToBalance(weapon.KillReward, msg);
-			if (assister != -1)
-			{
-				char attackerName[255];
-				GetClientName(attacker.Client, attackerName, sizeof(attackerName));
-				Format(msg, sizeof(msg), "Award for assisting %s in neutralizing an enemy", attackerName);
-				TFGOPlayer(GetClientOfUserId(assister)).AddToBalance(weapon.KillReward / 2, msg);
-			}
+			char attackerName[255];
+			GetClientName(attacker.Client, attackerName, sizeof(attackerName));
+			Format(msg, sizeof(msg), "Award for assisting %s in neutralizing an enemy", attackerName);
+			TFGOPlayer(GetClientOfUserId(assister)).AddToBalance(weapon.KillReward / 2, msg);
 		}
 	}
+	
+	if (g_bRoundActive || g_bRoundInBonusTime)victim.ClearLoadout();
+	
 	
 	if (g_bBombPlanted)
 	{
@@ -381,9 +363,6 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	{
 		victim.ActiveBuyMenu.Cancel();
 	}
-	victim.ClearLoadout();
-	
-	// TODO restore previous weapons IF this death was a suicide in the respawn room
 	
 	return Plugin_Continue;
 }
@@ -408,7 +387,8 @@ public void OnClientConnected(int client)
 
 public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBroadcast)
 {
-	g_bRoundStarted = false;
+	g_bRoundActive = false;
+	g_bRoundInBonusTime = true;
 	
 	// Determine winning/losing team
 	TFGOTeam winningTeam = TFGOTeam(view_as<TFTeam>(event.GetInt("winning_team")));
@@ -517,7 +497,7 @@ public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontB
 
 public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
-	g_bRoundStarted = true;
+	g_bRoundInBonusTime = false;
 	g_bRoundActive = false;
 	g_bBuyTimeActive = true;
 	g_hBuytimeTimer = CreateTimer(tfgo_buytime.FloatValue, OnBuyTimeExpire);
@@ -602,7 +582,6 @@ void Toggle_ConVars(bool toggle)
 {
 	static bool bArenaFirstBlood;
 	static bool bArenaUseQueue;
-	static int iArenaMaxStreak;
 	static int iArenaRoundTime;
 	static int iBonusRoundtime;
 	
@@ -614,9 +593,6 @@ void Toggle_ConVars(bool toggle)
 		bArenaUseQueue = tf_arena_use_queue.BoolValue;
 		tf_arena_use_queue.BoolValue = false;
 		
-		iArenaMaxStreak = tf_arena_max_streak.IntValue;
-		tf_arena_max_streak.IntValue = 8;
-		
 		iArenaRoundTime = tf_arena_round_time.IntValue;
 		tf_arena_round_time.IntValue = 135;
 		
@@ -627,7 +603,6 @@ void Toggle_ConVars(bool toggle)
 	{
 		tf_arena_first_blood.BoolValue = bArenaFirstBlood;
 		tf_arena_use_queue.BoolValue = bArenaUseQueue;
-		tf_arena_max_streak.IntValue = iArenaMaxStreak;
 		tf_arena_round_time.IntValue = iArenaRoundTime;
 		mp_bonusroundtime.IntValue = iBonusRoundtime;
 	}

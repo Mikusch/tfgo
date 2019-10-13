@@ -199,7 +199,7 @@ methodmap TFGOPlayer
 			{
 				TF2_CreateAndEquipWeapon(this.Client, defindex);
 			}
-			else if (!g_bSlotsToKeep[class][slot])
+			else
 			{
 				TF2_RemoveItemInSlot(this.Client, slot);
 			}
