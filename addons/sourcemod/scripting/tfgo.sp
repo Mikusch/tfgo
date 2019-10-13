@@ -25,7 +25,8 @@
 #define TFGO_STARTING_BALANCE			800
 #define TFGO_MIN_BALANCE				0
 #define TFGO_MAX_BALANCE				16000
-#define TFGO_CAPTURE_WIN_REWARD			3500
+#define TFGO_BOMB_DETONATION_WIN_REWARD	3500
+#define TFGO_BOMB_DEFUSE_WIN_REWARD		3500
 #define TFGO_ELIMINATION_WIN_REWARD		3250
 #define TFGO_CAPPER_BONUS				300
 #define TFGO_SUICIDE_PENALTY			-300
@@ -206,7 +207,6 @@ public void OnEntityCreated(int entity, const char[] classname)
 		SDKHook(entity, SDKHook_EndTouch, Entity_EndTouch_RespawnRoom);
 	}
 }
-
 
 public Action Entity_StartTouch_RespawnRoom(int entity, int client)
 {
@@ -437,7 +437,7 @@ void PlantBomb(int team, const char[] cappers)
 	for (int i = 0; i < strlen(cappers); i++)
 	{
 		int capper = cappers[i];
-		TFGOPlayer(capper).AddToBalance(TFGO_CAPPER_BONUS, "Award for planting bomb");
+		TFGOPlayer(capper).AddToBalance(TFGO_CAPPER_BONUS, "Award for planting the bomb");
 		
 		// TODO: Bandaid solution for the game making the planting team lose if they all die
 		TF2_AddCondition(capper, TFCond_HalloweenInHell);
@@ -555,11 +555,11 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 		{
 			if (g_iBombPlanterTeam == event.GetInt("winning_team"))
 			{
-				winningTeam.AddToTeamBalance(TFGO_CAPTURE_WIN_REWARD, "Team award for detonating bomb");
+				winningTeam.AddToTeamBalance(TFGO_BOMB_DETONATION_WIN_REWARD, "Team award for detonating bomb");
 			}
 			else
 			{
-				winningTeam.AddToTeamBalance(TFGO_CAPTURE_WIN_REWARD, "Team award for defusing bomb");
+				winningTeam.AddToTeamBalance(TFGO_BOMB_DEFUSE_WIN_REWARD, "Team award for winning by defusing the bomb");
 			}
 		}
 		/*
