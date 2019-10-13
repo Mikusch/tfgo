@@ -266,7 +266,7 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 		int team_round_timer = FindEntityByClassname(-1, "team_round_timer");
 		if (team_round_timer > -1)
 		{
-			SetVariantInt(45 + 1);
+			SetVariantInt(RoundFloat(TFGO_BOMB_DETONATION_TIME) + 1);
 			AcceptEntityInput(team_round_timer, "SetTime");
 		}
 		
