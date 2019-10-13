@@ -109,7 +109,7 @@ StringMap killAwardMap;
 
 
 public Plugin myinfo =  {
-	name = "Team Fortress: Global Offensive", 
+	name = "Team Fortress: Global Offensive Arena", 
 	author = "Mikusch", 
 	description = "A Team Fortress 2 gamemode inspired by Counter-Strike: Global Offensive", 
 	version = "1.0", 
@@ -133,15 +133,15 @@ public void OnPluginStart()
 	
 	HookEvent("player_spawn", Event_Player_Spawn);
 	HookEvent("player_death", Event_Player_Death);
-	HookEvent("arena_win_panel", Event_Arena_Win_Panel);
-	HookEvent("arena_round_start", Event_Arena_Round_Start);
-	HookEvent("teamplay_round_start", Event_Teamplay_Round_Start);
-	HookEvent("arena_match_maxstreak", Event_Arena_Match_MaxStreak);
-	HookEvent("teamplay_broadcast_audio", Event_Pre_Broadcast_Audio, EventHookMode_Pre);
+	HookEvent("post_inventory_application", Event_Post_Inventory_Application);
 	HookEvent("teamplay_waiting_begins", Event_Teamplay_Waiting_Begins);
 	HookEvent("teamplay_waiting_ends", Event_Teamplay_Waiting_Ends);
-	HookEvent("post_inventory_application", Event_Post_Inventory_Application);
+	HookEvent("teamplay_round_start", Event_Teamplay_Round_Start);
+	HookEvent("arena_round_start", Event_Arena_Round_Start);
+	HookEvent("teamplay_broadcast_audio", Event_Pre_Broadcast_Audio, EventHookMode_Pre);
 	HookEvent("teamplay_point_captured", Event_Teamplay_Point_Captured);
+	HookEvent("arena_win_panel", Event_Arena_Win_Panel);
+	HookEvent("arena_match_maxstreak", Event_Arena_Match_MaxStreak);
 	
 	tf_arena_first_blood = FindConVar("tf_arena_first_blood");
 	tf_arena_round_time = FindConVar("tf_arena_round_time");
@@ -180,12 +180,62 @@ public void OnMapStart()
 	}
 }
 
+public void OnClientConnected(int client)
+{
+	TFGOPlayer(client).Balance = TFGO_STARTING_BALANCE;
+	// Give the player some music from the music kit while they wait
+	if (g_bWaitingForPlayers)
+	{
+		EmitSoundToClient(client, "tfgo/music/valve_csgo_01/chooseteam.mp3");
+	}
+}
+
+public void OnClientDisconnect(int client)
+{
+	if (g_bBombPlanted)
+	{
+		// TODO team alive check to  end the round during bomb plant
+	}
+}
+
 public void OnEntityCreated(int entity, const char[] classname)
 {
 	if (strcmp(classname, "func_respawnroom") == 0)
 	{
 		SDKHook(entity, SDKHook_StartTouch, Entity_StartTouch_RespawnRoom);
 		SDKHook(entity, SDKHook_EndTouch, Entity_EndTouch_RespawnRoom);
+	}
+}
+
+
+public Action Entity_StartTouch_RespawnRoom(int entity, int client)
+{
+	if (client <= MaxClients && IsClientConnected(client))
+	{
+		if (GetEntProp(entity, Prop_Data, "m_iTeamNum") == GetClientTeam(client))
+		{
+			ShowMainBuyMenu(client);
+		}
+	}
+}
+
+public Action Entity_EndTouch_RespawnRoom(int entity, int client)
+{
+	if (client <= MaxClients && IsClientConnected(client))
+	{
+		if (GetEntProp(entity, Prop_Data, "m_iTeamNum") == GetClientTeam(client))
+		{
+			TFGOPlayer player = TFGOPlayer(client);
+			if (player.ActiveBuyMenu != null)
+			{
+				player.ActiveBuyMenu.Cancel();
+			}
+			
+			if (g_bBuyTimeActive)
+			{
+				CPrintToChat(client, "{alert}Alert: {default}You have left the buy zone");
+			}
+		}
 	}
 }
 
@@ -198,9 +248,8 @@ void PrecacheModels()
 // Called every frame after the round is supposed to end
 public MRESReturn Hook_SetWinningTeam(Handle hParams)
 {
-	int team = DHookGetParam(hParams, 1);
-	int winReason = DHookGetParam(hParams, 2);
-	//PrintToServer("team: %d, winreason: %d is bomb planted: %b", team, winReason, g_bBombPlanted);
+	//int team = DHookGetParam(hParams, 1);
+	//int winReason = DHookGetParam(hParams, 2);
 	if (g_bBombPlanted)
 	{
 		return MRES_Supercede;
@@ -209,6 +258,158 @@ public MRESReturn Hook_SetWinningTeam(Handle hParams)
 	{
 		return MRES_Ignored;
 	}
+}
+
+public Action Event_Player_Spawn(Event event, const char[] name, bool dontBroadcast)
+{
+	// Granting PDA weapons is utterly broken and causes way too many client crashes
+	// The most sane thing to do here is just to disable them
+	
+	int client = GetClientOfUserId(event.GetInt("userid"));
+	TFClassType class = TF2_GetPlayerClass(client);
+	if (class == TFClass_Engineer || class == TFClass_Spy)
+	{
+		TFClassType randomClass = TF2_GetRandomClass();
+		while (randomClass == TFClass_Engineer || randomClass == TFClass_Spy)
+		{
+			randomClass = TF2_GetRandomClass();
+		}
+		TF2_SetPlayerClass(client, randomClass);
+		TF2_RespawnPlayer(client);
+		PrintToChat(client, "This class is currently disabled. Your class has been forcibly changed.");
+	}
+}
+
+public Action Event_Player_Death(Event event, const char[] name, bool dontBroadcast)
+{
+	TFGOPlayer attacker = TFGOPlayer(GetClientOfUserId(event.GetInt("attacker")));
+	TFGOPlayer victim = TFGOPlayer(GetClientOfUserId(event.GetInt("userid")));
+	int defindex = event.GetInt("weapon_def_index");
+	int customkill = event.GetInt("customkill");
+	int assister = event.GetInt("assister");
+	
+	if (customkill == TF_CUSTOM_SUICIDE && attacker == victim)
+	{
+		// TODO compensate random alive enemy player for this suicide ($300)
+		if (g_bRoundActive)victim.AddToBalance(TFGO_SUICIDE_PENALTY, "Penalty for suiciding");
+	}
+	else if (attacker.Client >= 1 && attacker.Client <= 32)
+	{
+		char weaponName[255];
+		TF2Econ_GetItemName(defindex, weaponName, sizeof(weaponName));
+		char msg[255];
+		Format(msg, sizeof(msg), "Award for neutralizing an enemy with %s", weaponName);
+		
+		char weaponclass[255];
+		TF2Econ_GetItemClassName(defindex, weaponclass, sizeof(weaponclass));
+		
+		TFGOWeapon weapon = TFGOWeapon(defindex);
+		attacker.AddToBalance(weapon.KillReward, msg);
+		if (assister != -1)
+		{
+			char attackerName[255];
+			GetClientName(attacker.Client, attackerName, sizeof(attackerName));
+			Format(msg, sizeof(msg), "Award for assisting %s in neutralizing an enemy", attackerName);
+			TFGOPlayer(GetClientOfUserId(assister)).AddToBalance(weapon.KillReward / 2, msg);
+		}
+	}
+	
+	if (g_bRoundActive || g_bRoundInBonusTime)victim.ClearLoadout();
+	
+	
+	if (g_bBombPlanted)
+	{
+		int victimTeam = GetClientTeam(GetClientOfUserId(event.GetInt("userid")));
+		if (g_iBombPlanterTeam != victimTeam && GetAliveTeamCount(victimTeam) - 1 <= 0) // -1 because it doesn't work properly in player_death
+		{
+			// End the round if every member of the non-planting team died
+			// TODO: the planting team still loses even if the bomb does detonate
+			g_bBombPlanted = false;
+		}
+	}
+	
+	if (victim.ActiveBuyMenu != null)
+	{
+		victim.ActiveBuyMenu.Cancel();
+	}
+	
+	return Plugin_Continue;
+}
+
+public Action Event_Post_Inventory_Application(Event event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(event.GetInt("userid"));
+	if (IsClientInGame(client))
+	{
+		ShowMainBuyMenu(client);
+		TFGOPlayer player = TFGOPlayer(client);
+		player.ShowMoneyHudDisplay(tfgo_buytime.FloatValue);
+		player.ApplyLoadout();
+	}
+	
+	return Plugin_Handled;
+}
+
+public Action Event_Teamplay_Waiting_Begins(Event event, const char[] sName, bool bDontBroadcast)
+{
+	g_bWaitingForPlayers = true;
+}
+
+public Action Event_Teamplay_Waiting_Ends(Event event, const char[] sName, bool bDontBroadcast)
+{
+	g_bWaitingForPlayers = false;
+	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/chooseteam.mp3");
+}
+
+public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
+{
+	g_bRoundInBonusTime = false;
+	g_bRoundActive = false;
+	g_bBuyTimeActive = true;
+	g_hBuytimeTimer = CreateTimer(tfgo_buytime.FloatValue, OnBuyTimeExpire);
+	
+	PlayRoundStartMusic();
+	
+	for (int client = 1; client < MaxClients; client++)
+	{
+		if (IsClientInGame(client))
+		{
+			ShowMainBuyMenu(client);
+			TFGOPlayer(client).ShowMoneyHudDisplay(tfgo_buytime.FloatValue);
+		}
+	}
+}
+
+public Action OnBuyTimeExpire(Handle timer)
+{
+	g_bBuyTimeActive = false;
+	g_hBuytimeTimer = null;
+	
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientInGame(client))
+		{
+			TFGOPlayer player = TFGOPlayer(client);
+			
+			if (player.ActiveBuyMenu != null)
+			{
+				player.ActiveBuyMenu.Cancel();
+			}
+		}
+	}
+	
+	if (!g_bBombPlanted)
+	{
+		char message[256] = "The %d second buy period has expired";
+		Format(message, sizeof(message), message, tfgo_buytime.IntValue);
+		ShowGameMessage(message, "ico_notify_ten_seconds");
+	}
+}
+
+public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontBroadcast)
+{
+	g_bRoundActive = true;
+	g_h10SecondRoundTimer = CreateTimer(tf_arena_round_time.FloatValue - 12.7, Play10SecondWarning);
 }
 
 public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool dontBroadcast)
@@ -326,109 +527,6 @@ void DefuseBomb(const char[] cappers)
 		delete g_hBombTimer;
 }
 
-// Reset the game
-public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool dontBroadcast)
-{
-	for (int client = 1; client <= MaxClients; client++)
-	{
-		TFGOPlayer player = TFGOPlayer(client);
-		player.Balance = TFGO_STARTING_BALANCE;
-		player.ClearLoadout();
-	}
-	
-	for (int i = 0; i < sizeof(g_iLoseStreak); i++)g_iLoseStreak[i] = TFGO_STARTING_LOSESTREAK;
-}
-
-public Action Event_Player_Spawn(Event event, const char[] name, bool dontBroadcast)
-{
-	int client = GetClientOfUserId(event.GetInt("userid"));
-	TFClassType class = TF2_GetPlayerClass(client);
-	if (class == TFClass_Engineer || class == TFClass_Spy)
-	{
-		TFClassType randomClass = TF2_GetRandomClass();
-		while (randomClass == TFClass_Engineer || randomClass == TFClass_Spy)
-		{
-			randomClass = TF2_GetRandomClass();
-		}
-		TF2_SetPlayerClass(client, randomClass);
-		TF2_RespawnPlayer(client);
-	}
-}
-
-public Action Event_Player_Death(Event event, const char[] name, bool dontBroadcast)
-{
-	TFGOPlayer attacker = TFGOPlayer(GetClientOfUserId(event.GetInt("attacker")));
-	TFGOPlayer victim = TFGOPlayer(GetClientOfUserId(event.GetInt("userid")));
-	int defindex = event.GetInt("weapon_def_index");
-	int customkill = event.GetInt("customkill");
-	int assister = event.GetInt("assister");
-	
-	if (customkill == TF_CUSTOM_SUICIDE && attacker == victim)
-	{
-		// TODO compensate random alive enemy player for this suicide ($300)
-		if (g_bRoundActive)victim.AddToBalance(TFGO_SUICIDE_PENALTY, "Penalty for suiciding");
-	}
-	else if (attacker.Client >= 1 && attacker.Client <= 32)
-	{
-		char weaponName[255];
-		TF2Econ_GetItemName(defindex, weaponName, sizeof(weaponName));
-		char msg[255];
-		Format(msg, sizeof(msg), "Award for neutralizing an enemy with %s", weaponName);
-		
-		char weaponclass[255];
-		TF2Econ_GetItemClassName(defindex, weaponclass, sizeof(weaponclass));
-		
-		TFGOWeapon weapon = TFGOWeapon(defindex);
-		attacker.AddToBalance(weapon.KillReward, msg);
-		if (assister != -1)
-		{
-			char attackerName[255];
-			GetClientName(attacker.Client, attackerName, sizeof(attackerName));
-			Format(msg, sizeof(msg), "Award for assisting %s in neutralizing an enemy", attackerName);
-			TFGOPlayer(GetClientOfUserId(assister)).AddToBalance(weapon.KillReward / 2, msg);
-		}
-	}
-	
-	if (g_bRoundActive || g_bRoundInBonusTime)victim.ClearLoadout();
-	
-	
-	if (g_bBombPlanted)
-	{
-		int victimTeam = GetClientTeam(GetClientOfUserId(event.GetInt("userid")));
-		if (g_iBombPlanterTeam != victimTeam && GetAliveTeamCount(victimTeam) - 1 <= 0) // -1 because it doesn't work properly in player_death
-		{
-			// End the round if every member of the non-planting team died
-			// TODO: the planting team still loses even if the bomb does detonate
-			g_bBombPlanted = false;
-		}
-	}
-	
-	if (victim.ActiveBuyMenu != null)
-	{
-		victim.ActiveBuyMenu.Cancel();
-	}
-	
-	return Plugin_Continue;
-}
-
-public void OnClientDisconnect(int client)
-{
-	if (g_bBombPlanted)
-	{
-		// TODO team alive check to  end the round during bomb plant
-	}
-}
-
-public void OnClientConnected(int client)
-{
-	TFGOPlayer(client).Balance = TFGO_STARTING_BALANCE;
-	// Give the player some music from the music kit while they wait
-	if (g_bWaitingForPlayers)
-	{
-		EmitSoundToClient(client, "tfgo/music/valve_csgo_01/chooseteam.mp3");
-	}
-}
-
 public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBroadcast)
 {
 	g_bRoundActive = false;
@@ -519,111 +617,16 @@ public Action SaveWeaponsForAlivePlayers(Handle timer)
 	}
 }
 
-public Action Event_Post_Inventory_Application(Event event, const char[] name, bool dontBroadcast)
+public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool dontBroadcast)
 {
-	int client = GetClientOfUserId(event.GetInt("userid"));
-	if (IsClientInGame(client))
-	{
-		ShowMainBuyMenu(client);
-		TFGOPlayer player = TFGOPlayer(client);
-		player.ShowMoneyHudDisplay(tfgo_buytime.FloatValue);
-		player.ApplyLoadout();
-	}
-	
-	return Plugin_Handled;
-}
-
-public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontBroadcast)
-{
-	g_bRoundActive = true;
-	g_h10SecondRoundTimer = CreateTimer(tf_arena_round_time.FloatValue - 12.7, Play10SecondWarning);
-}
-
-public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
-{
-	g_bRoundInBonusTime = false;
-	g_bRoundActive = false;
-	g_bBuyTimeActive = true;
-	g_hBuytimeTimer = CreateTimer(tfgo_buytime.FloatValue, OnBuyTimeExpire);
-	
-	PlayRoundStartMusic();
-	
-	for (int client = 1; client < MaxClients; client++)
-	{
-		if (IsClientInGame(client))
-		{
-			ShowMainBuyMenu(client);
-			TFGOPlayer(client).ShowMoneyHudDisplay(tfgo_buytime.FloatValue);
-		}
-	}
-}
-
-public Action OnBuyTimeExpire(Handle timer)
-{
-	g_bBuyTimeActive = false;
-	g_hBuytimeTimer = null;
-	
 	for (int client = 1; client <= MaxClients; client++)
 	{
-		if (IsClientInGame(client))
-		{
-			TFGOPlayer player = TFGOPlayer(client);
-			
-			if (player.ActiveBuyMenu != null)
-			{
-				player.ActiveBuyMenu.Cancel();
-			}
-		}
+		TFGOPlayer player = TFGOPlayer(client);
+		player.Balance = TFGO_STARTING_BALANCE;
+		player.ClearLoadout();
 	}
 	
-	if (!g_bBombPlanted)
-	{
-		char message[256] = "The %d second buy period has expired";
-		Format(message, sizeof(message), message, tfgo_buytime.IntValue);
-		ShowGameMessage(message, "ico_notify_ten_seconds");
-	}
-}
-
-public Action Event_Teamplay_Waiting_Begins(Event event, const char[] sName, bool bDontBroadcast)
-{
-	g_bWaitingForPlayers = true;
-}
-
-public Action Event_Teamplay_Waiting_Ends(Event event, const char[] sName, bool bDontBroadcast)
-{
-	g_bWaitingForPlayers = false;
-	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/chooseteam.mp3");
-}
-
-public Action Entity_StartTouch_RespawnRoom(int entity, int client)
-{
-	if (client <= MaxClients && IsClientConnected(client))
-	{
-		if (GetEntProp(entity, Prop_Data, "m_iTeamNum") == GetClientTeam(client))
-		{
-			ShowMainBuyMenu(client);
-		}
-	}
-}
-
-public Action Entity_EndTouch_RespawnRoom(int entity, int client)
-{
-	if (client <= MaxClients && IsClientConnected(client))
-	{
-		if (GetEntProp(entity, Prop_Data, "m_iTeamNum") == GetClientTeam(client))
-		{
-			TFGOPlayer player = TFGOPlayer(client);
-			if (player.ActiveBuyMenu != null)
-			{
-				player.ActiveBuyMenu.Cancel();
-			}
-			
-			if (g_bBuyTimeActive)
-			{
-				CPrintToChat(client, "{alert}Alert: {default}You have left the buy zone");
-			}
-		}
-	}
+	for (int i = 0; i < sizeof(g_iLoseStreak); i++)g_iLoseStreak[i] = TFGO_STARTING_LOSESTREAK;
 }
 
 void Toggle_ConVars(bool toggle)
