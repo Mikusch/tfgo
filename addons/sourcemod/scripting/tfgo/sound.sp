@@ -54,12 +54,24 @@ static char g_sBombDefusedSoldierResponses[][PLATFORM_MAX_PATH] =  {
 
 stock void PrecacheSounds()
 {
-	AddFileToDownloadsTable ("sound/tfgo/music/valve_csgo_01/wonround.mp3");
-	AddFileToDownloadsTable ("sound/tfgo/music/valve_csgo_01/lostround.mp3");
-	AddFileToDownloadsTable ("sound/tfgo/music/valve_csgo_01/roundtenseccount.mp3");
-	AddFileToDownloadsTable ("sound/tfgo/music/valve_csgo_01/bombtenseccount.mp3");
-	AddFileToDownloadsTable ("sound/tfgo/music/valve_csgo_01/chooseteam.mp3");
-	AddFileToDownloadsTable ("sound/tfgo/music/valve_csgo_01/bombplanted.mp3");
+	AddFileToDownloadsTable("sound/tfgo/music/valve_csgo_01/wonround.mp3");
+	AddFileToDownloadsTable("sound/tfgo/music/valve_csgo_01/lostround.mp3");
+	AddFileToDownloadsTable("sound/tfgo/music/valve_csgo_01/roundtenseccount.mp3");
+	AddFileToDownloadsTable("sound/tfgo/music/valve_csgo_01/bombtenseccount.mp3");
+	AddFileToDownloadsTable("sound/tfgo/music/valve_csgo_01/chooseteam.mp3");
+	AddFileToDownloadsTable("sound/tfgo/music/valve_csgo_01/bombplanted.mp3");
+	for (int i = 0; i < sizeof(g_sStartRoundMusic); i++)
+	{
+		char sound[PLATFORM_MAX_PATH] = "sound/";
+		StrCat(sound[i], sizeof(sound), g_sStartRoundMusic[i]);
+		AddFileToDownloadsTable(sound);
+	}
+	for (int i = 0; i < sizeof(g_sStartActionMusic); i++)
+	{
+		char sound[PLATFORM_MAX_PATH] = "sound/";
+		StrCat(sound[i], sizeof(sound), g_sStartActionMusic[i]);
+		AddFileToDownloadsTable(sound);
+	}
 	
 	PrecacheSound("tfgo/music/valve_csgo_01/wonround.mp3");
 	PrecacheSound("tfgo/music/valve_csgo_01/lostround.mp3");
@@ -80,7 +92,7 @@ stock void PrecacheSounds()
 	PrecacheSound("vo/halloween_boo5.mp3");
 	PrecacheSound("vo/halloween_boo6.mp3");
 	PrecacheSound("vo/halloween_boo7.mp3");
-
+	
 	for (int i = 0; i < sizeof(g_sStartRoundMusic); i++)PrecacheSound(g_sStartRoundMusic[i]);
 	for (int i = 0; i < sizeof(g_sStartActionMusic); i++)PrecacheSound(g_sStartActionMusic[i]);
 	for (int i = 0; i < sizeof(g_sBombPlantedAnnouncerAlerts); i++)PrecacheSound(g_sBombPlantedAnnouncerAlerts[i]);
