@@ -43,6 +43,7 @@ Handle g_hBuytimeTimer;
 Handle g_h10SecondRoundTimer;
 Handle g_h10SecondBombTimer;
 Handle g_hBombTimer;
+Handle g_hBombExplosionWarningTimer;
 
 // Other handles
 Menu g_hActiveBuyMenus[TF_MAXPLAYERS + 1];
@@ -483,6 +484,7 @@ void PlantBomb(int team, const char[] cappers)
 	
 	// Set up timers
 	g_h10SecondBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 10.0, Play10SecondBombWarning);
+	g_hBombExplosionWarningTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 1.5, PlayBombExplosionWarning, EntIndexToEntRef(bomb));
 	g_hBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME, DetonateBomb, EntIndexToEntRef(bomb));
 	
 	if (g_h10SecondRoundTimer != null)
@@ -501,6 +503,13 @@ void PlantBomb(int team, const char[] cappers)
 	ShowGameMessage(message, "ico_time_60");
 }
 
+public Action PlayBombExplosionWarning(Handle timer, int bomb)
+{
+	float vec[3];
+	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", vec);
+	EmitAmbientSound("mvm/mvm_bomb_warning.wav", vec, bomb, SNDLEVEL_RAIDSIREN);
+}
+
 public Action DetonateBomb(Handle timer, int bombProp)
 {
 	g_bBombPlanted = false;
@@ -517,6 +526,9 @@ void DefuseBomb(const char[] cappers)
 	
 	if (g_h10SecondBombTimer != null)
 		delete g_h10SecondBombTimer;
+	
+	if (g_hBombExplosionWarningTimer != null)
+		delete g_hBombExplosionWarningTimer;
 	
 	if (g_hBombTimer != null)
 		delete g_hBombTimer;
