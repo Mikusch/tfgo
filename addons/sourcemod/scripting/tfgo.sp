@@ -119,19 +119,15 @@ public Plugin myinfo =  {
 
 public void OnPluginStart()
 {
-	// TODO: Choose a music kit for the entire game, only change on arena scramble
 	LoadTranslations("common.phrases.txt");
 	LoadTranslations("tfgo.phrases.txt");
 	
-	for (int client = 0; client < sizeof(g_iLoadoutWeaponIndex); client++)
-	for (int class = 0; class < sizeof(g_iLoadoutWeaponIndex[]); class++)
-	for (int slot = 0; slot < sizeof(g_iLoadoutWeaponIndex[][]); slot++)
-	g_iLoadoutWeaponIndex[client][class][slot] = -1;
-	
+	// Initializing globals
 	SDK_Init();
-	
 	g_hHudSync = CreateHudSynchronizer();
+	for (int client = 1; client <= MaxClients; client++)TFGOPlayer(client).ClearLoadout();
 	
+	// Events
 	HookEvent("player_spawn", Event_Player_Spawn);
 	HookEvent("player_death", Event_Player_Death);
 	HookEvent("post_inventory_application", Event_Post_Inventory_Application);
@@ -144,6 +140,7 @@ public void OnPluginStart()
 	HookEvent("arena_win_panel", Event_Arena_Win_Panel);
 	HookEvent("arena_match_maxstreak", Event_Arena_Match_MaxStreak);
 	
+	// ConVars
 	tf_arena_first_blood = FindConVar("tf_arena_first_blood");
 	tf_arena_round_time = FindConVar("tf_arena_round_time");
 	tf_arena_use_queue = FindConVar("tf_arena_use_queue");
@@ -151,10 +148,10 @@ public void OnPluginStart()
 	mp_bonusroundtime = FindConVar("mp_bonusroundtime");
 	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
 	
+	Toggle_ConVars(true);
+	
 	CAddColor("alert", 0xEA4141);
 	CAddColor("money", 0xA2FE47);
-	
-	Toggle_ConVars(true);
 }
 
 public void OnAllPluginsLoaded()
@@ -183,7 +180,11 @@ public void OnMapStart()
 
 public void OnClientConnected(int client)
 {
-	TFGOPlayer(client).Balance = TFGO_STARTING_BALANCE;
+	// New player starts with fixed balance and empty loadout
+	TFGOPlayer player = TFGOPlayer(client);
+	player.Balance = TFGO_STARTING_BALANCE;
+	player.ClearLoadout();
+	
 	// Give the player some music from the music kit while they wait
 	if (g_bWaitingForPlayers)
 	{
@@ -284,9 +285,9 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 {
 	TFGOPlayer attacker = TFGOPlayer(GetClientOfUserId(event.GetInt("attacker")));
 	TFGOPlayer victim = TFGOPlayer(GetClientOfUserId(event.GetInt("userid")));
-	int defindex = event.GetInt("weapon_def_index");
+	TFGOPlayer assister = TFGOPlayer(GetClientOfUserId(event.GetInt("assister")));
+	TFGOWeapon weapon = TFGOWeapon(event.GetInt("weapon_def_index"));
 	int customkill = event.GetInt("customkill");
-	int assister = event.GetInt("assister");
 	
 	if (customkill == TF_CUSTOM_SUICIDE && attacker == victim)
 	{
@@ -296,26 +297,22 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	else if (attacker.Client >= 1 && attacker.Client <= 32)
 	{
 		char weaponName[255];
-		TF2Econ_GetItemName(defindex, weaponName, sizeof(weaponName));
+		TF2Econ_GetItemName(weapon.DefIndex, weaponName, sizeof(weaponName));
 		char msg[255];
 		Format(msg, sizeof(msg), "Award for neutralizing an enemy with %s", weaponName);
 		
 		char weaponclass[255];
-		TF2Econ_GetItemClassName(defindex, weaponclass, sizeof(weaponclass));
+		TF2Econ_GetItemClassName(weapon.DefIndex, weaponclass, sizeof(weaponclass));
 		
-		TFGOWeapon weapon = TFGOWeapon(defindex);
 		attacker.AddToBalance(weapon.KillReward, msg);
-		if (assister != -1)
+		if (assister.Client >= 1 || assister.Client <= 32)
 		{
 			char attackerName[255];
 			GetClientName(attacker.Client, attackerName, sizeof(attackerName));
 			Format(msg, sizeof(msg), "Award for assisting %s in neutralizing an enemy", attackerName);
-			TFGOPlayer(GetClientOfUserId(assister)).AddToBalance(weapon.KillReward / 2, msg);
+			assister.AddToBalance(weapon.KillReward / 2, msg);
 		}
 	}
-	
-	if (g_bRoundActive || g_bRoundInBonusTime)victim.ClearLoadout();
-	
 	
 	if (g_bBombPlanted)
 	{
@@ -328,10 +325,8 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 		}
 	}
 	
-	if (victim.ActiveBuyMenu != null)
-	{
-		victim.ActiveBuyMenu.Cancel();
-	}
+	if (g_bRoundActive || g_bRoundInBonusTime)victim.ClearLoadout();
+	if (victim.ActiveBuyMenu != null)victim.ActiveBuyMenu.Cancel();
 	
 	return Plugin_Continue;
 }
