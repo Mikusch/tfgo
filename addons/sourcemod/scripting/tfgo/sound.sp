@@ -82,6 +82,7 @@ stock void PrecacheSounds()
 	PrecacheSound("mvm/mvm_bomb_warning.wav");
 	PrecacheSound("mvm/mvm_bomb_explode.wav");
 	PrecacheSound("mvm/mvm_bought_upgrade.wav");
+	PrecacheSound("player/cyoa_pda_beep8.wav");
 	PrecacheSound("vo/announcer_time_added.mp3");
 	
 	// TODO remove this after removing the bandaid
@@ -190,14 +191,6 @@ stock Action Play10SecondWarning(Handle timer)
 	EmitSoundToAll("tfgo/music/valve_csgo_01/roundtenseccount.mp3");
 	g_h10SecondRoundTimer = null;
 }
-
-stock Action Play10SecondBombWarning(Handle timer)
-{
-	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/bombplanted.mp3");
-	EmitSoundToAll("tfgo/music/valve_csgo_01/bombtenseccount.mp3");
-	g_h10SecondBombTimer = null;
-}
-
 
 stock void PlayRoundStartMusic()
 {

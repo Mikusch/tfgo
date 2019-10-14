@@ -44,6 +44,7 @@ Handle g_h10SecondRoundTimer;
 Handle g_h10SecondBombTimer;
 Handle g_hBombTimer;
 Handle g_hBombExplosionWarningTimer;
+Handle g_hBombBeepTimer;
 
 // Other handles
 Menu g_hActiveBuyMenus[TF_MAXPLAYERS + 1];
@@ -419,7 +420,7 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 	}
 	else
 	{
-		DefuseBomb(cappers);
+		DefuseBomb();
 	}
 	
 	g_bBombPlanted = !g_bBombPlanted;
@@ -484,6 +485,7 @@ void PlantBomb(int team, const char[] cappers)
 	
 	// Set up timers
 	g_h10SecondBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 10.0, Play10SecondBombWarning);
+	g_hBombBeepTimer = CreateTimer(1.0, PlayBombBeep, EntIndexToEntRef(bomb), TIMER_REPEAT);
 	g_hBombExplosionWarningTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 1.5, PlayBombExplosionWarning, EntIndexToEntRef(bomb));
 	g_hBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME, DetonateBomb, EntIndexToEntRef(bomb));
 	
@@ -503,29 +505,48 @@ void PlantBomb(int team, const char[] cappers)
 	ShowGameMessage(message, "ico_time_60");
 }
 
+public Action PlayBombBeep(Handle timer, int bomb)
+{
+	float vec[3];
+	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", vec);
+	EmitAmbientSound("player/cyoa_pda_beep8.wav", vec, bomb);
+}
+
+stock Action Play10SecondBombWarning(Handle timer)
+{
+	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/bombplanted.mp3");
+	EmitSoundToAll("tfgo/music/valve_csgo_01/bombtenseccount.mp3");
+}
+
 public Action PlayBombExplosionWarning(Handle timer, int bomb)
 {
 	float vec[3];
 	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", vec);
 	EmitAmbientSound("mvm/mvm_bomb_warning.wav", vec, bomb, SNDLEVEL_RAIDSIREN);
+	delete g_hBombBeepTimer;
 }
 
 public Action DetonateBomb(Handle timer, int bombProp)
 {
 	g_bBombPlanted = false;
 	
+	if (g_hBombBeepTimer != null)
+	 	delete g_hBombBeepTimer;
+	
 	float vec[3];
 	GetEntPropVector(bombProp, Prop_Send, "m_vecOrigin", vec);
 	TF2_Explode(_, vec, 500.0, 788.0, "mvm_hatch_destroy", "mvm/mvm_bomb_explode.wav");
 	RemoveEntity(bombProp);
+	delete g_hBombTimer;
 }
 
-void DefuseBomb(const char[] cappers)
+void DefuseBomb()
 {
-	// TODO: Award defusers
-	
 	if (g_h10SecondBombTimer != null)
 		delete g_h10SecondBombTimer;
+	
+	if (g_hBombBeepTimer != null)
+		delete g_hBombBeepTimer;
 	
 	if (g_hBombExplosionWarningTimer != null)
 		delete g_hBombExplosionWarningTimer;
