@@ -141,8 +141,6 @@ public void OnPluginStart()
 	HookEvent("player_team", Event_Player_Team);
 	HookEvent("player_death", Event_Player_Death);
 	HookEvent("post_inventory_application", Event_Post_Inventory_Application);
-	HookEvent("teamplay_waiting_begins", Event_Teamplay_Waiting_Begins);
-	HookEvent("teamplay_waiting_ends", Event_Teamplay_Waiting_Ends);
 	HookEvent("teamplay_round_start", Event_Teamplay_Round_Start);
 	HookEvent("arena_round_start", Event_Arena_Round_Start);
 	HookEvent("teamplay_broadcast_audio", Event_Pre_Broadcast_Audio, EventHookMode_Pre);
@@ -156,7 +154,7 @@ public void OnPluginStart()
 	tf_arena_use_queue = FindConVar("tf_arena_use_queue");
 	tf_arena_preround_time = FindConVar("tf_arena_preround_time");
 	tf_arena_override_cap_enable_time = FindConVar("tf_arena_override_cap_enable_time");
-	tf_arena_max_streak = FindConvar("tf_arena_max_streak");
+	tf_arena_max_streak = FindConVar("tf_arena_max_streak");
 	mp_bonusroundtime = FindConVar("mp_bonusroundtime");
 	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
 
@@ -339,12 +337,12 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 	return Plugin_Handled;
 }
 
-public Action Event_Teamplay_Waiting_Begins(Event event, const char[] sName, bool bDontBroadcast)
+public void TF2_OnWaitingForPlayersStart()
 {
 	g_bWaitingForPlayers = true;
 }
 
-public Action Event_Teamplay_Waiting_Ends(Event event, const char[] sName, bool bDontBroadcast)
+public void TF2_OnWaitingForPlayersEnd()
 {
 	g_bWaitingForPlayers = false;
 	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/chooseteam.mp3");
