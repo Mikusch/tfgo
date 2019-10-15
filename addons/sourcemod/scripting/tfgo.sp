@@ -87,6 +87,7 @@ ConVar tf_arena_round_time;
 ConVar tf_arena_use_queue;
 ConVar tf_arena_preround_time;
 ConVar tf_arena_override_cap_enable_time;
+ConVar tf_arena_max_streak;
 ConVar mp_bonusroundtime;
 
 // SDK functions
@@ -155,6 +156,7 @@ public void OnPluginStart()
 	tf_arena_use_queue = FindConVar("tf_arena_use_queue");
 	tf_arena_preround_time = FindConVar("tf_arena_preround_time");
 	tf_arena_override_cap_enable_time = FindConVar("tf_arena_override_cap_enable_time");
+	tf_arena_max_streak = FindConvar("tf_arena_max_streak");
 	mp_bonusroundtime = FindConVar("mp_bonusroundtime");
 	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
 
@@ -626,8 +628,9 @@ void Toggle_ConVars(bool toggle)
 	static bool arenaUseQueue;
 	static int arenaRoundTime;
 	static int arenaOverrideCapEnableTime;
+	static int arenaMaxStreak;
 	static int bonusRoundTime;
-
+	
 	if (toggle)
 	{
 		arenaFirstBlood = tf_arena_first_blood.BoolValue;
@@ -642,6 +645,9 @@ void Toggle_ConVars(bool toggle)
 		arenaOverrideCapEnableTime = tf_arena_override_cap_enable_time.IntValue;
 		tf_arena_override_cap_enable_time.IntValue = 15;
 
+		arenaMaxStreak = tf_arena_max_streak.IntValue;
+		tf_arena_max_streak.IntValue = 5;
+
 		bonusRoundTime = mp_bonusroundtime.IntValue;
 		mp_bonusroundtime.IntValue = 7;
 	}
@@ -651,6 +657,7 @@ void Toggle_ConVars(bool toggle)
 		tf_arena_use_queue.BoolValue = arenaUseQueue;
 		tf_arena_round_time.IntValue = arenaRoundTime;
 		tf_arena_override_cap_enable_time.IntValue = arenaOverrideCapEnableTime;
+		tf_arena_max_streak.IntValue = arenaMaxStreak;
 		mp_bonusroundtime.IntValue = bonusRoundTime;
 	}
 }
