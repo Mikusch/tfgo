@@ -120,22 +120,10 @@ public void ShoutBombWarnings()
 		{
 			switch (TF2_GetPlayerClass(client))
 			{
-				case TFClass_Engineer:
-				{
-					EmitSoundToAll(g_sBombPlantedEngineerAlerts[GetRandomInt(0, sizeof(g_sBombPlantedEngineerAlerts) - 1)], _, SNDCHAN_VOICE);
-				}
-				case TFClass_Heavy:
-				{
-					EmitSoundToAll(g_sBombPlantedHeavyAlerts[GetRandomInt(0, sizeof(g_sBombPlantedHeavyAlerts) - 1)], _, SNDCHAN_VOICE);
-				}
-				case TFClass_Medic:
-				{
-					EmitSoundToAll(g_sBombPlantedMedicAlerts[GetRandomInt(0, sizeof(g_sBombPlantedMedicAlerts) - 1)], _, SNDCHAN_VOICE);
-				}
-				case TFClass_Soldier:
-				{
-					EmitSoundToAll(g_sBombPlantedSoldierAlerts[GetRandomInt(0, sizeof(g_sBombPlantedSoldierAlerts) - 1)], _, SNDCHAN_VOICE);
-				}
+				case TFClass_Engineer:EmitSoundToAll(g_sBombPlantedEngineerAlerts[GetRandomInt(0, sizeof(g_sBombPlantedEngineerAlerts) - 1)], _, SNDCHAN_VOICE);
+				case TFClass_Heavy:EmitSoundToAll(g_sBombPlantedHeavyAlerts[GetRandomInt(0, sizeof(g_sBombPlantedHeavyAlerts) - 1)], _, SNDCHAN_VOICE);
+				case TFClass_Medic:EmitSoundToAll(g_sBombPlantedMedicAlerts[GetRandomInt(0, sizeof(g_sBombPlantedMedicAlerts) - 1)], _, SNDCHAN_VOICE);
+				case TFClass_Soldier:EmitSoundToAll(g_sBombPlantedSoldierAlerts[GetRandomInt(0, sizeof(g_sBombPlantedSoldierAlerts) - 1)], _, SNDCHAN_VOICE);
 			}
 		}
 	}
@@ -144,12 +132,8 @@ public void ShoutBombWarnings()
 stock void EmitSoundToTeam(int team, const char[] sound)
 {
 	for (int client = 1; client <= MaxClients; client++)
-	{
-		if (IsClientInGame(client) && GetClientTeam(client) == team)
-		{
-			EmitSoundToClient(client, sound);
-		}
-	}
+	    if (IsClientInGame(client) && GetClientTeam(client) == team)
+		    EmitSoundToClient(client, sound);
 }
 
 public Action Event_Pre_Broadcast_Audio(Event event, const char[] name, bool dontBroadcast)
@@ -159,11 +143,11 @@ public Action Event_Pre_Broadcast_Audio(Event event, const char[] name, bool don
 	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/bombplanted.mp3");
 	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/roundtenseccount.mp3");
 	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/bombtenseccount.mp3");
-	
+
 	char sound[PLATFORM_MAX_PATH];
 	event.GetString("sound", sound, sizeof(sound));
 	int team = event.GetInt("team");
-	
+
 	if (strcmp(sound, "Game.YourTeamWon") == 0)
 	{
 		EmitSoundToTeam(team, "tfgo/music/valve_csgo_01/wonround.mp3");
@@ -181,7 +165,7 @@ public Action Event_Pre_Broadcast_Audio(Event event, const char[] name, bool don
 		EmitSoundToAll(g_sStartActionMusic[iRandom]);
 		return Plugin_Continue;
 	}
-	
+
 	return Plugin_Continue;
 }
 
@@ -203,18 +187,12 @@ stock void PlayRoundStartMusic()
 stock void StopRoundActionMusic()
 {
 	for (int i = 0; i < sizeof(g_sStartActionMusic); i++)
-	{
-		StopSoundForAll(SNDCHAN_AUTO, g_sStartActionMusic[i]);
-	}
+	    StopSoundForAll(SNDCHAN_AUTO, g_sStartActionMusic[i]);
 }
 
 stock void StopSoundForAll(int channel, const char[] sound)
 {
 	for (int i = 1; i <= MaxClients; i++)
-	{
-		if (i <= MaxClients && IsClientConnected(i))
-		{
-			StopSound(i, channel, sound);
-		}
-	}
+	    if (IsClientConnected(i))
+		    StopSound(i, channel, sound);
 }
