@@ -184,7 +184,7 @@ methodmap TFGOPlayer
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Client);
 
-		for (int slot = 0; slot < sizeof(g_iLoadoutWeaponIndex[][]) - 1; slot++)
+		for (int slot = sizeof(g_iLoadoutWeaponIndex[][]) - 1; slot >= 0 ; slot--)
 		{
 			int defindex = this.GetWeaponFromLoadout(class, slot);
 			if (defindex != -1)

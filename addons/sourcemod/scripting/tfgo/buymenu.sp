@@ -9,11 +9,6 @@ public void ShowMainBuyMenu(int client)
 	
 	switch (TF2_GetPlayerClass(client))
 	{
-		case TFClass_Spy:
-		{
-			menu.AddItem("0", "Secondary Weapon");
-			menu.AddItem("2", "Melee Weapon");
-		}
 		default:
 		{
 			menu.AddItem("0", "Primary Weapon");
