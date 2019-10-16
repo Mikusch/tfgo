@@ -1,6 +1,6 @@
 #define MUSIC_KIT_FILE "configs/tfgo/musickits.cfg"
 
-enum struct SMusicKit
+enum struct MusicKit
 {
 	char name[PLATFORM_MAX_PATH];
 	
@@ -18,13 +18,26 @@ enum struct SMusicKit
 	ArrayList roundmvpanthem;
 }
 
+enum MusicType
+{
+	Music_BombPlanted, 
+	Music_BombTenSecCount, 
+	Music_ChooseTeam, 
+	Music_LostRound, 
+	Music_RoundTenSecCount, 
+	Music_WonRound, 
+	Music_StartAction, 
+	Music_StartRound, 
+	Music_RoundMVPAnthem
+}
+
 void ReadMusicKitConfig(KeyValues kv)
 {
 	if (kv.GotoFirstSubKey(false))
 	{
 		do // Loop through each music kit
 		{
-			SMusicKit kit;
+			MusicKit kit;
 			char name[PLATFORM_MAX_PATH];
 			kv.GetSectionName(name, sizeof(name));
 			kit.name = name;
@@ -81,6 +94,25 @@ void ReadMusicKitConfig(KeyValues kv)
 		kv.GoBack();
 	}
 	kv.GoBack();
+}
+
+public void GetSound(char[] buffer, int maxlength, const char[] name, MusicType type)
+{
+	MusicKit kit;
+	g_hMusicKits.GetArray(name, kit, sizeof(kit));
+	
+	switch (type)
+	{
+		case Music_BombPlanted:strcopy(buffer, maxlength, kit.bombplanted);
+		case Music_BombTenSecCount:strcopy(buffer, maxlength, kit.bombtenseccount);
+		case Music_ChooseTeam:strcopy(buffer, maxlength, kit.chooseteam);
+		case Music_LostRound:strcopy(buffer, maxlength, kit.lostround);
+		case Music_RoundTenSecCount:strcopy(buffer, maxlength, kit.roundtenseccount);
+		case Music_WonRound:strcopy(buffer, maxlength, kit.wonround);
+		case Music_StartRound:kit.startround.GetString(GetRandomInt(0, kit.startround.Length - 1), buffer, maxlength);
+		case Music_StartAction:kit.startaction.GetString(GetRandomInt(0, kit.startaction.Length - 1), buffer, maxlength);
+		case Music_RoundMVPAnthem:kit.roundmvpanthem.GetString(GetRandomInt(0, kit.roundmvpanthem.Length - 1), buffer, maxlength);
+	}
 }
 
 void MusicKit_Init()
