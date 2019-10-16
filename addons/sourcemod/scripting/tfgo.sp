@@ -158,7 +158,7 @@ public void OnPluginStart()
 	tf_arena_override_cap_enable_time = FindConVar("tf_arena_override_cap_enable_time");
 	tf_arena_max_streak = FindConVar("tf_arena_max_streak");
 	tf_weapon_criticals = FindConVar("tf_weapon_criticals");
-    tf_weapon_criticals_melee = FindConVar("tf_weapon_criticals_melee");
+	tf_weapon_criticals_melee = FindConVar("tf_weapon_criticals_melee");
 	mp_bonusroundtime = FindConVar("mp_bonusroundtime");
 	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
 
@@ -632,7 +632,7 @@ void Toggle_ConVars(bool toggle)
 	static int arenaOverrideCapEnableTime;
 	static int arenaMaxStreak;
 	static bool weaponCriticals;
-    static bool weaponCriticalsMelee;
+	static bool weaponCriticalsMelee;
 	static int bonusRoundTime;
 	
 	if (toggle)
@@ -669,7 +669,7 @@ void Toggle_ConVars(bool toggle)
 		tf_arena_override_cap_enable_time.IntValue = arenaOverrideCapEnableTime;
 		tf_arena_max_streak.IntValue = arenaMaxStreak;
 		tf_weapon_criticals.BoolValue = weaponCriticals;
-        tf_weapon_criticals_melee.BoolValue = weaponCriticalsMelee;
+		tf_weapon_criticals_melee.BoolValue = weaponCriticalsMelee;
 		mp_bonusroundtime.IntValue = bonusRoundTime;
 	}
 }
