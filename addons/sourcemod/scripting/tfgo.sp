@@ -43,6 +43,7 @@ Handle g_hBombBeepTimer;
 
 // Other handles
 Menu g_hActiveBuyMenus[TF_MAXPLAYERS + 1];
+StringMap g_hMusicKits;
 
 /*
 * Pre-defined default weapons for each class and slot.
@@ -112,6 +113,7 @@ StringMap killAwardMap;
 
 
 #include "tfgo/stocks.sp"
+#include "tfgo/musickits.sp"
 #include "tfgo/methodmaps.sp"
 #include "tfgo/sound.sp"
 #include "tfgo/config.sp"
@@ -134,6 +136,7 @@ public void OnPluginStart()
 	// Initializing globals
 	SDK_Init();
 	Config_Init();
+	MusicKit_Init();
 	g_hHudSync = CreateHudSynchronizer();
 	for (int client = 1; client <= MaxClients; client++)
 	    TFGOPlayer(client).ClearLoadout();
