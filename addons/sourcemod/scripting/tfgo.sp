@@ -58,7 +58,7 @@ int g_iDefaultWeaponIndex[][] =  {
 	{ -1, 11, 30758, -1, -1, -1 },  // Heavy
 	{ -1, 12, 30758, -1, -1, -1 },  // Pyro
 	{ 24, 735, 30758, 27, 30, -1 },  // Spy
-	{ 9, 22, 30758, 25, 26, 28 } // Engineer
+	{ -1, 22, 30758, 25, 26, 28 } // Engineer
 };
 
 // Player loadouts
@@ -249,10 +249,10 @@ public Action Event_Player_Spawn(Event event, const char[] name, bool dontBroadc
 
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	TFClassType class = TF2_GetPlayerClass(client);
-	if (class == TFClass_Engineer || class == TFClass_Spy)
+	if (class == TFClass_Spy)
 	{
 		TFClassType randomClass = TF2_GetRandomClass();
-		while (randomClass == TFClass_Engineer || randomClass == TFClass_Spy)
+		while (randomClass == TFClass_Spy)
 		{
 			randomClass = TF2_GetRandomClass();
 		}
