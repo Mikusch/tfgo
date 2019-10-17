@@ -60,7 +60,7 @@ public void ShowBuyMenu(int client, int slot)
 
 			char display[255];
 			char weaponName[255];
-			TF2Econ_GetItemName(weapon.DefIndex, weaponName, sizeof(weaponName));
+			TF2_GetItemName(weapon.DefIndex, weaponName, sizeof(weaponName));
 			Format(display, sizeof(display), "%s ($%d)", weaponName, weapon.Cost);
 
 			menu.AddItem(info, display);
