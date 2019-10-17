@@ -2,6 +2,7 @@
 
 enum struct MusicKit
 {
+	// Unique identifier of this music kit
 	char name[PLATFORM_MAX_PATH];
 	
 	// Single-value sounds
@@ -34,27 +35,27 @@ enum MusicType
 public void PlayMusicToClient(int client, const char[] name, MusicType type)
 {
 	char sound[PLATFORM_MAX_PATH];
-	GetRandomMusic(sound, sizeof(sound), name, type);
+	GetRandomMusicFile(sound, sizeof(sound), name, type);
 	EmitSoundToClient(client, sound);
-}
-
-public void PlayMusicToAll(const char[] name, MusicType type)
-{
-	char sound[PLATFORM_MAX_PATH];
-	GetRandomMusic(sound, sizeof(sound), name, type);
-	EmitSoundToAll(sound);
 }
 
 public void PlayMusicToTeam(TFTeam team, const char[] name, MusicType type)
 {
 	char sound[PLATFORM_MAX_PATH];
-	GetRandomMusic(sound, sizeof(sound), name, type);
+	GetRandomMusicFile(sound, sizeof(sound), name, type);
 	for (int client = 1; client <= MaxClients; client++)
 	if (IsClientInGame(client) && TF2_GetClientTeam(client) == team)
 		EmitSoundToClient(client, sound);
 }
 
-public void GetRandomMusic(char[] buffer, int maxlength, const char[] name, MusicType type)
+public void PlayMusicToAll(const char[] name, MusicType type)
+{
+	char sound[PLATFORM_MAX_PATH];
+	GetRandomMusicFile(sound, sizeof(sound), name, type);
+	EmitSoundToAll(sound);
+}
+
+public void GetRandomMusicFile(char[] buffer, int maxlength, const char[] name, MusicType type)
 {
 	MusicKit kit;
 	g_hMusicKits.GetArray(name, kit, sizeof(kit));
@@ -78,6 +79,7 @@ public void StopMusicForClient(int entity, const char[] name, MusicType type)
 	MusicKit kit;
 	g_hMusicKits.GetArray(name, kit, sizeof(kit));
 	
+	char sound[PLATFORM_MAX_PATH];
 	switch (type)
 	{
 		case Music_BombPlanted:StopSound(entity, SNDCHAN_AUTO, kit.bombplanted);
@@ -90,7 +92,6 @@ public void StopMusicForClient(int entity, const char[] name, MusicType type)
 		{
 			for (int i = 0; i < kit.startround.Length; i++)
 			{
-				char sound[PLATFORM_MAX_PATH];
 				kit.startround.GetString(i, sound, sizeof(sound));
 				StopSound(entity, SNDCHAN_AUTO, sound);
 			}
@@ -99,7 +100,6 @@ public void StopMusicForClient(int entity, const char[] name, MusicType type)
 		{
 			for (int i = 0; i < kit.startaction.Length; i++)
 			{
-				char sound[PLATFORM_MAX_PATH];
 				kit.startaction.GetString(i, sound, sizeof(sound));
 				StopSound(entity, SNDCHAN_AUTO, sound);
 			}
@@ -108,7 +108,6 @@ public void StopMusicForClient(int entity, const char[] name, MusicType type)
 		{
 			for (int i = 0; i < kit.roundmvpanthem.Length; i++)
 			{
-				char sound[PLATFORM_MAX_PATH];
 				kit.roundmvpanthem.GetString(i, sound, sizeof(sound));
 				StopSound(entity, SNDCHAN_AUTO, sound);
 			}
