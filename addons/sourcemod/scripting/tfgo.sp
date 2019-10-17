@@ -43,6 +43,7 @@ Handle g_hBombBeepTimer;
 
 // Other handles
 Menu g_hActiveBuyMenus[TF_MAXPLAYERS + 1];
+StringMap g_hMusicKits;
 
 /*
 * Pre-defined default weapons for each class and slot.
@@ -111,6 +112,9 @@ ArrayList weaponList;
 StringMap killAwardMap;
 
 
+#include "tfgo/musickits.sp"
+MusicKit g_hCurrentMusicKit;
+
 #include "tfgo/stocks.sp"
 #include "tfgo/methodmaps.sp"
 #include "tfgo/sound.sp"
@@ -134,6 +138,7 @@ public void OnPluginStart()
 	// Initializing globals
 	SDK_Init();
 	Config_Init();
+	MusicKit_Init();
 	g_hHudSync = CreateHudSynchronizer();
 	for (int client = 1; client <= MaxClients; client++)
 	    TFGOPlayer(client).ClearLoadout();
@@ -176,12 +181,39 @@ public void OnPluginEnd()
 public void OnMapStart()
 {
 	DHookGamerules(g_hSetWinningTeam, false);
+	
 	PrecacheSounds();
 	PrecacheModels();
+	
+	// Precache all music kit sounds
+	StringMapSnapshot snapshot = g_hMusicKits.Snapshot();
+	for (int i = 0; i < snapshot.Length; i++)
+	{
+		char kitName[PLATFORM_MAX_PATH];
+		snapshot.GetKey(i, kitName, sizeof(kitName));
+		
+		MusicKit kit;
+		g_hMusicKits.GetArray(kitName, kit, sizeof(kit));
+		kit.PrecacheSounds();
+	}
+	delete snapshot;
+	
+	// Pick random music kit for the game
+	ChooseRandomMusicKit();
 
 	int func_respawnroom = FindEntityByClassname(-1, "func_respawnroom");
 	if (func_respawnroom <= -1)
 		LogMessage("This map is missing a func_respawnroom entity - unable to define a buy zone");
+}
+
+public void ChooseRandomMusicKit()
+{
+	StringMapSnapshot musicKitNames = g_hMusicKits.Snapshot();
+	char kitName[PLATFORM_MAX_PATH];
+	musicKitNames.GetKey(GetRandomInt(0, musicKitNames.Length - 1), kitName, sizeof(kitName));
+	delete musicKitNames;
+	
+	g_hMusicKits.GetArray(kitName, g_hCurrentMusicKit, sizeof(g_hCurrentMusicKit));
 }
 
 public void OnClientConnected(int client)
@@ -192,7 +224,7 @@ public void OnClientConnected(int client)
 	player.ClearLoadout();
 
 	if (g_bWaitingForPlayers)
-		EmitSoundToClient(client, "tfgo/music/valve_csgo_01/chooseteam.mp3");
+		g_hCurrentMusicKit.PlayMusicToClient(client,  Music_ChooseTeam);
 }
 
 public void OnClientDisconnect(int client)
@@ -349,7 +381,7 @@ public void TF2_OnWaitingForPlayersStart()
 public void TF2_OnWaitingForPlayersEnd()
 {
 	g_bWaitingForPlayers = false;
-	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/chooseteam.mp3");
+	g_hCurrentMusicKit.StopMusicForAll(Music_ChooseTeam);
 }
 
 public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
@@ -473,9 +505,9 @@ void PlantBomb(int team, const char[] cappers)
 		delete g_h10SecondRoundTimer;
 
 	// Play Sounds
-	StopRoundActionMusic();
-	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/roundtenseccount.mp3");
-	EmitSoundToAll("tfgo/music/valve_csgo_01/bombplanted.mp3");
+	g_hCurrentMusicKit.StopMusicForAll(Music_StartAction);
+	g_hCurrentMusicKit.StopMusicForAll(Music_RoundTenSecCount);
+	g_hCurrentMusicKit.PlayMusicToAll(Music_BombPlanted);
 	PlayAnnouncerBombAlert();
 	ShoutBombWarnings();
 
@@ -494,8 +526,8 @@ public Action PlayBombBeep(Handle timer, int bomb)
 
 stock Action Play10SecondBombWarning(Handle timer)
 {
-	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/bombplanted.mp3");
-	EmitSoundToAll("tfgo/music/valve_csgo_01/bombtenseccount.mp3");
+	g_hCurrentMusicKit.StopMusicForAll(Music_BombPlanted);
+	g_hCurrentMusicKit.PlayMusicToAll(Music_BombTenSecCount);
 }
 
 public Action PlayBombExplosionWarning(Handle timer, int bomb)
@@ -617,6 +649,8 @@ public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool d
 
 	for (int i = 0; i < sizeof(g_iLoseStreak); i++)
 	    g_iLoseStreak[i] = TFGO_STARTING_LOSESTREAK;
+
+	ChooseRandomMusicKit();
 }
 
 void PrecacheModels()

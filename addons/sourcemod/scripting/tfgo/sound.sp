@@ -1,14 +1,3 @@
-
-static char g_sStartRoundMusic[][PLATFORM_MAX_PATH] =  {
-	"tfgo/music/valve_csgo_01/startround_01.mp3", 
-	"tfgo/music/valve_csgo_01/startround_02.mp3", 
-	"tfgo/music/valve_csgo_01/startround_03.mp3"
-};
-
-static char g_sStartActionMusic[][PLATFORM_MAX_PATH] =  {
-	"tfgo/music/valve_csgo_01/startaction_01.mp3"
-};
-
 static char g_sBombPlantedAnnouncerAlerts[][PLATFORM_MAX_PATH] =  {
 	"vo/mvm_bomb_alerts01.mp3", 
 	"vo/mvm_bomb_alerts02.mp3"
@@ -54,37 +43,11 @@ static char g_sBombDefusedSoldierResponses[][PLATFORM_MAX_PATH] =  {
 
 stock void PrecacheSounds()
 {
-	AddFileToDownloadsTable("sound/tfgo/music/valve_csgo_01/wonround.mp3");
-	AddFileToDownloadsTable("sound/tfgo/music/valve_csgo_01/lostround.mp3");
-	AddFileToDownloadsTable("sound/tfgo/music/valve_csgo_01/roundtenseccount.mp3");
-	AddFileToDownloadsTable("sound/tfgo/music/valve_csgo_01/bombtenseccount.mp3");
-	AddFileToDownloadsTable("sound/tfgo/music/valve_csgo_01/chooseteam.mp3");
-	AddFileToDownloadsTable("sound/tfgo/music/valve_csgo_01/bombplanted.mp3");
-	for (int i = 0; i < sizeof(g_sStartRoundMusic); i++)
-	{
-		char sound[PLATFORM_MAX_PATH] = "sound/";
-		StrCat(sound[i], sizeof(sound), g_sStartRoundMusic[i]);
-		AddFileToDownloadsTable(sound);
-	}
-	for (int i = 0; i < sizeof(g_sStartActionMusic); i++)
-	{
-		char sound[PLATFORM_MAX_PATH] = "sound/";
-		StrCat(sound[i], sizeof(sound), g_sStartActionMusic[i]);
-		AddFileToDownloadsTable(sound);
-	}
-	
-	PrecacheSound("tfgo/music/valve_csgo_01/wonround.mp3");
-	PrecacheSound("tfgo/music/valve_csgo_01/lostround.mp3");
-	PrecacheSound("tfgo/music/valve_csgo_01/roundtenseccount.mp3");
-	PrecacheSound("tfgo/music/valve_csgo_01/bombtenseccount.mp3");
-	PrecacheSound("tfgo/music/valve_csgo_01/chooseteam.mp3");
-	PrecacheSound("tfgo/music/valve_csgo_01/bombplanted.mp3");
 	PrecacheSound("mvm/mvm_bomb_warning.wav");
 	PrecacheSound("mvm/mvm_bomb_explode.wav");
 	PrecacheSound("mvm/mvm_bought_upgrade.wav");
 	PrecacheSound("player/cyoa_pda_beep8.wav");
 	PrecacheSound("vo/announcer_time_added.mp3");
-	
 	// TODO remove this after removing the bandaid
 	PrecacheSound("vo/halloween_boo1.mp3");
 	PrecacheSound("vo/halloween_boo2.mp3");
@@ -94,8 +57,6 @@ stock void PrecacheSounds()
 	PrecacheSound("vo/halloween_boo6.mp3");
 	PrecacheSound("vo/halloween_boo7.mp3");
 	
-	for (int i = 0; i < sizeof(g_sStartRoundMusic); i++)PrecacheSound(g_sStartRoundMusic[i]);
-	for (int i = 0; i < sizeof(g_sStartActionMusic); i++)PrecacheSound(g_sStartActionMusic[i]);
 	for (int i = 0; i < sizeof(g_sBombPlantedAnnouncerAlerts); i++)PrecacheSound(g_sBombPlantedAnnouncerAlerts[i]);
 	for (int i = 0; i < sizeof(g_sBombPlantedEngineerAlerts); i++)PrecacheSound(g_sBombPlantedEngineerAlerts[i]);
 	for (int i = 0; i < sizeof(g_sBombPlantedHeavyAlerts); i++)PrecacheSound(g_sBombPlantedHeavyAlerts[i]);
@@ -129,70 +90,48 @@ public void ShoutBombWarnings()
 	}
 }
 
-stock void EmitSoundToTeam(int team, const char[] sound)
-{
-	for (int client = 1; client <= MaxClients; client++)
-	    if (IsClientInGame(client) && GetClientTeam(client) == team)
-		    EmitSoundToClient(client, sound);
-}
-
 public Action Event_Pre_Broadcast_Audio(Event event, const char[] name, bool dontBroadcast)
 {
 	// Cancel various sounds that could still be playing here
-	StopRoundActionMusic();
-	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/bombplanted.mp3");
-	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/roundtenseccount.mp3");
-	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/bombtenseccount.mp3");
-
+	g_hCurrentMusicKit.StopMusicForAll(Music_StartRound);
+	g_hCurrentMusicKit.StopMusicForAll(Music_StartAction);
+	g_hCurrentMusicKit.StopMusicForAll(Music_BombPlanted);
+	g_hCurrentMusicKit.StopMusicForAll(Music_RoundTenSecCount);
+	g_hCurrentMusicKit.StopMusicForAll(Music_BombTenSecCount);
+	
 	char sound[PLATFORM_MAX_PATH];
 	event.GetString("sound", sound, sizeof(sound));
-	int team = event.GetInt("team");
-
+	TFTeam team = view_as<TFTeam>(event.GetInt("team"));
+	
 	if (strcmp(sound, "Game.YourTeamWon") == 0)
 	{
-		EmitSoundToTeam(team, "tfgo/music/valve_csgo_01/wonround.mp3");
+		g_hCurrentMusicKit.PlayMusicToTeam(team, Music_WonRound);
 		return Plugin_Handled;
 	}
 	else if (strcmp(sound, "Game.YourTeamLost") == 0 || strcmp(sound, "Game.Stalemate") == 0)
 	{
-		EmitSoundToTeam(team, "tfgo/music/valve_csgo_01/lostround.mp3");
+		g_hCurrentMusicKit.PlayMusicToTeam(team, Music_LostRound);
 		return Plugin_Handled;
 	}
 	else if (strcmp(sound, "Announcer.AM_RoundStartRandom") == 0)
 	{
-		for (int i = 0; i < sizeof(g_sStartRoundMusic); i++)StopSoundForAll(SNDCHAN_AUTO, g_sStartRoundMusic[i]);
-		int iRandom = GetRandomInt(0, sizeof(g_sStartActionMusic) - 1);
-		EmitSoundToAll(g_sStartActionMusic[iRandom]);
+		g_hCurrentMusicKit.PlayMusicToAll(Music_StartAction);
 		return Plugin_Continue;
 	}
-
+	
 	return Plugin_Continue;
 }
 
 stock Action Play10SecondWarning(Handle timer)
 {
-	StopRoundActionMusic(); // if it is still playing for whatever reason
-	EmitSoundToAll("tfgo/music/valve_csgo_01/roundtenseccount.mp3");
+	g_hCurrentMusicKit.StopMusicForAll(Music_StartAction);
+	g_hCurrentMusicKit.PlayMusicToAll(Music_RoundTenSecCount);
 	g_h10SecondRoundTimer = null;
 }
 
 stock void PlayRoundStartMusic()
 {
-	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/wonround.mp3");
-	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/lostround.mp3");
-	int iRandom = GetRandomInt(0, sizeof(g_sStartRoundMusic) - 1);
-	EmitSoundToAll(g_sStartRoundMusic[iRandom]);
-}
-
-stock void StopRoundActionMusic()
-{
-	for (int i = 0; i < sizeof(g_sStartActionMusic); i++)
-	    StopSoundForAll(SNDCHAN_AUTO, g_sStartActionMusic[i]);
-}
-
-stock void StopSoundForAll(int channel, const char[] sound)
-{
-	for (int i = 1; i <= MaxClients; i++)
-	    if (IsClientConnected(i))
-		    StopSound(i, channel, sound);
+	g_hCurrentMusicKit.StopMusicForAll(Music_WonRound);
+	g_hCurrentMusicKit.StopMusicForAll(Music_LostRound);
+	g_hCurrentMusicKit.PlayMusicToAll(Music_StartRound);
 }
