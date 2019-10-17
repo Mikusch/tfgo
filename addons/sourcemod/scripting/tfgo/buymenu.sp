@@ -17,7 +17,6 @@ public void ShowMainBuyMenu(int client)
 		}
 	}
 	
-	menu.ExitButton = false;
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
