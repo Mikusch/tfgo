@@ -1,7 +1,7 @@
 "Phrases"
 {
 	// Translations for weapons TF2 Econ can't provide
-		"#TF_Weapon_Pistol"
+	"#TF_Weapon_Pistol"
 	{
 		"en"	"Pistol"
 	}
