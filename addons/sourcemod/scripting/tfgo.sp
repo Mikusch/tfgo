@@ -298,12 +298,28 @@ public Action Event_Player_Team(Event event, const char[] name, bool dontBroadca
 {
 	// Reset player data on team switch
 	TFGOPlayer player = TFGOPlayer(GetClientOfUserId(event.GetInt("userid")));
-	player.Balance = TFGO_STARTING_BALANCE;
+	
+	// Cap balance at highest of the team
+	int balance = GetHighestBalanceInTeam(event.GetInt("team"));
+	if (player.Balance > balance)
+		player.Balance = balance;
 	player.ClearLoadout();
 
 	// Cancel buy menu if client switched to spectator  (#4)
 	if (view_as<TFTeam>(event.GetInt("team")) == TFTeam_Spectator && player.ActiveBuyMenu != null)
 		player.ActiveBuyMenu.Cancel();
+}
+
+int GetHighestBalanceInTeam(int team)
+{
+	int balance = TFGO_STARTING_BALANCE;
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		TFGOPlayer player = TFGOPlayer(client);
+		if (IsClientInGame(client) && GetClientTeam(client) == team && player.Balance > balance)
+			balance = player.Balance;
+	}
+	return balance;
 }
 
 public Action Event_Player_Death(Event event, const char[] name, bool dontBroadcast)
