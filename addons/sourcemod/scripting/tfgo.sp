@@ -205,7 +205,7 @@ public void OnClientConnected(int client)
 	player.ClearLoadout();
 
 	if (g_bWaitingForPlayers)
-		EmitSoundToClient(client, "tfgo/music/valve_csgo_01/chooseteam.mp3");
+		PlayMusicToClient(client, g_strCurrentMusicKit, Music_ChooseTeam);
 }
 
 public void OnClientDisconnect(int client)
@@ -362,7 +362,7 @@ public void TF2_OnWaitingForPlayersStart()
 public void TF2_OnWaitingForPlayersEnd()
 {
 	g_bWaitingForPlayers = false;
-	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/chooseteam.mp3");
+	StopMusicForAll(g_strCurrentMusicKit, Music_ChooseTeam);
 }
 
 public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
@@ -486,9 +486,9 @@ void PlantBomb(int team, const char[] cappers)
 		delete g_h10SecondRoundTimer;
 
 	// Play Sounds
-	StopRoundActionMusic();
-	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/roundtenseccount.mp3");
-	EmitSoundToAll("tfgo/music/valve_csgo_01/bombplanted.mp3");
+	StopMusicForAll(g_strCurrentMusicKit, Music_StartAction);
+	StopMusicForAll(g_strCurrentMusicKit, Music_RoundTenSecCount);
+	PlayMusicToAll(g_strCurrentMusicKit, Music_BombPlanted);
 	PlayAnnouncerBombAlert();
 	ShoutBombWarnings();
 
@@ -507,8 +507,8 @@ public Action PlayBombBeep(Handle timer, int bomb)
 
 stock Action Play10SecondBombWarning(Handle timer)
 {
-	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/bombplanted.mp3");
-	EmitSoundToAll("tfgo/music/valve_csgo_01/bombtenseccount.mp3");
+	StopMusicForAll(g_strCurrentMusicKit, Music_BombPlanted);
+	PlayMusicToAll(g_strCurrentMusicKit, Music_BombTenSecCount);
 }
 
 public Action PlayBombExplosionWarning(Handle timer, int bomb)

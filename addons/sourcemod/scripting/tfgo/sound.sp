@@ -1,14 +1,3 @@
-
-static char g_sStartRoundMusic[][PLATFORM_MAX_PATH] =  {
-	"tfgo/music/valve_csgo_01/startround_01.mp3", 
-	"tfgo/music/valve_csgo_01/startround_02.mp3", 
-	"tfgo/music/valve_csgo_01/startround_03.mp3"
-};
-
-static char g_sStartActionMusic[][PLATFORM_MAX_PATH] =  {
-	"tfgo/music/valve_csgo_01/startaction_01.mp3"
-};
-
 static char g_sBombPlantedAnnouncerAlerts[][PLATFORM_MAX_PATH] =  {
 	"vo/mvm_bomb_alerts01.mp3", 
 	"vo/mvm_bomb_alerts02.mp3"
@@ -54,37 +43,21 @@ static char g_sBombDefusedSoldierResponses[][PLATFORM_MAX_PATH] =  {
 
 stock void PrecacheSounds()
 {
-	AddFileToDownloadsTable("sound/tfgo/music/valve_csgo_01/wonround.mp3");
-	AddFileToDownloadsTable("sound/tfgo/music/valve_csgo_01/lostround.mp3");
-	AddFileToDownloadsTable("sound/tfgo/music/valve_csgo_01/roundtenseccount.mp3");
-	AddFileToDownloadsTable("sound/tfgo/music/valve_csgo_01/bombtenseccount.mp3");
-	AddFileToDownloadsTable("sound/tfgo/music/valve_csgo_01/chooseteam.mp3");
-	AddFileToDownloadsTable("sound/tfgo/music/valve_csgo_01/bombplanted.mp3");
-	for (int i = 0; i < sizeof(g_sStartRoundMusic); i++)
+	// Precache all music kit sounds and add them to the downloads table
+	StringMapSnapshot snapshot = g_hMusicKits.Snapshot();
+	for (int i = 0; i < snapshot.Length; i++)
 	{
-		char sound[PLATFORM_MAX_PATH] = "sound/";
-		StrCat(sound[i], sizeof(sound), g_sStartRoundMusic[i]);
-		AddFileToDownloadsTable(sound);
+		char kitName[PLATFORM_MAX_PATH];
+		snapshot.GetKey(i, kitName, sizeof(kitName));
+		PrecacheMusicKit(kitName);
 	}
-	for (int i = 0; i < sizeof(g_sStartActionMusic); i++)
-	{
-		char sound[PLATFORM_MAX_PATH] = "sound/";
-		StrCat(sound[i], sizeof(sound), g_sStartActionMusic[i]);
-		AddFileToDownloadsTable(sound);
-	}
+	delete snapshot;
 	
-	PrecacheSound("tfgo/music/valve_csgo_01/wonround.mp3");
-	PrecacheSound("tfgo/music/valve_csgo_01/lostround.mp3");
-	PrecacheSound("tfgo/music/valve_csgo_01/roundtenseccount.mp3");
-	PrecacheSound("tfgo/music/valve_csgo_01/bombtenseccount.mp3");
-	PrecacheSound("tfgo/music/valve_csgo_01/chooseteam.mp3");
-	PrecacheSound("tfgo/music/valve_csgo_01/bombplanted.mp3");
 	PrecacheSound("mvm/mvm_bomb_warning.wav");
 	PrecacheSound("mvm/mvm_bomb_explode.wav");
 	PrecacheSound("mvm/mvm_bought_upgrade.wav");
 	PrecacheSound("player/cyoa_pda_beep8.wav");
 	PrecacheSound("vo/announcer_time_added.mp3");
-	
 	// TODO remove this after removing the bandaid
 	PrecacheSound("vo/halloween_boo1.mp3");
 	PrecacheSound("vo/halloween_boo2.mp3");
@@ -94,8 +67,6 @@ stock void PrecacheSounds()
 	PrecacheSound("vo/halloween_boo6.mp3");
 	PrecacheSound("vo/halloween_boo7.mp3");
 	
-	for (int i = 0; i < sizeof(g_sStartRoundMusic); i++)PrecacheSound(g_sStartRoundMusic[i]);
-	for (int i = 0; i < sizeof(g_sStartActionMusic); i++)PrecacheSound(g_sStartActionMusic[i]);
 	for (int i = 0; i < sizeof(g_sBombPlantedAnnouncerAlerts); i++)PrecacheSound(g_sBombPlantedAnnouncerAlerts[i]);
 	for (int i = 0; i < sizeof(g_sBombPlantedEngineerAlerts); i++)PrecacheSound(g_sBombPlantedEngineerAlerts[i]);
 	for (int i = 0; i < sizeof(g_sBombPlantedHeavyAlerts); i++)PrecacheSound(g_sBombPlantedHeavyAlerts[i]);
@@ -105,6 +76,71 @@ stock void PrecacheSounds()
 	for (int i = 0; i < sizeof(g_sBombDefusedHeavyResponses); i++)PrecacheSound(g_sBombDefusedHeavyResponses[i]);
 	for (int i = 0; i < sizeof(g_sBombDefusedMedicResponses); i++)PrecacheSound(g_sBombDefusedMedicResponses[i]);
 	for (int i = 0; i < sizeof(g_sBombDefusedSoldierResponses); i++)PrecacheSound(g_sBombDefusedSoldierResponses[i]);
+}
+
+void PrecacheMusicKit(const char[] name)
+{
+	MusicKit kit;
+	g_hMusicKits.GetArray(name, kit, sizeof(kit));
+	char filename[PLATFORM_MAX_PATH];
+	
+	filename = "sound/";
+	PrecacheSound(kit.bombplanted);
+	StrCat(filename, sizeof(filename), kit.bombplanted);
+	AddFileToDownloadsTable(filename);
+	
+	filename = "sound/";
+	PrecacheSound(kit.bombtenseccount);
+	StrCat(filename, sizeof(filename), kit.bombtenseccount);
+	AddFileToDownloadsTable(filename);
+	
+	filename = "sound/";
+	PrecacheSound(kit.chooseteam);
+	StrCat(filename, sizeof(filename), kit.chooseteam);
+	AddFileToDownloadsTable(filename);
+	
+	filename = "sound/";
+	PrecacheSound(kit.lostround);
+	StrCat(filename, sizeof(filename), kit.lostround);
+	AddFileToDownloadsTable(filename);
+	
+	filename = "sound/";
+	PrecacheSound(kit.roundtenseccount);
+	StrCat(filename, sizeof(filename), kit.roundtenseccount);
+	AddFileToDownloadsTable(filename);
+	
+	filename = "sound/";
+	PrecacheSound(kit.wonround);
+	StrCat(filename, sizeof(filename), kit.wonround);
+	AddFileToDownloadsTable(filename);
+	
+	char sound[PLATFORM_MAX_PATH];
+	for (int i = 0; i < kit.startround.Length; i++)
+	{
+		kit.startround.GetString(i, sound, sizeof(sound));
+		PrecacheSound(sound);
+		filename = "sound/";
+		StrCat(filename, sizeof(filename), sound);
+		AddFileToDownloadsTable(filename);
+	}
+	
+	for (int i = 0; i < kit.startaction.Length; i++)
+	{
+		kit.startaction.GetString(i, sound, sizeof(sound));
+		PrecacheSound(sound);
+		filename = "sound/";
+		StrCat(filename, sizeof(filename), sound);
+		AddFileToDownloadsTable(filename);
+	}
+	
+	for (int i = 0; i < kit.roundmvpanthem.Length; i++)
+	{
+		kit.roundmvpanthem.GetString(i, sound, sizeof(sound));
+		PrecacheSound(sound);
+		filename = "sound/";
+		StrCat(filename, sizeof(filename), sound);
+		AddFileToDownloadsTable(filename);
+	}
 }
 
 public void PlayAnnouncerBombAlert()
@@ -129,70 +165,47 @@ public void ShoutBombWarnings()
 	}
 }
 
-stock void EmitSoundToTeam(int team, const char[] sound)
-{
-	for (int client = 1; client <= MaxClients; client++)
-	    if (IsClientInGame(client) && GetClientTeam(client) == team)
-		    EmitSoundToClient(client, sound);
-}
-
 public Action Event_Pre_Broadcast_Audio(Event event, const char[] name, bool dontBroadcast)
 {
 	// Cancel various sounds that could still be playing here
-	StopRoundActionMusic();
-	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/bombplanted.mp3");
-	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/roundtenseccount.mp3");
-	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/bombtenseccount.mp3");
-
+	StopMusicForAll(g_strCurrentMusicKit, Music_StartAction);
+	StopMusicForAll(g_strCurrentMusicKit, Music_BombPlanted);
+	StopMusicForAll(g_strCurrentMusicKit, Music_RoundTenSecCount);
+	StopMusicForAll(g_strCurrentMusicKit, Music_BombTenSecCount);
+	
 	char sound[PLATFORM_MAX_PATH];
 	event.GetString("sound", sound, sizeof(sound));
-	int team = event.GetInt("team");
-
+	TFTeam team = view_as<TFTeam>(event.GetInt("team"));
+	
 	if (strcmp(sound, "Game.YourTeamWon") == 0)
 	{
-		EmitSoundToTeam(team, "tfgo/music/valve_csgo_01/wonround.mp3");
+		PlayMusicToTeam(team, g_strCurrentMusicKit, Music_WonRound);
 		return Plugin_Handled;
 	}
 	else if (strcmp(sound, "Game.YourTeamLost") == 0 || strcmp(sound, "Game.Stalemate") == 0)
 	{
-		EmitSoundToTeam(team, "tfgo/music/valve_csgo_01/lostround.mp3");
+		PlayMusicToTeam(team, g_strCurrentMusicKit, Music_LostRound);
 		return Plugin_Handled;
 	}
 	else if (strcmp(sound, "Announcer.AM_RoundStartRandom") == 0)
 	{
-		for (int i = 0; i < sizeof(g_sStartRoundMusic); i++)StopSoundForAll(SNDCHAN_AUTO, g_sStartRoundMusic[i]);
-		int iRandom = GetRandomInt(0, sizeof(g_sStartActionMusic) - 1);
-		EmitSoundToAll(g_sStartActionMusic[iRandom]);
+		PlayMusicToAll(g_strCurrentMusicKit, Music_StartAction);
 		return Plugin_Continue;
 	}
-
+	
 	return Plugin_Continue;
 }
 
 stock Action Play10SecondWarning(Handle timer)
 {
-	StopRoundActionMusic(); // if it is still playing for whatever reason
-	EmitSoundToAll("tfgo/music/valve_csgo_01/roundtenseccount.mp3");
+	StopMusicForAll(g_strCurrentMusicKit, Music_StartAction);
+	PlayMusicToAll(g_strCurrentMusicKit, Music_RoundTenSecCount);
 	g_h10SecondRoundTimer = null;
 }
 
 stock void PlayRoundStartMusic()
 {
-	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/wonround.mp3");
-	StopSoundForAll(SNDCHAN_AUTO, "tfgo/music/valve_csgo_01/lostround.mp3");
-	int iRandom = GetRandomInt(0, sizeof(g_sStartRoundMusic) - 1);
-	EmitSoundToAll(g_sStartRoundMusic[iRandom]);
-}
-
-stock void StopRoundActionMusic()
-{
-	for (int i = 0; i < sizeof(g_sStartActionMusic); i++)
-	    StopSoundForAll(SNDCHAN_AUTO, g_sStartActionMusic[i]);
-}
-
-stock void StopSoundForAll(int channel, const char[] sound)
-{
-	for (int i = 1; i <= MaxClients; i++)
-	    if (IsClientConnected(i))
-		    StopSound(i, channel, sound);
+	StopMusicForAll(g_strCurrentMusicKit, Music_WonRound);
+	StopMusicForAll(g_strCurrentMusicKit, Music_LostRound);
+	PlayMusicToAll(g_strCurrentMusicKit, Music_StartRound);
 }
