@@ -80,6 +80,8 @@ bool g_bRoundInBonusTime;
 bool g_bBombPlanted;
 int g_iBombPlanterTeam;
 
+char g_strCurrentMusicKit[PLATFORM_MAX_PATH];
+
 // ConVars
 ConVar tfgo_buytime;
 
@@ -161,7 +163,7 @@ public void OnPluginStart()
 	tf_arena_override_cap_enable_time = FindConVar("tf_arena_override_cap_enable_time");
 	tf_arena_max_streak = FindConVar("tf_arena_max_streak");
 	tf_weapon_criticals = FindConVar("tf_weapon_criticals");
-    tf_weapon_criticals_melee = FindConVar("tf_weapon_criticals_melee");
+	tf_weapon_criticals_melee = FindConVar("tf_weapon_criticals_melee");
 	mp_bonusroundtime = FindConVar("mp_bonusroundtime");
 	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
 
@@ -181,10 +183,18 @@ public void OnMapStart()
 	DHookGamerules(g_hSetWinningTeam, false);
 	PrecacheSounds();
 	PrecacheModels();
+	ChooseRandomMusicKit();
 
 	int func_respawnroom = FindEntityByClassname(-1, "func_respawnroom");
 	if (func_respawnroom <= -1)
 		LogMessage("This map is missing a func_respawnroom entity - unable to define a buy zone");
+}
+
+public void ChooseRandomMusicKit()
+{
+	StringMapSnapshot musicKitNames = g_hMusicKits.Snapshot();
+	musicKitNames.GetKey(GetRandomInt(0, musicKitNames.Length - 1), g_strCurrentMusicKit, sizeof(g_strCurrentMusicKit));
+	delete musicKitNames;
 }
 
 public void OnClientConnected(int client)
@@ -620,6 +630,8 @@ public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool d
 
 	for (int i = 0; i < sizeof(g_iLoseStreak); i++)
 	    g_iLoseStreak[i] = TFGO_STARTING_LOSESTREAK;
+
+	ChooseRandomMusicKit();
 }
 
 void PrecacheModels()
@@ -635,7 +647,7 @@ void Toggle_ConVars(bool toggle)
 	static int arenaOverrideCapEnableTime;
 	static int arenaMaxStreak;
 	static bool weaponCriticals;
-    static bool weaponCriticalsMelee;
+	static bool weaponCriticalsMelee;
 	static int bonusRoundTime;
 	
 	if (toggle)
@@ -672,7 +684,7 @@ void Toggle_ConVars(bool toggle)
 		tf_arena_override_cap_enable_time.IntValue = arenaOverrideCapEnableTime;
 		tf_arena_max_streak.IntValue = arenaMaxStreak;
 		tf_weapon_criticals.BoolValue = weaponCriticals;
-        tf_weapon_criticals_melee.BoolValue = weaponCriticalsMelee;
+		tf_weapon_criticals_melee.BoolValue = weaponCriticalsMelee;
 		mp_bonusroundtime.IntValue = bonusRoundTime;
 	}
 }
