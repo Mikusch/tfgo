@@ -1,4 +1,18 @@
 #define MUSIC_KIT_FILE "configs/tfgo/musickits.cfg"
+#define SOUND_PATH "sound/"
+
+enum MusicType
+{
+	Music_BombPlanted, 
+	Music_BombTenSecCount, 
+	Music_ChooseTeam, 
+	Music_LostRound, 
+	Music_RoundTenSecCount, 
+	Music_WonRound, 
+	Music_StartAction, 
+	Music_StartRound, 
+	Music_RoundMVPAnthem
+}
 
 enum struct MusicKit
 {
@@ -17,115 +31,159 @@ enum struct MusicKit
 	ArrayList startaction;
 	ArrayList startround;
 	ArrayList roundmvpanthem;
-}
-
-enum MusicType
-{
-	Music_BombPlanted, 
-	Music_BombTenSecCount, 
-	Music_ChooseTeam, 
-	Music_LostRound, 
-	Music_RoundTenSecCount, 
-	Music_WonRound, 
-	Music_StartAction, 
-	Music_StartRound, 
-	Music_RoundMVPAnthem
-}
-
-public void PlayMusicToClient(int client, const char[] name, MusicType type)
-{
-	char sound[PLATFORM_MAX_PATH];
-	GetRandomMusicFile(sound, sizeof(sound), name, type);
-	EmitSoundToClient(client, sound);
-}
-
-public void PlayMusicToTeam(TFTeam team, const char[] name, MusicType type)
-{
-	char sound[PLATFORM_MAX_PATH];
-	GetRandomMusicFile(sound, sizeof(sound), name, type);
-	for (int client = 1; client <= MaxClients; client++)
-	if (IsClientInGame(client) && TF2_GetClientTeam(client) == team)
+	
+	void GetRandomMusicFile(char[] buffer, int maxlength, MusicType type)
+	{
+		switch (type)
+		{
+			case Music_BombPlanted:strcopy(buffer, maxlength, this.bombplanted);
+			case Music_BombTenSecCount:strcopy(buffer, maxlength, this.bombtenseccount);
+			case Music_ChooseTeam:strcopy(buffer, maxlength, this.chooseteam);
+			case Music_LostRound:strcopy(buffer, maxlength, this.lostround);
+			case Music_RoundTenSecCount:strcopy(buffer, maxlength, this.roundtenseccount);
+			case Music_WonRound:strcopy(buffer, maxlength, this.wonround);
+			case Music_StartRound:this.startround.GetString(GetRandomInt(0, this.startround.Length - 1), buffer, maxlength);
+			case Music_StartAction:this.startaction.GetString(GetRandomInt(0, this.startaction.Length - 1), buffer, maxlength);
+			case Music_RoundMVPAnthem:this.roundmvpanthem.GetString(GetRandomInt(0, this.roundmvpanthem.Length - 1), buffer, maxlength);
+		}
+	}
+	
+	void PlayMusicToClient(int client, MusicType type)
+	{
+		char sound[PLATFORM_MAX_PATH];
+		this.GetRandomMusicFile(sound, sizeof(sound), type);
 		EmitSoundToClient(client, sound);
-}
-
-public void PlayMusicToAll(const char[] name, MusicType type)
-{
-	char sound[PLATFORM_MAX_PATH];
-	GetRandomMusicFile(sound, sizeof(sound), name, type);
-	EmitSoundToAll(sound);
-}
-
-public void GetRandomMusicFile(char[] buffer, int maxlength, const char[] name, MusicType type)
-{
-	MusicKit kit;
-	g_hMusicKits.GetArray(name, kit, sizeof(kit));
-	
-	switch (type)
-	{
-		case Music_BombPlanted:strcopy(buffer, maxlength, kit.bombplanted);
-		case Music_BombTenSecCount:strcopy(buffer, maxlength, kit.bombtenseccount);
-		case Music_ChooseTeam:strcopy(buffer, maxlength, kit.chooseteam);
-		case Music_LostRound:strcopy(buffer, maxlength, kit.lostround);
-		case Music_RoundTenSecCount:strcopy(buffer, maxlength, kit.roundtenseccount);
-		case Music_WonRound:strcopy(buffer, maxlength, kit.wonround);
-		case Music_StartRound:kit.startround.GetString(GetRandomInt(0, kit.startround.Length - 1), buffer, maxlength);
-		case Music_StartAction:kit.startaction.GetString(GetRandomInt(0, kit.startaction.Length - 1), buffer, maxlength);
-		case Music_RoundMVPAnthem:kit.roundmvpanthem.GetString(GetRandomInt(0, kit.roundmvpanthem.Length - 1), buffer, maxlength);
 	}
-}
-
-public void StopMusicForClient(int entity, const char[] name, MusicType type)
-{
-	MusicKit kit;
-	g_hMusicKits.GetArray(name, kit, sizeof(kit));
 	
-	char sound[PLATFORM_MAX_PATH];
-	switch (type)
+	void PlayMusicToTeam(TFTeam team, MusicType type)
 	{
-		case Music_BombPlanted:StopSound(entity, SNDCHAN_AUTO, kit.bombplanted);
-		case Music_BombTenSecCount:StopSound(entity, SNDCHAN_AUTO, kit.bombtenseccount);
-		case Music_ChooseTeam:StopSound(entity, SNDCHAN_AUTO, kit.chooseteam);
-		case Music_LostRound:StopSound(entity, SNDCHAN_AUTO, kit.lostround);
-		case Music_RoundTenSecCount:StopSound(entity, SNDCHAN_AUTO, kit.roundtenseccount);
-		case Music_WonRound:StopSound(entity, SNDCHAN_AUTO, kit.wonround);
-		case Music_StartRound:
+		char sound[PLATFORM_MAX_PATH];
+		this.GetRandomMusicFile(sound, sizeof(sound), type);
+		for (int client = 1; client <= MaxClients; client++)
+		if (IsClientInGame(client) && TF2_GetClientTeam(client) == team)
+			EmitSoundToClient(client, sound);
+	}
+	
+	void PlayMusicToAll(MusicType type)
+	{
+		char sound[PLATFORM_MAX_PATH];
+		this.GetRandomMusicFile(sound, sizeof(sound), type);
+		EmitSoundToAll(sound);
+	}
+	
+	void StopMusicForClient(int entity, MusicType type)
+	{
+		char sound[PLATFORM_MAX_PATH];
+		switch (type)
 		{
-			for (int i = 0; i < kit.startround.Length; i++)
+			case Music_BombPlanted:StopSound(entity, SNDCHAN_AUTO, this.bombplanted);
+			case Music_BombTenSecCount:StopSound(entity, SNDCHAN_AUTO, this.bombtenseccount);
+			case Music_ChooseTeam:StopSound(entity, SNDCHAN_AUTO, this.chooseteam);
+			case Music_LostRound:StopSound(entity, SNDCHAN_AUTO, this.lostround);
+			case Music_RoundTenSecCount:StopSound(entity, SNDCHAN_AUTO, this.roundtenseccount);
+			case Music_WonRound:StopSound(entity, SNDCHAN_AUTO, this.wonround);
+			case Music_StartRound:
 			{
-				kit.startround.GetString(i, sound, sizeof(sound));
-				StopSound(entity, SNDCHAN_AUTO, sound);
+				for (int i = 0; i < this.startround.Length; i++)
+				{
+					this.startround.GetString(i, sound, sizeof(sound));
+					StopSound(entity, SNDCHAN_AUTO, sound);
+				}
 			}
-		}
-		case Music_StartAction:
-		{
-			for (int i = 0; i < kit.startaction.Length; i++)
+			case Music_StartAction:
 			{
-				kit.startaction.GetString(i, sound, sizeof(sound));
-				StopSound(entity, SNDCHAN_AUTO, sound);
+				for (int i = 0; i < this.startaction.Length; i++)
+				{
+					this.startaction.GetString(i, sound, sizeof(sound));
+					StopSound(entity, SNDCHAN_AUTO, sound);
+				}
 			}
-		}
-		case Music_RoundMVPAnthem:
-		{
-			for (int i = 0; i < kit.roundmvpanthem.Length; i++)
+			case Music_RoundMVPAnthem:
 			{
-				kit.roundmvpanthem.GetString(i, sound, sizeof(sound));
-				StopSound(entity, SNDCHAN_AUTO, sound);
+				for (int i = 0; i < this.roundmvpanthem.Length; i++)
+				{
+					this.roundmvpanthem.GetString(i, sound, sizeof(sound));
+					StopSound(entity, SNDCHAN_AUTO, sound);
+				}
 			}
 		}
 	}
-}
-
-public void StopMusicForTeam(TFTeam team, const char[] name, MusicType type)
-{
-	for (int client = 1; client <= MaxClients; client++)
-	if (IsClientInGame(client) && TF2_GetClientTeam(client) == team)
-		StopMusicForClient(client, name, type);
-}
-
-public void StopMusicForAll(const char[] name, MusicType type)
-{
-	for (int client = 1; client <= MaxClients; client++)
-	StopMusicForClient(client, name, type);
+	
+	void StopMusicForTeam(TFTeam team, MusicType type)
+	{
+		for (int client = 1; client <= MaxClients; client++)
+		if (IsClientInGame(client) && TF2_GetClientTeam(client) == team)
+			this.StopMusicForClient(client, type);
+	}
+	
+	void StopMusicForAll(MusicType type)
+	{
+		for (int client = 1; client <= MaxClients; client++)
+		this.StopMusicForClient(client, type);
+	}
+	
+	void PrecacheSounds()
+	{
+		char filename[PLATFORM_MAX_PATH];
+		
+		filename = SOUND_PATH;
+		PrecacheSound(this.bombplanted);
+		StrCat(filename, sizeof(filename), this.bombplanted);
+		AddFileToDownloadsTable(filename);
+		
+		filename = SOUND_PATH;
+		PrecacheSound(this.bombtenseccount);
+		StrCat(filename, sizeof(filename), this.bombtenseccount);
+		AddFileToDownloadsTable(filename);
+		
+		filename = SOUND_PATH;
+		PrecacheSound(this.chooseteam);
+		StrCat(filename, sizeof(filename), this.chooseteam);
+		AddFileToDownloadsTable(filename);
+		
+		filename = SOUND_PATH;
+		PrecacheSound(this.lostround);
+		StrCat(filename, sizeof(filename), this.lostround);
+		AddFileToDownloadsTable(filename);
+		
+		filename = SOUND_PATH;
+		PrecacheSound(this.roundtenseccount);
+		StrCat(filename, sizeof(filename), this.roundtenseccount);
+		AddFileToDownloadsTable(filename);
+		
+		filename = SOUND_PATH;
+		PrecacheSound(this.wonround);
+		StrCat(filename, sizeof(filename), this.wonround);
+		AddFileToDownloadsTable(filename);
+		
+		char sound[PLATFORM_MAX_PATH];
+		for (int i = 0; i < this.startround.Length; i++)
+		{
+			this.startround.GetString(i, sound, sizeof(sound));
+			PrecacheSound(sound);
+			filename = SOUND_PATH;
+			StrCat(filename, sizeof(filename), sound);
+			AddFileToDownloadsTable(filename);
+		}
+		
+		for (int i = 0; i < this.startaction.Length; i++)
+		{
+			this.startaction.GetString(i, sound, sizeof(sound));
+			PrecacheSound(sound);
+			filename = SOUND_PATH;
+			StrCat(filename, sizeof(filename), sound);
+			AddFileToDownloadsTable(filename);
+		}
+		
+		for (int i = 0; i < this.roundmvpanthem.Length; i++)
+		{
+			this.roundmvpanthem.GetString(i, sound, sizeof(sound));
+			PrecacheSound(sound);
+			filename = SOUND_PATH;
+			StrCat(filename, sizeof(filename), sound);
+			AddFileToDownloadsTable(filename);
+		}
+	}
 }
 
 void ReadMusicKitConfig(KeyValues kv)
@@ -167,8 +225,8 @@ void ReadMusicKitConfig(KeyValues kv)
 						ArrayList list = new ArrayList(PLATFORM_MAX_PATH);
 						char buffers[32][PLATFORM_MAX_PATH];
 						kv.GetString(NULL_STRING, temp, sizeof(temp));
-						ExplodeString(temp, ";", buffers, sizeof(buffers), sizeof(buffers[]));
-						for (int i = 0; i < sizeof(buffers); i++)list.PushString(buffers[i]);
+						int count = ExplodeString(temp, ";", buffers, sizeof(buffers), sizeof(buffers[]));
+						for (int i = 0; i < count; i++)list.PushString(buffers[i]);
 						
 						if (StrEqual(title, "startround"))
 							kit.startround = list;

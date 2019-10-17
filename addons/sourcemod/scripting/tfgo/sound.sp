@@ -43,16 +43,6 @@ static char g_sBombDefusedSoldierResponses[][PLATFORM_MAX_PATH] =  {
 
 stock void PrecacheSounds()
 {
-	// Precache all music kit sounds and add them to the downloads table
-	StringMapSnapshot snapshot = g_hMusicKits.Snapshot();
-	for (int i = 0; i < snapshot.Length; i++)
-	{
-		char kitName[PLATFORM_MAX_PATH];
-		snapshot.GetKey(i, kitName, sizeof(kitName));
-		PrecacheMusicKit(kitName);
-	}
-	delete snapshot;
-	
 	PrecacheSound("mvm/mvm_bomb_warning.wav");
 	PrecacheSound("mvm/mvm_bomb_explode.wav");
 	PrecacheSound("mvm/mvm_bought_upgrade.wav");
@@ -76,71 +66,6 @@ stock void PrecacheSounds()
 	for (int i = 0; i < sizeof(g_sBombDefusedHeavyResponses); i++)PrecacheSound(g_sBombDefusedHeavyResponses[i]);
 	for (int i = 0; i < sizeof(g_sBombDefusedMedicResponses); i++)PrecacheSound(g_sBombDefusedMedicResponses[i]);
 	for (int i = 0; i < sizeof(g_sBombDefusedSoldierResponses); i++)PrecacheSound(g_sBombDefusedSoldierResponses[i]);
-}
-
-void PrecacheMusicKit(const char[] name)
-{
-	MusicKit kit;
-	g_hMusicKits.GetArray(name, kit, sizeof(kit));
-	char filename[PLATFORM_MAX_PATH];
-	
-	filename = "sound/";
-	PrecacheSound(kit.bombplanted);
-	StrCat(filename, sizeof(filename), kit.bombplanted);
-	AddFileToDownloadsTable(filename);
-	
-	filename = "sound/";
-	PrecacheSound(kit.bombtenseccount);
-	StrCat(filename, sizeof(filename), kit.bombtenseccount);
-	AddFileToDownloadsTable(filename);
-	
-	filename = "sound/";
-	PrecacheSound(kit.chooseteam);
-	StrCat(filename, sizeof(filename), kit.chooseteam);
-	AddFileToDownloadsTable(filename);
-	
-	filename = "sound/";
-	PrecacheSound(kit.lostround);
-	StrCat(filename, sizeof(filename), kit.lostround);
-	AddFileToDownloadsTable(filename);
-	
-	filename = "sound/";
-	PrecacheSound(kit.roundtenseccount);
-	StrCat(filename, sizeof(filename), kit.roundtenseccount);
-	AddFileToDownloadsTable(filename);
-	
-	filename = "sound/";
-	PrecacheSound(kit.wonround);
-	StrCat(filename, sizeof(filename), kit.wonround);
-	AddFileToDownloadsTable(filename);
-	
-	char sound[PLATFORM_MAX_PATH];
-	for (int i = 0; i < kit.startround.Length; i++)
-	{
-		kit.startround.GetString(i, sound, sizeof(sound));
-		PrecacheSound(sound);
-		filename = "sound/";
-		StrCat(filename, sizeof(filename), sound);
-		AddFileToDownloadsTable(filename);
-	}
-	
-	for (int i = 0; i < kit.startaction.Length; i++)
-	{
-		kit.startaction.GetString(i, sound, sizeof(sound));
-		PrecacheSound(sound);
-		filename = "sound/";
-		StrCat(filename, sizeof(filename), sound);
-		AddFileToDownloadsTable(filename);
-	}
-	
-	for (int i = 0; i < kit.roundmvpanthem.Length; i++)
-	{
-		kit.roundmvpanthem.GetString(i, sound, sizeof(sound));
-		PrecacheSound(sound);
-		filename = "sound/";
-		StrCat(filename, sizeof(filename), sound);
-		AddFileToDownloadsTable(filename);
-	}
 }
 
 public void PlayAnnouncerBombAlert()
@@ -168,10 +93,10 @@ public void ShoutBombWarnings()
 public Action Event_Pre_Broadcast_Audio(Event event, const char[] name, bool dontBroadcast)
 {
 	// Cancel various sounds that could still be playing here
-	StopMusicForAll(g_strCurrentMusicKit, Music_StartAction);
-	StopMusicForAll(g_strCurrentMusicKit, Music_BombPlanted);
-	StopMusicForAll(g_strCurrentMusicKit, Music_RoundTenSecCount);
-	StopMusicForAll(g_strCurrentMusicKit, Music_BombTenSecCount);
+	g_hCurrentMusicKit.StopMusicForAll(Music_StartAction);
+	g_hCurrentMusicKit.StopMusicForAll(Music_BombPlanted);
+	g_hCurrentMusicKit.StopMusicForAll(Music_RoundTenSecCount);
+	g_hCurrentMusicKit.StopMusicForAll(Music_BombTenSecCount);
 	
 	char sound[PLATFORM_MAX_PATH];
 	event.GetString("sound", sound, sizeof(sound));
@@ -179,17 +104,17 @@ public Action Event_Pre_Broadcast_Audio(Event event, const char[] name, bool don
 	
 	if (strcmp(sound, "Game.YourTeamWon") == 0)
 	{
-		PlayMusicToTeam(team, g_strCurrentMusicKit, Music_WonRound);
+		g_hCurrentMusicKit.PlayMusicToTeam(team, Music_WonRound);
 		return Plugin_Handled;
 	}
 	else if (strcmp(sound, "Game.YourTeamLost") == 0 || strcmp(sound, "Game.Stalemate") == 0)
 	{
-		PlayMusicToTeam(team, g_strCurrentMusicKit, Music_LostRound);
+		g_hCurrentMusicKit.PlayMusicToTeam(team, Music_LostRound);
 		return Plugin_Handled;
 	}
 	else if (strcmp(sound, "Announcer.AM_RoundStartRandom") == 0)
 	{
-		PlayMusicToAll(g_strCurrentMusicKit, Music_StartAction);
+		g_hCurrentMusicKit.PlayMusicToAll(Music_StartAction);
 		return Plugin_Continue;
 	}
 	
@@ -198,14 +123,14 @@ public Action Event_Pre_Broadcast_Audio(Event event, const char[] name, bool don
 
 stock Action Play10SecondWarning(Handle timer)
 {
-	StopMusicForAll(g_strCurrentMusicKit, Music_StartAction);
-	PlayMusicToAll(g_strCurrentMusicKit, Music_RoundTenSecCount);
+	g_hCurrentMusicKit.StopMusicForAll(Music_StartAction);
+	g_hCurrentMusicKit.PlayMusicToAll(Music_RoundTenSecCount);
 	g_h10SecondRoundTimer = null;
 }
 
 stock void PlayRoundStartMusic()
 {
-	StopMusicForAll(g_strCurrentMusicKit, Music_WonRound);
-	StopMusicForAll(g_strCurrentMusicKit, Music_LostRound);
-	PlayMusicToAll(g_strCurrentMusicKit, Music_StartRound);
+	g_hCurrentMusicKit.StopMusicForAll(Music_WonRound);
+	g_hCurrentMusicKit.StopMusicForAll(Music_LostRound);
+	g_hCurrentMusicKit.PlayMusicToAll(Music_StartRound);
 }
