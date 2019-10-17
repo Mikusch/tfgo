@@ -147,7 +147,7 @@ methodmap TFGOPlayer
 			this.Balance -= weapon.Cost;
 
 			char name[255];
-			TF2Econ_GetItemName(defindex, name, sizeof(name));
+			TF2_GetItemName(defindex, name, sizeof(name));
 			CPrintToChat(this.Client, "You have bought {normal}%s{default} for {money}$%d{default}.", name, weapon.Cost);
 
 			float pos[3];

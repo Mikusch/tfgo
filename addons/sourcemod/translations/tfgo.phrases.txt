@@ -1,5 +1,92 @@
 "Phrases"
 {
+	// Translations for weapons TF2 Econ can't provide
+		"#TF_Weapon_Pistol"
+	{
+		"en"	"Pistol"
+	}
+	"#TF_Weapon_Shotgun"
+	{
+		"en"	"Shotgun"
+	}
+	"#TF_Weapon_Scattergun"
+	{
+		"en"	"Scattergun"
+	}
+	"#TF_Weapon_Bat"
+	{
+		"en"	"Bat"
+	}
+	"#TF_Weapon_RocketLauncher"
+	{
+		"en"	"Rocket Launcher"
+	}
+	"#TF_Weapon_Shovel"
+	{
+		"en"	"Shovel"
+	}
+	"#TF_Weapon_FlameThrower"
+	{
+		"en"	"Flame Thrower"
+	}
+	"#TF_Weapon_FireAxe"
+	{
+		"en"	"Fire Axe"
+	}
+	"#TF_Weapon_GrenadeLauncher"
+	{
+		"en"	"Grenade Launcher"
+	}
+	"#TF_Weapon_PipebombLauncher"
+	{
+		"en"	"Stickybomb Launcher"
+	}
+	"#TF_Weapon_Bottle"
+	{
+		"en"	"Bottle"
+	}
+	"#TF_Weapon_Minigun"
+	{
+		"en"	"Minigun"
+	}
+	"#TF_Weapon_Fists"
+	{
+		"en"	"Fists"
+	}
+	"#TF_Weapon_SyringeGun"
+	{
+		"en"	"Syringe Gun"
+	}
+	"#TF_Weapon_Medigun"
+	{
+		"en"	"Medi Gun"
+	}
+	"#TF_Weapon_Bonesaw"
+	{
+		"en"	"Bonesaw"
+	}
+	"#TF_Weapon_SniperRifle"
+	{
+		"en"	"Sniper Rifle"
+	}
+	"#TF_Weapon_SMG"
+	{
+		"en"	"SMG"
+	}
+	"#TF_Weapon_Club"
+	{
+		"en"	"Kukri"
+	}
+	"#TF_Weapon_Revolver"
+	{
+		"en"	"Revolver"
+	}
+	"#TF_Weapon_Knife"
+	{
+		"en"	"Knife"
+	}
+	
+	// Buy Menu Translations
 	"#buymenu_title"
 	{
 		"en"	"Welcome to the buy menu!\nYou currently have $%d."

@@ -53,6 +53,18 @@ stock int TF2_GetItemInSlot(int client, int slot)
 		return GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
 }
 
+// Fixes TF2 Econ not returning proper names for stock weapons
+stock void TF2_GetItemName(int defindex, char[] buffer, int maxlength)
+{
+	TF2Econ_GetItemName(defindex, buffer, maxlength);
+	if (StrContains(buffer, "TF_WEAPON_") > -1) // This doesn't look like a proper name
+	{
+		char localizedName[256];
+		TF2Econ_GetLocalizedItemName(defindex, localizedName, sizeof(localizedName));
+		Format(buffer, maxlength, "%T", localizedName, LANG_SERVER);
+	}
+}
+
 stock TFClassType TF2_GetRandomClass()
 {
 	return view_as<TFClassType>(GetRandomInt(view_as<int>(TFClass_Scout), view_as<int>(TFClass_Engineer)));

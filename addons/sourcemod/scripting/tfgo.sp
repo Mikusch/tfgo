@@ -323,7 +323,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	else if (attacker.Client >= 1 && attacker.Client <= MaxClients)
 	{
 		char weaponName[255];
-		TF2Econ_GetItemName(weapon.DefIndex, weaponName, sizeof(weaponName));
+		TF2_GetItemName(weapon.DefIndex, weaponName, sizeof(weaponName));
 		char msg[255];
 		Format(msg, sizeof(msg), "Award for neutralizing an enemy with %s", weaponName);
 
