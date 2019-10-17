@@ -700,7 +700,7 @@ void Toggle_ConVars(bool toggle)
 		tf_arena_override_cap_enable_time.IntValue = 15;
 
 		arenaMaxStreak = tf_arena_max_streak.IntValue;
-		tf_arena_max_streak.IntValue = 5;
+		tf_arena_max_streak.IntValue = 16;
 
 		weaponCriticals = tf_weapon_criticals.BoolValue;
 		tf_weapon_criticals.BoolValue = false;
