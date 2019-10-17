@@ -93,6 +93,7 @@ public void ShoutBombWarnings()
 public Action Event_Pre_Broadcast_Audio(Event event, const char[] name, bool dontBroadcast)
 {
 	// Cancel various sounds that could still be playing here
+	g_hCurrentMusicKit.StopMusicForAll(Music_StartRound);
 	g_hCurrentMusicKit.StopMusicForAll(Music_StartAction);
 	g_hCurrentMusicKit.StopMusicForAll(Music_BombPlanted);
 	g_hCurrentMusicKit.StopMusicForAll(Music_RoundTenSecCount);
