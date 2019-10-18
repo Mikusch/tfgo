@@ -205,27 +205,27 @@ Action Timer_ShowGameMessage(Handle timer, int ref)
 
 stock void SDK_EquipWearable(int client, int wearable)
 {
-	if (g_hSDKEquipWearable != null)
-		SDKCall(g_hSDKEquipWearable, client, wearable);
+	if (g_SDKEquipWearable != null)
+		SDKCall(g_SDKEquipWearable, client, wearable);
 }
 
 stock void SDK_RemoveWearable(int client, int wearable)
 {
-	if (g_hSDKRemoveWearable != null)
-		SDKCall(g_hSDKRemoveWearable, client, wearable);
+	if (g_SDKRemoveWearable != null)
+		SDKCall(g_SDKRemoveWearable, client, wearable);
 }
 
 stock int SDK_GetEquippedWearable(int client, int slot)
 {
-	if (g_hSDKGetEquippedWearable != null)
-		return SDKCall(g_hSDKGetEquippedWearable, client, slot);
+	if (g_SDKGetEquippedWearable != null)
+		return SDKCall(g_SDKGetEquippedWearable, client, slot);
 	
 	return -1;
 }
 
 stock int SDK_GetMaxAmmo(int client, int slot)
 {
-	if (g_hSDKGetMaxAmmo != null)
-		return SDKCall(g_hSDKGetMaxAmmo, client, slot, -1);
+	if (g_SDKGetMaxAmmo != null)
+		return SDKCall(g_SDKGetMaxAmmo, client, slot, -1);
 	return -1;
 }

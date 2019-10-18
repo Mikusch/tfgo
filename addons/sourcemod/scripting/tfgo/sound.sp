@@ -77,7 +77,7 @@ public void ShoutBombWarnings()
 {
 	for (int client = 1; client <= MaxClients; client++)
 	{
-		if (IsClientInGame(client) && GetClientTeam(client) != g_iBombPlanterTeam)
+		if (IsClientInGame(client) && GetClientTeam(client) != g_bombPlantingTeam)
 		{
 			switch (TF2_GetPlayerClass(client))
 			{
@@ -90,32 +90,32 @@ public void ShoutBombWarnings()
 	}
 }
 
-public Action Event_Pre_Broadcast_Audio(Event event, const char[] name, bool dontBroadcast)
+public Action Event_Pre_Teamplay_Broadcast_Audio(Event event, const char[] name, bool dontBroadcast)
 {
 	// Cancel various sounds that could still be playing here
-	g_hCurrentMusicKit.StopMusicForAll(Music_StartRound);
-	g_hCurrentMusicKit.StopMusicForAll(Music_StartAction);
-	g_hCurrentMusicKit.StopMusicForAll(Music_BombPlanted);
-	g_hCurrentMusicKit.StopMusicForAll(Music_RoundTenSecCount);
-	g_hCurrentMusicKit.StopMusicForAll(Music_BombTenSecCount);
+	g_currentMusicKit.StopMusicForAll(Music_StartRound);
+	g_currentMusicKit.StopMusicForAll(Music_StartAction);
+	g_currentMusicKit.StopMusicForAll(Music_BombPlanted);
+	g_currentMusicKit.StopMusicForAll(Music_RoundTenSecCount);
+	g_currentMusicKit.StopMusicForAll(Music_BombTenSecCount);
 	
 	char sound[PLATFORM_MAX_PATH];
 	event.GetString("sound", sound, sizeof(sound));
 	TFTeam team = view_as<TFTeam>(event.GetInt("team"));
 	
-	if (strcmp(sound, "Game.YourTeamWon") == 0)
+	if (StrEqual(sound, "Game.YourTeamWon"))
 	{
-		g_hCurrentMusicKit.PlayMusicToTeam(team, Music_WonRound);
+		g_currentMusicKit.PlayMusicToTeam(team, Music_WonRound);
 		return Plugin_Handled;
 	}
-	else if (strcmp(sound, "Game.YourTeamLost") == 0 || strcmp(sound, "Game.Stalemate") == 0)
+	else if (StrEqual(sound, "Game.YourTeamLost") || StrEqual(sound, "Game.Stalemate"))
 	{
-		g_hCurrentMusicKit.PlayMusicToTeam(team, Music_LostRound);
+		g_currentMusicKit.PlayMusicToTeam(team, Music_LostRound);
 		return Plugin_Handled;
 	}
-	else if (strcmp(sound, "Announcer.AM_RoundStartRandom") == 0)
+	else if (StrEqual(sound, "Announcer.AM_RoundStartRandom"))
 	{
-		g_hCurrentMusicKit.PlayMusicToAll(Music_StartAction);
+		g_currentMusicKit.PlayMusicToAll(Music_StartAction);
 		return Plugin_Continue;
 	}
 	
@@ -124,14 +124,14 @@ public Action Event_Pre_Broadcast_Audio(Event event, const char[] name, bool don
 
 stock Action Play10SecondWarning(Handle timer)
 {
-	g_hCurrentMusicKit.StopMusicForAll(Music_StartAction);
-	g_hCurrentMusicKit.PlayMusicToAll(Music_RoundTenSecCount);
-	g_h10SecondRoundTimer = null;
+	g_currentMusicKit.StopMusicForAll(Music_StartAction);
+	g_currentMusicKit.PlayMusicToAll(Music_RoundTenSecCount);
+	g_10SecondRoundTimer = null;
 }
 
 stock void PlayRoundStartMusic()
 {
-	g_hCurrentMusicKit.StopMusicForAll(Music_WonRound);
-	g_hCurrentMusicKit.StopMusicForAll(Music_LostRound);
-	g_hCurrentMusicKit.PlayMusicToAll(Music_StartRound);
+	g_currentMusicKit.StopMusicForAll(Music_WonRound);
+	g_currentMusicKit.StopMusicForAll(Music_LostRound);
+	g_currentMusicKit.PlayMusicToAll(Music_StartRound);
 }

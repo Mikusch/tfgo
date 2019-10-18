@@ -1,6 +1,15 @@
 #define CONFIG_FILE "configs/tfgo/tfgo.cfg"
 #define DEFAULT_KILL_AWARD  100
 
+enum struct Weapon
+{
+	int defindex;
+	int cost;
+	int killAward;
+}
+
+StringMap g_weaponClassKillAwards;
+
 public void ReadWeaponConfig(KeyValues kv)
 {
 	if (kv.JumpToKey("Weapons", false))
@@ -10,17 +19,27 @@ public void ReadWeaponConfig(KeyValues kv)
 			do // Loop through each weapon definition index
 			{
 				char defindex[256];
-				kv.GetSectionName(defindex, sizeof(defindex)); // Weapon Definition Index
+				kv.GetSectionName(defindex, sizeof(defindex));
 				
-				// Set weapon data
-				TFGOWeaponEntry weapon;
-				weapon.DefIndex = StringToInt(defindex);
-				weapon.Cost = kv.GetNum("cost", -1);
+				// Set basic weapon data
+				Weapon weapon;
+				weapon.defindex = StringToInt(defindex);
+				weapon.cost = kv.GetNum("cost", -1);
 				
-				int length = weaponList.Length;
-				weaponList.Resize(length + 1);
-				weaponList.Set(length, StringToInt(defindex), 0);
-				weaponList.SetArray(length, weapon, sizeof(weapon));
+				// Fetch kill award
+				int killAward = kv.GetNum("killAward", -1);
+				if (killAward <= -1)
+				{
+					char class[255];
+					TF2Econ_GetItemClassName(weapon.defindex, class, sizeof(class));
+					g_weaponClassKillAwards.GetValue(class, killAward);
+				}
+				weapon.killAward = killAward;
+				
+				int length = g_availableWeapons.Length;
+				g_availableWeapons.Resize(length + 1);
+				g_availableWeapons.Set(length, weapon.defindex, 0);
+				g_availableWeapons.SetArray(length, weapon, sizeof(weapon));
 			}
 			while (kv.GotoNextKey(false));
 			kv.GoBack();
@@ -37,9 +56,9 @@ void ReadKillAwardConfig(KeyValues kv)
 		{
 			do // Loop through each weapon class
 			{
-				char weaponClass[256];
-				kv.GetSectionName(weaponClass, sizeof(weaponClass)); // Weapon class
-				killAwardMap.SetValue(weaponClass, kv.GetNum(NULL_STRING, DEFAULT_KILL_AWARD));
+				char class[256];
+				kv.GetSectionName(class, sizeof(class)); // Weapon class
+				g_weaponClassKillAwards.SetValue(class, kv.GetNum(NULL_STRING, DEFAULT_KILL_AWARD));
 			}
 			while (kv.GotoNextKey(false));
 			kv.GoBack();
@@ -51,12 +70,12 @@ void ReadKillAwardConfig(KeyValues kv)
 
 void Config_Init()
 {
-	if (killAwardMap == null)
-		killAwardMap = new StringMap();
+	if (g_weaponClassKillAwards == null)
+		g_weaponClassKillAwards = new StringMap();
 	
-	if (weaponList == null)
-		weaponList = new ArrayList(3);
-
+	if (g_availableWeapons == null)
+		g_availableWeapons = new ArrayList(3);
+	
 	// Read config
 	KeyValues kv = new KeyValues("Config");
 	char path[PLATFORM_MAX_PATH];

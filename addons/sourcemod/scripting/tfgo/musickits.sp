@@ -20,31 +20,31 @@ enum struct MusicKit
 	char name[PLATFORM_MAX_PATH];
 	
 	// Single-value sounds
-	char bombplanted[PLATFORM_MAX_PATH];
-	char bombtenseccount[PLATFORM_MAX_PATH];
-	char chooseteam[PLATFORM_MAX_PATH];
-	char lostround[PLATFORM_MAX_PATH];
-	char roundtenseccount[PLATFORM_MAX_PATH];
-	char wonround[PLATFORM_MAX_PATH];
+	char bombPlanted[PLATFORM_MAX_PATH];
+	char bombTenSecCount[PLATFORM_MAX_PATH];
+	char chooseTeam[PLATFORM_MAX_PATH];
+	char lostRound[PLATFORM_MAX_PATH];
+	char roundTenSecCount[PLATFORM_MAX_PATH];
+	char wonRound[PLATFORM_MAX_PATH];
 	
 	// Multi-value sounds
-	ArrayList startaction;
-	ArrayList startround;
-	ArrayList roundmvpanthem;
+	ArrayList startRound;
+	ArrayList startAction;
+	ArrayList roundMvpAnthem;
 	
 	void GetRandomMusicFile(char[] buffer, int maxlength, MusicType type)
 	{
 		switch (type)
 		{
-			case Music_BombPlanted:strcopy(buffer, maxlength, this.bombplanted);
-			case Music_BombTenSecCount:strcopy(buffer, maxlength, this.bombtenseccount);
-			case Music_ChooseTeam:strcopy(buffer, maxlength, this.chooseteam);
-			case Music_LostRound:strcopy(buffer, maxlength, this.lostround);
-			case Music_RoundTenSecCount:strcopy(buffer, maxlength, this.roundtenseccount);
-			case Music_WonRound:strcopy(buffer, maxlength, this.wonround);
-			case Music_StartRound:this.startround.GetString(GetRandomInt(0, this.startround.Length - 1), buffer, maxlength);
-			case Music_StartAction:this.startaction.GetString(GetRandomInt(0, this.startaction.Length - 1), buffer, maxlength);
-			case Music_RoundMVPAnthem:this.roundmvpanthem.GetString(GetRandomInt(0, this.roundmvpanthem.Length - 1), buffer, maxlength);
+			case Music_BombPlanted:strcopy(buffer, maxlength, this.bombPlanted);
+			case Music_BombTenSecCount:strcopy(buffer, maxlength, this.bombTenSecCount);
+			case Music_ChooseTeam:strcopy(buffer, maxlength, this.chooseTeam);
+			case Music_LostRound:strcopy(buffer, maxlength, this.lostRound);
+			case Music_RoundTenSecCount:strcopy(buffer, maxlength, this.roundTenSecCount);
+			case Music_WonRound:strcopy(buffer, maxlength, this.wonRound);
+			case Music_StartRound:this.startRound.GetString(GetRandomInt(0, this.startRound.Length - 1), buffer, maxlength);
+			case Music_StartAction:this.startAction.GetString(GetRandomInt(0, this.startAction.Length - 1), buffer, maxlength);
+			case Music_RoundMVPAnthem:this.roundMvpAnthem.GetString(GetRandomInt(0, this.roundMvpAnthem.Length - 1), buffer, maxlength);
 		}
 	}
 	
@@ -76,33 +76,33 @@ enum struct MusicKit
 		char sound[PLATFORM_MAX_PATH];
 		switch (type)
 		{
-			case Music_BombPlanted:StopSound(entity, SNDCHAN_AUTO, this.bombplanted);
-			case Music_BombTenSecCount:StopSound(entity, SNDCHAN_AUTO, this.bombtenseccount);
-			case Music_ChooseTeam:StopSound(entity, SNDCHAN_AUTO, this.chooseteam);
-			case Music_LostRound:StopSound(entity, SNDCHAN_AUTO, this.lostround);
-			case Music_RoundTenSecCount:StopSound(entity, SNDCHAN_AUTO, this.roundtenseccount);
-			case Music_WonRound:StopSound(entity, SNDCHAN_AUTO, this.wonround);
+			case Music_BombPlanted:StopSound(entity, SNDCHAN_AUTO, this.bombPlanted);
+			case Music_BombTenSecCount:StopSound(entity, SNDCHAN_AUTO, this.bombTenSecCount);
+			case Music_ChooseTeam:StopSound(entity, SNDCHAN_AUTO, this.chooseTeam);
+			case Music_LostRound:StopSound(entity, SNDCHAN_AUTO, this.lostRound);
+			case Music_RoundTenSecCount:StopSound(entity, SNDCHAN_AUTO, this.roundTenSecCount);
+			case Music_WonRound:StopSound(entity, SNDCHAN_AUTO, this.wonRound);
 			case Music_StartRound:
 			{
-				for (int i = 0; i < this.startround.Length; i++)
+				for (int i = 0; i < this.startRound.Length; i++)
 				{
-					this.startround.GetString(i, sound, sizeof(sound));
+					this.startRound.GetString(i, sound, sizeof(sound));
 					StopSound(entity, SNDCHAN_AUTO, sound);
 				}
 			}
 			case Music_StartAction:
 			{
-				for (int i = 0; i < this.startaction.Length; i++)
+				for (int i = 0; i < this.startAction.Length; i++)
 				{
-					this.startaction.GetString(i, sound, sizeof(sound));
+					this.startAction.GetString(i, sound, sizeof(sound));
 					StopSound(entity, SNDCHAN_AUTO, sound);
 				}
 			}
 			case Music_RoundMVPAnthem:
 			{
-				for (int i = 0; i < this.roundmvpanthem.Length; i++)
+				for (int i = 0; i < this.roundMvpAnthem.Length; i++)
 				{
-					this.roundmvpanthem.GetString(i, sound, sizeof(sound));
+					this.roundMvpAnthem.GetString(i, sound, sizeof(sound));
 					StopSound(entity, SNDCHAN_AUTO, sound);
 				}
 			}
@@ -127,63 +127,79 @@ enum struct MusicKit
 		char filename[PLATFORM_MAX_PATH];
 		
 		filename = SOUND_PATH;
-		PrecacheSound(this.bombplanted);
-		StrCat(filename, sizeof(filename), this.bombplanted);
+		PrecacheSound(this.bombPlanted);
+		StrCat(filename, sizeof(filename), this.bombPlanted);
 		AddFileToDownloadsTable(filename);
 		
 		filename = SOUND_PATH;
-		PrecacheSound(this.bombtenseccount);
-		StrCat(filename, sizeof(filename), this.bombtenseccount);
+		PrecacheSound(this.bombTenSecCount);
+		StrCat(filename, sizeof(filename), this.bombTenSecCount);
 		AddFileToDownloadsTable(filename);
 		
 		filename = SOUND_PATH;
-		PrecacheSound(this.chooseteam);
-		StrCat(filename, sizeof(filename), this.chooseteam);
+		PrecacheSound(this.chooseTeam);
+		StrCat(filename, sizeof(filename), this.chooseTeam);
 		AddFileToDownloadsTable(filename);
 		
 		filename = SOUND_PATH;
-		PrecacheSound(this.lostround);
-		StrCat(filename, sizeof(filename), this.lostround);
+		PrecacheSound(this.lostRound);
+		StrCat(filename, sizeof(filename), this.lostRound);
 		AddFileToDownloadsTable(filename);
 		
 		filename = SOUND_PATH;
-		PrecacheSound(this.roundtenseccount);
-		StrCat(filename, sizeof(filename), this.roundtenseccount);
+		PrecacheSound(this.roundTenSecCount);
+		StrCat(filename, sizeof(filename), this.roundTenSecCount);
 		AddFileToDownloadsTable(filename);
 		
 		filename = SOUND_PATH;
-		PrecacheSound(this.wonround);
-		StrCat(filename, sizeof(filename), this.wonround);
+		PrecacheSound(this.wonRound);
+		StrCat(filename, sizeof(filename), this.wonRound);
 		AddFileToDownloadsTable(filename);
 		
 		char sound[PLATFORM_MAX_PATH];
-		for (int i = 0; i < this.startround.Length; i++)
+		for (int i = 0; i < this.startRound.Length; i++)
 		{
-			this.startround.GetString(i, sound, sizeof(sound));
+			this.startRound.GetString(i, sound, sizeof(sound));
 			PrecacheSound(sound);
 			filename = SOUND_PATH;
 			StrCat(filename, sizeof(filename), sound);
 			AddFileToDownloadsTable(filename);
 		}
 		
-		for (int i = 0; i < this.startaction.Length; i++)
+		for (int i = 0; i < this.startAction.Length; i++)
 		{
-			this.startaction.GetString(i, sound, sizeof(sound));
+			this.startAction.GetString(i, sound, sizeof(sound));
 			PrecacheSound(sound);
 			filename = SOUND_PATH;
 			StrCat(filename, sizeof(filename), sound);
 			AddFileToDownloadsTable(filename);
 		}
 		
-		for (int i = 0; i < this.roundmvpanthem.Length; i++)
+		for (int i = 0; i < this.roundMvpAnthem.Length; i++)
 		{
-			this.roundmvpanthem.GetString(i, sound, sizeof(sound));
+			this.roundMvpAnthem.GetString(i, sound, sizeof(sound));
 			PrecacheSound(sound);
 			filename = SOUND_PATH;
 			StrCat(filename, sizeof(filename), sound);
 			AddFileToDownloadsTable(filename);
 		}
 	}
+}
+
+public void PrecacheMusicKits()
+{
+	// Precache all music kit sounds
+	StringMapSnapshot snapshot = g_availableMusicKits.Snapshot();
+	for (int i = 0; i < snapshot.Length; i++)
+	{
+		char name[PLATFORM_MAX_PATH];
+		snapshot.GetKey(i, name, sizeof(name));
+		
+		MusicKit kit;
+		g_availableMusicKits.GetArray(name, kit, sizeof(kit));
+		kit.PrecacheSounds();
+	}
+	delete snapshot;
 }
 
 void ReadMusicKitConfig(KeyValues kv)
@@ -209,17 +225,17 @@ void ReadMusicKitConfig(KeyValues kv)
 					
 					// Collect all known sounds
 					if (StrEqual(title, "bombplanted"))
-						kv.GetString(NULL_STRING, kit.bombplanted, sizeof(kit.bombplanted));
+						kv.GetString(NULL_STRING, kit.bombPlanted, sizeof(kit.bombPlanted));
 					else if (StrEqual(title, "bombtenseccount"))
-						kv.GetString(NULL_STRING, kit.bombtenseccount, sizeof(kit.bombtenseccount));
+						kv.GetString(NULL_STRING, kit.bombTenSecCount, sizeof(kit.bombTenSecCount));
 					else if (StrEqual(title, "chooseteam"))
-						kv.GetString(NULL_STRING, kit.chooseteam, sizeof(kit.chooseteam));
+						kv.GetString(NULL_STRING, kit.chooseTeam, sizeof(kit.chooseTeam));
 					else if (StrEqual(title, "lostround"))
-						kv.GetString(NULL_STRING, kit.lostround, sizeof(kit.lostround));
+						kv.GetString(NULL_STRING, kit.lostRound, sizeof(kit.lostRound));
 					else if (StrEqual(title, "roundtenseccount"))
-						kv.GetString(NULL_STRING, kit.roundtenseccount, sizeof(kit.roundtenseccount));
+						kv.GetString(NULL_STRING, kit.roundTenSecCount, sizeof(kit.roundTenSecCount));
 					else if (StrEqual(title, "wonround"))
-						kv.GetString(NULL_STRING, kit.wonround, sizeof(kit.wonround));
+						kv.GetString(NULL_STRING, kit.wonRound, sizeof(kit.wonRound));
 					else if (StrEqual(title, "startround") || StrEqual(title, "startaction") || StrEqual(title, "roundmvpanthem"))
 					{
 						ArrayList list = new ArrayList(PLATFORM_MAX_PATH);
@@ -229,11 +245,11 @@ void ReadMusicKitConfig(KeyValues kv)
 						for (int i = 0; i < count; i++)list.PushString(buffers[i]);
 						
 						if (StrEqual(title, "startround"))
-							kit.startround = list;
+							kit.startRound = list;
 						else if (StrEqual(title, "startaction"))
-							kit.startaction = list;
+							kit.startAction = list;
 						else if (StrEqual(title, "roundmvpanthem"))
-							kit.roundmvpanthem = list;
+							kit.roundMvpAnthem = list;
 					}
 					else
 						LogError("Found unrecognized sound %s", title);
@@ -242,7 +258,7 @@ void ReadMusicKitConfig(KeyValues kv)
 			}
 			kv.GoBack();
 			
-			g_hMusicKits.SetArray(name, kit, sizeof(kit));
+			g_availableMusicKits.SetArray(name, kit, sizeof(kit));
 		}
 		while (kv.GotoNextKey(false));
 		kv.GoBack();
@@ -252,8 +268,8 @@ void ReadMusicKitConfig(KeyValues kv)
 
 void MusicKit_Init()
 {
-	if (g_hMusicKits == null)
-		g_hMusicKits = new StringMap();
+	if (g_availableMusicKits == null)
+		g_availableMusicKits = new StringMap();
 	
 	// Read config
 	KeyValues kv = new KeyValues("MusicKits");
