@@ -17,6 +17,7 @@ public void ShowMainBuyMenu(int client)
 		}
 	}
 	
+	if (g_mapHasRespawnRoom)menu.ExitButton = false;
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 

@@ -49,6 +49,9 @@ ArrayList g_availableWeapons;
 int g_teamLosingStreaks[view_as<int>(TFTeam_Blue) + 1] =  { TFGO_STARTING_LOSESTREAK, ... };
 int g_losingStreakCompensation[TFGO_MAX_LOSESTREAK + 1] =  { 1400, 1900, 2400, 2900, 3400 };
 
+// Map
+bool g_mapHasRespawnRoom;
+
 // Game state
 bool g_isGameWaitingForPlayers;
 bool g_isBuyTimeActive;
@@ -366,7 +369,6 @@ public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool do
 {
 	g_isBonusRoundActive = false;
 	g_isMainRoundActive = false;
-	g_isBuyTimeActive = true;
 	g_buyTimeTimer = CreateTimer(tfgo_buytime.FloatValue, OnBuyTimeExpire);
 	
 	PlayRoundStartMusic();
@@ -549,6 +551,7 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 {
 	g_isMainRoundActive = false;
 	g_isBonusRoundActive = true;
+	g_isBuyTimeActive = true;
 	
 	// Determine winning/losing team
 	TFGOTeam winningTeam = TFGOTeam(view_as<TFTeam>(event.GetInt("winning_team")));
