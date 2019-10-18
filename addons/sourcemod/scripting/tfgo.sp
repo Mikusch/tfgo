@@ -234,6 +234,8 @@ public MRESReturn Hook_SetWinningTeam(Handle hParams)
 
 public Action Event_Player_Spawn(Event event, const char[] name, bool dontBroadcast)
 {
+	ShowMainBuyMenu(GetClientOfUserId(event.GetInt("userid")));
+	
 	// Granting PDA weapons is utterly broken and causes way too many client crashes
 	// The most sane thing to do here is just to disable these classes until I figure something out
 	
@@ -285,9 +287,6 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	TFGOPlayer attacker = TFGOPlayer(GetClientOfUserId(event.GetInt("attacker")));
 	TFGOPlayer victim = TFGOPlayer(GetClientOfUserId(event.GetInt("userid")));
 	TFGOPlayer assister = TFGOPlayer(GetClientOfUserId(event.GetInt("assister")));
-	Weapon weapon;
-	g_availableWeapons.GetArray(g_availableWeapons.FindValue(event.GetInt("weapon_def_index"), 0), weapon, sizeof(weapon));
-	
 	int customkill = event.GetInt("customkill");
 	
 	// TODO: Check inflictor to reward engineer for sentry kills
@@ -300,6 +299,10 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	}
 	else if (attacker.Client >= 1 && attacker.Client <= MaxClients)
 	{
+		int index = g_availableWeapons.FindValue(event.GetInt("weapon_def_index"), 0);
+		Weapon weapon;
+		g_availableWeapons.GetArray(index, weapon, sizeof(weapon));
+		
 		char weaponName[255];
 		TF2_GetItemName(weapon.defindex, weaponName, sizeof(weaponName));
 		char msg[255];
@@ -604,9 +607,8 @@ public Action SaveWeaponsForAlivePlayers(Handle timer)
 				int defindex = TF2_GetItemInSlot(client, slot);
 				if (defindex > -1)
 				{
-					Weapon weapon;
-					g_availableWeapons.GetArray(g_availableWeapons.FindValue(defindex, 0), weapon, sizeof(weapon));
-					if (weapon.cost > -1) // save only weapons that are buyable from the buy menu
+					int value = g_availableWeapons.FindValue(defindex, 0);
+					if (value > -1) // save only weapons that are buyable from the buy menu
 						TFGOPlayer(client).AddToLoadout(defindex);
 				}
 			}

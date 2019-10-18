@@ -74,7 +74,10 @@ void Config_Init()
 		g_weaponClassKillAwards = new StringMap();
 	
 	if (g_availableWeapons == null)
-		g_availableWeapons = new ArrayList(3);
+	{
+		Weapon weapon;
+		g_availableWeapons = new ArrayList(1 + sizeof(weapon));
+	}
 	
 	// Read config
 	KeyValues kv = new KeyValues("Config");

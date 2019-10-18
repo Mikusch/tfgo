@@ -111,9 +111,9 @@ methodmap TFGOPlayer
 		// This shouldn't even be possible but better safe than sorry?
 		if (!g_isBuyTimeActive)return;
 		
-		int i = g_availableWeapons.FindValue(this, 0);
+		int index = g_availableWeapons.FindValue(defindex, 0);
 		Weapon weapon;
-		g_availableWeapons.GetArray(i, weapon, sizeof(weapon));
+		g_availableWeapons.GetArray(index, weapon, sizeof(weapon));
 		
 		TFClassType class = TF2_GetPlayerClass(this.Client);
 		int slot = TF2Econ_GetItemSlot(defindex, class);
