@@ -609,11 +609,7 @@ public Action SaveWeaponsForAlivePlayers(Handle timer)
 			{
 				int defindex = TF2_GetItemInSlot(client, slot);
 				if (defindex > -1)
-				{
-					int value = g_availableWeapons.FindValue(defindex, 0);
-					if (value > -1) // save only weapons that are buyable from the buy menu
-						TFGOPlayer(client).AddToLoadout(defindex);
-				}
+					TFGOPlayer(client).AddToLoadout(defindex);
 			}
 		}
 	}
