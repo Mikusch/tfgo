@@ -418,6 +418,17 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 		DefuseBomb();
 	}
 	
+	// Lock every other control point in the map
+	int team_control_point;
+	while ((team_control_point = FindEntityByClassname(team_control_point, "team_control_point")) > -1)
+	{
+		if (GetEntProp(team_control_point, Prop_Data, "m_iPointIndex") != event.GetInt("cp"))
+		{
+			SetVariantInt(1);
+			AcceptEntityInput(team_control_point, "SetLocked");
+		}
+	}
+	
 	g_isBombPlanted = !g_isBombPlanted;
 }
 
