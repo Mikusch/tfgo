@@ -68,6 +68,26 @@ void ReadKillAwardConfig(KeyValues kv)
 	}
 }
 
+public int GetEffectiveKillAward(int defindex)
+{
+	int killAward;
+	int index = g_availableWeapons.FindValue(defindex, 0);
+	if (index > -1)
+	{
+		Weapon weapon;
+		g_availableWeapons.GetArray(index, weapon, sizeof(weapon));
+		killAward = weapon.killAward;
+	}
+	else
+	{
+		char weaponclass[256];
+		TF2Econ_GetItemClassName(defindex, weaponclass, sizeof(weaponclass));
+		if (!g_weaponClassKillAwards.GetValue(weaponclass, killAward))
+			return DEFAULT_KILL_AWARD;
+	}
+	return killAward;
+}
+
 void Config_Init()
 {
 	if (g_weaponClassKillAwards == null)

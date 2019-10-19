@@ -291,6 +291,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	TFGOPlayer victim = TFGOPlayer(GetClientOfUserId(event.GetInt("userid")));
 	TFGOPlayer assister = TFGOPlayer(GetClientOfUserId(event.GetInt("assister")));
 	int customkill = event.GetInt("customkill");
+	int defindex = event.GetInt("weapon_def_index");
 	
 	// TODO: Check inflictor to reward engineer for sentry kills
 	// TODO: Fix environmental kills counting as kills with weapon "default"
@@ -302,22 +303,20 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	}
 	else if (attacker.Client >= 1 && attacker.Client <= MaxClients)
 	{
-		int index = g_availableWeapons.FindValue(event.GetInt("weapon_def_index"), 0);
-		Weapon weapon;
-		g_availableWeapons.GetArray(index, weapon, sizeof(weapon));
+		int killAward = GetEffectiveKillAward(defindex);
 		
-		char weaponName[255];
-		TF2_GetItemName(weapon.defindex, weaponName, sizeof(weaponName));
-		char msg[255];
+		char weaponName[256];
+		TF2_GetItemName(defindex, weaponName, sizeof(weaponName));
+		char msg[256];
 		Format(msg, sizeof(msg), "Award for neutralizing an enemy with %s", weaponName);
 		
-		attacker.AddToBalance(weapon.killAward, msg);
+		attacker.AddToBalance(killAward, msg);
 		if (assister.Client >= 1 && assister.Client <= MaxClients)
 		{
-			char attackerName[255];
+			char attackerName[256];
 			GetClientName(attacker.Client, attackerName, sizeof(attackerName));
 			Format(msg, sizeof(msg), "Award for assisting %s in neutralizing an enemy", attackerName);
-			assister.AddToBalance(weapon.killAward / 2, msg);
+			assister.AddToBalance(killAward / 2, msg);
 		}
 	}
 	
