@@ -48,14 +48,6 @@ stock void PrecacheSounds()
 	PrecacheSound("mvm/mvm_bought_upgrade.wav");
 	PrecacheSound("player/cyoa_pda_beep3.wav");
 	PrecacheSound("vo/announcer_time_added.mp3");
-	// TODO remove this after removing the bandaid
-	PrecacheSound("vo/halloween_boo1.mp3");
-	PrecacheSound("vo/halloween_boo2.mp3");
-	PrecacheSound("vo/halloween_boo3.mp3");
-	PrecacheSound("vo/halloween_boo4.mp3");
-	PrecacheSound("vo/halloween_boo5.mp3");
-	PrecacheSound("vo/halloween_boo6.mp3");
-	PrecacheSound("vo/halloween_boo7.mp3");
 	
 	for (int i = 0; i < sizeof(g_sBombPlantedAnnouncerAlerts); i++)PrecacheSound(g_sBombPlantedAnnouncerAlerts[i]);
 	for (int i = 0; i < sizeof(g_sBombPlantedEngineerAlerts); i++)PrecacheSound(g_sBombPlantedEngineerAlerts[i]);

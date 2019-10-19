@@ -444,9 +444,6 @@ void PlantBomb(int team, int cp, const char[] cappers)
 	{
 		int capper = cappers[i];
 		TFGOPlayer(capper).AddToBalance(TFGO_CAPPER_BONUS, "Award for planting the bomb");
-		
-		// TODO: Bandaid solution for the game making the planting team lose if they all die
-		TF2_AddCondition(capper, TFCond_HalloweenInHell);
 	}
 	
 	// Superceding SetWinningTeam causes arena mode to force a map change on capture
