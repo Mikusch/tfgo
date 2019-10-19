@@ -58,6 +58,7 @@ bool g_isBuyTimeActive;
 bool g_isMainRoundActive;
 bool g_isBonusRoundActive;
 bool g_isBombPlanted;
+bool g_isBombDetonated;
 int g_bombPlantingTeam;
 
 // ConVars
@@ -227,9 +228,10 @@ public Action OnEndTouchBuyZone(int entity, int client)
 // Prevent round from ending, called every frame after the round is supposed to end
 public MRESReturn Hook_SetWinningTeam(Handle hParams)
 {
-	//int team = DHookGetParam(hParams, 1);
-	//int winReason = DHookGetParam(hParams, 2);
+	int team = DHookGetParam(hParams, 1);
 	if (g_isBombPlanted)
+		return MRES_Supercede;
+	else if (g_isBombDetonated && team != g_bombPlantingTeam)
 		return MRES_Supercede;
 	else
 		return MRES_Ignored;
@@ -366,6 +368,7 @@ public void TF2_OnWaitingForPlayersEnd()
 
 public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
+	g_isBombDetonated = false;
 	g_isBonusRoundActive = false;
 	g_isMainRoundActive = false;
 	g_buyTimeTimer = CreateTimer(tfgo_buytime.FloatValue, OnBuyTimeExpire);
@@ -423,13 +426,9 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 	event.GetString("cappers", cappers, MaxClients);
 	
 	if (!g_isBombPlanted)
-	{
 		PlantBomb(event.GetInt("team"), event.GetInt("cp"), cappers);
-	}
 	else
-	{
 		DefuseBomb();
-	}
 	
 	g_isBombPlanted = !g_isBombPlanted;
 }
@@ -551,14 +550,8 @@ public Action DetonateBomb(Handle timer, int bombRef)
 {
 	if (g_bombDetonationTimer != timer)return;
 	
+	g_isBombDetonated = true;
 	g_isBombPlanted = false;
-	
-	// Most multi-CP maps require you to capture all points to win, so we trigger the win manually
-	if (g_isMainRoundActive)
-	{
-		TF2_ForceTeamWin(view_as<TFTeam>(g_bombPlantingTeam));
-	}
-	
 	g_bombBeepingTimer = null; // Or else this timer will try to get m_vecOrigin from a deleted bomb
 	
 	int bomb = EntRefToEntIndex(bombRef);
