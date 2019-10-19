@@ -33,7 +33,6 @@
 
 
 // Timers
-Handle g_hudSync;
 Handle g_buyTimeTimer;
 Handle g_10SecondRoundTimer;
 Handle g_10SecondBombTimer;
@@ -42,6 +41,7 @@ Handle g_bombDetonationWarningTimer;
 Handle g_bombBeepingTimer;
 
 // Other handles
+Handle g_hudSync;
 StringMap g_availableMusicKits;
 ArrayList g_availableWeapons;
 
@@ -372,12 +372,18 @@ public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool do
 	g_buyTimeTimer = CreateTimer(tfgo_buytime.FloatValue, OnBuyTimeExpire);
 	
 	PlayRoundStartMusic();
+	
+	// Bomb can freely tick and explode through the bonus time and we cancel it here
+	g_bombBeepingTimer = null;
+	g_bombDetonationWarningTimer = null;
+	g_bombDetonationTimer = null;
 }
 
 public Action OnBuyTimeExpire(Handle timer)
 {
+	if (g_buyTimeTimer != timer)return;
+	
 	g_isBuyTimeActive = false;
-	g_buyTimeTimer = null;
 	
 	for (int client = 1; client <= MaxClients; client++)
 	{
@@ -404,6 +410,14 @@ public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontB
 	g_10SecondRoundTimer = CreateTimer(tf_arena_round_time.FloatValue - 12.7, Play10SecondWarning);
 }
 
+public Action Play10SecondWarning(Handle timer)
+{
+	if (g_10SecondRoundTimer != timer)return;
+	
+	g_currentMusicKit.StopMusicForAll(Music_StartAction);
+	g_currentMusicKit.PlayMusicToAll(Music_RoundTenSecCount);
+}
+
 public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool dontBroadcast)
 {
 	char[] cappers = new char[MaxClients];
@@ -411,28 +425,17 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 	
 	if (!g_isBombPlanted)
 	{
-		PlantBomb(event.GetInt("team"), cappers);
+		PlantBomb(event.GetInt("team"), event.GetInt("cp"), cappers);
 	}
 	else
 	{
 		DefuseBomb();
 	}
 	
-	// Lock every other control point in the map
-	int team_control_point;
-	while ((team_control_point = FindEntityByClassname(team_control_point, "team_control_point")) > -1)
-	{
-		if (GetEntProp(team_control_point, Prop_Data, "m_iPointIndex") != event.GetInt("cp"))
-		{
-			SetVariantInt(1);
-			AcceptEntityInput(team_control_point, "SetLocked");
-		}
-	}
-	
 	g_isBombPlanted = !g_isBombPlanted;
 }
 
-void PlantBomb(int team, const char[] cappers)
+void PlantBomb(int team, int cp, const char[] cappers)
 {
 	g_bombPlantingTeam = team;
 	
@@ -445,17 +448,6 @@ void PlantBomb(int team, const char[] cappers)
 		// TODO: Bandaid solution for the game making the planting team lose if they all die
 		TF2_AddCondition(capper, TFCond_HalloweenInHell);
 	}
-	
-	// Spawn bomb prop on position of first capper
-	// TODO: Set skin of bomb to team color
-	float pos[3];
-	float ang[3];
-	GetClientAbsOrigin(cappers[0], pos);
-	GetClientAbsAngles(cappers[0], ang);
-	int bomb = CreateEntityByName("prop_dynamic_override");
-	SetEntityModel(bomb, "models/props_td/atom_bomb.mdl");
-	DispatchSpawn(bomb);
-	TeleportEntity(bomb, pos, ang, NULL_VECTOR);
 	
 	// Superceding SetWinningTeam causes arena mode to force a map change on capture
 	int game_end;
@@ -486,14 +478,35 @@ void PlantBomb(int team, const char[] cappers)
 		AcceptEntityInput(team_round_timer, "SetTime");
 	}
 	
-	// Set up timers
-	g_10SecondBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 10.0, Play10SecondBombWarning);
-	g_bombBeepingTimer = CreateTimer(1.0, PlayBombBeep, EntIndexToEntRef(bomb), TIMER_REPEAT);
-	g_bombDetonationWarningTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 1.5, PlayBombExplosionWarning, EntIndexToEntRef(bomb));
-	g_bombDetonationTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME, DetonateBomb, EntIndexToEntRef(bomb));
-	
-	if (g_10SecondRoundTimer != null)
-		delete g_10SecondRoundTimer;
+	int team_control_point;
+	while ((team_control_point = FindEntityByClassname(team_control_point, "team_control_point")) > -1)
+	{
+		// Lock every other control point in the map
+		if (GetEntProp(team_control_point, Prop_Data, "m_iPointIndex") != cp)
+		{
+			SetVariantInt(1);
+			AcceptEntityInput(team_control_point, "SetLocked");
+		}
+		else // Spawn bomb prop on CP
+		{
+			// TODO: Set skin of bomb to team color
+			float m_vecOrigin[3];
+			GetEntPropVector(team_control_point, Prop_Send, "m_vecOrigin", m_vecOrigin);
+			float m_angRotation[3];
+			GetEntPropVector(team_control_point, Prop_Send, "m_angRotation", m_angRotation);
+			
+			int bomb = CreateEntityByName("prop_dynamic_override");
+			SetEntityModel(bomb, "models/props_td/atom_bomb.mdl");
+			DispatchSpawn(bomb);
+			TeleportEntity(bomb, m_vecOrigin, m_angRotation, NULL_VECTOR);
+			
+			// Set up timers
+			g_10SecondBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 10.0, Play10SecondBombWarning);
+			g_bombBeepingTimer = CreateTimer(1.0, PlayBombBeep, EntIndexToEntRef(bomb), TIMER_REPEAT);
+			g_bombDetonationWarningTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 1.5, PlayBombExplosionWarning, EntIndexToEntRef(bomb));
+			g_bombDetonationTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME, DetonateBomb, EntIndexToEntRef(bomb));
+		}
+	}
 	
 	// Play Sounds
 	g_currentMusicKit.StopMusicForAll(Music_StartAction);
@@ -501,6 +514,9 @@ void PlantBomb(int team, const char[] cappers)
 	g_currentMusicKit.PlayMusicToAll(Music_BombPlanted);
 	PlayAnnouncerBombAlert();
 	ShoutBombWarnings();
+	
+	// Reset timers
+	g_10SecondRoundTimer = null;
 	
 	// Show text on screen
 	char message[256] = "The bomb has been planted.\n%d seconds to detonation.";
@@ -510,52 +526,58 @@ void PlantBomb(int team, const char[] cappers)
 
 public Action PlayBombBeep(Handle timer, int bomb)
 {
+	if (g_bombBeepingTimer != timer)return Plugin_Stop;
+	
 	float m_vecOrigin[3];
 	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", m_vecOrigin);
-	EmitAmbientSound("player/cyoa_pda_beep8.wav", m_vecOrigin, bomb);
+	EmitAmbientSound("player/cyoa_pda_beep3.wav", m_vecOrigin, bomb);
+	return Plugin_Continue;
 }
 
-stock Action Play10SecondBombWarning(Handle timer)
+public Action Play10SecondBombWarning(Handle timer)
 {
+	if (g_10SecondBombTimer != timer)return;
+	
 	g_currentMusicKit.StopMusicForAll(Music_BombPlanted);
 	g_currentMusicKit.PlayMusicToAll(Music_BombTenSecCount);
 }
 
 public Action PlayBombExplosionWarning(Handle timer, int bomb)
 {
+	if (g_bombDetonationWarningTimer != timer)return;
+	
 	float m_vecOrigin[3];
 	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", m_vecOrigin);
 	EmitAmbientSound("mvm/mvm_bomb_warning.wav", m_vecOrigin, bomb, SNDLEVEL_RAIDSIREN);
-	delete g_bombBeepingTimer;
 }
 
-public Action DetonateBomb(Handle timer, int bombProp)
+public Action DetonateBomb(Handle timer, int bombRef)
 {
+	if (g_bombDetonationTimer != timer)return;
+	
 	g_isBombPlanted = false;
 	
-	if (g_bombBeepingTimer != null)
-		delete g_bombBeepingTimer;
+	// Most multi-CP maps require you to capture all points to win, so we trigger the win manually
+	if (g_isMainRoundActive)
+	{
+		TF2_ForceTeamWin(view_as<TFTeam>(g_bombPlantingTeam));
+	}
 	
+	g_bombBeepingTimer = null; // Or else this timer will try to get m_vecOrigin from a deleted bomb
+	
+	int bomb = EntRefToEntIndex(bombRef);
 	float m_vecOrigin[3];
-	GetEntPropVector(bombProp, Prop_Send, "m_vecOrigin", m_vecOrigin);
+	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", m_vecOrigin);
 	TF2_Explode(_, m_vecOrigin, 500.0, 788.0, "mvm_hatch_destroy", "mvm/mvm_bomb_explode.wav");
-	RemoveEntity(bombProp);
-	delete g_bombDetonationTimer;
+	RemoveEntity(bomb);
 }
 
 void DefuseBomb()
 {
-	if (g_10SecondBombTimer != null)
-		delete g_10SecondBombTimer;
-	
-	if (g_bombBeepingTimer != null)
-		delete g_bombBeepingTimer;
-	
-	if (g_bombDetonationWarningTimer != null)
-		delete g_bombDetonationWarningTimer;
-	
-	if (g_bombDetonationTimer != null)
-		delete g_bombDetonationTimer;
+	g_bombBeepingTimer = null;
+	g_10SecondBombTimer = null;
+	g_bombDetonationWarningTimer = null;
+	g_bombDetonationTimer = null;
 }
 
 public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBroadcast)
@@ -597,14 +619,8 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	winningTeam.LoseStreak--;
 	
 	// Reset timers
-	if (g_buyTimeTimer != null)
-		delete g_buyTimeTimer;
-	
-	if (g_10SecondRoundTimer != null)
-		delete g_10SecondRoundTimer;
-	
-	if (g_10SecondBombTimer != null)
-		delete g_10SecondBombTimer;
+	g_10SecondRoundTimer = null;
+	g_10SecondBombTimer = null;
 	
 	// Everyone who survives the post-victory time gets to keep their weapons
 	CreateTimer(mp_bonusroundtime.FloatValue - 0.1, SaveWeaponsForAlivePlayers);

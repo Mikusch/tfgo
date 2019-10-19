@@ -46,7 +46,7 @@ stock void PrecacheSounds()
 	PrecacheSound("mvm/mvm_bomb_warning.wav");
 	PrecacheSound("mvm/mvm_bomb_explode.wav");
 	PrecacheSound("mvm/mvm_bought_upgrade.wav");
-	PrecacheSound("player/cyoa_pda_beep8.wav");
+	PrecacheSound("player/cyoa_pda_beep3.wav");
 	PrecacheSound("vo/announcer_time_added.mp3");
 	// TODO remove this after removing the bandaid
 	PrecacheSound("vo/halloween_boo1.mp3");
@@ -120,13 +120,6 @@ public Action Event_Pre_Teamplay_Broadcast_Audio(Event event, const char[] name,
 	}
 	
 	return Plugin_Continue;
-}
-
-stock Action Play10SecondWarning(Handle timer)
-{
-	g_currentMusicKit.StopMusicForAll(Music_StartAction);
-	g_currentMusicKit.PlayMusicToAll(Music_RoundTenSecCount);
-	g_10SecondRoundTimer = null;
 }
 
 stock void PlayRoundStartMusic()
