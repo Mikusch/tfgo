@@ -237,7 +237,20 @@ public MRESReturn Hook_SetWinningTeam(Handle hParams)
 	else if (g_isBombDetonated && team != g_bombPlantingTeam)
 		return MRES_Supercede;
 	else
+	{
+		// Stalemate
+		if (team == view_as<int>(TFTeam_Unassigned))
+		{
+			TFGOTeam red = TFGOTeam(TFTeam_Red);
+			TFGOTeam blue = TFGOTeam(TFTeam_Blue);
+			red.AddToTeamBalance(g_losingStreakCompensation[red.LoseStreak], "Income for triggering stalemate");
+			blue.AddToTeamBalance(g_losingStreakCompensation[blue.LoseStreak], "Income for triggering stalemate");
+			red.LoseStreak++;
+			blue.LoseStreak++;
+		}
+		
 		return MRES_Ignored;
+	}
 }
 
 public Action Event_Player_Spawn(Event event, const char[] name, bool dontBroadcast)
