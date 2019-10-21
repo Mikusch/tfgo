@@ -14,6 +14,19 @@ stock int IntAbs(int num)
 	return num;
 }
 
+stock void TF2_ForceTeamWin(TFTeam team, int winReason)
+{
+	int game_round_win = CreateEntityByName("game_round_win");
+	char strWinReason[8];
+	IntToString(view_as<int>(team), strWinReason, sizeof(strWinReason));
+	DispatchKeyValue(game_round_win, "win_reason", strWinReason);
+	DispatchSpawn(game_round_win);
+	SetVariantInt(g_bombPlantingTeam);
+	AcceptEntityInput(game_round_win, "SetTeam");
+	AcceptEntityInput(game_round_win, "RoundWin");
+	RemoveEntity(game_round_win);
+}
+
 // Taken from VSH Rewrite
 stock void TF2_Explode(int iAttacker = -1, float flPos[3], float flDamage, float flRadius, const char[] strParticle, const char[] strSound)
 {

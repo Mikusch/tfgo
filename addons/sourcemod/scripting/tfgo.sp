@@ -39,6 +39,7 @@ Handle g_10SecondBombTimer;
 Handle g_bombDetonationTimer;
 Handle g_bombDetonationWarningTimer;
 Handle g_bombBeepingTimer;
+Handle g_forcePlantingTeamWinTimer;
 
 // Other handles
 Handle g_hudSync;
@@ -113,7 +114,7 @@ public void OnPluginStart()
 	TFGOPlayer(client).ClearLoadout();
 	
 	// Events
-	HookEvent("player_spawn", Event_Player_Spawn);
+	HookEvent("player_spawn", Event_Player_Spawn, EventHookMode_Pre);
 	HookEvent("player_team", Event_Player_Team);
 	HookEvent("player_death", Event_Player_Death);
 	HookEvent("post_inventory_application", Event_Post_Inventory_Application);
@@ -166,6 +167,8 @@ public void OnMapStart()
 	int func_respawnroom = FindEntityByClassname(-1, "func_respawnroom");
 	if (func_respawnroom <= -1)
 		LogMessage("This map is missing a func_respawnroom entity - unable to define a buy zone");
+	else
+		g_mapHasRespawnRoom = true;
 }
 
 public void ChooseRandomMusicKit()
@@ -424,11 +427,12 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 {
 	char[] cappers = new char[MaxClients];
 	event.GetString("cappers", cappers, MaxClients);
+	int team = event.GetInt("team");
 	
 	if (!g_isBombPlanted)
-		PlantBomb(event.GetInt("team"), event.GetInt("cp"), cappers);
+		PlantBomb(team, event.GetInt("cp"), cappers);
 	else
-		DefuseBomb();
+		DefuseBomb(team);
 	
 	g_isBombPlanted = !g_isBombPlanted;
 }
@@ -503,6 +507,9 @@ void PlantBomb(int team, int cp, const char[] cappers)
 		}
 	}
 	
+	// Forcing a win for the planting team is required for multi-CP maps because often they don't trigger a win with only one captured CP
+	g_forcePlantingTeamWinTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME, ForcePlantingTeamWin, team_control_point);
+	
 	// Play Sounds
 	g_currentMusicKit.StopMusicForAll(Music_StartAction);
 	g_currentMusicKit.StopMusicForAll(Music_RoundTenSecCount);
@@ -517,6 +524,14 @@ void PlantBomb(int team, int cp, const char[] cappers)
 	char message[256] = "The bomb has been planted.\n%d seconds to detonation.";
 	Format(message, sizeof(message), message, RoundFloat(TFGO_BOMB_DETONATION_TIME));
 	ShowGameMessage(message, "ico_notify_sixty_seconds");
+}
+
+public Action ForcePlantingTeamWin(Handle timer, int team_control_point)
+{
+	if (g_forcePlantingTeamWinTimer != timer)return Plugin_Stop;
+	
+	TF2_ForceTeamWin(view_as<TFTeam>(g_bombPlantingTeam), TF_ARENA_WINREASON_CAPTURE);
+	return Plugin_Continue;
 }
 
 public Action PlayBombBeep(Handle timer, int bomb)
@@ -561,12 +576,14 @@ public Action DetonateBomb(Handle timer, int bombRef)
 	RemoveEntity(bomb);
 }
 
-void DefuseBomb()
+void DefuseBomb(int team)
 {
 	g_bombBeepingTimer = null;
 	g_10SecondBombTimer = null;
 	g_bombDetonationWarningTimer = null;
 	g_bombDetonationTimer = null;
+	
+	TF2_ForceTeamWin(view_as<TFTeam>(team), TF_ARENA_WINREASON_CAPTURE);
 }
 
 public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBroadcast)
@@ -610,6 +627,7 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	// Reset timers
 	g_10SecondRoundTimer = null;
 	g_10SecondBombTimer = null;
+	g_forcePlantingTeamWinTimer = null;
 	
 	// Everyone who survives the post-victory time gets to keep their weapons
 	CreateTimer(mp_bonusroundtime.FloatValue - 0.1, SaveWeaponsForAlivePlayers);
