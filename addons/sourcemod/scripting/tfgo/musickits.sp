@@ -52,7 +52,7 @@ enum struct MusicKit
 	{
 		char sound[PLATFORM_MAX_PATH];
 		this.GetRandomMusicFile(sound, sizeof(sound), type);
-		EmitSoundToClient(client, sound);
+		EmitSoundToClient(client, sound, _, SNDCHAN_STATIC);
 	}
 	
 	void PlayMusicToTeam(TFTeam team, MusicType type)
@@ -61,14 +61,14 @@ enum struct MusicKit
 		this.GetRandomMusicFile(sound, sizeof(sound), type);
 		for (int client = 1; client <= MaxClients; client++)
 		if (IsClientInGame(client) && TF2_GetClientTeam(client) == team)
-			EmitSoundToClient(client, sound);
+			EmitSoundToClient(client, sound, _, SNDCHAN_STATIC);
 	}
 	
 	void PlayMusicToAll(MusicType type)
 	{
 		char sound[PLATFORM_MAX_PATH];
 		this.GetRandomMusicFile(sound, sizeof(sound), type);
-		EmitSoundToAll(sound);
+		EmitSoundToAll(sound, _, SNDCHAN_STATIC);
 	}
 	
 	void StopMusicForClient(int entity, MusicType type)
@@ -76,18 +76,18 @@ enum struct MusicKit
 		char sound[PLATFORM_MAX_PATH];
 		switch (type)
 		{
-			case Music_BombPlanted:StopSound(entity, SNDCHAN_AUTO, this.bombPlanted);
-			case Music_BombTenSecCount:StopSound(entity, SNDCHAN_AUTO, this.bombTenSecCount);
-			case Music_ChooseTeam:StopSound(entity, SNDCHAN_AUTO, this.chooseTeam);
-			case Music_LostRound:StopSound(entity, SNDCHAN_AUTO, this.lostRound);
-			case Music_RoundTenSecCount:StopSound(entity, SNDCHAN_AUTO, this.roundTenSecCount);
-			case Music_WonRound:StopSound(entity, SNDCHAN_AUTO, this.wonRound);
+			case Music_BombPlanted:StopSound(entity, SNDCHAN_STATIC, this.bombPlanted);
+			case Music_BombTenSecCount:StopSound(entity, SNDCHAN_STATIC, this.bombTenSecCount);
+			case Music_ChooseTeam:StopSound(entity, SNDCHAN_STATIC, this.chooseTeam);
+			case Music_LostRound:StopSound(entity, SNDCHAN_STATIC, this.lostRound);
+			case Music_RoundTenSecCount:StopSound(entity, SNDCHAN_STATIC, this.roundTenSecCount);
+			case Music_WonRound:StopSound(entity, SNDCHAN_STATIC, this.wonRound);
 			case Music_StartRound:
 			{
 				for (int i = 0; i < this.startRound.Length; i++)
 				{
 					this.startRound.GetString(i, sound, sizeof(sound));
-					StopSound(entity, SNDCHAN_AUTO, sound);
+					StopSound(entity, SNDCHAN_STATIC, sound);
 				}
 			}
 			case Music_StartAction:
@@ -95,7 +95,7 @@ enum struct MusicKit
 				for (int i = 0; i < this.startAction.Length; i++)
 				{
 					this.startAction.GetString(i, sound, sizeof(sound));
-					StopSound(entity, SNDCHAN_AUTO, sound);
+					StopSound(entity, SNDCHAN_STATIC, sound);
 				}
 			}
 			case Music_RoundMVPAnthem:
@@ -103,7 +103,7 @@ enum struct MusicKit
 				for (int i = 0; i < this.roundMvpAnthem.Length; i++)
 				{
 					this.roundMvpAnthem.GetString(i, sound, sizeof(sound));
-					StopSound(entity, SNDCHAN_AUTO, sound);
+					StopSound(entity, SNDCHAN_STATIC, sound);
 				}
 			}
 		}

@@ -47,7 +47,6 @@ stock void PrecacheSounds()
 	PrecacheSound("mvm/mvm_bomb_explode.wav");
 	PrecacheSound("mvm/mvm_bought_upgrade.wav");
 	PrecacheSound("player/cyoa_pda_beep3.wav");
-	PrecacheSound("vo/announcer_time_added.mp3");
 	
 	for (int i = 0; i < sizeof(g_sBombPlantedAnnouncerAlerts); i++)PrecacheSound(g_sBombPlantedAnnouncerAlerts[i]);
 	for (int i = 0; i < sizeof(g_sBombPlantedEngineerAlerts); i++)PrecacheSound(g_sBombPlantedEngineerAlerts[i]);
@@ -62,7 +61,7 @@ stock void PrecacheSounds()
 
 public void PlayAnnouncerBombAlert()
 {
-	EmitSoundToAll(g_sBombPlantedAnnouncerAlerts[GetRandomInt(0, sizeof(g_sBombPlantedAnnouncerAlerts) - 1)]);
+	EmitSoundToAll(g_sBombPlantedAnnouncerAlerts[GetRandomInt(0, sizeof(g_sBombPlantedAnnouncerAlerts) - 1)], _, SNDCHAN_VOICE_BASE); // SNDCHAN_VOICE_BASE = CHAN_VOICE2
 }
 
 public void ShoutBombWarnings()
