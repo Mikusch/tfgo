@@ -1,7 +1,11 @@
-/*
-* Pre-defined default weapons for each class and slot.
-* -1 indicates this class should start with no weapon in this slot.
-*/
+#define TFGO_STARTING_BALANCE			800
+#define TFGO_MIN_BALANCE				0
+#define TFGO_MAX_BALANCE				16000
+#define TFGO_MIN_LOSESTREAK				0
+#define TFGO_MAX_LOSESTREAK				4
+#define TFGO_STARTING_LOSESTREAK		1
+
+// -1 indicates the class should start with no weapon in that slot
 int g_defaultWeaponIndexes[][] =  {
 	{ -1, -1, -1, -1, -1, -1 },  // Unknown
 	{ -1, 23, 30758, -1, -1, -1 },  // Scout
@@ -14,10 +18,12 @@ int g_defaultWeaponIndexes[][] =  {
 	{ 24, 735, 30758, 27, 30, -1 },  // Spy
 	{ -1, 22, 30758, 25, 26, 28 } // Engineer
 };
-
 int g_playerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][view_as<int>(TFWeaponSlot_PDA) + 1];
 int g_playerBalances[TF_MAXPLAYERS + 1] =  { TFGO_STARTING_BALANCE, ... };
 Menu g_activeBuyMenus[TF_MAXPLAYERS + 1];
+
+int g_teamLosingStreaks[view_as<int>(TFTeam_Blue) + 1] =  { TFGO_STARTING_LOSESTREAK, ... };
+int g_losingStreakCompensation[TFGO_MAX_LOSESTREAK + 1] =  { 1400, 1900, 2400, 2900, 3400 };
 
 
 methodmap TFGOPlayer
@@ -53,6 +59,11 @@ methodmap TFGOPlayer
 			else
 				g_playerBalances[this] = val;
 		}
+	}
+	
+	public void ResetBalance()
+	{
+		this.Balance = TFGO_STARTING_BALANCE;
 	}
 	
 	property Menu ActiveBuyMenu
@@ -227,6 +238,19 @@ methodmap TFGOTeam
 		}
 	}
 	
+	property int LoseIncome
+	{
+		public get()
+		{
+			return g_losingStreakCompensation[this.LoseStreak];
+		}
+	}
+	
+	public void ResetLoseStreak()
+	{
+		g_teamLosingStreaks[this] = TFGO_STARTING_LOSESTREAK;
+	}
+	
 	/**
 	 * Adds balance to every client in this team and displays
 	 * a chat message notifying them of the amount earned.
@@ -239,5 +263,17 @@ methodmap TFGOTeam
 		for (int client = 1; client <= MaxClients; client++)
 		if (IsClientInGame(client) && TF2_GetClientTeam(client) == this.Team)
 			TFGOPlayer(client).AddToBalance(val, reason);
+	}
+	
+	public int GetHighestBalance()
+	{
+		int balance = TFGO_STARTING_BALANCE;
+		for (int client = 1; client <= MaxClients; client++)
+		{
+			TFGOPlayer player = TFGOPlayer(client);
+			if (IsClientInGame(client) && TF2_GetClientTeam(client) == this.Team && player.Balance > balance)
+				balance = player.Balance;
+		}
+		return balance;
 	}
 }

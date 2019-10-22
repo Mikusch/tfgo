@@ -10,19 +10,12 @@
 
 #pragma newdecls required
 
-// TF2 stuff
+// TF2 defines
 #define TF_MAXPLAYERS					32
 #define TF_ARENA_WINREASON_CAPTURE		1
 #define TF_ARENA_WINREASON_ELIMINATION	2
 
-// TFGO stuff
-#define TFGO_MIN_LOSESTREAK				0
-#define TFGO_MAX_LOSESTREAK				4
-#define TFGO_STARTING_LOSESTREAK		1
-
-#define TFGO_STARTING_BALANCE			800
-#define TFGO_MIN_BALANCE				0
-#define TFGO_MAX_BALANCE				16000
+// TFGO defines
 #define TFGO_BOMB_DETONATION_WIN_AWARD	3500
 #define TFGO_BOMB_DEFUSE_WIN_AWARD		3500
 #define TFGO_ELIMINATION_WIN_AWARD		3250
@@ -45,10 +38,6 @@ Handle g_forcePlantingTeamWinTimer;
 Handle g_hudSync;
 StringMap g_availableMusicKits;
 ArrayList g_availableWeapons;
-
-// Round loss payouts
-int g_teamLosingStreaks[view_as<int>(TFTeam_Blue) + 1] =  { TFGO_STARTING_LOSESTREAK, ... };
-int g_losingStreakCompensation[TFGO_MAX_LOSESTREAK + 1] =  { 1400, 1900, 2400, 2900, 3400 };
 
 // Map
 bool g_mapHasRespawnRoom;
@@ -111,7 +100,10 @@ public void OnPluginStart()
 	MusicKit_Init();
 	g_hudSync = CreateHudSynchronizer();
 	for (int client = 1; client <= MaxClients; client++)
-	TFGOPlayer(client).ClearLoadout();
+	{
+		// Balance does not need to be initialized here
+		TFGOPlayer(client).ClearLoadout();
+	}
 	
 	// Events
 	HookEvent("player_spawn", Event_Player_Spawn, EventHookMode_Pre);
@@ -185,7 +177,7 @@ public void OnClientConnected(int client)
 {
 	// Initialize new player with default values
 	TFGOPlayer player = TFGOPlayer(client);
-	player.Balance = TFGO_STARTING_BALANCE;
+	player.ResetBalance();
 	player.ClearLoadout();
 	
 	if (g_isGameWaitingForPlayers)
@@ -243,8 +235,8 @@ public MRESReturn Hook_SetWinningTeam(Handle hParams)
 		{
 			TFGOTeam red = TFGOTeam(TFTeam_Red);
 			TFGOTeam blue = TFGOTeam(TFTeam_Blue);
-			red.AddToTeamBalance(g_losingStreakCompensation[red.LoseStreak], "Income for triggering stalemate");
-			blue.AddToTeamBalance(g_losingStreakCompensation[blue.LoseStreak], "Income for triggering stalemate");
+			red.AddToTeamBalance(red.LoseIncome, "Income for triggering stalemate");
+			blue.AddToTeamBalance(blue.LoseIncome, "Income for triggering stalemate");
 			red.LoseStreak++;
 			blue.LoseStreak++;
 		}
@@ -281,26 +273,14 @@ public Action Event_Player_Team(Event event, const char[] name, bool dontBroadca
 	TFGOPlayer player = TFGOPlayer(GetClientOfUserId(event.GetInt("userid")));
 	
 	// Cap balance at highest of the team
-	int balance = GetHighestBalanceInTeam(event.GetInt("team"));
-	if (player.Balance > balance)
-		player.Balance = balance;
+	int highestBalance = TFGOTeam(view_as<TFTeam>(event.GetInt("team"))).GetHighestBalance();
+	if (player.Balance > highestBalance)
+		player.Balance = highestBalance;
 	player.ClearLoadout();
 	
 	// Cancel buy menu if client switched to spectator  (#4)
 	if (view_as<TFTeam>(event.GetInt("team")) == TFTeam_Spectator && player.ActiveBuyMenu != null)
 		player.ActiveBuyMenu.Cancel();
-}
-
-int GetHighestBalanceInTeam(int team)
-{
-	int balance = TFGO_STARTING_BALANCE;
-	for (int client = 1; client <= MaxClients; client++)
-	{
-		TFGOPlayer player = TFGOPlayer(client);
-		if (IsClientInGame(client) && GetClientTeam(client) == team && player.Balance > balance)
-			balance = player.Balance;
-	}
-	return balance;
 }
 
 public Action Event_Player_Death(Event event, const char[] name, bool dontBroadcast)
@@ -636,8 +616,7 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 			winningTeam.AddToTeamBalance(TFGO_ELIMINATION_WIN_AWARD, "Team award for eliminating the enemy team");
 		}
 	}
-	int compensation = g_losingStreakCompensation[losingTeam.LoseStreak];
-	losingTeam.AddToTeamBalance(compensation, "Income for losing");
+	losingTeam.AddToTeamBalance(losingTeam.LoseIncome, "Income for losing");
 	
 	// Adjust team losing streaks
 	losingTeam.LoseStreak++;
@@ -673,12 +652,12 @@ public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool d
 	for (int client = 1; client <= MaxClients; client++)
 	{
 		TFGOPlayer player = TFGOPlayer(client);
-		player.Balance = TFGO_STARTING_BALANCE;
+		player.ResetBalance();
 		player.ClearLoadout();
 	}
 	
-	for (int i = 0; i < sizeof(g_teamLosingStreaks); i++)
-	g_teamLosingStreaks[i] = TFGO_STARTING_LOSESTREAK;
+	for (int team = 0; team < view_as<int>(TFTeam_Blue); team++)
+	TFGOTeam(view_as<TFTeam>(team)).ResetLoseStreak();
 	
 	ChooseRandomMusicKit();
 }
