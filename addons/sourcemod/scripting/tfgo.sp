@@ -326,7 +326,8 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	TFGOPlayer assister = TFGOPlayer(GetClientOfUserId(event.GetInt("assister")));
 	int customkill = event.GetInt("customkill");
 	int defindex = event.GetInt("weapon_def_index");
-	int inflictor = event.GetInt("inflictor_entindex");
+	char weapon[256];
+	event.GetString("weapon", weapon, sizeof(weapon));
 	
 	// TODO: Fix environmental kills counting as kills with weapon "default"
 	if (customkill == TF_CUSTOM_SUICIDE && attacker == victim)
@@ -340,10 +341,8 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 		char msg[256];
 		int killAward;
 		
-		if (inflictor > MaxClients)
+		if (strncmp(weapon, "obj_", 4) == 0)
 		{
-			char weapon[256];
-			event.GetString("weapon", weapon, sizeof(weapon));
 			g_weaponClassKillAwards.GetValue(weapon, killAward);
 			Format(msg, sizeof(msg), "Award for neutralizing an enemy with a Sentry Gun");
 		}
