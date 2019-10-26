@@ -98,6 +98,7 @@ public void OnPluginStart()
 	// Initializing globals
 	SDK_Init();
 	MusicKit_Init();
+	Config_Init();
 	g_hudSync = CreateHudSynchronizer();
 	for (int client = 1; client <= MaxClients; client++)
 	{
@@ -133,11 +134,6 @@ public void OnPluginStart()
 	
 	CAddColor("alert", 0xEA4141);
 	CAddColor("money", 0xA2FE47);
-}
-
-public void OnAllPluginsLoaded()
-{
-	Config_Init(); // Config requires TF2 Econ to be loaded
 }
 
 public void OnPluginEnd()
