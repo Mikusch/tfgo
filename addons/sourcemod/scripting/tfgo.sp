@@ -12,10 +12,11 @@
 
 // TF2 defines
 #define TF_MAXPLAYERS					32
-#define TF_ARENA_WINREASON_CAPTURE		1
-#define TF_ARENA_WINREASON_ELIMINATION	2
 
 // TFGO defines
+#define TFGO_ARENA_WINREASON_BOMB_DETONATED	8
+#define TFGO_ARENA_WINREASON_BOMB_DEFUSED	9
+
 #define TFGO_BOMB_DETONATION_WIN_AWARD	3500
 #define TFGO_BOMB_DEFUSE_WIN_AWARD		3500
 #define TFGO_ELIMINATION_WIN_AWARD		3250
@@ -32,7 +33,6 @@ Handle g_10SecondBombTimer;
 Handle g_bombDetonationTimer;
 Handle g_bombDetonationWarningTimer;
 Handle g_bombBeepingTimer;
-Handle g_forcePlantingTeamWinTimer;
 
 // Other handles
 Handle g_hudSync;
@@ -49,6 +49,7 @@ bool g_isMainRoundActive;
 bool g_isBonusRoundActive;
 bool g_isBombPlanted;
 bool g_isBombDetonated;
+bool g_isBombDefused;
 int g_bombPlantingTeam;
 
 // ConVars
@@ -71,7 +72,7 @@ Handle g_SDKRemoveWearable;
 Handle g_SDKGetEquippedWearable;
 Handle g_SDKGetMaxAmmo;
 
-
+#include "tfgo/include/tfgo.inc"
 #include "tfgo/musickits.sp"
 MusicKit g_currentMusicKit;
 
@@ -144,6 +145,8 @@ public void OnPluginEnd()
 public void OnMapStart()
 {
 	DHookGamerules(g_dHookSetWinningTeam, false);
+	
+	ResetGameState();
 	
 	PrecacheSounds();
 	PrecacheModels();
@@ -220,23 +223,60 @@ public Action OnEndTouchBuyZone(int entity, int client)
 public MRESReturn Hook_SetWinningTeam(Handle hParams)
 {
 	int team = DHookGetParam(hParams, 1);
-	if (g_isBombPlanted)
+	int winReason = DHookGetParam(hParams, 2);
+	
+	//PrintToServer("Team: %d, Win Reason: %d", team, winReason);
+	//PrintToServer("Is bomb planted: %b", g_isBombPlanted);
+	//PrintToServer("Is bomb detonated: %b", g_isBombDetonated);
+	//PrintToServer("Is bomb defused: %b", g_isBombDefused);
+	
+	
+	// Bomb is detonated but game wants to award elimination win on multi-CP maps, rewrite it to make it look like a capture
+	if (g_isBombDetonated && winReason == view_as<int>(Winreason_Elimination))
+	{
+		DHookSetParam(hParams, 2, view_as<int>(Winreason_PointCaptured));
+		return MRES_ChangedHandled;
+	}
+	
+	// Bomb is defused but game wants to award elimination win on multi-CP maps, rewrite it to make it look like a capture
+	else if (g_isBombDefused && team != g_bombPlantingTeam && winReason == view_as<int>(Winreason_Elimination))
+	{
+		DHookSetParam(hParams, 2, view_as<int>(Winreason_PointCaptured));
+		return MRES_ChangedHandled;
+	}
+	// Sometimes the game is stupid and gives defuse win to the planting team, this should prevent that
+	else if (g_isBombDefused && team == g_bombPlantingTeam)
+	{
 		return MRES_Supercede;
-	else if (g_isBombDetonated && team != g_bombPlantingTeam)
+	}
+	
+	// If this is a capture win from planting the bomb we supercede it, otherwise ignore to grant the defusal win
+	else if (g_isBombPlanted && team == g_bombPlantingTeam && (winReason == view_as<int>(Winreason_PointCaptured) || winReason == view_as<int>(Winreason_AllPointsCaptured)))
+	{
 		return MRES_Supercede;
+	}
+	
+	// Planting team was killed while the bomb was active, do not give elimination win to enemy team
+	else if (g_isBombPlanted && team != g_bombPlantingTeam && winReason == view_as<int>(Winreason_Elimination))
+	{
+		return MRES_Supercede;
+	}
+	
+	// Stalemate
+	else if (team == view_as<int>(TFTeam_Unassigned) && winReason == view_as<int>(Winreason_Stalemate))
+	{
+		TFGOTeam red = TFGOTeam(TFTeam_Red);
+		TFGOTeam blue = TFGOTeam(TFTeam_Blue);
+		red.AddToTeamBalance(red.LoseIncome, "Income for triggering stalemate");
+		blue.AddToTeamBalance(blue.LoseIncome, "Income for triggering stalemate");
+		red.LoseStreak++;
+		blue.LoseStreak++;
+		return MRES_Ignored;
+	}
+	
+	// Everything else that doesn't require superceding e.g. eliminating the enemy team
 	else
 	{
-		// Stalemate
-		if (team == view_as<int>(TFTeam_Unassigned))
-		{
-			TFGOTeam red = TFGOTeam(TFTeam_Red);
-			TFGOTeam blue = TFGOTeam(TFTeam_Blue);
-			red.AddToTeamBalance(red.LoseIncome, "Income for triggering stalemate");
-			blue.AddToTeamBalance(blue.LoseIncome, "Income for triggering stalemate");
-			red.LoseStreak++;
-			blue.LoseStreak++;
-		}
-		
 		return MRES_Ignored;
 	}
 }
@@ -317,12 +357,9 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	if (g_isBombPlanted)
 	{
 		int victimTeam = GetClientTeam(GetClientOfUserId(event.GetInt("userid")));
+		// End the round if every member of the non-planting team died
 		if (g_bombPlantingTeam != victimTeam && GetAliveTeamCount(victimTeam) - 1 <= 0) // -1 because it doesn't work properly in player_death
-		{
-			// End the round if every member of the non-planting team died
-			// TODO: the planting team still loses even if the bomb does detonate
 			g_isBombPlanted = false;
-		}
 	}
 	
 	if (g_isMainRoundActive || g_isBonusRoundActive)
@@ -418,12 +455,11 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 	event.GetString("cappers", cappers, MaxClients);
 	int team = event.GetInt("team");
 	
-	if (!g_isBombPlanted)
+	g_isBombPlanted = !g_isBombPlanted;
+	if (g_isBombPlanted)
 		PlantBomb(team, event.GetInt("cp"), cappers);
 	else
 		DefuseBomb(team);
-	
-	g_isBombPlanted = !g_isBombPlanted;
 }
 
 void PlantBomb(int team, int cp, const char[] cappers)
@@ -502,9 +538,6 @@ void PlantBomb(int team, int cp, const char[] cappers)
 		}
 	}
 	
-	// Forcing a win for the planting team is required for multi-CP maps because often they don't trigger a win with only one captured CP
-	g_forcePlantingTeamWinTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME, ForcePlantingTeamWin, team_control_point);
-	
 	// Play Sounds
 	g_currentMusicKit.StopMusicForAll(Music_StartAction);
 	g_currentMusicKit.StopMusicForAll(Music_RoundTenSecCount);
@@ -519,14 +552,6 @@ void PlantBomb(int team, int cp, const char[] cappers)
 	char message[256] = "The bomb has been planted.\n%d seconds to detonation.";
 	Format(message, sizeof(message), message, RoundFloat(TFGO_BOMB_DETONATION_TIME));
 	ShowGameMessage(message, "ico_notify_sixty_seconds");
-}
-
-public Action ForcePlantingTeamWin(Handle timer, int team_control_point)
-{
-	if (g_forcePlantingTeamWinTimer != timer)return Plugin_Stop;
-	
-	TF2_ForceTeamWin(view_as<TFTeam>(g_bombPlantingTeam), TF_ARENA_WINREASON_CAPTURE);
-	return Plugin_Continue;
 }
 
 public Action PlayBombBeep(Handle timer, int bomb)
@@ -562,6 +587,10 @@ public Action DetonateBomb(Handle timer, int bombRef)
 	
 	g_isBombDetonated = true;
 	g_isBombPlanted = false;
+	
+	// Only call this after we set g_isBombPlanted to false or the game softlocks
+	TF2_ForceTeamWin(view_as<TFTeam>(g_bombPlantingTeam), view_as<int>(Winreason_AllPointsCaptured));
+	
 	g_bombBeepingTimer = null; // Or else this timer will try to get m_vecOrigin from a deleted bomb
 	
 	int bomb = EntRefToEntIndex(bombRef);
@@ -578,7 +607,8 @@ void DefuseBomb(int team)
 	g_bombDetonationWarningTimer = null;
 	g_bombDetonationTimer = null;
 	
-	TF2_ForceTeamWin(view_as<TFTeam>(team), TF_ARENA_WINREASON_CAPTURE);
+	g_isBombDefused = true;
+	TF2_ForceTeamWin(view_as<TFTeam>(team), view_as<int>(Winreason_PointCaptured));
 }
 
 public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBroadcast)
@@ -598,20 +628,18 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	
 	// Add round end team awards
 	int winreason = event.GetInt("winreason");
-	switch (winreason)
+	if (winreason == view_as<int>(Winreason_PointCaptured) || winreason == view_as<int>(Winreason_AllPointsCaptured))
 	{
-		case TF_ARENA_WINREASON_CAPTURE:
-		{
-			if (g_bombPlantingTeam == event.GetInt("winning_team"))
-				winningTeam.AddToTeamBalance(TFGO_BOMB_DETONATION_WIN_AWARD, "Team award for detonating bomb");
-			else
-				winningTeam.AddToTeamBalance(TFGO_BOMB_DEFUSE_WIN_AWARD, "Team award for winning by defusing the bomb");
-		}
-		case TF_ARENA_WINREASON_ELIMINATION:
-		{
-			winningTeam.AddToTeamBalance(TFGO_ELIMINATION_WIN_AWARD, "Team award for eliminating the enemy team");
-		}
+		if (g_bombPlantingTeam == event.GetInt("winning_team"))
+			winningTeam.AddToTeamBalance(TFGO_BOMB_DETONATION_WIN_AWARD, "Team award for detonating bomb");
+		else
+			winningTeam.AddToTeamBalance(TFGO_BOMB_DEFUSE_WIN_AWARD, "Team award for winning by defusing the bomb");
 	}
+	else if (winreason == view_as<int>(Winreason_Elimination))
+	{
+		winningTeam.AddToTeamBalance(TFGO_ELIMINATION_WIN_AWARD, "Team award for eliminating the enemy team");
+	}
+	
 	losingTeam.AddToTeamBalance(losingTeam.LoseIncome, "Income for losing");
 	
 	// Adjust team losing streaks
@@ -621,10 +649,19 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	// Reset timers
 	g_10SecondRoundTimer = null;
 	g_10SecondBombTimer = null;
-	g_forcePlantingTeamWinTimer = null;
+	
+	// Reset game state
+	ResetGameState();
 	
 	// Everyone who survives the post-victory time gets to keep their weapons
 	CreateTimer(mp_bonusroundtime.FloatValue - 0.1, SaveWeaponsForAlivePlayers);
+}
+
+public void ResetGameState()
+{
+	g_isBombPlanted = false;
+	g_isBombDetonated = false;
+	g_isBombDefused = false;
 }
 
 public Action SaveWeaponsForAlivePlayers(Handle timer)
