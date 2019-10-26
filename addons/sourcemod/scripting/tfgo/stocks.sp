@@ -20,6 +20,7 @@ stock void TF2_ForceTeamWin(TFTeam team, int winReason)
 	char strWinReason[8];
 	IntToString(view_as<int>(team), strWinReason, sizeof(strWinReason));
 	DispatchKeyValue(game_round_win, "win_reason", strWinReason);
+	DispatchKeyValue(game_round_win, "force_map_reset", "1");
 	DispatchSpawn(game_round_win);
 	SetVariantInt(g_bombPlantingTeam);
 	AcceptEntityInput(game_round_win, "SetTeam");
