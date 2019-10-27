@@ -334,7 +334,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	char msg[256];
 	if (attacker.Client >= 1 && attacker.Client <= MaxClients)
 	{
-		// Killed by an entity (sentry guns, etc.)
+		// Killed by an entity (sentry gun, sandman ball etc.)
 		if (inflictorEntindex >= MaxClients)
 		{
 			char classname[256];
@@ -344,36 +344,32 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 			msg = "Award for neutralizing an enemy";
 		}
 		
-		// Environmental kills
+		// If weapon is "world" it's either suicide or environmental kill
 		if (strcmp(weapon, "world") == 0)
 		{
-			g_weaponClassKillAwards.GetValue(weapon, killAward);
-			msg = "Award for neutralizing an enemy using the environment";
-		}
-		
-		// Only go here if no kill award was set yet
-		if (killAward == 0)
-		{
-			switch (customkill)
+			// TODO: Compensate random alive enemy player for this suicide ($300)
+			if (customkill == TF_CUSTOM_SUICIDE)
 			{
-				case TF_CUSTOM_SUICIDE:
+				if (g_isMainRoundActive && attacker == victim)
 				{
-					// TODO: Compensate random alive enemy player for this suicide ($300)
-					if (g_isMainRoundActive && attacker == victim)
-					{
-						killAward = TFGO_SUICIDE_PENALTY;
-						msg = "Penalty for suiciding";
-					}
-				}
-				
-				default:
-				{
-					killAward = GetEffectiveKillAward(defindex);
-					char weaponName[256];
-					TF2_GetItemName(defindex, weaponName, sizeof(weaponName));
-					Format(msg, sizeof(msg), "Award for neutralizing an enemy with %s", weaponName);
+					killAward = TFGO_SUICIDE_PENALTY;
+					msg = "Penalty for suiciding";
 				}
 			}
+			else
+			{
+				g_weaponClassKillAwards.GetValue(weapon, killAward);
+				msg = "Award for neutralizing an enemy using the environment";
+			}
+		}
+		
+		// Use value of the killing weapon if death was not by defined entity or world
+		if (killAward == 0)
+		{
+			killAward = GetEffectiveKillAward(defindex);
+			char weaponName[256];
+			TF2_GetItemName(defindex, weaponName, sizeof(weaponName));
+			Format(msg, sizeof(msg), "Award for neutralizing an enemy with %s", weaponName);
 		}
 		
 		if (killAward != 0)
