@@ -326,31 +326,65 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	TFGOPlayer assister = TFGOPlayer(GetClientOfUserId(event.GetInt("assister")));
 	int customkill = event.GetInt("customkill");
 	int defindex = event.GetInt("weapon_def_index");
+	int inflictorEntindex = event.GetInt("inflictor_entindex");
+	char weapon[256];
+	event.GetString("weapon", weapon, sizeof(weapon));
 	
-	// TODO: Check inflictor to reward engineer for sentry kills
-	// TODO: Fix environmental kills counting as kills with weapon "default"
-	if (customkill == TF_CUSTOM_SUICIDE && attacker == victim)
+	int killAward;
+	char msg[256];
+	if (attacker.Client >= 1 && attacker.Client <= MaxClients)
 	{
-		// TODO: Compensate random alive enemy player for this suicide ($300)
-		if (g_isMainRoundActive)
-			victim.AddToBalance(TFGO_SUICIDE_PENALTY, "Penalty for suiciding");
-	}
-	else if (attacker.Client >= 1 && attacker.Client <= MaxClients)
-	{
-		int killAward = GetEffectiveKillAward(defindex);
-		
-		char weaponName[256];
-		TF2_GetItemName(defindex, weaponName, sizeof(weaponName));
-		char msg[256];
-		Format(msg, sizeof(msg), "Award for neutralizing an enemy with %s", weaponName);
-		
-		attacker.AddToBalance(killAward, msg);
-		if (assister.Client >= 1 && assister.Client <= MaxClients)
+		// Killed by an entity (sentry gun, sandman ball etc.)
+		if (inflictorEntindex >= MaxClients)
 		{
-			char attackerName[256];
-			GetClientName(attacker.Client, attackerName, sizeof(attackerName));
-			Format(msg, sizeof(msg), "Award for assisting %s in neutralizing an enemy", attackerName);
-			assister.AddToBalance(killAward / 2, msg);
+			char classname[256];
+			GetEntityClassname(inflictorEntindex, classname, sizeof(classname));
+			g_weaponClassKillAwards.GetValue(weapon, killAward);
+			// TODO: More specific messages?
+			msg = "Award for neutralizing an enemy";
+		}
+		
+		// If weapon is "world" it's either suicide or environmental kill
+		if (strcmp(weapon, "world") == 0)
+		{
+			// TODO: Compensate random alive enemy player for this suicide ($300)
+			if (customkill == TF_CUSTOM_SUICIDE)
+			{
+				if (g_isMainRoundActive && attacker == victim)
+				{
+					killAward = TFGO_SUICIDE_PENALTY;
+					msg = "Penalty for suiciding";
+				}
+			}
+			else
+			{
+				g_weaponClassKillAwards.GetValue(weapon, killAward);
+				msg = "Award for neutralizing an enemy using the environment";
+			}
+		}
+		
+		// Use value of the killing weapon if death was not by defined entity or world
+		if (killAward == 0)
+		{
+			killAward = GetEffectiveKillAward(defindex);
+			char weaponName[256];
+			TF2_GetItemName(defindex, weaponName, sizeof(weaponName));
+			Format(msg, sizeof(msg), "Award for neutralizing an enemy with %s", weaponName);
+		}
+		
+		if (killAward != 0)
+		{
+			// Grant kill award
+			attacker.AddToBalance(killAward, msg);
+			
+			// Grant assist award
+			if (assister.Client >= 1 && assister.Client <= MaxClients)
+			{
+				char attackerName[256];
+				GetClientName(attacker.Client, attackerName, sizeof(attackerName));
+				Format(msg, sizeof(msg), "Award for assisting %s in neutralizing an enemy", attackerName);
+				assister.AddToBalance(killAward / 2, msg);
+			}
 		}
 	}
 	
