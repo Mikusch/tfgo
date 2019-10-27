@@ -149,7 +149,7 @@ methodmap TFGOPlayer
 		}
 		else // Player owns this weapon already, equip it
 		{
-			TF2_CreateAndEquipWeapon(this.Client, defindex);
+			TF2_EquipWeapon(this.Client, GetPlayerWeaponSlot(this.Client, slot));
 		}
 	}
 	

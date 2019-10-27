@@ -130,20 +130,7 @@ stock void TF2_CreateAndEquipWeapon(int iClient, int defindex)
 			EquipPlayerWeapon(iClient, iWeapon);
 	}
 	
-	
-	if (StrContains(sClassname, "tf_wearable") == 0)
-	{
-		if (GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") <= MaxClients)
-		{
-			//Looks like player's active weapon got replaced into wearable, fix that by using melee
-			int iMelee = GetPlayerWeaponSlot(iClient, TFWeaponSlot_Melee);
-			SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iMelee);
-		}
-	}
-	else
-	{
-		SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iWeapon);
-	}
+	TF2_EquipWeapon(iClient, iWeapon, sClassname, sizeof(sClassname));
 	
 	//Set ammo as weapon's max ammo
 	if (HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType")) //Wearables dont have ammo netprop
@@ -164,6 +151,34 @@ stock void TF2_CreateAndEquipWeapon(int iClient, int defindex)
 			}
 			
 			SetEntProp(iClient, Prop_Send, "m_iAmmo", iMaxAmmo, _, iAmmoType);
+		}
+	}
+}
+
+stock void TF2_EquipWeapon(int iClient, int iWeapon, char[] sClassname = NULL_STRING, int iClassNameLength = 0)
+{
+	if (IsValidEntity(iWeapon))
+	{
+		int defindex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+		
+		if (IsNullString(sClassname))
+		{
+			TF2Econ_GetItemClassName(defindex, sClassname, iClassNameLength);
+			TF2Econ_TranslateWeaponEntForClass(sClassname, iClassNameLength, TF2_GetPlayerClass(iClient));
+		}
+		
+		if (StrContains(sClassname, "tf_wearable") == 0)
+		{
+			if (GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") <= MaxClients)
+			{
+				//Looks like player's active weapon got replaced into wearable, fix that by using melee
+				int iMelee = GetPlayerWeaponSlot(iClient, TFWeaponSlot_Melee);
+				SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iMelee);
+			}
+		}
+		else
+		{
+			SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iWeapon);
 		}
 	}
 }
