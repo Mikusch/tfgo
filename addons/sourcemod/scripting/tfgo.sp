@@ -515,11 +515,6 @@ void PlantBomb(int team, int cp, const char[] cappers)
 		}
 		else
 		{
-			// Set defuse time to 10 seconds
-			int trigger_capture_area;
-			while ((trigger_capture_area = FindEntityByClassname(trigger_capture_area, "trigger_capture_area")) > -1)
-				DispatchKeyValueFloat(trigger_capture_area, "area_time_to_cap", 10.0);
-			
 			// Spawn bomb prop on CP
 			// TODO: Set skin of bomb to team color
 			float m_vecOrigin[3];
