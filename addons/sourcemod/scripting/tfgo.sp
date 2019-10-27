@@ -335,7 +335,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	char msg[256];
 	if (attacker.Client >= 1 && attacker.Client <= MaxClients)
 	{
-		// Killed by an entity (sentry gun, sandman ball etc.)
+		// Entity kill (sentry gun, sandman ball etc.)
 		if (inflictorEntindex >= MaxClients)
 		{
 			char classname[256];
@@ -345,27 +345,20 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 			msg = "Award for neutralizing an enemy";
 		}
 		
-		// If weapon is "world" it's either suicide or environmental kill
-		if (strcmp(weapon, "world") == 0)
+		if (customkill == TF_CUSTOM_SUICIDE && attacker == victim) // Suicide
 		{
-			// TODO: Compensate random alive enemy player for this suicide ($300)
-			if (customkill == TF_CUSTOM_SUICIDE)
+			if (g_isMainRoundActive)
 			{
-				if (g_isMainRoundActive && attacker == victim)
-				{
-					killAward = TFGO_SUICIDE_PENALTY;
-					msg = "Penalty for suiciding";
-				}
-			}
-			else
-			{
-				g_weaponClassKillAwards.GetValue(weapon, killAward);
-				msg = "Award for neutralizing an enemy using the environment";
+				killAward = TFGO_SUICIDE_PENALTY;
+				msg = "Penalty for suiciding";
 			}
 		}
-		
-		// Use value of the killing weapon if death was not by defined entity or world
-		if (killAward == 0)
+		else if (strcmp(weapon, "world") == 0) // Environmental kill
+		{
+			g_weaponClassKillAwards.GetValue(weapon, killAward);
+			msg = "Award for neutralizing an enemy using the environment";
+		}
+		else if (killAward == 0) // Get kill award from weapon
 		{
 			killAward = GetEffectiveKillAward(defindex);
 			char weaponName[256];
