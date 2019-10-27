@@ -16,9 +16,9 @@ int g_defaultWeaponIndexes[][] =  {
 	{ -1, 11, 30758, -1, -1, -1 },  // Heavy
 	{ -1, 12, 30758, -1, -1, -1 },  // Pyro
 	{ 24, 735, 30758, 27, 30, -1 },  // Spy
-	{ -1, 22, 30758, -1, 26, 28 } // Engineer
+	{ 9, -1, 30758, -1, 26, 28 } // Engineer
 };
-int g_playerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][view_as<int>(TFWeaponSlot_Item2) + 1];
+int g_playerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][view_as<int>(WeaponSlot_BuilderEngie) + 1];
 int g_playerBalances[TF_MAXPLAYERS + 1] =  { TFGO_STARTING_BALANCE, ... };
 Menu g_activeBuyMenus[TF_MAXPLAYERS + 1];
 
@@ -191,7 +191,8 @@ methodmap TFGOPlayer
 	public void AddToLoadout(int defindex)
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Client);
-		g_playerLoadoutWeaponIndexes[this.Client][view_as<int>(class)][TF2Econ_GetItemSlot(defindex, class)] = defindex;
+		int slot = TF2_GetSlotInItem(defindex, class);
+		g_playerLoadoutWeaponIndexes[this.Client][view_as<int>(class)][slot] = defindex;
 	}
 	
 	/**

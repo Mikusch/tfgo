@@ -695,7 +695,7 @@ public Action SaveWeaponsForAlivePlayers(Handle timer)
 	{
 		if (IsClientInGame(client) && IsPlayerAlive(client))
 		{
-			for (int slot = 0; slot <= view_as<int>(TFWeaponSlot_PDA); slot++)
+			for (int slot = 0; slot <= view_as<int>(WeaponSlot_BuilderEngie); slot++)
 			{
 				int defindex = TF2_GetItemInSlot(client, slot);
 				if (defindex > -1)

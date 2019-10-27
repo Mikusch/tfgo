@@ -183,6 +183,31 @@ stock void TF2_EquipWeapon(int iClient, int iWeapon, char[] sClassname = NULL_ST
 	}
 }
 
+stock int TF2_GetSlotInItem(int defindex, TFClassType class)
+{
+	int slot = TF2Econ_GetItemSlot(defindex, class);
+	if (slot >= 0)
+	{
+		//Spy slots is a bit messy
+		switch (class)
+		{
+			case TFClass_Spy:
+			{
+				if (slot == 1)slot = WeaponSlot_Primary; //Revolver
+				if (slot == 4)slot = WeaponSlot_Secondary; //Sapper
+				if (slot == 6)slot = WeaponSlot_InvisWatch; //Invis Watch
+			}
+			
+			case TFClass_Engineer:
+			{
+				if (slot == 6)slot = WeaponSlot_PDADestroy; //Destruction PDA
+			}
+		}
+	}
+	
+	return slot;
+}
+
 stock void ShowGameMessage(const char[] message, const char[] icon, float time = 5.0, int displayToTeam = 0, int teamColor = 0)
 {
 	int msg = CreateEntityByName("game_text_tf");
