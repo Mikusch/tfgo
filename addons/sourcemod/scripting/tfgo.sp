@@ -108,7 +108,7 @@ public void OnPluginStart()
 	}
 	
 	// Events
-	HookEvent("player_spawn", Event_Player_Spawn, EventHookMode_Pre);
+	HookEvent("player_spawn", Event_Player_Spawn);
 	HookEvent("player_team", Event_Player_Team);
 	HookEvent("player_death", Event_Player_Death);
 	HookEvent("post_inventory_application", Event_Post_Inventory_Application);
@@ -284,23 +284,6 @@ public MRESReturn Hook_SetWinningTeam(Handle hParams)
 public Action Event_Player_Spawn(Event event, const char[] name, bool dontBroadcast)
 {
 	ShowMainBuyMenu(GetClientOfUserId(event.GetInt("userid")));
-	
-	// Granting PDA weapons is utterly broken and causes way too many client crashes
-	// The most sane thing to do here is just to disable these classes until I figure something out
-	
-	int client = GetClientOfUserId(event.GetInt("userid"));
-	TFClassType class = TF2_GetPlayerClass(client);
-	if (class == TFClass_Spy)
-	{
-		TFClassType randomClass = TF2_GetRandomClass();
-		while (randomClass == TFClass_Spy)
-		{
-			randomClass = TF2_GetRandomClass();
-		}
-		TF2_SetPlayerClass(client, randomClass);
-		TF2_RespawnPlayer(client);
-		PrintToChat(client, "This class is currently disabled. Your class has been forcibly changed.");
-	}
 }
 
 public Action Event_Player_Team(Event event, const char[] name, bool dontBroadcast)
