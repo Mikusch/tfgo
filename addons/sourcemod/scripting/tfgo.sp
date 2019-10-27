@@ -144,6 +144,9 @@ public void OnPluginEnd()
 
 public void OnMapStart()
 {
+	// Allow players to buy stuff on the first round
+	g_isBuyTimeActive = true;
+	
 	DHookGamerules(g_dHookSetWinningTeam, false);
 	
 	ResetGameState();
@@ -283,8 +286,6 @@ public MRESReturn Hook_SetWinningTeam(Handle hParams)
 
 public Action Event_Player_Spawn(Event event, const char[] name, bool dontBroadcast)
 {
-	ShowMainBuyMenu(GetClientOfUserId(event.GetInt("userid")));
-	
 	// Granting PDA weapons is utterly broken and causes way too many client crashes
 	// The most sane thing to do here is just to disable these classes until I figure something out
 	
