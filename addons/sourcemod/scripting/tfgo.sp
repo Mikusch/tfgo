@@ -215,7 +215,7 @@ public Action OnEndTouchBuyZone(int entity, int client)
 			player.ActiveBuyMenu.Cancel();
 		
 		if (g_isBuyTimeActive)
-			CPrintToChat(client, "{alert}Alert: {default}You have left the buy zone");
+			PrintHintText(client, "You have left the buy zone");
 	}
 }
 
