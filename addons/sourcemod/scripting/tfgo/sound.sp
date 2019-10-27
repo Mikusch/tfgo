@@ -112,10 +112,3 @@ public Action Event_Pre_Teamplay_Broadcast_Audio(Event event, const char[] name,
 	
 	return Plugin_Continue;
 }
-
-stock void PlayRoundStartMusic()
-{
-	g_currentMusicKit.StopMusicForAll(Music_WonRound);
-	g_currentMusicKit.StopMusicForAll(Music_LostRound);
-	g_currentMusicKit.PlayMusicToAll(Music_StartRound);
-}

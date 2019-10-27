@@ -402,7 +402,9 @@ public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool do
 	g_isMainRoundActive = false;
 	g_buyTimeTimer = CreateTimer(tfgo_buytime.FloatValue, OnBuyTimeExpire);
 	
-	PlayRoundStartMusic();
+	g_currentMusicKit.StopMusicForAll(Music_WonRound);
+	g_currentMusicKit.StopMusicForAll(Music_LostRound);
+	g_currentMusicKit.PlayMusicToAll(Music_StartRound);
 	
 	// Bomb can freely tick and explode through the bonus time and we cancel it here
 	g_bombBeepingTimer = null;
