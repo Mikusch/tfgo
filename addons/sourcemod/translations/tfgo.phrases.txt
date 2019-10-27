@@ -53,6 +53,10 @@
 	{
 		"en"	"Fists"
 	}
+	"#TF_Weapon_PDA_Engineer_Builder"
+	{
+		"en"	"Construction PDA"
+	}
 	"#TF_Weapon_SyringeGun"
 	{
 		"en"	"Syringe Gun"
