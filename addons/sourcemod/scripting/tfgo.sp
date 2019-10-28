@@ -54,6 +54,7 @@ int g_bombPlantingTeam;
 
 // ConVars
 ConVar tfgo_buytime;
+ConVar tfgo_buyzone_radius;
 
 ConVar tf_arena_first_blood;
 ConVar tf_arena_round_time;
@@ -130,6 +131,7 @@ public void OnPluginStart()
 	tf_weapon_criticals_melee = FindConVar("tf_weapon_criticals_melee");
 	mp_bonusroundtime = FindConVar("mp_bonusroundtime");
 	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
+	tfgo_buyzone_radius = CreateConVar("tfgo_buyzone_radius", "500", "If the map has no defined buy zone, how far away from their spawn point players can buy items for (in hammer units)");
 	
 	Toggle_ConVars(true);
 	
