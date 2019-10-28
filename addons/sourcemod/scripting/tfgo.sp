@@ -215,7 +215,10 @@ public void Hook_OnClientThink(int client)
 		else // Player has left buy zone
 		{
 			if (player.ActiveBuyMenu != null)
+			{
 				player.ActiveBuyMenu.Cancel();
+				PrintHintText(client, "You have left the buy zone");
+			}
 		}
 	}
 }
@@ -251,10 +254,10 @@ public Action OnEndTouchBuyZone(int entity, int client)
 	{
 		TFGOPlayer player = TFGOPlayer(client);
 		if (player.ActiveBuyMenu != null)
+		{
 			player.ActiveBuyMenu.Cancel();
-		
-		if (g_isBuyTimeActive)
 			PrintHintText(client, "You have left the buy zone");
+		}
 	}
 }
 
