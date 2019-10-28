@@ -374,9 +374,9 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 			// Grant assist award
 			if (assister.Client >= 1 && assister.Client <= MaxClients)
 			{
-				char attackerName[256];
-				GetClientName(attacker.Client, attackerName, sizeof(attackerName));
-				Format(msg, sizeof(msg), "Award for assisting %s in neutralizing an enemy", attackerName);
+				char victimName[256];
+				GetClientName(victi.Client, victimName, sizeof(victimName));
+				Format(msg, sizeof(msg), "Award for assisting in neutralizing %s", victimName);
 				assister.AddToBalance(killAward / 2, msg);
 			}
 		}
