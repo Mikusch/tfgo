@@ -167,6 +167,39 @@ public void OnMapStart()
 		g_mapHasRespawnRoom = true;
 }
 
+public void OnClientPutInServer(int client)
+{
+	if (!g_mapHasRespawnRoom)
+		SDKHook(client, SDKHook_Think, Hook_OnClientThink);
+}
+
+public void Hook_OnClientThink(int client)
+{
+	if (!g_isBuyTimeActive)return;
+	
+	TFGOPlayer player = TFGOPlayer(client);
+	
+	float origin[3];
+	GetClientAbsOrigin(client, origin);
+	float spawn[3];
+	player.GetSpawnPoint(spawn);
+	
+	// Calculate total absolute difference between spawn point and player's current position
+	float difference;
+	for (int i = 0; i < sizeof(spawn); i++)difference += FloatAbs(spawn[i] - origin[i]);
+	
+	if (difference <= tfgo_buyzone_radius.FloatValue) // Player is in buy zone
+	{
+		if (player.ActiveBuyMenu == null)
+			ShowMainBuyMenu(client);
+	}
+	else // Player has left buy zone
+	{
+		if (player.ActiveBuyMenu != null)
+			player.ActiveBuyMenu.Cancel();
+	}
+}
+
 public void ChooseRandomMusicKit()
 {
 	StringMapSnapshot snapshot = g_availableMusicKits.Snapshot();
@@ -409,6 +442,14 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 		TFGOPlayer player = TFGOPlayer(client);
 		player.ShowMoneyHudDisplay(tfgo_buytime.FloatValue);
 		player.ApplyLoadout();
+		
+		// Saving player spawn for dynamic buyzone
+		if (!g_mapHasRespawnRoom)
+		{
+			float origin[3];
+			GetClientAbsOrigin(client, origin);
+			player.SetSpawnPoint(origin);
+		}
 	}
 	
 	return Plugin_Handled;
