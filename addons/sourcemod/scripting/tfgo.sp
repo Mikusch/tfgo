@@ -167,51 +167,12 @@ public void OnMapStart()
 		g_mapHasRespawnRoom = true;
 }
 
-public void OnClientPutInServer(int client)
-{
-	if (!g_mapHasRespawnRoom)
-		SDKHook(client, SDKHook_Think, Hook_OnClientThink);
-}
-
-public void Hook_OnClientThink(int client)
-{
-	if (!g_isBuyTimeActive)return;
-	
-	TFGOPlayer player = TFGOPlayer(client);
-	
-	float origin[3];
-	GetClientAbsOrigin(client, origin);
-	float spawn[3];
-	player.GetSpawnPoint(spawn);
-	
-	// Calculate total absolute difference between spawn point and player's current position
-	float difference;
-	for (int i = 0; i < sizeof(spawn); i++)difference += FloatAbs(spawn[i] - origin[i]);
-	
-	if (difference <= tfgo_buyzone_radius.FloatValue) // Player is in buy zone
-	{
-		if (player.ActiveBuyMenu == null)
-			ShowMainBuyMenu(client);
-	}
-	else // Player has left buy zone
-	{
-		if (player.ActiveBuyMenu != null)
-			player.ActiveBuyMenu.Cancel();
-	}
-}
-
-public void ChooseRandomMusicKit()
-{
-	StringMapSnapshot snapshot = g_availableMusicKits.Snapshot();
-	char name[PLATFORM_MAX_PATH];
-	snapshot.GetKey(GetRandomInt(0, snapshot.Length - 1), name, sizeof(name));
-	delete snapshot;
-	
-	g_availableMusicKits.GetArray(name, g_currentMusicKit, sizeof(g_currentMusicKit));
-}
-
 public void OnClientConnected(int client)
 {
+	// Hook dynamic buy zone if map has no func_respawnroom
+	if (!g_mapHasRespawnRoom)
+		SDKHook(client, SDKHook_Think, Hook_OnClientThink);
+	
 	// Initialize new player with default values
 	TFGOPlayer player = TFGOPlayer(client);
 	player.ResetBalance();
@@ -223,10 +184,50 @@ public void OnClientConnected(int client)
 
 public void OnClientDisconnect(int client)
 {
+	SDKUnhook(client, SDKHook_Think, Hook_OnClientThink);
+	
 	if (g_isBombPlanted)
 	{
 		// TODO team alive check to  end the round during bomb plant
 	}
+}
+
+public void Hook_OnClientThink(int client)
+{
+	if (g_isBuyTimeActive && IsPlayerAlive(client))
+	{
+		TFGOPlayer player = TFGOPlayer(client);
+		
+		float origin[3];
+		GetClientAbsOrigin(client, origin);
+		float spawn[3];
+		player.GetSpawnPoint(spawn);
+		
+		// Calculate total absolute difference between spawn point and player's current position
+		float difference;
+		for (int i = 0; i < sizeof(spawn); i++)difference += FloatAbs(spawn[i] - origin[i]);
+		
+		if (difference <= tfgo_buyzone_radius.FloatValue) // Player is in buy zone
+		{
+			if (player.ActiveBuyMenu == null)
+				ShowMainBuyMenu(client);
+		}
+		else // Player has left buy zone
+		{
+			if (player.ActiveBuyMenu != null)
+				player.ActiveBuyMenu.Cancel();
+		}
+	}
+}
+
+public void ChooseRandomMusicKit()
+{
+	StringMapSnapshot snapshot = g_availableMusicKits.Snapshot();
+	char name[PLATFORM_MAX_PATH];
+	snapshot.GetKey(GetRandomInt(0, snapshot.Length - 1), name, sizeof(name));
+	delete snapshot;
+	
+	g_availableMusicKits.GetArray(name, g_currentMusicKit, sizeof(g_currentMusicKit));
 }
 
 public void OnEntityCreated(int entity, const char[] classname)
