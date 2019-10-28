@@ -20,7 +20,6 @@ int g_defaultWeaponIndexes[][] =  {
 };
 int g_playerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][view_as<int>(TFWeaponSlot_PDA) + 1];
 int g_playerBalances[TF_MAXPLAYERS + 1] =  { TFGO_STARTING_BALANCE, ... };
-float g_playerSpawnPoints[TF_MAXPLAYERS + 1][3];
 Menu g_activeBuyMenus[TF_MAXPLAYERS + 1];
 
 int g_teamLosingStreaks[view_as<int>(TFTeam_Blue) + 1] =  { TFGO_STARTING_LOSESTREAK, ... };
@@ -77,18 +76,6 @@ methodmap TFGOPlayer
 		{
 			g_activeBuyMenus[this] = val;
 		}
-	}
-	
-	public void GetSpawnPoint(float[3] vec)
-	{
-		for (int i = 0; i < sizeof(vec); i++)
-		vec[i] = g_playerSpawnPoints[this.Client][i];
-	}
-	
-	public void SetSpawnPoint(const float[3] vec)
-	{
-		for (int i = 0; i < sizeof(vec); i++)
-		g_playerSpawnPoints[this.Client] = vec;
 	}
 	
 	public void ShowMoneyHudDisplay(float time)
