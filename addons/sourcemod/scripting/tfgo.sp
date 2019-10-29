@@ -163,7 +163,9 @@ public void OnMapStart()
 	int func_respawnroom = FindEntityByClassname(-1, "func_respawnroom");
 	if (func_respawnroom <= -1)
 	{
-		LogMessage("This map is missing a func_respawnroom entity, calculating dynamic buy zones for each team");
+		g_mapHasRespawnRoom = false;
+		
+		LogMessage("This map is missing a func_respawnroom entity, calculating buy zones based on info_player_teamspawn entities");
 		CalculateDynamicBuyZones();
 	}
 	else

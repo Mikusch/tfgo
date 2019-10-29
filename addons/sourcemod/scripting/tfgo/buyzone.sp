@@ -2,6 +2,11 @@ float g_avgPlayerStartOrigin[view_as<int>(TFTeam_Blue) + 1][3];
 
 public void CalculateDynamicBuyZones()
 {
+	// Reset buy zones from previous map
+	for (int i = 0; i < sizeof(g_avgPlayerStartOrigin); i++)
+		for (int j = 0; j < sizeof(g_avgPlayerStartOrigin[]); j++)
+			g_avgPlayerStartOrigin[i][j] = 0.0;
+	
 	// Calculate average position of each info_player_start for each team
 	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
 	{
