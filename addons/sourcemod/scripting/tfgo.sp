@@ -401,9 +401,14 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 		TFGOPlayer player = TFGOPlayer(client);
 		player.ShowMoneyHudDisplay(tfgo_buytime.FloatValue);
 		player.ApplyLoadout();
+		
 		// Cancel active buy menu or OnGameFrame will throw a million errors
 		if (player.ActiveBuyMenu != null)
 			player.ActiveBuyMenu.Cancel();
+		
+		// func_respawnroom OnStartTouch doesn't fire thus buy menu doesn't get re-opened so we do it manually
+		if (g_mapHasRespawnRoom)
+			ShowMainBuyMenu(client);
 	}
 	
 	return Plugin_Handled;
