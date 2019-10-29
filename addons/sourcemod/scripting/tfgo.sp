@@ -437,7 +437,7 @@ public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool do
 	g_isBombDetonated = false;
 	g_isBonusRoundActive = false;
 	g_isMainRoundActive = false;
-	g_buyTimeTimer = CreateTimer(tfgo_buytime.FloatValue, OnBuyTimeExpire);
+	g_buyTimeTimer = CreateTimer(tfgo_buytime.FloatValue, OnBuyTimeExpire, _, TIMER_FLAG_NO_MAPCHANGE);
 	
 	g_currentMusicKit.StopMusicForAll(Music_WonRound);
 	g_currentMusicKit.StopMusicForAll(Music_LostRound);
@@ -477,7 +477,7 @@ public Action OnBuyTimeExpire(Handle timer)
 public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
 	g_isMainRoundActive = true;
-	g_10SecondRoundTimer = CreateTimer(tf_arena_round_time.FloatValue - 10.0, Play10SecondWarning);
+	g_10SecondRoundTimer = CreateTimer(tf_arena_round_time.FloatValue - 10.0, Play10SecondWarning, _, TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public Action Play10SecondWarning(Handle timer)
@@ -577,10 +577,10 @@ void PlantBomb(int team, int cp, ArrayList cappers)
 			TeleportEntity(bomb, m_vecOrigin, m_angRotation, NULL_VECTOR);
 			
 			// Set up timers
-			g_10SecondBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 10.0, Play10SecondBombWarning);
-			g_bombBeepingTimer = CreateTimer(1.0, PlayBombBeep, EntIndexToEntRef(bomb), TIMER_REPEAT);
-			g_bombDetonationWarningTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 1.5, PlayBombExplosionWarning, EntIndexToEntRef(bomb));
-			g_bombDetonationTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME, DetonateBomb, EntIndexToEntRef(bomb));
+			g_10SecondBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 10.0, Play10SecondBombWarning, _, TIMER_FLAG_NO_MAPCHANGE);
+			g_bombBeepingTimer = CreateTimer(1.0, PlayBombBeep, EntIndexToEntRef(bomb), TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+			g_bombDetonationWarningTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 1.5, PlayBombExplosionWarning, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
+			g_bombDetonationTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME, DetonateBomb, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
 		}
 	}
 	
@@ -706,7 +706,7 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	ResetGameState();
 	
 	// Everyone who survives the post-victory time gets to keep their weapons
-	CreateTimer(mp_bonusroundtime.FloatValue - 0.1, SaveWeaponsForAlivePlayers);
+	CreateTimer(mp_bonusroundtime.FloatValue - 0.1, SaveWeaponsForAlivePlayers, TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public void ResetGameState()
