@@ -2,8 +2,6 @@
 // TODO: Proper use of translation files
 public void ShowMainBuyMenu(int client)
 {
-	if (!g_isBuyTimeActive)return;
-	
 	Menu menu = new Menu(HandleBuyMenuFront, MENU_ACTIONS_ALL);
 	menu.SetTitle("%T", "#buymenu_title", LANG_SERVER, TFGOPlayer(client).Balance);
 	

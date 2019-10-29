@@ -183,6 +183,17 @@ public void OnClientConnected(int client)
 		g_currentMusicKit.PlayMusicToClient(client, Music_ChooseTeam);
 }
 
+public void OnGameFrame()
+{
+	if (!g_mapHasRespawnRoom && g_isBuyTimeActive)
+	{
+		for (int client = 1; client <= MaxClients; client++)
+		{
+			DisplayMenuInDynamicBuyZone(client);
+		}
+	}
+}
+
 public void OnClientDisconnect(int client)
 {
 	if (g_isBombPlanted)
@@ -290,10 +301,6 @@ public Action Event_Player_Spawn(Event event, const char[] name, bool dontBroadc
 		TF2_RespawnPlayer(client);
 		PrintToChat(client, "This class is currently disabled. Your class has been forcibly changed.");
 	}
-	
-	// Hook dynamic buy zone if map has no func_respawnroom
-	if (!g_mapHasRespawnRoom)
-		SDKHook(client, SDKHook_Think, Hook_OnClientThink);
 }
 
 public Action Event_Player_Team(Event event, const char[] name, bool dontBroadcast)
@@ -385,7 +392,6 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	if (g_isMainRoundActive || g_isBonusRoundActive)
 		victim.ClearLoadout();
 	
-	SDKUnhook(victim.Client, SDKHook_Think, Hook_OnClientThink);
 	if (victim.ActiveBuyMenu != null)
 		victim.ActiveBuyMenu.Cancel();
 	
@@ -397,10 +403,12 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	if (IsClientInGame(client))
 	{
-		ShowMainBuyMenu(client);
 		TFGOPlayer player = TFGOPlayer(client);
 		player.ShowMoneyHudDisplay(tfgo_buytime.FloatValue);
 		player.ApplyLoadout();
+		// Cancel active buy menu or OnGameFrame will throw a million errors
+		if (player.ActiveBuyMenu != null)
+			player.ActiveBuyMenu.Cancel();
 	}
 	
 	return Plugin_Handled;
@@ -445,7 +453,6 @@ public Action OnBuyTimeExpire(Handle timer)
 		if (IsClientInGame(client))
 		{
 			TFGOPlayer player = TFGOPlayer(client);
-			SDKUnhook(client, SDKHook_Think, Hook_OnClientThink);
 			if (player.ActiveBuyMenu != null)
 				player.ActiveBuyMenu.Cancel();
 		}
