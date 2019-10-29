@@ -305,7 +305,6 @@ public Action Event_Player_Spawn(Event event, const char[] name, bool dontBroadc
 
 public Action Event_Player_Team(Event event, const char[] name, bool dontBroadcast)
 {
-	// Reset player data on team switch
 	TFGOPlayer player = TFGOPlayer(GetClientOfUserId(event.GetInt("userid")));
 	
 	// Cap balance at highest of the team
@@ -313,10 +312,6 @@ public Action Event_Player_Team(Event event, const char[] name, bool dontBroadca
 	if (player.Balance > highestBalance)
 		player.Balance = highestBalance;
 	player.ClearLoadout();
-	
-	// Cancel buy menu if client switched to spectator  (#4)
-	if (view_as<TFTeam>(event.GetInt("team")) == TFTeam_Spectator && player.ActiveBuyMenu != null)
-		player.ActiveBuyMenu.Cancel();
 }
 
 public Action Event_Player_Death(Event event, const char[] name, bool dontBroadcast)
