@@ -174,10 +174,6 @@ public void OnMapStart()
 
 public void OnClientConnected(int client)
 {
-	// Hook dynamic buy zone if map has no func_respawnroom
-	if (!g_mapHasRespawnRoom)
-		SDKHook(client, SDKHook_Think, Hook_OnClientThink);
-	
 	// Initialize new player with default values
 	TFGOPlayer player = TFGOPlayer(client);
 	player.ResetBalance();
@@ -189,8 +185,6 @@ public void OnClientConnected(int client)
 
 public void OnClientDisconnect(int client)
 {
-	SDKUnhook(client, SDKHook_Think, Hook_OnClientThink);
-	
 	if (g_isBombPlanted)
 	{
 		// TODO team alive check to  end the round during bomb plant
@@ -296,6 +290,10 @@ public Action Event_Player_Spawn(Event event, const char[] name, bool dontBroadc
 		TF2_RespawnPlayer(client);
 		PrintToChat(client, "This class is currently disabled. Your class has been forcibly changed.");
 	}
+	
+	// Hook dynamic buy zone if map has no func_respawnroom
+	if (!g_mapHasRespawnRoom)
+		SDKHook(client, SDKHook_Think, Hook_OnClientThink);
 }
 
 public Action Event_Player_Team(Event event, const char[] name, bool dontBroadcast)
@@ -386,6 +384,8 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	
 	if (g_isMainRoundActive || g_isBonusRoundActive)
 		victim.ClearLoadout();
+	
+	SDKUnhook(victim.Client, SDKHook_Think, Hook_OnClientThink);
 	if (victim.ActiveBuyMenu != null)
 		victim.ActiveBuyMenu.Cancel();
 	
@@ -445,6 +445,7 @@ public Action OnBuyTimeExpire(Handle timer)
 		if (IsClientInGame(client))
 		{
 			TFGOPlayer player = TFGOPlayer(client);
+			SDKUnhook(client, SDKHook_Think, Hook_OnClientThink);
 			if (player.ActiveBuyMenu != null)
 				player.ActiveBuyMenu.Cancel();
 		}
