@@ -42,8 +42,6 @@ public int HandleBuyMenuFront(Menu menu, MenuAction action, int param1, int para
 
 public void ShowBuyMenu(int client, int slot)
 {
-	if (!g_isBuyTimeActive)return;
-	
 	Menu menu = new Menu(HandleBuyMenu, MENU_ACTIONS_ALL);
 	menu.SetTitle("%T", "#buymenu_title", LANG_SERVER, TFGOPlayer(client).Balance);
 	

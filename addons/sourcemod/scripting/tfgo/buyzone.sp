@@ -34,7 +34,6 @@ public void CalculateDynamicBuyZones()
 			}
 		}
 		
-		LogMessage("Dynamic buy zone for team %d calculated at origin [%f, %f, %f]", team, g_avgPlayerStartOrigin[team][0], g_avgPlayerStartOrigin[team][1], g_avgPlayerStartOrigin[team][2]);
 		delete teamspawns;
 	}
 }
@@ -47,7 +46,7 @@ public Action Hook_OnStartTouchBuyZone(int entity, int client)
 
 public Action Hook_OnEndTouchBuyZone(int entity, int client)
 {
-	if (g_isBuyTimeActive&&client >= 1 && client <= MaxClients && IsClientInGame(client) && GetEntProp(entity, Prop_Data, "m_iTeamNum") == GetClientTeam(client))
+	if (g_isBuyTimeActive && client >= 1 && client <= MaxClients && IsClientInGame(client) && GetEntProp(entity, Prop_Data, "m_iTeamNum") == GetClientTeam(client))
 	{
 		TFGOPlayer player = TFGOPlayer(client);
 		if (player.ActiveBuyMenu != null)
