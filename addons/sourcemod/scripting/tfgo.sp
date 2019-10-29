@@ -494,7 +494,7 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 	char[] cappers = new char[MaxClients];
 	event.GetString("cappers", cappers, MaxClients);
 	
-	ArrayList capperList;
+	ArrayList capperList = new ArrayList();
 	for (int i = 0; i < strlen(cappers); i++)
 	{
 		int capper = cappers[i];
