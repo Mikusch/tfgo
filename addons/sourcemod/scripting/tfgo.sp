@@ -81,6 +81,7 @@ MusicKit g_currentMusicKit;
 #include "tfgo/methodmaps.sp"
 #include "tfgo/sound.sp"
 #include "tfgo/buymenu.sp"
+#include "tfgo/forward.sp"
 
 
 public Plugin myinfo =  {
@@ -90,6 +91,14 @@ public Plugin myinfo =  {
 	version = "1.0", 
 	url = "https://github.com/Mikusch/tfgo"
 };
+
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
+{
+	Forward_AskLoad();
+	RegPluginLibrary("tfgo");
+	
+	return APLRes_Success;
+}
 
 public void OnPluginStart()
 {
@@ -375,7 +384,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 			if (assister.Client >= 1 && assister.Client <= MaxClients)
 			{
 				char victimName[256];
-				GetClientName(victi.Client, victimName, sizeof(victimName));
+				GetClientName(victim.Client, victimName, sizeof(victimName));
 				Format(msg, sizeof(msg), "Award for assisting in neutralizing %s", victimName);
 				assister.AddToBalance(killAward / 2, msg);
 			}
@@ -481,25 +490,37 @@ public Action Play10SecondWarning(Handle timer)
 
 public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool dontBroadcast)
 {
+	int team = event.GetInt("team");
 	char[] cappers = new char[MaxClients];
 	event.GetString("cappers", cappers, MaxClients);
-	int team = event.GetInt("team");
+	
+	ArrayList capperList;
+	for (int i = 0; i < strlen(cappers); i++)
+	{
+		int capper = cappers[i];
+		capperList.Push(capper);
+	}
 	
 	g_isBombPlanted = !g_isBombPlanted;
 	if (g_isBombPlanted)
-		PlantBomb(team, event.GetInt("cp"), cappers);
+	{
+		
+		PlantBomb(team, event.GetInt("cp"), capperList);
+	}
 	else
-		DefuseBomb(team);
+	{
+		DefuseBomb(team, capperList);
+	}
 }
 
-void PlantBomb(int team, int cp, const char[] cappers)
+void PlantBomb(int team, int cp, ArrayList cappers)
 {
 	g_bombPlantingTeam = team;
 	
 	// Award capture bonus to cappers
-	for (int i = 0; i < strlen(cappers); i++)
+	for (int i = 0; i < cappers.Length; i++)
 	{
-		int capper = cappers[i];
+		int capper = cappers.Get(i);
 		TFGOPlayer(capper).AddToBalance(TFGO_CAPPER_BONUS, "Award for planting the bomb");
 	}
 	
@@ -577,6 +598,8 @@ void PlantBomb(int team, int cp, const char[] cappers)
 	char message[256] = "The bomb has been planted.\n%d seconds to detonation.";
 	Format(message, sizeof(message), message, RoundFloat(TFGO_BOMB_DETONATION_TIME));
 	ShowGameMessage(message, "ico_notify_sixty_seconds");
+	
+	Forward_BombPlanted(team, cappers);
 }
 
 public Action PlayBombBeep(Handle timer, int bomb)
@@ -623,9 +646,11 @@ public Action DetonateBomb(Handle timer, int bombRef)
 	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", m_vecOrigin);
 	TF2_Explode(_, m_vecOrigin, 500.0, 788.0, "mvm_hatch_destroy", "mvm/mvm_bomb_explode.wav");
 	RemoveEntity(bomb);
+	
+	Forward_BombDetonated(g_bombPlantingTeam);
 }
 
-void DefuseBomb(int team)
+void DefuseBomb(int team, ArrayList cappers)
 {
 	g_bombBeepingTimer = null;
 	g_10SecondBombTimer = null;
@@ -634,6 +659,8 @@ void DefuseBomb(int team)
 	
 	g_isBombDefused = true;
 	TF2_ForceTeamWin(view_as<TFTeam>(team), view_as<int>(Winreason_PointCaptured));
+	
+	Forward_BombDefused(team, cappers);
 }
 
 public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBroadcast)
