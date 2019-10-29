@@ -54,6 +54,7 @@ int g_bombPlantingTeam;
 
 // ConVars
 ConVar tfgo_buytime;
+ConVar tfgo_buyzone_radius;
 
 ConVar tf_arena_first_blood;
 ConVar tf_arena_round_time;
@@ -81,8 +82,8 @@ MusicKit g_currentMusicKit;
 #include "tfgo/methodmaps.sp"
 #include "tfgo/sound.sp"
 #include "tfgo/buymenu.sp"
+#include "tfgo/buyzone.sp"
 #include "tfgo/forward.sp"
-
 
 public Plugin myinfo =  {
 	name = "Team Fortress: Global Offensive Arena", 
@@ -139,6 +140,7 @@ public void OnPluginStart()
 	tf_weapon_criticals_melee = FindConVar("tf_weapon_criticals_melee");
 	mp_bonusroundtime = FindConVar("mp_bonusroundtime");
 	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
+	tfgo_buyzone_radius = CreateConVar("tfgo_buyzone_radius", "500", "If the map has no defined buy zone, how far away from their spawn point players can buy items for (in hammer units)");
 	
 	Toggle_ConVars(true);
 	
@@ -169,19 +171,16 @@ public void OnMapStart()
 	
 	int func_respawnroom = FindEntityByClassname(-1, "func_respawnroom");
 	if (func_respawnroom <= -1)
-		LogMessage("This map is missing a func_respawnroom entity - unable to define a buy zone");
+	{
+		g_mapHasRespawnRoom = false;
+		
+		LogMessage("This map is missing a func_respawnroom entity, calculating buy zones based on info_player_teamspawn entities");
+		CalculateDynamicBuyZones();
+	}
 	else
+	{
 		g_mapHasRespawnRoom = true;
-}
-
-public void ChooseRandomMusicKit()
-{
-	StringMapSnapshot snapshot = g_availableMusicKits.Snapshot();
-	char name[PLATFORM_MAX_PATH];
-	snapshot.GetKey(GetRandomInt(0, snapshot.Length - 1), name, sizeof(name));
-	delete snapshot;
-	
-	g_availableMusicKits.GetArray(name, g_currentMusicKit, sizeof(g_currentMusicKit));
+	}
 }
 
 public void OnClientConnected(int client)
@@ -195,6 +194,17 @@ public void OnClientConnected(int client)
 		g_currentMusicKit.PlayMusicToClient(client, Music_ChooseTeam);
 }
 
+public void OnGameFrame()
+{
+	if (!g_mapHasRespawnRoom && g_isBuyTimeActive)
+	{
+		for (int client = 1; client <= MaxClients; client++)
+		{
+			DisplayMenuInDynamicBuyZone(client);
+		}
+	}
+}
+
 public void OnClientDisconnect(int client)
 {
 	if (g_isBombPlanted)
@@ -203,31 +213,22 @@ public void OnClientDisconnect(int client)
 	}
 }
 
+public void ChooseRandomMusicKit()
+{
+	StringMapSnapshot snapshot = g_availableMusicKits.Snapshot();
+	char name[PLATFORM_MAX_PATH];
+	snapshot.GetKey(GetRandomInt(0, snapshot.Length - 1), name, sizeof(name));
+	delete snapshot;
+	
+	g_availableMusicKits.GetArray(name, g_currentMusicKit, sizeof(g_currentMusicKit));
+}
+
 public void OnEntityCreated(int entity, const char[] classname)
 {
 	if (StrEqual(classname, "func_respawnroom"))
 	{
-		SDKHook(entity, SDKHook_StartTouch, OnStartTouchBuyZone);
-		SDKHook(entity, SDKHook_EndTouch, OnEndTouchBuyZone);
-	}
-}
-
-public Action OnStartTouchBuyZone(int entity, int client)
-{
-	if (client >= 1 && client <= MaxClients && IsClientInGame(client) && GetEntProp(entity, Prop_Data, "m_iTeamNum") == GetClientTeam(client))
-		ShowMainBuyMenu(client);
-}
-
-public Action OnEndTouchBuyZone(int entity, int client)
-{
-	if (client >= 1 && client <= MaxClients && IsClientInGame(client) && GetEntProp(entity, Prop_Data, "m_iTeamNum") == GetClientTeam(client))
-	{
-		TFGOPlayer player = TFGOPlayer(client);
-		if (player.ActiveBuyMenu != null)
-			player.ActiveBuyMenu.Cancel();
-		
-		if (g_isBuyTimeActive)
-			PrintHintText(client, "You have left the buy zone");
+		SDKHook(entity, SDKHook_StartTouch, Hook_OnStartTouchBuyZone);
+		SDKHook(entity, SDKHook_EndTouch, Hook_OnEndTouchBuyZone);
 	}
 }
 
@@ -315,7 +316,6 @@ public Action Event_Player_Spawn(Event event, const char[] name, bool dontBroadc
 
 public Action Event_Player_Team(Event event, const char[] name, bool dontBroadcast)
 {
-	// Reset player data on team switch
 	TFGOPlayer player = TFGOPlayer(GetClientOfUserId(event.GetInt("userid")));
 	
 	// Cap balance at highest of the team
@@ -323,10 +323,6 @@ public Action Event_Player_Team(Event event, const char[] name, bool dontBroadca
 	if (player.Balance > highestBalance)
 		player.Balance = highestBalance;
 	player.ClearLoadout();
-	
-	// Cancel buy menu if client switched to spectator  (#4)
-	if (view_as<TFTeam>(event.GetInt("team")) == TFTeam_Spectator && player.ActiveBuyMenu != null)
-		player.ActiveBuyMenu.Cancel();
 }
 
 public Action Event_Player_Death(Event event, const char[] name, bool dontBroadcast)
@@ -401,6 +397,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	
 	if (g_isMainRoundActive || g_isBonusRoundActive)
 		victim.ClearLoadout();
+	
 	if (victim.ActiveBuyMenu != null)
 		victim.ActiveBuyMenu.Cancel();
 	
@@ -412,10 +409,17 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	if (IsClientInGame(client))
 	{
-		ShowMainBuyMenu(client);
 		TFGOPlayer player = TFGOPlayer(client);
 		player.ShowMoneyHudDisplay(tfgo_buytime.FloatValue);
 		player.ApplyLoadout();
+		
+		// Cancel active buy menu or OnGameFrame will throw a million errors
+		if (player.ActiveBuyMenu != null)
+			player.ActiveBuyMenu.Cancel();
+		
+		// func_respawnroom OnStartTouch doesn't fire thus buy menu doesn't get re-opened so we do it manually
+		if (g_mapHasRespawnRoom)
+			ShowMainBuyMenu(client);
 	}
 	
 	return Plugin_Handled;
