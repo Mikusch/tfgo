@@ -10,7 +10,6 @@
 
 #pragma newdecls required
 
-// TF2 defines
 #define TF_MAXPLAYERS					32
 
 #define TFGO_BOMB_DETONATION_WIN_AWARD	3500
@@ -50,6 +49,8 @@ int g_bombPlantingTeam;
 ConVar tfgo_buytime;
 ConVar tfgo_buyzone_radius;
 ConVar tfgo_bomb_timer;
+ConVar tfgo_startmoney;
+ConVar tfgo_maxmoney;
 
 ConVar tf_arena_first_blood;
 ConVar tf_arena_round_time;
@@ -108,8 +109,9 @@ public void OnPluginStart()
 	g_hudSync = CreateHudSynchronizer();
 	for (int client = 1; client <= MaxClients; client++)
 	{
-		// Balance does not need to be initialized here
-		TFGOPlayer(client).ClearLoadout();
+		TFGOPlayer player = TFGOPlayer(client);
+		player.ResetBalance();
+		player.ClearLoadout();
 	}
 	
 	// Events
@@ -134,9 +136,11 @@ public void OnPluginStart()
 	tf_weapon_criticals = FindConVar("tf_weapon_criticals");
 	tf_weapon_criticals_melee = FindConVar("tf_weapon_criticals_melee");
 	mp_bonusroundtime = FindConVar("mp_bonusroundtime");
-	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
+	tfgo_buytime = CreateConVar("tfgo_buytime", "20", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
 	tfgo_buyzone_radius = CreateConVar("tfgo_buyzone_radius", "500", "If the map has no defined buy zone, how far away from their spawn point players can buy items for (in hammer units)");
-	tfgo_bomb_timer = CreateConVar("tfgo_bomb_timer", "40", "How long from when the bomb is planted until it blows", _, true, 5.0, true, tf_arena_round_time.FloatValue);
+	tfgo_bomb_timer = CreateConVar("tfgo_bomb_timer", "40", "How long from when the bomb is planted until it blows", _, true, 15.0, true, tf_arena_round_time.FloatValue);
+	tfgo_startmoney = CreateConVar("tfgo_startmoney", "800", "Amount of money each player gets when they reset");
+	tfgo_maxmoney = CreateConVar("tfgo_maxmoney", "16000", "Maximum amount of money allowed in a player's account");
 	
 	Toggle_ConVars(true);
 	
@@ -772,13 +776,13 @@ void Toggle_ConVars(bool toggle)
 		tf_arena_use_queue.BoolValue = false;
 		
 		arenaRoundTime = tf_arena_round_time.IntValue;
-		tf_arena_round_time.IntValue = 135;
+		tf_arena_round_time.IntValue = 115;
 		
 		arenaOverrideCapEnableTime = tf_arena_override_cap_enable_time.IntValue;
 		tf_arena_override_cap_enable_time.IntValue = 15;
 		
 		arenaMaxStreak = tf_arena_max_streak.IntValue;
-		tf_arena_max_streak.IntValue = 16;
+		tf_arena_max_streak.IntValue = 8;
 		
 		weaponCriticals = tf_weapon_criticals.BoolValue;
 		tf_weapon_criticals.BoolValue = false;
