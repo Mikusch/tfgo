@@ -12,10 +12,6 @@
 
 #define TF_MAXPLAYERS					32
 
-#define TFGO_BOMB_DETONATION_WIN_AWARD	3500
-#define TFGO_BOMB_DEFUSE_WIN_AWARD		3500
-#define TFGO_ELIMINATION_WIN_AWARD		3250
-#define TFGO_CAPPER_BONUS				300
 #define TFGO_SUICIDE_PENALTY			-300
 
 
@@ -51,6 +47,11 @@ ConVar tfgo_buyzone_radius;
 ConVar tfgo_bomb_timer;
 ConVar tfgo_startmoney;
 ConVar tfgo_maxmoney;
+ConVar tfgo_cash_player_bomb_planted;
+ConVar tfgo_cash_player_bomb_defused;
+ConVar tfgo_cash_team_win_bomb_detonated;
+ConVar tfgo_cash_team_win_bomb_defused;
+ConVar tfgo_cash_team_win_elimination;
 
 ConVar tf_arena_first_blood;
 ConVar tf_arena_round_time;
@@ -126,7 +127,7 @@ public void OnPluginStart()
 	HookEvent("arena_win_panel", Event_Arena_Win_Panel);
 	HookEvent("arena_match_maxstreak", Event_Arena_Match_MaxStreak);
 	
-	// ConVars
+	// Collect ConVars
 	tf_arena_first_blood = FindConVar("tf_arena_first_blood");
 	tf_arena_round_time = FindConVar("tf_arena_round_time");
 	tf_arena_use_queue = FindConVar("tf_arena_use_queue");
@@ -136,11 +137,18 @@ public void OnPluginStart()
 	tf_weapon_criticals = FindConVar("tf_weapon_criticals");
 	tf_weapon_criticals_melee = FindConVar("tf_weapon_criticals_melee");
 	mp_bonusroundtime = FindConVar("mp_bonusroundtime");
+	
+	// Create TFGO ConVars
 	tfgo_buytime = CreateConVar("tfgo_buytime", "20", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
-	tfgo_buyzone_radius = CreateConVar("tfgo_buyzone_radius", "500", "If the map has no defined buy zone, how far away from their spawn point players can buy items for (in hammer units)");
+	tfgo_buyzone_radius = CreateConVar("tfgo_buyzone_radius", "500", "Radius in hammer units of dynamically generated buy zone");
 	tfgo_bomb_timer = CreateConVar("tfgo_bomb_timer", "40", "How long from when the bomb is planted until it blows", _, true, 15.0, true, tf_arena_round_time.FloatValue);
 	tfgo_startmoney = CreateConVar("tfgo_startmoney", "800", "Amount of money each player gets when they reset");
-	tfgo_maxmoney = CreateConVar("tfgo_maxmoney", "16000", "Maximum amount of money allowed in a player's account");
+	tfgo_maxmoney = CreateConVar("tfgo_maxmoney", "16000", "Maximum amount of money allowed in a player's account", _, true, tfgo_startmoney.FloatValue);
+	tfgo_cash_player_bomb_planted = CreateConVar("tfgo_cash_player_bomb_planted", "300", "Cash award for each player that planted the bomb");
+	tfgo_cash_player_bomb_defused = CreateConVar("tfgo_cash_player_bomb_defused", "300", "Cash award for each player that defused the bomb");
+	tfgo_cash_team_win_bomb_detonated = CreateConVar("tfgo_cash_team_win_bomb_detonated", "3500", "Team cash award for winning by detonating the bomb");
+	tfgo_cash_team_win_bomb_defused = CreateConVar("tfgo_cash_team_win_bomb_defused", "3500", "Team cash award for winning by defusing the bomb");
+	tfgo_cash_team_win_elimination = CreateConVar("tfgo_cash_team_win_elimination", "3250", "Team cash award for winning by eliminating the enemy team");
 	
 	Toggle_ConVars(true);
 	
@@ -525,7 +533,7 @@ void PlantBomb(int team, int cp, ArrayList cappers)
 	for (int i = 0; i < cappers.Length; i++)
 	{
 		int capper = cappers.Get(i);
-		TFGOPlayer(capper).AddToBalance(TFGO_CAPPER_BONUS, "Award for planting the bomb");
+		TFGOPlayer(capper).AddToBalance(tfgo_cash_player_bomb_planted.IntValue, "Award for planting the bomb");
 	}
 	
 	// Superceding SetWinningTeam causes arena mode to force a map change on capture
@@ -661,6 +669,12 @@ void DefuseBomb(int team, ArrayList cappers)
 	g_bombDetonationWarningTimer = null;
 	g_bombDetonationTimer = null;
 	
+	for (int i = 0; i < cappers.Length; i++)
+	{
+		int capper = cappers.Get(i);
+		TFGOPlayer(capper).AddToBalance(tfgo_cash_player_bomb_defused.IntValue, "Award for defusing the bomb");
+	}
+	
 	g_isBombDefused = true;
 	TF2_ForceTeamWin(view_as<TFTeam>(team), view_as<int>(Winreason_PointCaptured));
 	
@@ -687,13 +701,13 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	if (winreason == view_as<int>(Winreason_PointCaptured) || winreason == view_as<int>(Winreason_AllPointsCaptured))
 	{
 		if (g_bombPlantingTeam == event.GetInt("winning_team"))
-			winningTeam.AddToTeamBalance(TFGO_BOMB_DETONATION_WIN_AWARD, "Team award for detonating bomb");
+			winningTeam.AddToTeamBalance(tfgo_cash_team_win_bomb_detonated.IntValue, "Team award for detonating bomb");
 		else
-			winningTeam.AddToTeamBalance(TFGO_BOMB_DEFUSE_WIN_AWARD, "Team award for winning by defusing the bomb");
+			winningTeam.AddToTeamBalance(tfgo_cash_team_win_bomb_defused.IntValue, "Team award for winning by defusing the bomb");
 	}
 	else if (winreason == view_as<int>(Winreason_Elimination))
 	{
-		winningTeam.AddToTeamBalance(TFGO_ELIMINATION_WIN_AWARD, "Team award for eliminating the enemy team");
+		winningTeam.AddToTeamBalance(tfgo_cash_team_win_elimination.IntValue, "Team award for eliminating the enemy team");
 	}
 	
 	losingTeam.AddToTeamBalance(losingTeam.LoseIncome, "Income for losing");
