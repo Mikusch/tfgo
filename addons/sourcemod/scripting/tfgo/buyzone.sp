@@ -21,9 +21,7 @@ public void CalculateDynamicBuyZones()
 			{
 				float origin[3];
 				GetEntPropVector(info_player_teamspawn, Prop_Send, "m_vecOrigin", origin);
-				int length = teamspawns.Length;
-				teamspawns.Resize(length + 1);
-				teamspawns.SetArray(length, origin);
+				teamspawns.PushArray(origin);
 			}
 		}
 		
