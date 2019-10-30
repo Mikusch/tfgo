@@ -107,12 +107,6 @@ public void OnPluginStart()
 	MusicKit_Init();
 	Config_Init();
 	g_hudSync = CreateHudSynchronizer();
-	for (int client = 1; client <= MaxClients; client++)
-	{
-		TFGOPlayer player = TFGOPlayer(client);
-		player.ResetBalance();
-		player.ClearLoadout();
-	}
 	
 	// Events
 	HookEvent("player_spawn", Event_Player_Spawn, EventHookMode_Pre);
@@ -151,6 +145,13 @@ public void OnPluginStart()
 	tfgo_cash_team_win_elimination = CreateConVar("tfgo_cash_team_win_elimination", "3250", "Team cash award for winning by eliminating the enemy team");
 	
 	Toggle_ConVars(true);
+	
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		TFGOPlayer player = TFGOPlayer(client);
+		player.ResetBalance();
+		player.ClearLoadout();
+	}
 	
 	CAddColor("alert", 0xEA4141);
 	CAddColor("money", 0xA2FE47);
