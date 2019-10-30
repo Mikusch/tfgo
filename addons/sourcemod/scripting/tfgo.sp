@@ -23,8 +23,6 @@
 #define TFGO_CAPPER_BONUS				300
 #define TFGO_SUICIDE_PENALTY			-300
 
-#define TFGO_BOMB_DETONATION_TIME		45.0
-
 
 // Timers
 Handle g_buyTimeTimer;
@@ -55,6 +53,7 @@ int g_bombPlantingTeam;
 // ConVars
 ConVar tfgo_buytime;
 ConVar tfgo_buyzone_radius;
+ConVar tfgo_bomb_timer;
 
 ConVar tf_arena_first_blood;
 ConVar tf_arena_round_time;
@@ -141,6 +140,7 @@ public void OnPluginStart()
 	mp_bonusroundtime = FindConVar("mp_bonusroundtime");
 	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
 	tfgo_buyzone_radius = CreateConVar("tfgo_buyzone_radius", "500", "If the map has no defined buy zone, how far away from their spawn point players can buy items for (in hammer units)");
+	tfgo_bomb_timer = CreateConVar("tfgo_bomb_timer", "40", "How long from when the bomb is planted until it blows", _, true, 5.0, true, tf_arena_round_time.FloatValue);
 	
 	Toggle_ConVars(true);
 	
@@ -553,7 +553,7 @@ void PlantBomb(int team, int cp, ArrayList cappers)
 	int team_round_timer = FindEntityByClassname(-1, "team_round_timer");
 	if (team_round_timer > -1)
 	{
-		SetVariantInt(RoundFloat(TFGO_BOMB_DETONATION_TIME) + 1);
+		SetVariantInt(tfgo_bomb_timer.IntValue + 1);
 		AcceptEntityInput(team_round_timer, "SetTime");
 	}
 	
@@ -581,10 +581,10 @@ void PlantBomb(int team, int cp, ArrayList cappers)
 			TeleportEntity(bomb, m_vecOrigin, m_angRotation, NULL_VECTOR);
 			
 			// Set up timers
-			g_10SecondBombTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 10.0, Play10SecondBombWarning, _, TIMER_FLAG_NO_MAPCHANGE);
+			g_10SecondBombTimer = CreateTimer(tfgo_bomb_timer.FloatValue - 10.0, Play10SecondBombWarning, _, TIMER_FLAG_NO_MAPCHANGE);
 			g_bombBeepingTimer = CreateTimer(1.0, PlayBombBeep, EntIndexToEntRef(bomb), TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
-			g_bombDetonationWarningTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME - 1.5, PlayBombExplosionWarning, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
-			g_bombDetonationTimer = CreateTimer(TFGO_BOMB_DETONATION_TIME, DetonateBomb, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
+			g_bombDetonationWarningTimer = CreateTimer(tfgo_bomb_timer.FloatValue - 1.5, PlayBombExplosionWarning, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
+			g_bombDetonationTimer = CreateTimer(tfgo_bomb_timer.FloatValue, DetonateBomb, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
 		}
 	}
 	
@@ -600,7 +600,7 @@ void PlantBomb(int team, int cp, ArrayList cappers)
 	
 	// Show text on screen
 	char message[256] = "The bomb has been planted.\n%d seconds to detonation.";
-	Format(message, sizeof(message), message, RoundFloat(TFGO_BOMB_DETONATION_TIME));
+	Format(message, sizeof(message), message, tfgo_bomb_timer.IntValue);
 	ShowGameMessage(message, "ico_notify_sixty_seconds");
 	
 	Forward_BombPlanted(team, cappers);
