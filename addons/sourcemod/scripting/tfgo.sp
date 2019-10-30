@@ -12,8 +12,6 @@
 
 #define TF_MAXPLAYERS					32
 
-#define TFGO_SUICIDE_PENALTY			-300
-
 
 // Timers
 Handle g_buyTimeTimer;
@@ -49,6 +47,7 @@ ConVar tfgo_startmoney;
 ConVar tfgo_maxmoney;
 ConVar tfgo_cash_player_bomb_planted;
 ConVar tfgo_cash_player_bomb_defused;
+ConVar tfgo_cash_player_suicide_compensation;
 ConVar tfgo_cash_team_win_bomb_detonated;
 ConVar tfgo_cash_team_win_bomb_defused;
 ConVar tfgo_cash_team_win_elimination;
@@ -146,6 +145,7 @@ public void OnPluginStart()
 	tfgo_maxmoney = CreateConVar("tfgo_maxmoney", "16000", "Maximum amount of money allowed in a player's account", _, true, tfgo_startmoney.FloatValue);
 	tfgo_cash_player_bomb_planted = CreateConVar("tfgo_cash_player_bomb_planted", "300", "Cash award for each player that planted the bomb");
 	tfgo_cash_player_bomb_defused = CreateConVar("tfgo_cash_player_bomb_defused", "300", "Cash award for each player that defused the bomb");
+	tfgo_cash_player_suicide_compensation = CreateConVar("tfgo_cash_player_suicide_compensation", "300", "Compensation for an enemy player suiciding");
 	tfgo_cash_team_win_bomb_detonated = CreateConVar("tfgo_cash_team_win_bomb_detonated", "3500", "Team cash award for winning by detonating the bomb");
 	tfgo_cash_team_win_bomb_defused = CreateConVar("tfgo_cash_team_win_bomb_defused", "3500", "Team cash award for winning by defusing the bomb");
 	tfgo_cash_team_win_elimination = CreateConVar("tfgo_cash_team_win_elimination", "3250", "Team cash award for winning by eliminating the enemy team");
@@ -344,6 +344,9 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	char weapon[256];
 	event.GetString("weapon", weapon, sizeof(weapon));
 	
+	char victimName[256];
+	GetClientName(victim.Client, victimName, sizeof(victimName));
+	
 	int killAward;
 	char msg[256];
 	if (attacker.Client >= 1 && attacker.Client <= MaxClients)
@@ -362,8 +365,19 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 		{
 			if (g_isMainRoundActive)
 			{
-				killAward = TFGO_SUICIDE_PENALTY;
-				msg = "Penalty for suiciding";
+				// Re-assign attacker to random enemy player
+				ArrayList enemies = new ArrayList();
+				for (int client = 1; client <= MaxClients; client++)
+				{
+					if (IsClientInGame(client) && GetClientTeam(client) != GetClientTeam(attacker.Client))
+						enemies.Push(client);
+				}
+				attacker = TFGOPlayer(enemies.Get(GetRandomInt(0, enemies.Length - 1)));
+				delete enemies;
+				
+				killAward = tfgo_cash_player_suicide_compensation.IntValue;
+				Format(msg, sizeof(msg), "Compensation for the suicide of %s", victimName);
+				PrintToChatAll("An enemy player was awarded compensation for the suicide of %s.", victimName);
 			}
 		}
 		else if (strcmp(weapon, "world") == 0) // Environmental kill
@@ -387,8 +401,6 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 			// Grant assist award
 			if (assister.Client >= 1 && assister.Client <= MaxClients)
 			{
-				char victimName[256];
-				GetClientName(victim.Client, victimName, sizeof(victimName));
 				Format(msg, sizeof(msg), "Award for assisting in neutralizing %s", victimName);
 				assister.AddToBalance(killAward / 2, msg);
 			}
