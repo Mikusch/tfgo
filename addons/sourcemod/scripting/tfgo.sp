@@ -133,8 +133,25 @@ public void OnPluginStart()
 	
 	Toggle_ConVars(true);
 	
+	AddCommandListener(Client_BuildCommand, "build");
+	
 	CAddColor("alert", 0xEA4141);
 	CAddColor("money", 0xA2FE47);
+}
+
+public Action Client_BuildCommand(int client, const char[] command, int args)
+{
+	TFGOPlayer player = TFGOPlayer(client);
+	// Player owns PDA
+	if (TF2_GetPlayerClass(client) == TFClass_Engineer && player.GetWeaponFromLoadout(TFClass_Engineer, WeaponSlot_PDABuild) != -1)
+	{
+		//SetEntProp(iWeapon, Prop_Send, "m_aBuildableObjectTypes", 1, _, view_as<int>(TFObject_Sentry));
+		PrintToServer("Allowed to build");
+		return Plugin_Continue;
+	}
+	
+	// Block building by default
+	return Plugin_Handled;
 }
 
 public void OnPluginEnd()

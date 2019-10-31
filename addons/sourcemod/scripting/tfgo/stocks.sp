@@ -188,7 +188,7 @@ stock int TF2_GetSlotInItem(int defindex, TFClassType class)
 	int slot = TF2Econ_GetItemSlot(defindex, class);
 	if (slot >= 0)
 	{
-		//Spy slots is a bit messy
+		// Econ reports wrong slots for Engineer and Spy
 		switch (class)
 		{
 			case TFClass_Spy:
@@ -200,6 +200,8 @@ stock int TF2_GetSlotInItem(int defindex, TFClassType class)
 			
 			case TFClass_Engineer:
 			{
+				if (slot == 4)slot = WeaponSlot_BuilderEngie; // Toolbox
+				if (slot == 5)slot = WeaponSlot_PDABuild; //Construction PDA
 				if (slot == 6)slot = WeaponSlot_PDADestroy; //Destruction PDA
 			}
 		}

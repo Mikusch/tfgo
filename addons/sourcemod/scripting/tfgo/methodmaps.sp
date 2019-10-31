@@ -127,7 +127,7 @@ methodmap TFGOPlayer
 		g_availableWeapons.GetArray(index, weapon, sizeof(weapon));
 		
 		TFClassType class = TF2_GetPlayerClass(this.Client);
-		int slot = TF2Econ_GetItemSlot(defindex, class);
+		int slot = TF2_GetSlotInItem(defindex, class);
 		
 		// Player doesn't own weapon yet, charge them for it and grant it
 		if (g_playerLoadoutWeaponIndexes[this][class][slot] != defindex)
@@ -178,10 +178,13 @@ methodmap TFGOPlayer
 		for (int slot = sizeof(g_playerLoadoutWeaponIndexes[][]) - 1; slot >= 0; slot--)
 		{
 			int defindex = this.GetWeaponFromLoadout(class, slot);
-			if (defindex != -1)
-				TF2_CreateAndEquipWeapon(this.Client, defindex);
-			else
-				TF2_RemoveItemInSlot(this.Client, slot);
+			if (defindex != TF2_GetItemInSlot(this.Client, slot))
+			{
+				if (defindex != -1)
+					TF2_CreateAndEquipWeapon(this.Client, defindex);
+				else
+					TF2_RemoveItemInSlot(this.Client, slot);
+			}
 		}
 	}
 	
