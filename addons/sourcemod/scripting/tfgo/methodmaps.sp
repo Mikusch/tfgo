@@ -1,6 +1,3 @@
-#define TFGO_STARTING_BALANCE			800
-#define TFGO_MIN_BALANCE				0
-#define TFGO_MAX_BALANCE				16000
 #define TFGO_MIN_LOSESTREAK				0
 #define TFGO_MAX_LOSESTREAK				4
 #define TFGO_STARTING_LOSESTREAK		1
@@ -18,8 +15,10 @@ int g_defaultWeaponIndexes[][] =  {
 	{ 24, 735, 30758, 27, 30, -1 },  // Spy
 	{ 9, -1, 30758, -1, 26, 28 } // Engineer
 };
+
 int g_playerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][view_as<int>(WeaponSlot_BuilderEngie) + 1];
 int g_playerBalances[TF_MAXPLAYERS + 1] =  { TFGO_STARTING_BALANCE, ... };
+
 Menu g_activeBuyMenus[TF_MAXPLAYERS + 1];
 
 int g_teamLosingStreaks[view_as<int>(TFTeam_Blue) + 1] =  { TFGO_STARTING_LOSESTREAK, ... };
@@ -52,10 +51,10 @@ methodmap TFGOPlayer
 		}
 		public set(int val)
 		{
-			if (val > TFGO_MAX_BALANCE)
-				g_playerBalances[this] = TFGO_MAX_BALANCE;
-			else if (val < TFGO_MIN_BALANCE)
-				g_playerBalances[this] = TFGO_MIN_BALANCE;
+			if (val > tfgo_maxmoney.IntValue)
+				g_playerBalances[this] = tfgo_maxmoney.IntValue;
+			else if (val < 0)
+				g_playerBalances[this] = 0;
 			else
 				g_playerBalances[this] = val;
 		}
@@ -63,7 +62,7 @@ methodmap TFGOPlayer
 	
 	public void ResetBalance()
 	{
-		this.Balance = TFGO_STARTING_BALANCE;
+		this.Balance = tfgo_startmoney.IntValue;
 	}
 	
 	property Menu ActiveBuyMenu
@@ -271,7 +270,7 @@ methodmap TFGOTeam
 	
 	public int GetHighestBalance()
 	{
-		int balance = TFGO_STARTING_BALANCE;
+		int balance = tfgo_startmoney.IntValue;
 		for (int client = 1; client <= MaxClients; client++)
 		{
 			TFGOPlayer player = TFGOPlayer(client);

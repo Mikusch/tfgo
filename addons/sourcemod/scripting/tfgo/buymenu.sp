@@ -2,8 +2,6 @@
 // TODO: Proper use of translation files
 public void ShowMainBuyMenu(int client)
 {
-	if (!g_isBuyTimeActive)return;
-	
 	Menu menu = new Menu(HandleBuyMenuFront, MENU_ACTIONS_ALL);
 	menu.SetTitle("%T", "#buymenu_title", LANG_SERVER, TFGOPlayer(client).Balance);
 	
@@ -25,7 +23,7 @@ public void ShowMainBuyMenu(int client)
 		}
 	}
 	
-	if (g_mapHasRespawnRoom)menu.ExitButton = false;
+	menu.ExitButton = false;
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
@@ -52,8 +50,6 @@ public int HandleBuyMenuFront(Menu menu, MenuAction action, int param1, int para
 
 public void ShowBuyMenu(int client, int slot)
 {
-	if (!g_isBuyTimeActive)return;
-	
 	Menu menu = new Menu(HandleBuyMenu, MENU_ACTIONS_ALL);
 	menu.SetTitle("%T", "#buymenu_title", LANG_SERVER, TFGOPlayer(client).Balance);
 	
