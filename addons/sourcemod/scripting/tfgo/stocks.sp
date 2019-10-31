@@ -49,7 +49,6 @@ stock void TF2_Explode(int iAttacker = -1, float flPos[3], float flDamage, float
 stock void TF2_RemoveItemInSlot(int client, int slot)
 {
 	TF2_RemoveWeaponSlot(client, slot);
-	
 	int iWearable = SDK_GetEquippedWearable(client, slot);
 	if (iWearable > MaxClients)
 	{
@@ -88,7 +87,7 @@ stock TFClassType TF2_GetRandomClass()
 stock void TF2_CreateAndEquipWeapon(int iClient, int defindex)
 {
 	TFClassType nClass = TF2_GetPlayerClass(iClient);
-	int iSlot = TF2Econ_GetItemSlot(defindex, nClass);
+	int iSlot = TF2_GetSlotInItem(defindex, nClass);
 	
 	//Remove sniper scope and slowdown cond if have one, otherwise can cause client crashes
 	if (TF2_IsPlayerInCondition(iClient, TFCond_Zoomed))
