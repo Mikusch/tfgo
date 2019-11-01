@@ -16,6 +16,14 @@ public void ShowMainBuyMenu(int client)
 			menu.AddItem("5;6", "PDA");
 		}
 		
+		case TFClass_Spy:
+		{
+			menu.AddItem("1", "Secondary Weapon"); // Revolvers
+			menu.AddItem("2", "Melee Weapon"); // Revolvers
+			menu.AddItem("3;6", "PDA"); // Disguise Kit/Invis Watch
+			menu.AddItem("4", "Sapper");
+		}
+		
 		default:
 		{
 			menu.AddItem("0", "Primary Weapon");
