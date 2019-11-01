@@ -17,7 +17,7 @@ int g_defaultWeaponIndexes[][] =  {
 };
 
 int g_playerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][view_as<int>(WeaponSlot_BuilderEngie) + 1];
-int g_playerBalances[TF_MAXPLAYERS + 1] =  { TFGO_STARTING_BALANCE, ... };
+int g_playerBalances[TF_MAXPLAYERS + 1];
 
 Menu g_activeBuyMenus[TF_MAXPLAYERS + 1];
 
