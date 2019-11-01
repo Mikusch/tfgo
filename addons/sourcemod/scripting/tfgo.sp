@@ -147,7 +147,8 @@ public void OnPluginStart()
 	Toggle_ConVars(true);
 	
 	AddCommandListener(Client_BuildCommand, "build");
-  
+	AddCommandListener(Client_DestroyCommand, "destroy");
+	
 	for (int client = 1; client <= MaxClients; client++)
 	{
 		TFGOPlayer player = TFGOPlayer(client);
@@ -157,18 +158,6 @@ public void OnPluginStart()
 	
 	CAddColor("alert", 0xEA4141);
 	CAddColor("money", 0xA2FE47);
-}
-
-public Action Client_BuildCommand(int client, const char[] command, int args)
-{
-	TFGOPlayer player = TFGOPlayer(client);
-	
-	// Check if player owns a Construction PDA
-	if (player.GetWeaponFromLoadout(TFClass_Engineer, WeaponSlot_PDABuild) != -1)
-		return Plugin_Continue;
-	
-	// Block building by default
-	return Plugin_Handled;
 }
 
 public void OnPluginEnd()
@@ -790,6 +779,26 @@ public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool d
 	TFGOTeam(view_as<TFTeam>(team)).ResetLoseStreak();
 	
 	ChooseRandomMusicKit();
+}
+
+public Action Client_BuildCommand(int client, const char[] command, int args)
+{
+	// Check if player owns Construction PDA
+	if (TFGOPlayer(client).GetWeaponFromLoadout(TFClass_Engineer, WeaponSlot_PDABuild) != -1)
+		return Plugin_Continue;
+	
+	// Block build by default
+	return Plugin_Handled;
+}
+
+public Action Client_DestroyCommand(int client, const char[] command, int args)
+{
+	// Check if player owns Destruction PDA
+	if (TFGOPlayer(client).GetWeaponFromLoadout(TFClass_Engineer, WeaponSlot_PDADestroy) != -1)
+		return Plugin_Continue;
+	
+	// Block destroy by default
+	return Plugin_Handled;
 }
 
 void PrecacheModels()

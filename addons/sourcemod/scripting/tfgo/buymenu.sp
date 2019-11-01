@@ -5,6 +5,7 @@ public void ShowMainBuyMenu(int client)
 	Menu menu = new Menu(HandleBuyMenuFront, MENU_ACTIONS_ALL);
 	menu.SetTitle("%T", "#buymenu_title", LANG_SERVER, TFGOPlayer(client).Balance);
 	
+	// Reminder: These are TF2Econ slots
 	switch (TF2_GetPlayerClass(client))
 	{
 		case TFClass_Engineer:
@@ -12,7 +13,7 @@ public void ShowMainBuyMenu(int client)
 			menu.AddItem("0", "Primary Weapon");
 			menu.AddItem("1", "Secondary Weapon");
 			menu.AddItem("2", "Melee Weapon");
-			menu.AddItem("5", "PDA");
+			menu.AddItem("5;6", "PDA");
 		}
 		
 		default:
@@ -35,9 +36,20 @@ public int HandleBuyMenuFront(Menu menu, MenuAction action, int param1, int para
 		
 		case MenuAction_Select:
 		{
-			char info[32];
+			char info[8];
 			menu.GetItem(param2, info, sizeof(info));
-			ShowBuyMenu(param1, StringToInt(info));
+			
+			char slotStrings[TFWeaponSlot_Building + 1][8];
+			if (ExplodeString(info, ";", slotStrings, sizeof(slotStrings), sizeof(slotStrings[])) >= 1)
+			{
+				ArrayList slots = new ArrayList();
+				for (int i = 0; i < sizeof(slotStrings); i++)
+				{
+					if (strlen(slotStrings[i]) > 0)
+						slots.Push(StringToInt(slotStrings[i]));
+				}
+				ShowBuyMenu(param1, slots);
+			}
 		}
 		
 		case MenuAction_Cancel:TFGOPlayer(param1).ActiveBuyMenu = null;
@@ -48,7 +60,7 @@ public int HandleBuyMenuFront(Menu menu, MenuAction action, int param1, int para
 	return 0;
 }
 
-public void ShowBuyMenu(int client, int slot)
+public void ShowBuyMenu(int client, ArrayList slots)
 {
 	Menu menu = new Menu(HandleBuyMenu, MENU_ACTIONS_ALL);
 	menu.SetTitle("%T", "#buymenu_title", LANG_SERVER, TFGOPlayer(client).Balance);
@@ -57,9 +69,10 @@ public void ShowBuyMenu(int client, int slot)
 	{
 		Weapon weapon;
 		g_availableWeapons.GetArray(i, weapon, sizeof(weapon));
-		if (TF2Econ_GetItemSlot(weapon.defindex, TF2_GetPlayerClass(client)) == slot)
+		
+		if (slots.FindValue(TF2Econ_GetItemSlot(weapon.defindex, TF2_GetPlayerClass(client))) > -1)
 		{
-			char info[255];
+			char info[8];
 			IntToString(weapon.defindex, info, sizeof(info));
 			
 			char display[255];
@@ -70,6 +83,7 @@ public void ShowBuyMenu(int client, int slot)
 			menu.AddItem(info, display);
 		}
 	}
+	delete slots;
 	
 	menu.ExitButton = false;
 	menu.ExitBackButton = true;
