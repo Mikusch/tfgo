@@ -30,7 +30,6 @@ ArrayList g_availableWeapons;
 bool g_mapHasRespawnRoom;
 
 // Game state
-bool g_isGameWaitingForPlayers;
 bool g_isBuyTimeActive;
 bool g_isMainRoundActive;
 bool g_isBonusRoundActive;
@@ -200,9 +199,6 @@ public void OnClientConnected(int client)
 	TFGOPlayer player = TFGOPlayer(client);
 	player.ResetBalance();
 	player.ClearLoadout();
-	
-	if (g_isGameWaitingForPlayers)
-		g_currentMusicKit.PlayMusicToClient(client, Music_ChooseTeam);
 }
 
 public void OnGameFrame()
@@ -435,17 +431,6 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 	}
 	
 	return Plugin_Handled;
-}
-
-public void TF2_OnWaitingForPlayersStart()
-{
-	g_isGameWaitingForPlayers = true;
-}
-
-public void TF2_OnWaitingForPlayersEnd()
-{
-	g_isGameWaitingForPlayers = false;
-	g_currentMusicKit.StopMusicForAll(Music_ChooseTeam);
 }
 
 public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
