@@ -91,23 +91,30 @@ methodmap TFGOPlayer
 	 * @param val		the amount to add
 	 * @param reason	(optional) the reason for this operation
 	 */
-	public void AddToBalance(int val, const char[] reason = "")
+	public void AddToBalance(int val, const char[] reason = NULL_STRING)
 	{
 		this.Balance += val;
-		if (val >= 0)
+		if (val > 0)
 		{
-			if (strlen(reason) > 0)
-				CPrintToChat(this.Client, "{money}+$%d{default}: %s.", val, reason);
+			if (IsNullString(reason))
+				CPrintToChat(this.Client, "{positive}+$%d{default}", val);
 			else
-				CPrintToChat(this.Client, "{money}+$%d{default}", val);
+				CPrintToChat(this.Client, "{positive}+$%d{default}: %s.", val, reason);
+		}
+		else if (val < 0)
+		{
+			val = IntAbs(val);
+			if (IsNullString(reason))
+				CPrintToChat(this.Client, "{negative}-$%d{default}", val);
+			else
+				CPrintToChat(this.Client, "{negative}-$%d{default}: %s.", val, reason);
 		}
 		else
 		{
-			val = IntAbs(val);
-			if (strlen(reason) > 0)
-				CPrintToChat(this.Client, "{alert}-$%d{default}: %s.", val, reason);
+			if (IsNullString(reason))
+				CPrintToChat(this.Client, "{negative}$%d{default}", val);
 			else
-				CPrintToChat(this.Client, "{alert}-$%d{default}", val);
+				CPrintToChat(this.Client, "{negative}$%d{default}: %s.", val, reason);
 		}
 		
 		this.ShowMoneyHudDisplay(5.0);
@@ -138,7 +145,7 @@ methodmap TFGOPlayer
 			
 			char name[255];
 			TF2_GetItemName(defindex, name, sizeof(name));
-			CPrintToChat(this.Client, "You have bought {normal}%s{default} for {money}$%d{default}.", name, weapon.cost);
+			CPrintToChat(this.Client, "You have purchased {unique}%s{default} for {positive}$%d{default}.", name, weapon.cost);
 			
 			float pos[3];
 			GetClientAbsOrigin(this.Client, pos);

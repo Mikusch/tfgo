@@ -205,7 +205,10 @@ stock int TF2_GetSlotInItem(int defindex, TFClassType class)
 			
 			case TFClass_Engineer:
 			{
-				if (slot == 4)slot = WeaponSlot_BuilderEngie; // Toolbox
+				if (slot == 4)
+				{
+					slot = 5;
+				}
 				if (slot == 5)slot = WeaponSlot_PDABuild; //Construction PDA
 				if (slot == 6)slot = WeaponSlot_PDADestroy; //Destruction PDA
 			}

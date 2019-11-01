@@ -131,9 +131,9 @@ public void OnPluginStart()
 	mp_bonusroundtime = FindConVar("mp_bonusroundtime");
 	
 	// Create TFGO ConVars
-	tfgo_buytime = CreateConVar("tfgo_buytime", "20", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
+	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
 	tfgo_buyzone_radius = CreateConVar("tfgo_buyzone_radius", "500", "Radius in hammer units of dynamically generated buy zone");
-	tfgo_bomb_timer = CreateConVar("tfgo_bomb_timer", "40", "How long from when the bomb is planted until it blows", _, true, 15.0, true, tf_arena_round_time.FloatValue);
+	tfgo_bomb_timer = CreateConVar("tfgo_bomb_timer", "45", "How long from when the bomb is planted until it blows", _, true, 15.0, true, tf_arena_round_time.FloatValue);
 	tfgo_startmoney = CreateConVar("tfgo_startmoney", "800", "Amount of money each player gets when they reset");
 	tfgo_maxmoney = CreateConVar("tfgo_maxmoney", "16000", "Maximum amount of money allowed in a player's account", _, true, tfgo_startmoney.FloatValue);
 	tfgo_cash_player_bomb_planted = CreateConVar("tfgo_cash_player_bomb_planted", "300", "Cash award for each player that planted the bomb");
@@ -155,8 +155,8 @@ public void OnPluginStart()
 		player.ClearLoadout();
 	}
 	
-	CAddColor("alert", 0xEA4141);
-	CAddColor("money", 0xA2FE47);
+	CAddColor("negative", 0xEA4141);
+	CAddColor("positive", 0xA2FF47);
 }
 
 public void OnPluginEnd()
@@ -291,8 +291,8 @@ public MRESReturn Hook_SetWinningTeam(Handle hParams)
 	{
 		TFGOTeam red = TFGOTeam(TFTeam_Red);
 		TFGOTeam blue = TFGOTeam(TFTeam_Blue);
-		red.AddToTeamBalance(red.LoseIncome, "Income for triggering stalemate");
-		blue.AddToTeamBalance(blue.LoseIncome, "Income for triggering stalemate");
+		red.AddToTeamBalance(0, "No income for running out of time and surviving");
+		blue.AddToTeamBalance(0, "No income for running out of time and surviving");
 		red.LoseStreak++;
 		blue.LoseStreak++;
 		return MRES_Ignored;
@@ -484,7 +484,7 @@ public Action OnBuyTimeExpire(Handle timer)
 public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
 	g_isMainRoundActive = true;
-	g_10SecondRoundTimer = CreateTimer(tf_arena_round_time.FloatValue - 10.0, Play10SecondWarning, _, TIMER_FLAG_NO_MAPCHANGE);
+	g_10SecondRoundTimer = CreateTimer(tf_arena_round_time.FloatValue - 11.0, Play10SecondWarning, _, TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public Action Play10SecondWarning(Handle timer)
@@ -651,7 +651,7 @@ public Action DetonateBomb(Handle timer, int bombRef)
 	int bomb = EntRefToEntIndex(bombRef);
 	float m_vecOrigin[3];
 	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", m_vecOrigin);
-	TF2_Explode(_, m_vecOrigin, 500.0, 788.0, "mvm_hatch_destroy", "mvm/mvm_bomb_explode.wav");
+	TF2_Explode(_, m_vecOrigin, 500.0, 800.0, "mvm_hatch_destroy", "mvm/mvm_bomb_explode.wav");
 	RemoveEntity(bomb);
 	
 	Forward_BombDetonated(g_bombPlantingTeam);
@@ -789,6 +789,7 @@ void Toggle_ConVars(bool toggle)
 {
 	static bool arenaFirstBlood;
 	static bool arenaUseQueue;
+	static int arenaPreRoundTime;
 	static int arenaRoundTime;
 	static int arenaOverrideCapEnableTime;
 	static int arenaMaxStreak;
@@ -804,8 +805,11 @@ void Toggle_ConVars(bool toggle)
 		arenaUseQueue = tf_arena_use_queue.BoolValue;
 		tf_arena_use_queue.BoolValue = false;
 		
+		arenaPreRoundTime = tf_arena_preround_time.IntValue;
+		tf_arena_preround_time.IntValue = 15;
+		
 		arenaRoundTime = tf_arena_round_time.IntValue;
-		tf_arena_round_time.IntValue = 115;
+		tf_arena_round_time.IntValue = 135;
 		
 		arenaOverrideCapEnableTime = tf_arena_override_cap_enable_time.IntValue;
 		tf_arena_override_cap_enable_time.IntValue = 15;
@@ -826,6 +830,7 @@ void Toggle_ConVars(bool toggle)
 	{
 		tf_arena_first_blood.BoolValue = arenaFirstBlood;
 		tf_arena_use_queue.BoolValue = arenaUseQueue;
+		tf_arena_preround_time.IntValue = arenaPreRoundTime;
 		tf_arena_round_time.IntValue = arenaRoundTime;
 		tf_arena_override_cap_enable_time.IntValue = arenaOverrideCapEnableTime;
 		tf_arena_max_streak.IntValue = arenaMaxStreak;
