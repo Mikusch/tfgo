@@ -1,6 +1,3 @@
-#define TFGO_STARTING_BALANCE			800
-#define TFGO_MIN_BALANCE				0
-#define TFGO_MAX_BALANCE				16000
 #define TFGO_MIN_LOSESTREAK				0
 #define TFGO_MAX_LOSESTREAK				4
 #define TFGO_STARTING_LOSESTREAK		1
@@ -16,10 +13,12 @@ int g_defaultWeaponIndexes[][] =  {
 	{ -1, 11, 30758, -1, -1, -1 },  // Heavy
 	{ -1, 12, 30758, -1, -1, -1 },  // Pyro
 	{ 24, 735, 30758, 27, 30, -1 },  // Spy
-	{ -1, 22, 30758, 25, 26, 28 } // Engineer
+	{ 9, 22, 30758, -1, -1, 28 } // Engineer
 };
-int g_playerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][view_as<int>(TFWeaponSlot_PDA) + 1];
-int g_playerBalances[TF_MAXPLAYERS + 1] =  { TFGO_STARTING_BALANCE, ... };
+
+int g_playerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][view_as<int>(WeaponSlot_BuilderEngie) + 1];
+int g_playerBalances[TF_MAXPLAYERS + 1];
+
 Menu g_activeBuyMenus[TF_MAXPLAYERS + 1];
 
 int g_teamLosingStreaks[view_as<int>(TFTeam_Blue) + 1] =  { TFGO_STARTING_LOSESTREAK, ... };
@@ -52,10 +51,10 @@ methodmap TFGOPlayer
 		}
 		public set(int val)
 		{
-			if (val > TFGO_MAX_BALANCE)
-				g_playerBalances[this] = TFGO_MAX_BALANCE;
-			else if (val < TFGO_MIN_BALANCE)
-				g_playerBalances[this] = TFGO_MIN_BALANCE;
+			if (val > tfgo_maxmoney.IntValue)
+				g_playerBalances[this] = tfgo_maxmoney.IntValue;
+			else if (val < 0)
+				g_playerBalances[this] = 0;
 			else
 				g_playerBalances[this] = val;
 		}
@@ -63,7 +62,7 @@ methodmap TFGOPlayer
 	
 	public void ResetBalance()
 	{
-		this.Balance = TFGO_STARTING_BALANCE;
+		this.Balance = tfgo_startmoney.IntValue;
 	}
 	
 	property Menu ActiveBuyMenu
@@ -127,7 +126,7 @@ methodmap TFGOPlayer
 		g_availableWeapons.GetArray(index, weapon, sizeof(weapon));
 		
 		TFClassType class = TF2_GetPlayerClass(this.Client);
-		int slot = TF2Econ_GetItemSlot(defindex, class);
+		int slot = TF2_GetSlotInItem(defindex, class);
 		
 		// Player doesn't own weapon yet, charge them for it and grant it
 		if (g_playerLoadoutWeaponIndexes[this][class][slot] != defindex)
@@ -149,7 +148,7 @@ methodmap TFGOPlayer
 		}
 		else // Player owns this weapon already, equip it
 		{
-			TF2_CreateAndEquipWeapon(this.Client, defindex);
+			TF2_EquipWeapon(this.Client, GetPlayerWeaponSlot(this.Client, slot));
 		}
 	}
 	
@@ -178,10 +177,13 @@ methodmap TFGOPlayer
 		for (int slot = sizeof(g_playerLoadoutWeaponIndexes[][]) - 1; slot >= 0; slot--)
 		{
 			int defindex = this.GetWeaponFromLoadout(class, slot);
-			if (defindex != -1)
-				TF2_CreateAndEquipWeapon(this.Client, defindex);
-			else
-				TF2_RemoveItemInSlot(this.Client, slot);
+			if (defindex != TF2_GetItemInSlot(this.Client, slot))
+			{
+				if (defindex != -1)
+					TF2_CreateAndEquipWeapon(this.Client, defindex);
+				else
+					TF2_RemoveItemInSlot(this.Client, slot);
+			}
 		}
 	}
 	
@@ -191,7 +193,8 @@ methodmap TFGOPlayer
 	public void AddToLoadout(int defindex)
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Client);
-		g_playerLoadoutWeaponIndexes[this.Client][view_as<int>(class)][TF2Econ_GetItemSlot(defindex, class)] = defindex;
+		int slot = TF2_GetSlotInItem(defindex, class);
+		g_playerLoadoutWeaponIndexes[this.Client][view_as<int>(class)][slot] = defindex;
 	}
 	
 	/**
@@ -267,7 +270,7 @@ methodmap TFGOTeam
 	
 	public int GetHighestBalance()
 	{
-		int balance = TFGO_STARTING_BALANCE;
+		int balance = tfgo_startmoney.IntValue;
 		for (int client = 1; client <= MaxClients; client++)
 		{
 			TFGOPlayer player = TFGOPlayer(client);

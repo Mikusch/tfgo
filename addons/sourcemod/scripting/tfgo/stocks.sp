@@ -49,7 +49,6 @@ stock void TF2_Explode(int iAttacker = -1, float flPos[3], float flDamage, float
 stock void TF2_RemoveItemInSlot(int client, int slot)
 {
 	TF2_RemoveWeaponSlot(client, slot);
-	
 	int iWearable = SDK_GetEquippedWearable(client, slot);
 	if (iWearable > MaxClients)
 	{
@@ -88,7 +87,7 @@ stock TFClassType TF2_GetRandomClass()
 stock void TF2_CreateAndEquipWeapon(int iClient, int defindex)
 {
 	TFClassType nClass = TF2_GetPlayerClass(iClient);
-	int iSlot = TF2Econ_GetItemSlot(defindex, nClass);
+	int iSlot = TF2_GetSlotInItem(defindex, nClass);
 	
 	//Remove sniper scope and slowdown cond if have one, otherwise can cause client crashes
 	if (TF2_IsPlayerInCondition(iClient, TFCond_Zoomed))
@@ -130,20 +129,7 @@ stock void TF2_CreateAndEquipWeapon(int iClient, int defindex)
 			EquipPlayerWeapon(iClient, iWeapon);
 	}
 	
-	
-	if (StrContains(sClassname, "tf_wearable") == 0)
-	{
-		if (GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") <= MaxClients)
-		{
-			//Looks like player's active weapon got replaced into wearable, fix that by using melee
-			int iMelee = GetPlayerWeaponSlot(iClient, TFWeaponSlot_Melee);
-			SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iMelee);
-		}
-	}
-	else
-	{
-		SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iWeapon);
-	}
+	TF2_EquipWeapon(iClient, iWeapon, sClassname, sizeof(sClassname));
 	
 	//Set ammo as weapon's max ammo
 	if (HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType")) //Wearables dont have ammo netprop
@@ -166,6 +152,61 @@ stock void TF2_CreateAndEquipWeapon(int iClient, int defindex)
 			SetEntProp(iClient, Prop_Send, "m_iAmmo", iMaxAmmo, _, iAmmoType);
 		}
 	}
+}
+
+stock void TF2_EquipWeapon(int iClient, int iWeapon, char[] sClassname = NULL_STRING, int iClassNameLength = 0)
+{
+	if (IsValidEntity(iWeapon))
+	{
+		int defindex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+		
+		if (IsNullString(sClassname))
+		{
+			TF2Econ_GetItemClassName(defindex, sClassname, iClassNameLength);
+			TF2Econ_TranslateWeaponEntForClass(sClassname, iClassNameLength, TF2_GetPlayerClass(iClient));
+		}
+		
+		if (StrContains(sClassname, "tf_wearable") == 0)
+		{
+			if (GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") <= MaxClients)
+			{
+				//Looks like player's active weapon got replaced into wearable, fix that by using melee
+				int iMelee = GetPlayerWeaponSlot(iClient, TFWeaponSlot_Melee);
+				SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iMelee);
+			}
+		}
+		else
+		{
+			SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iWeapon);
+		}
+	}
+}
+
+stock int TF2_GetSlotInItem(int defindex, TFClassType class)
+{
+	int slot = TF2Econ_GetItemSlot(defindex, class);
+	if (slot >= 0)
+	{
+		// Econ reports wrong slots for Engineer and Spy
+		switch (class)
+		{
+			case TFClass_Spy:
+			{
+				if (slot == 1)slot = WeaponSlot_Primary; //Revolver
+				if (slot == 4)slot = WeaponSlot_Secondary; //Sapper
+				if (slot == 6)slot = WeaponSlot_InvisWatch; //Invis Watch
+			}
+			
+			case TFClass_Engineer:
+			{
+				if (slot == 4)slot = WeaponSlot_BuilderEngie; // Toolbox
+				if (slot == 5)slot = WeaponSlot_PDABuild; //Construction PDA
+				if (slot == 6)slot = WeaponSlot_PDADestroy; //Destruction PDA
+			}
+		}
+	}
+	
+	return slot;
 }
 
 stock void ShowGameMessage(const char[] message, const char[] icon, float time = 5.0, int displayToTeam = 0, int teamColor = 0)
