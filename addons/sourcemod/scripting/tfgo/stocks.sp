@@ -166,7 +166,7 @@ stock void TF2_EquipWeapon(int iClient, int iWeapon, char[] sClassname = NULL_ST
 			TF2Econ_TranslateWeaponEntForClass(sClassname, iClassNameLength, TF2_GetPlayerClass(iClient));
 		}
 		
-		if (StrContains(sClassname, "tf_wearable") == 0)
+		if (StrContains(sClassname, "tf_wearable") == 0 || StrContains(sClassname, "tf_weapon_parachute") == 0)
 		{
 			if (GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") <= MaxClients)
 			{
@@ -175,6 +175,12 @@ stock void TF2_EquipWeapon(int iClient, int iWeapon, char[] sClassname = NULL_ST
 				SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iMelee);
 			}
 		}
+		else if (StrContains(sClassname, "tf_weapon_invis") == 0)
+		{
+			// Invis watches glitch out when switched to
+			return;
+		}
+		
 		else
 		{
 			SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iWeapon);

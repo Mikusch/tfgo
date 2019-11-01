@@ -109,7 +109,6 @@ public void OnPluginStart()
 	g_hudSync = CreateHudSynchronizer();
 	
 	// Events
-	HookEvent("player_spawn", Event_Player_Spawn);
 	HookEvent("player_team", Event_Player_Team);
 	HookEvent("player_death", Event_Player_Death);
 	HookEvent("post_inventory_application", Event_Post_Inventory_Application);
