@@ -241,6 +241,15 @@ public void OnEntityCreated(int entity, const char[] classname)
 		SDKHook(entity, SDKHook_StartTouch, Hook_OnStartTouchBuyZone);
 		SDKHook(entity, SDKHook_EndTouch, Hook_OnEndTouchBuyZone);
 	}
+	else if (StrEqual(classname, "trigger_capture_area"))
+	{
+		SDKHook(entity, SDKHook_SpawnPost, OnCaptureAreaSpawned);
+	}
+}
+
+public void OnCaptureAreaSpawned(int entity)
+{
+	SetEntPropFloat(entity, Prop_Data, "m_flCapTime", GetEntPropFloat(entity, Prop_Data, "m_flCapTime") / 2);
 }
 
 // Prevent round from ending, called every frame after the round is supposed to end
