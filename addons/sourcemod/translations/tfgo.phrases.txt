@@ -97,6 +97,10 @@
 	{
 		"en"	"Knife"
 	}
+	"#TF_Weapon_Disguise_Kit"
+	{
+		"en"	"Disguise Kit"
+	}
 	
 	// Buy Menu Translations
 	"#buymenu_title"
