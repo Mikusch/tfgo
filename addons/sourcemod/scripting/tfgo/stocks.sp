@@ -198,19 +198,23 @@ stock int TF2_GetSlotInItem(int defindex, TFClassType class)
 		{
 			case TFClass_Spy:
 			{
-				if (slot == 1)slot = WeaponSlot_Primary; //Revolver
-				if (slot == 4)slot = WeaponSlot_Secondary; //Sapper
-				if (slot == 6)slot = WeaponSlot_InvisWatch; //Invis Watch
+				switch (slot)
+				{
+					case 1:slot = WeaponSlot_Primary; // Revolver
+					case 4:slot = WeaponSlot_Secondary; // Sapper
+					case 5:slot = WeaponSlot_PDADisguise; // Disguise Kit
+					case 6:slot = WeaponSlot_InvisWatch; // Invis Watch
+				}
 			}
 			
 			case TFClass_Engineer:
 			{
-				if (slot == 4)
+				switch (slot)
 				{
-					slot = 5;
+					case 4:slot = WeaponSlot_BuilderEngie; // Toolbox
+					case 5:slot = WeaponSlot_PDABuild; // Construction PDA
+					case 6:slot = WeaponSlot_PDADestroy; // Destruction PDA
 				}
-				if (slot == 5)slot = WeaponSlot_PDABuild; //Construction PDA
-				if (slot == 6)slot = WeaponSlot_PDADestroy; //Destruction PDA
 			}
 		}
 	}
