@@ -49,7 +49,6 @@ stock void TF2_Explode(int iAttacker = -1, float flPos[3], float flDamage, float
 stock void TF2_RemoveItemInSlot(int client, int slot)
 {
 	TF2_RemoveWeaponSlot(client, slot);
-	
 	int iWearable = SDK_GetEquippedWearable(client, slot);
 	if (iWearable > MaxClients)
 	{
@@ -88,7 +87,7 @@ stock TFClassType TF2_GetRandomClass()
 stock void TF2_CreateAndEquipWeapon(int iClient, int defindex)
 {
 	TFClassType nClass = TF2_GetPlayerClass(iClient);
-	int iSlot = TF2Econ_GetItemSlot(defindex, nClass);
+	int iSlot = TF2_GetSlotInItem(defindex, nClass);
 	
 	//Remove sniper scope and slowdown cond if have one, otherwise can cause client crashes
 	if (TF2_IsPlayerInCondition(iClient, TFCond_Zoomed))
@@ -181,6 +180,33 @@ stock void TF2_EquipWeapon(int iClient, int iWeapon, char[] sClassname = NULL_ST
 			SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iWeapon);
 		}
 	}
+}
+
+stock int TF2_GetSlotInItem(int defindex, TFClassType class)
+{
+	int slot = TF2Econ_GetItemSlot(defindex, class);
+	if (slot >= 0)
+	{
+		// Econ reports wrong slots for Engineer and Spy
+		switch (class)
+		{
+			case TFClass_Spy:
+			{
+				if (slot == 1)slot = WeaponSlot_Primary; //Revolver
+				if (slot == 4)slot = WeaponSlot_Secondary; //Sapper
+				if (slot == 6)slot = WeaponSlot_InvisWatch; //Invis Watch
+			}
+			
+			case TFClass_Engineer:
+			{
+				if (slot == 4)slot = WeaponSlot_BuilderEngie; // Toolbox
+				if (slot == 5)slot = WeaponSlot_PDABuild; //Construction PDA
+				if (slot == 6)slot = WeaponSlot_PDADestroy; //Destruction PDA
+			}
+		}
+	}
+	
+	return slot;
 }
 
 stock void ShowGameMessage(const char[] message, const char[] icon, float time = 5.0, int displayToTeam = 0, int teamColor = 0)

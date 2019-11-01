@@ -146,6 +146,8 @@ public void OnPluginStart()
 	
 	Toggle_ConVars(true);
 	
+	AddCommandListener(Client_BuildCommand, "build");
+  
 	for (int client = 1; client <= MaxClients; client++)
 	{
 		TFGOPlayer player = TFGOPlayer(client);
@@ -155,6 +157,18 @@ public void OnPluginStart()
 	
 	CAddColor("alert", 0xEA4141);
 	CAddColor("money", 0xA2FE47);
+}
+
+public Action Client_BuildCommand(int client, const char[] command, int args)
+{
+	TFGOPlayer player = TFGOPlayer(client);
+	
+	// Check if player owns a Construction PDA
+	if (player.GetWeaponFromLoadout(TFClass_Engineer, WeaponSlot_PDABuild) != -1)
+		return Plugin_Continue;
+	
+	// Block building by default
+	return Plugin_Handled;
 }
 
 public void OnPluginEnd()
@@ -753,7 +767,7 @@ public Action SaveWeaponsForAlivePlayers(Handle timer)
 	{
 		if (IsClientInGame(client) && IsPlayerAlive(client))
 		{
-			for (int slot = 0; slot <= view_as<int>(TFWeaponSlot_PDA); slot++)
+			for (int slot = 0; slot <= view_as<int>(WeaponSlot_BuilderEngie); slot++)
 			{
 				int defindex = TF2_GetItemInSlot(client, slot);
 				if (defindex > -1)

@@ -9,7 +9,24 @@ enum Arena_Winreason
 	Winreason_Elimination, 
 	Winreason_AllPointsCaptured = 4, 
 	Winreason_Stalemate
-}
+};
+
+enum
+{
+	WeaponSlot_Primary = 0, 
+	WeaponSlot_Secondary, 
+	WeaponSlot_Melee, 
+	WeaponSlot_PDABuild, 
+	WeaponSlot_PDADisguise = 3, 
+	WeaponSlot_PDADestroy, 
+	WeaponSlot_InvisWatch = 4, 
+	WeaponSlot_BuilderEngie, 
+	WeaponSlot_Unknown1, 
+	WeaponSlot_Head, 
+	WeaponSlot_Misc1, 
+	WeaponSlot_Action, 
+	WeaponSlot_Misc2
+}; 
 
 /**
  * Forward called when the bomb has been planted.
@@ -35,4 +52,4 @@ forward void TFGO_OnBombDetonated(int team);
  * @param cappers			ArrayList of clients that defused the bomb
  * @noreturn
  */
-forward void TFGO_OnBombDefused(int team, ArrayList cappers); 
+forward void TFGO_OnBombDefused(int team, ArrayList cappers);
