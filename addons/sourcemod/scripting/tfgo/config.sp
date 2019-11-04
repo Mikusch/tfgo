@@ -44,15 +44,11 @@ public void ReadWeaponConfig(KeyValues kv)
 				if (strlen(variantsString) > 0)
 				{
 					char buffers[32][256]; // max. 32 variants
-					for (int i = 0; i < sizeof(buffers); i++)buffers[i] = "-1"; // because 0 = Bat
-					ExplodeString(variantsString, ";", buffers, sizeof(buffers), sizeof(buffers[]));
-					
-					for (int i = 0; i < sizeof(buffers); i++)
+					int numVariants = ExplodeString(variantsString, ";", buffers, sizeof(buffers), sizeof(buffers[]));
+					for (int i = 0; i < numVariants; i++)
 					{
 						TrimString(buffers[i]);
-						int variantDefIndex = StringToInt(buffers[i]);
-						if (variantDefIndex > -1)
-							variantList.Push(variantDefIndex);
+						variantList.Push(StringToInt(buffers[i]));
 					}
 				}
 				weapon.variants = variantList;
