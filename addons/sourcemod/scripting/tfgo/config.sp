@@ -6,6 +6,7 @@ enum struct Weapon
 	int defindex;
 	int cost;
 	int killAward;
+	ArrayList variants;
 }
 
 StringMap g_weaponClassKillAwards;
@@ -30,11 +31,30 @@ public void ReadWeaponConfig(KeyValues kv)
 				int killAward = kv.GetNum("killAward", -1);
 				if (killAward <= -1)
 				{
-					char class[255];
+					char class[256];
 					TF2Econ_GetItemClassName(weapon.defindex, class, sizeof(class));
 					g_weaponClassKillAwards.GetValue(class, killAward);
 				}
 				weapon.killAward = killAward;
+				
+				// Variants
+				char variantsString[256];
+				kv.GetString("variants", variantsString, sizeof(variantsString));
+				ArrayList variantList = new ArrayList();
+				if (strlen(variantsString) > 0)
+				{
+					char buffers[32][256]; // max. 32 variants
+					for (int i = 0; i < sizeof(buffers); i++)buffers[i] = "-1"; // because 0 = Bat
+					ExplodeString(variantsString, ";", buffers, sizeof(buffers), sizeof(buffers[]));
+					
+					for (int i = 0; i < sizeof(buffers); i++)
+					{
+						int variantDefIndex = StringToInt(buffers[i]);
+						if (variantDefIndex > -1)
+							variantList.Push(variantDefIndex);
+					}
+				}
+				weapon.variants = variantList;
 				
 				int length = g_availableWeapons.Length;
 				g_availableWeapons.Resize(length + 1);
