@@ -5,7 +5,6 @@ public void ShowMainBuyMenu(int client)
 	Menu menu = new Menu(HandleBuyMenuFront, MENU_ACTIONS_ALL);
 	menu.SetTitle("%T", "#buymenu_title", LANG_SERVER, TFGOPlayer(client).Balance);
 	
-	// Reminder: These are TF2Econ slots
 	switch (TF2_GetPlayerClass(client))
 	{
 		case TFClass_Engineer:
@@ -13,15 +12,15 @@ public void ShowMainBuyMenu(int client)
 			menu.AddItem("0", "Primary Weapon");
 			menu.AddItem("1", "Secondary Weapon");
 			menu.AddItem("2", "Melee Weapon");
-			menu.AddItem("5;6", "PDA");
+			menu.AddItem("3;4", "PDA");
 		}
 		
 		case TFClass_Spy:
 		{
-			menu.AddItem("1", "Secondary Weapon"); // Revolvers
+			menu.AddItem("0", "Secondary Weapon"); // Revolvers
 			menu.AddItem("2", "Melee Weapon"); // Revolvers
-			menu.AddItem("5;6", "PDA"); // Disguise Kit/Invis Watch
-			//menu.AddItem("4", "Sapper"); // Crashes the game
+			menu.AddItem("3;4", "PDA"); // Disguise Kit/Invis Watch
+			//menu.AddItem("1", "Sapper"); // Crashes the game
 		}
 		
 		default:
@@ -80,6 +79,8 @@ public void ShowBuyMenu(int client, ArrayList slots)
 		
 		int slotIndex = slots.FindValue(TF2Econ_GetItemSlot(weapon.defindex, TF2_GetPlayerClass(client)));
 		if (slotIndex > -1 && weapon.cost > -1)
+			
+		if (slots.FindValue(TF2_GetSlotInItem(weapon.defindex, TF2_GetPlayerClass(client))) > -1)
 		{
 			char info[8];
 			IntToString(weapon.defindex, info, sizeof(info));
