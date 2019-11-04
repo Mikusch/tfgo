@@ -78,7 +78,8 @@ public void ShowBuyMenu(int client, ArrayList slots)
 		Weapon weapon;
 		g_availableWeapons.GetArray(i, weapon, sizeof(weapon));
 		
-		if (slots.FindValue(TF2Econ_GetItemSlot(weapon.defindex, TF2_GetPlayerClass(client))) > -1)
+		int slotIndex = slots.FindValue(TF2Econ_GetItemSlot(weapon.defindex, TF2_GetPlayerClass(client)));
+		if (slotIndex > -1 && weapon.cost > -1)
 		{
 			char info[8];
 			IntToString(weapon.defindex, info, sizeof(info));
