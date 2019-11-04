@@ -53,6 +53,10 @@
 	{
 		"en"	"Fists"
 	}
+	"#TF_Weapon_Wrench"
+	{
+		"en" "Wrench"
+	}
 	"#TF_Weapon_PDA_Engineer_Builder"
 	{
 		"en"	"Construction PDA"
@@ -97,9 +101,17 @@
 	{
 		"en"	"Knife"
 	}
+	"#TF_Weapon_Spy_Sapper"
+	{
+		"en"	"Sapper"
+	}
 	"#TF_Weapon_Disguise_Kit"
 	{
 		"en"	"Disguise Kit"
+	}
+	"#TF_Weapon_Watch"
+	{
+		"en"	"Invis Watch"
 	}
 	
 	// Buy Menu Translations
