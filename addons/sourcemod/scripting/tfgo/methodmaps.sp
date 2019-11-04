@@ -187,14 +187,15 @@ methodmap TFGOPlayer
 			if (defindex > -1)
 			{
 				// Check if player already has this weapon
-				if (defindex != TF2_GetItemInSlot(this.Client, slot))
+				int equippedWeapon = TF2_GetItemInSlot(this.Client, slot);
+				if (defindex != equippedWeapon)
 				{
 					int index = g_availableWeapons.FindValue(defindex, 0);
 					Weapon weapon;
 					g_availableWeapons.GetArray(index, weapon, sizeof(weapon));
 					
 					// Check if player already has a variant of this weapon
-					if (weapon.variants.FindValue(TF2_GetItemInSlot(this.Client, slot)) <= -1)
+					if (weapon.variants.FindValue(equippedWeapon) <= -1)
 					{
 						// If all else fails, equip the player with the weapon
 						TF2_CreateAndEquipWeapon(this.Client, defindex);
