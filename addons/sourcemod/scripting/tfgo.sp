@@ -585,6 +585,13 @@ void PlantBomb(int team, int cp, ArrayList cappers)
 		}
 	}
 	
+	int trigger_capture_area;
+	while ((trigger_capture_area = FindEntityByClassname(trigger_capture_area, "trigger_capture_area")) > -1)
+	{
+		// Adjust defuse time
+		SetEntPropFloat(entity, Prop_Data, "m_flCapTime", GetEntPropFloat(entity, Prop_Data, "m_flCapTime") / 0.75);
+	}
+	
 	// Play Sounds
 	g_currentMusicKit.StopMusicForAll(Music_StartAction);
 	g_currentMusicKit.StopMusicForAll(Music_RoundTenSecCount);
