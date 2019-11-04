@@ -638,7 +638,7 @@ public Action DetonateBomb(Handle timer, int bombRef)
 	g_isBombPlanted = false;
 	
 	// Only call this after we set g_isBombPlanted to false or the game softlocks
-	TF2_ForceTeamWin(view_as<TFTeam>(g_bombPlantingTeam), view_as<int>(Winreason_AllPointsCaptured));
+	TF2_ForceRoundWin(view_as<TFTeam>(g_bombPlantingTeam), view_as<int>(Winreason_AllPointsCaptured));
 	
 	g_bombBeepingTimer = null; // Or else this timer will try to get m_vecOrigin from a deleted bomb
 	
@@ -665,7 +665,7 @@ void DefuseBomb(int team, ArrayList cappers)
 	}
 	
 	g_isBombDefused = true;
-	TF2_ForceTeamWin(view_as<TFTeam>(team), view_as<int>(Winreason_PointCaptured));
+	TF2_ForceRoundWin(view_as<TFTeam>(team), view_as<int>(Winreason_PointCaptured));
 	
 	Forward_BombDefused(team, cappers);
 }

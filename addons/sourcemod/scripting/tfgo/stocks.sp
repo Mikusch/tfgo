@@ -14,18 +14,19 @@ stock int IntAbs(int num)
 	return num;
 }
 
-stock void TF2_ForceTeamWin(TFTeam team, int winReason)
+stock void TF2_ForceRoundWin(TFTeam team, int winReason, bool forceMapReset = true, bool switchTeams = false)
 {
-	int game_round_win = CreateEntityByName("game_round_win");
+	int entity = CreateEntityByName("game_round_win");
 	char strWinReason[8];
-	IntToString(view_as<int>(team), strWinReason, sizeof(strWinReason));
-	DispatchKeyValue(game_round_win, "win_reason", strWinReason);
-	DispatchKeyValue(game_round_win, "force_map_reset", "1");
-	DispatchSpawn(game_round_win);
-	SetVariantInt(g_bombPlantingTeam);
-	AcceptEntityInput(game_round_win, "SetTeam");
-	AcceptEntityInput(game_round_win, "RoundWin");
-	RemoveEntity(game_round_win);
+	IntToString(winReason, strWinReason, sizeof(strWinReason));
+	DispatchKeyValue(entity, "win_reason", strWinReason);
+	DispatchKeyValue(entity, "force_map_reset", forceMapReset ? "1" : "0");
+	DispatchKeyValue(entity, "switch_teams", switchTeams ? "1" : "0");
+	DispatchSpawn(entity);
+	SetVariantInt(view_as<int>(team));
+	AcceptEntityInput(entity, "SetTeam");
+	AcceptEntityInput(entity, "RoundWin");
+	RemoveEntity(entity);
 }
 
 // Taken from VSH Rewrite
