@@ -589,7 +589,7 @@ void PlantBomb(int team, int cp, ArrayList cappers)
 	while ((trigger_capture_area = FindEntityByClassname(trigger_capture_area, "trigger_capture_area")) > -1)
 	{
 		// Adjust defuse time
-		SetEntPropFloat(entity, Prop_Data, "m_flCapTime", GetEntPropFloat(entity, Prop_Data, "m_flCapTime") / 0.75);
+		SetEntPropFloat(trigger_capture_area, Prop_Data, "m_flCapTime", GetEntPropFloat(trigger_capture_area, Prop_Data, "m_flCapTime") / 0.75);
 	}
 	
 	// Play Sounds
