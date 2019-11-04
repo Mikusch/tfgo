@@ -49,7 +49,7 @@ public void ReadWeaponConfig(KeyValues kv)
 					
 					for (int i = 0; i < sizeof(buffers); i++)
 					{
-						int variantDefIndex = StringToInt(buffers[i]);
+						int variantDefIndex = StringToInt(TrimString(buffers[i]));
 						if (variantDefIndex > -1)
 							variantList.Push(variantDefIndex);
 					}
