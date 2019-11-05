@@ -6,7 +6,7 @@ void Forward_AskLoad()
 {
 	g_forwardBombPlanted = new GlobalForward("TFGO_OnBombPlanted", ET_Ignore, Param_Cell, Param_Cell);
 	g_forwardBombDetonated = new GlobalForward("TFGO_OnBombDetonated", ET_Ignore, Param_Cell);
-	g_forwardBombDetonated = new GlobalForward("TFGO_OnBombDefused", ET_Ignore, Param_Cell, Param_Cell);
+	g_forwardBombDefused = new GlobalForward("TFGO_OnBombDefused", ET_Ignore, Param_Cell, Param_Cell);
 }
 
 void Forward_BombPlanted(int team, ArrayList cappers)
