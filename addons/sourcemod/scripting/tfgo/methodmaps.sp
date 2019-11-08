@@ -136,7 +136,8 @@ methodmap TFGOPlayer
 		int slot = TF2_GetSlotInItem(defindex, class);
 		
 		// Player doesn't own weapon yet, charge them for it and grant it
-		if (g_playerLoadoutWeaponIndexes[this][class][slot] != defindex)
+		int loadoutIndex = g_playerLoadoutWeaponIndexes[this][class][slot];
+		if (GetBaseWeaponForVariant(loadoutIndex) != defindex)
 		{
 			TF2_CreateAndEquipWeapon(this.Client, defindex);
 			
@@ -183,24 +184,13 @@ methodmap TFGOPlayer
 		
 		for (int slot = sizeof(g_playerLoadoutWeaponIndexes[][]) - 1; slot >= 0; slot--)
 		{
-			int defindex = this.GetWeaponFromLoadout(class, slot);
-			if (defindex > -1)
+			int loadoutIndex = this.GetWeaponFromLoadout(class, slot);
+			int equippedIndex = TF2_GetItemInSlot(this.Client, slot);
+			if (loadoutIndex > -1)
 			{
-				// Check if player already has this weapon
-				int equippedWeapon = TF2_GetItemInSlot(this.Client, slot);
-				if (defindex != equippedWeapon)
-				{
-					int index = g_availableWeapons.FindValue(defindex, 0);
-					Weapon weapon;
-					g_availableWeapons.GetArray(index, weapon, sizeof(weapon));
-					
-					// Check if player already has a variant of this weapon
-					if (weapon.variants.FindValue(equippedWeapon) <= -1)
-					{
-						// If all else fails, equip the player with the weapon
-						TF2_CreateAndEquipWeapon(this.Client, defindex);
-					}
-				}
+				// Equip the player with the saved weapon if they don't already have an equal one equipped
+				if (GetBaseWeaponForVariant(loadoutIndex) != GetBaseWeaponForVariant(equippedIndex))
+					TF2_CreateAndEquipWeapon(this.Client, loadoutIndex);
 			}
 			else
 			{

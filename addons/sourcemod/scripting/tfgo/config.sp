@@ -85,6 +85,27 @@ void ReadKillAwardConfig(KeyValues kv)
 	}
 }
 
+public int GetBaseWeaponForVariant(int defindex)
+{
+	if (g_availableWeapons.FindValue(defindex, 0) > -1)
+		return defindex;
+	
+	for (int i = 0; i < g_availableWeapons.Length; i++)
+	{
+		Weapon weapon;
+		g_availableWeapons.GetArray(i, weapon, sizeof(weapon));
+		
+		ArrayList variants = weapon.variants;
+		for (int j = 0; j < variants.Length; j++)
+		{
+			if (defindex == variants.Get(j))
+				return weapon.defindex;
+		}
+	}
+	
+	return -1;
+}
+
 public int GetEffectiveKillAward(int defindex)
 {
 	int killAward;
