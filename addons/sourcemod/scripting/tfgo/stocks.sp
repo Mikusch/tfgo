@@ -1,3 +1,5 @@
+#define ATTRIB_MAX_HEALTH_ADDITIVE_BONUS 26
+
 stock int GetAliveTeamCount(int team)
 {
 	int number = 0;
@@ -153,6 +155,17 @@ stock void TF2_CreateAndEquipWeapon(int iClient, int defindex)
 			SetEntProp(iClient, Prop_Send, "m_iAmmo", iMaxAmmo, _, iAmmoType);
 		}
 	}
+	
+	ArrayList staticAttribs = TF2Econ_GetItemStaticAttributes(defindex);
+	for (int i = 0; i < staticAttribs.Length; i++)
+	{
+		if (staticAttribs.Get(i, 0) == ATTRIB_MAX_HEALTH_ADDITIVE_BONUS)
+		{
+			SetEntityHealth(iClient, GetClientHealth(iClient) + RoundFloat(staticAttribs.Get(i, 1)));
+			break;
+		}
+	}
+	delete staticAttribs;
 }
 
 stock void TF2_EquipWeapon(int iClient, int iWeapon, char[] sClassname = NULL_STRING, int iClassNameLength = 0)
