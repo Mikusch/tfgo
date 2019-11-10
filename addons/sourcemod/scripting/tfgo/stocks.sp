@@ -1,3 +1,4 @@
+#define WEAPON_GAS_PASSER 1180
 #define ATTRIB_MAX_HEALTH_ADDITIVE_BONUS 26
 
 stock int GetAliveTeamCount(int team)
@@ -123,49 +124,42 @@ stock void TF2_CreateAndEquipWeapon(int iClient, int defindex)
 		SetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex", defindex);
 		SetEntProp(iWeapon, Prop_Send, "m_bInitialized", 1);
 		
-		DispatchSpawn(iWeapon);
-		SetEntProp(iWeapon, Prop_Send, "m_bValidatedAttachedEntity", true);
-		
-		if (StrContains(sClassname, "tf_wearable") == 0)
-			SDK_EquipWearable(iClient, iWeapon);
-		else
-			EquipPlayerWeapon(iClient, iWeapon);
-	}
-	
-	TF2_EquipWeapon(iClient, iWeapon, sClassname, sizeof(sClassname));
-	
-	//Set ammo as weapon's max ammo
-	if (HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType")) //Wearables dont have ammo netprop
-	{
-		int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
-		if (iAmmoType > -1)
+		if (DispatchSpawn(iWeapon))
 		{
-			//We want to set gas passer ammo empty, because thats how normal gas passer works
-			int iMaxAmmo;
-			if (defindex == 1180)
-			{
-				iMaxAmmo = 0;
-				SetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", 0.0, 1);
-			}
+			SetEntProp(iWeapon, Prop_Send, "m_bValidatedAttachedEntity", true);
+			
+			if (StrContains(sClassname, "tf_wearable") == 0)
+				SDK_EquipWearable(iClient, iWeapon);
 			else
+				EquipPlayerWeapon(iClient, iWeapon);
+			
+			TF2_EquipWeapon(iClient, iWeapon, sClassname, sizeof(sClassname));
+			
+			//Set ammo as weapon's max ammo
+			if (HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType")) //Wearables dont have ammo netprop
 			{
-				iMaxAmmo = SDK_GetMaxAmmo(iClient, iAmmoType);
+				int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
+				if (iAmmoType > -1)
+				{
+					//We want to set gas passer ammo empty, because thats how normal gas passer works
+					int iMaxAmmo;
+					if (defindex == WEAPON_GAS_PASSER)
+						SetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", 0.0, 1);
+					else
+						iMaxAmmo = SDK_GetMaxAmmo(iClient, iAmmoType);
+					
+					SetEntProp(iClient, Prop_Send, "m_iAmmo", iMaxAmmo, _, iAmmoType);
+				}
 			}
 			
-			SetEntProp(iClient, Prop_Send, "m_iAmmo", iMaxAmmo, _, iAmmoType);
+			//Add health to player if needed
+			ArrayList staticAttribs = TF2Econ_GetItemStaticAttributes(defindex);
+			int index = staticAttribs.FindValue(ATTRIB_MAX_HEALTH_ADDITIVE_BONUS, 0);
+			if (index > -1)
+				SetEntityHealth(iClient, GetClientHealth(iClient) + RoundFloat(staticAttribs.Get(index, 1)));
+			delete staticAttribs;
 		}
 	}
-	
-	ArrayList staticAttribs = TF2Econ_GetItemStaticAttributes(defindex);
-	for (int i = 0; i < staticAttribs.Length; i++)
-	{
-		if (staticAttribs.Get(i, 0) == ATTRIB_MAX_HEALTH_ADDITIVE_BONUS)
-		{
-			SetEntityHealth(iClient, GetClientHealth(iClient) + RoundFloat(staticAttribs.Get(i, 1)));
-			break;
-		}
-	}
-	delete staticAttribs;
 }
 
 stock void TF2_EquipWeapon(int iClient, int iWeapon, char[] sClassname = NULL_STRING, int iClassNameLength = 0)
