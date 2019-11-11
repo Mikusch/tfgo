@@ -65,16 +65,14 @@ public void DisplayMenuInDynamicBuyZone(int client)
 	if (IsClientInGame(client) && IsPlayerAlive(client))
 	{
 		TFGOPlayer player = TFGOPlayer(client);
-		int team = GetClientTeam(client);
 		
+		int team = GetClientTeam(client);
 		float origin[3];
 		GetClientAbsOrigin(client, origin);
 		
-		// Calculate total absolute difference between average spawn point and player's current position
-		float difference;
-		for (int i = 0; i < sizeof(origin); i++)difference += FloatAbs(g_avgPlayerStartOrigin[team][i] - origin[i]);
+		float distance = GetVectorDistance(g_avgPlayerStartOrigin[team], origin);
 		
-		if (difference <= tfgo_buyzone_radius.FloatValue) // Player is in buy zone
+		if (distance <= tfgo_buyzone_radius.FloatValue) // Player is in buy zone
 		{
 			if (player.ActiveBuyMenu == null)
 				ShowMainBuyMenu(client);
