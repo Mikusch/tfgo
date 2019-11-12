@@ -135,15 +135,15 @@ methodmap TFGOPlayer
 		TFClassType class = TF2_GetPlayerClass(this.Client);
 		int slot = TF2_GetSlotInItem(defindex, class);
 		
-		// Drop old weapon
-		if (g_playerLoadoutWeaponIndexes[this][class][slot] == defindex)
+		// Drop old weapon, if present
+		int currentWeapon = GetPlayerWeaponSlot(this.Client, slot);
+		if (currentWeapon > -1)
 		{
-			float pos[3];
-			GetClientAbsOrigin(this.Client, pos);
+			float origin[3];
+			GetClientAbsOrigin(this.Client, origin);
 			float angles[3];
 			GetClientAbsAngles(this.Client, angles);
-			int oldWeapon = GetPlayerWeaponSlot(this.Client, slot);
-			SDK_CreateDroppedWeapon(oldWeapon, this.Client, pos, angles);
+			SDK_CreateDroppedWeapon(currentWeapon, this.Client, origin, angles);
 		}
 		
 		TF2_CreateAndEquipWeapon(this.Client, defindex);
