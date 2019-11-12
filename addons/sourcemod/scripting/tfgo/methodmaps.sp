@@ -135,28 +135,31 @@ methodmap TFGOPlayer
 		TFClassType class = TF2_GetPlayerClass(this.Client);
 		int slot = TF2_GetSlotInItem(defindex, class);
 		
-		// Player doesn't own weapon yet, charge them for it and grant it
-		if (g_playerLoadoutWeaponIndexes[this][class][slot] != defindex)
+		// Drop old weapon
+		if (g_playerLoadoutWeaponIndexes[this][class][slot] == defindex)
 		{
-			TF2_CreateAndEquipWeapon(this.Client, defindex);
-			
-			g_playerLoadoutWeaponIndexes[this][class][slot] = defindex; // Save to loadout
-			this.Balance -= weapon.cost;
-			
-			char name[255];
-			TF2_GetItemName(defindex, name, sizeof(name));
-			CPrintToChat(this.Client, "You have purchased {unique}%s{default} for {positive}$%d{default}.", name, weapon.cost);
-			
 			float pos[3];
 			GetClientAbsOrigin(this.Client, pos);
-			EmitAmbientSound("mvm/mvm_bought_upgrade.wav", pos);
-			
-			this.ShowMoneyHudDisplay(5.0);
+			float angles[3];
+			GetClientAbsAngles(this.Client, angles);
+			int oldWeapon = GetPlayerWeaponSlot(this.Client, slot);
+			SDK_CreateDroppedWeapon(oldWeapon, this.Client, pos, angles);
 		}
-		else // Player owns this weapon already, equip it
-		{
-			TF2_EquipWeapon(this.Client, GetPlayerWeaponSlot(this.Client, slot));
-		}
+		
+		TF2_CreateAndEquipWeapon(this.Client, defindex);
+		
+		g_playerLoadoutWeaponIndexes[this][class][slot] = defindex; // Save to loadout
+		this.Balance -= weapon.cost;
+		
+		char name[255];
+		TF2_GetItemName(defindex, name, sizeof(name));
+		CPrintToChat(this.Client, "You have purchased {unique}%s{default} for {positive}$%d{default}.", name, weapon.cost);
+		
+		float pos[3];
+		GetClientAbsOrigin(this.Client, pos);
+		EmitAmbientSound("mvm/mvm_bought_upgrade.wav", pos);
+		
+		this.ShowMoneyHudDisplay(5.0);
 	}
 	
 	/**

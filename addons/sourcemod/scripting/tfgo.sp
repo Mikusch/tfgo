@@ -67,6 +67,8 @@ Handle g_SDKEquipWearable;
 Handle g_SDKRemoveWearable;
 Handle g_SDKGetEquippedWearable;
 Handle g_SDKGetMaxAmmo;
+Handle g_SDKCreateDroppedWeapon;
+Handle g_SDKInitDroppedWeapon;
 
 #include "tfgo/include/tfgo.inc"
 #include "tfgo/musickits.sp"
@@ -888,5 +890,28 @@ void SDK_Init()
 	if (g_SDKGetMaxAmmo == null)
 		LogMessage("Failed to create call: CTFPlayer::GetMaxAmmo");
 	
+	StartPrepSDKCall(SDKCall_Static);
+	PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CTFDroppedWeapon::Create");
+	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
+	PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
+	PrepSDKCall_AddParameter(SDKType_QAngle, SDKPass_ByRef);
+	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
+	g_SDKCreateDroppedWeapon = EndPrepSDKCall();
+	if (g_SDKCreateDroppedWeapon == null)
+		LogMessage("Failed to create call: CTFDroppedWeapon::Create");
+	
+	StartPrepSDKCall(SDKCall_Entity);
+	PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CTFDroppedWeapon::InitDroppedWeapon");
+	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
+	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
+	g_SDKInitDroppedWeapon = EndPrepSDKCall();
+	if (g_SDKInitDroppedWeapon == null)
+		LogMessage("Failed to create call: CTFDroppedWeapon::InitDroppedWeapon");
+	
 	delete config;
 }
+
