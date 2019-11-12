@@ -16,6 +16,8 @@ int g_defaultWeaponIndexes[][] =  {
 	{ 9, 22, 30758, -1, -1, 28 } // Engineer
 };
 
+float g_classViewHeights[] =  { -1.0, 65.0, 75.0, 68.0, 68.0, 75.0, 75.0, 68.0, 75.0, 68.0 };
+
 int g_playerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][view_as<int>(WeaponSlot_BuilderEngie) + 1];
 int g_playerBalances[TF_MAXPLAYERS + 1];
 
@@ -135,28 +137,32 @@ methodmap TFGOPlayer
 		TFClassType class = TF2_GetPlayerClass(this.Client);
 		int slot = TF2_GetSlotInItem(defindex, class);
 		
-		// Player doesn't own weapon yet, charge them for it and grant it
-		if (g_playerLoadoutWeaponIndexes[this][class][slot] != defindex)
+		// Drop old weapon, if present
+		int currentWeapon = GetPlayerWeaponSlot(this.Client, slot);
+		if (currentWeapon > -1)
 		{
-			TF2_CreateAndEquipWeapon(this.Client, defindex);
-			
-			g_playerLoadoutWeaponIndexes[this][class][slot] = defindex; // Save to loadout
-			this.Balance -= weapon.cost;
-			
-			char name[255];
-			TF2_GetItemName(defindex, name, sizeof(name));
-			CPrintToChat(this.Client, "You have purchased {unique}%s{default} for {positive}$%d{default}.", name, weapon.cost);
-			
-			float pos[3];
-			GetClientAbsOrigin(this.Client, pos);
-			EmitAmbientSound("mvm/mvm_bought_upgrade.wav", pos);
-			
-			this.ShowMoneyHudDisplay(5.0);
+			float origin[3];
+			GetClientAbsOrigin(this.Client, origin);
+			origin[2] += g_classViewHeights[class] / 2;
+			float angles[3];
+			GetClientAbsAngles(this.Client, angles);
+			SDK_CreateDroppedWeapon(currentWeapon, this.Client, origin, angles);
 		}
-		else // Player owns this weapon already, equip it
-		{
-			TF2_EquipWeapon(this.Client, GetPlayerWeaponSlot(this.Client, slot));
-		}
+		
+		TF2_CreateAndEquipWeapon(this.Client, defindex);
+		
+		g_playerLoadoutWeaponIndexes[this][class][slot] = defindex; // Save to loadout
+		this.Balance -= weapon.cost;
+		
+		char name[255];
+		TF2_GetItemName(defindex, name, sizeof(name));
+		CPrintToChat(this.Client, "You have purchased {unique}%s{default} for {positive}$%d{default}.", name, weapon.cost);
+		
+		float pos[3];
+		GetClientAbsOrigin(this.Client, pos);
+		EmitAmbientSound("mvm/mvm_bought_upgrade.wav", pos);
+		
+		this.ShowMoneyHudDisplay(5.0);
 	}
 	
 	/**

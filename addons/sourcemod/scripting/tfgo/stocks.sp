@@ -305,3 +305,25 @@ stock int SDK_GetMaxAmmo(int client, int slot)
 		return SDKCall(g_SDKGetMaxAmmo, client, slot, -1);
 	return -1;
 }
+
+stock int SDK_CreateDroppedWeapon(int fromWeapon, int client, const float origin[3], const float angles[3])
+{
+	int itemOffset = FindSendPropInfo("CTFWeaponBase", "m_Item");
+	if (itemOffset == -1)
+		ThrowError("Failed to find m_Item on CTFWeaponBase");
+	
+	char model[PLATFORM_MAX_PATH];
+	int modelidx = GetEntProp(fromWeapon, Prop_Send, "m_iWorldModelIndex");
+	ModelIndexToString(modelidx, model, sizeof(model));
+	
+	int droppedWeapon = SDKCall(g_SDKCreateDroppedWeapon, client, origin, angles, model, GetEntityAddress(fromWeapon) + view_as<Address>(itemOffset));
+	if (droppedWeapon != INVALID_ENT_REFERENCE)
+		SDKCall(g_SDKInitDroppedWeapon, droppedWeapon, client, fromWeapon, false, false);
+	return droppedWeapon;
+}
+
+stock void ModelIndexToString(int index, char[] model, int size)
+{
+	int table = FindStringTable("modelprecache");
+	ReadStringTable(table, index, model, size);
+}
