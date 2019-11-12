@@ -16,6 +16,8 @@ int g_defaultWeaponIndexes[][] =  {
 	{ 9, 22, 30758, -1, -1, 28 } // Engineer
 };
 
+float g_classViewHeights[] =  { -1.0, 65.0, 75.0, 68.0, 68.0, 75.0, 75.0, 68.0, 75.0, 68.0 };
+
 int g_playerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][view_as<int>(WeaponSlot_BuilderEngie) + 1];
 int g_playerBalances[TF_MAXPLAYERS + 1];
 
@@ -141,6 +143,7 @@ methodmap TFGOPlayer
 		{
 			float origin[3];
 			GetClientAbsOrigin(this.Client, origin);
+			origin[2] += g_classViewHeights[class] / 2;
 			float angles[3];
 			GetClientAbsAngles(this.Client, angles);
 			SDK_CreateDroppedWeapon(currentWeapon, this.Client, origin, angles);
