@@ -327,3 +327,46 @@ stock void ModelIndexToString(int index, char[] model, int size)
 	int table = FindStringTable("modelprecache");
 	ReadStringTable(table, index, model, size);
 }
+
+stock int PrecacheParticleSystem(const char[] particleSystem)
+{
+	static int particleEffectNames = INVALID_STRING_TABLE;
+	if (particleEffectNames == INVALID_STRING_TABLE)
+	{
+		if ((particleEffectNames = FindStringTable("ParticleEffectNames")) == INVALID_STRING_TABLE)
+		{
+			return INVALID_STRING_INDEX;
+		}
+	}
+	
+	int index = FindStringIndex2(particleEffectNames, particleSystem);
+	if (index == INVALID_STRING_INDEX)
+	{
+		int numStrings = GetStringTableNumStrings(particleEffectNames);
+		if (numStrings >= GetStringTableMaxStrings(particleEffectNames))
+		{
+			return INVALID_STRING_INDEX;
+		}
+		
+		AddToStringTable(particleEffectNames, particleSystem);
+		index = numStrings;
+	}
+	
+	return index;
+}
+
+stock int FindStringIndex2(int tableidx, const char[] str)
+{
+	char buf[1024];
+	int numStrings = GetStringTableNumStrings(tableidx);
+	for (int i = 0; i < numStrings; i++)
+	{
+		ReadStringTable(tableidx, i, buf, sizeof(buf));
+		if (StrEqual(buf, str))
+		{
+			return i;
+		}
+	}
+	
+	return INVALID_STRING_INDEX;
+}

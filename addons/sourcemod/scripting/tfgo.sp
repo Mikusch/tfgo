@@ -10,7 +10,10 @@
 
 #pragma newdecls required
 
-#define TF_MAXPLAYERS					32
+#define TF_MAXPLAYERS 32
+
+#define BOMB_MODEL "models/props_td/atom_bomb.mdl"
+#define BOMB_EXPLOSION_PARTICLE "mvm_hatch_destroy"
 
 
 // Timers
@@ -176,6 +179,7 @@ public void OnMapStart()
 	
 	PrecacheSounds();
 	PrecacheModels();
+	PrecacheParticleSystems();
 	PrecacheMusicKits();
 	
 	// Pick random music kit for the game
@@ -575,7 +579,7 @@ void PlantBomb(int team, int cp, ArrayList cappers)
 			GetEntPropVector(team_control_point, Prop_Send, "m_angRotation", m_angRotation);
 			
 			int bomb = CreateEntityByName("prop_dynamic_override");
-			SetEntityModel(bomb, "models/props_td/atom_bomb.mdl");
+			SetEntityModel(bomb, BOMB_MODEL);
 			DispatchSpawn(bomb);
 			TeleportEntity(bomb, m_vecOrigin, m_angRotation, NULL_VECTOR);
 			
@@ -654,7 +658,7 @@ public Action DetonateBomb(Handle timer, int bombRef)
 	int bomb = EntRefToEntIndex(bombRef);
 	float m_vecOrigin[3];
 	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", m_vecOrigin);
-	TF2_Explode(_, m_vecOrigin, 500.0, 800.0, "mvm_hatch_destroy", "mvm/mvm_bomb_explode.wav");
+	TF2_Explode(_, m_vecOrigin, 500.0, 800.0, BOMB_EXPLOSION_PARTICLE, "mvm/mvm_bomb_explode.wav");
 	RemoveEntity(bomb);
 	
 	Forward_BombDetonated(g_bombPlantingTeam);
@@ -785,7 +789,12 @@ public Action Client_DestroyCommand(int client, const char[] command, int args)
 
 void PrecacheModels()
 {
-	PrecacheModel("models/props_td/atom_bomb.mdl");
+	PrecacheModel(BOMB_MODEL);
+}
+
+void PrecacheParticleSystems()
+{
+	PrecacheParticleSystem(BOMB_EXPLOSION_PARTICLE);
 }
 
 void Toggle_ConVars(bool toggle)
