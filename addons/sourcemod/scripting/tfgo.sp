@@ -40,7 +40,7 @@ int g_bombPlantingTeam;
 
 // ConVars
 ConVar tfgo_buytime;
-ConVar tfgo_buyzone_radius;
+ConVar tfgo_buyzone_radius_override;
 ConVar tfgo_bomb_timer;
 ConVar tfgo_startmoney;
 ConVar tfgo_maxmoney;
@@ -133,7 +133,7 @@ public void OnPluginStart()
 	
 	// Create TFGO ConVars
 	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
-	tfgo_buyzone_radius = CreateConVar("tfgo_buyzone_radius", "500", "Radius in hammer units of dynamically generated buy zone");
+	tfgo_buyzone_radius_override = CreateConVar("tfgo_buyzone_radius_override", "-1", "Overrides the default calculated buyzone radius on maps with no respawn room");
 	tfgo_bomb_timer = CreateConVar("tfgo_bomb_timer", "45", "How long from when the bomb is planted until it blows", _, true, 15.0, true, tf_arena_round_time.FloatValue);
 	tfgo_startmoney = CreateConVar("tfgo_startmoney", "800", "Amount of money each player gets when they reset");
 	tfgo_maxmoney = CreateConVar("tfgo_maxmoney", "16000", "Maximum amount of money allowed in a player's account", _, true, tfgo_startmoney.FloatValue);
