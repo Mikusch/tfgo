@@ -1,4 +1,4 @@
-*
-!.gitignore
-!*/addons/*
-!*/sound/*
+*.dll
+*.so
+*.smx
+*.bat

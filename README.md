@@ -1,6 +1,4 @@
 # Team Fortress: Global Offensive Arena
-## **Warning:** This gamemode is very much WIP and still in early stages of development. Don't complain about messy code.
-
 TF:GO Arena brings the bomb defusal mode from Counter-Strike: Global Offensive to Team Fortress 2.  
 All players start with basic weaponry and can buy new gear at the start of each round with money earned from killing enemy players or planting the bomb.
 
