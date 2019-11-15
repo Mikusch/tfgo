@@ -42,9 +42,6 @@ methodmap TFGOPlayer
 		}
 	}
 	
-	/**
-	 * The player's money.
-	 */
 	property int Balance
 	{
 		public get()
@@ -62,11 +59,6 @@ methodmap TFGOPlayer
 		}
 	}
 	
-	public void ResetBalance()
-	{
-		this.Balance = tfgo_startmoney.IntValue;
-	}
-	
 	property Menu ActiveBuyMenu
 	{
 		public get()
@@ -81,18 +73,10 @@ methodmap TFGOPlayer
 	
 	public void ShowMoneyHudDisplay(float time)
 	{
-		SetHudTextParams(-1.0, 0.675, time, 0, 133, 67, 140);
+		SetHudTextParams(-1.0, 0.675, time, 0, 162, 255, 71);
 		ShowSyncHudText(this.Client, g_hudSync, "$%d", this.Balance);
 	}
 	
-	/**
-	 * Adds to the balance of this client and displays a chat message notifying them of the amount earned.
-	 *
-	 * Passing a negative value will remove balance instead.
-	 *
-	 * @param val		the amount to add
-	 * @param reason	(optional) the reason for this operation
-	 */
 	public void AddToBalance(int val, const char[] reason = NULL_STRING)
 	{
 		this.Balance += val;
@@ -122,18 +106,13 @@ methodmap TFGOPlayer
 		this.ShowMoneyHudDisplay(5.0);
 	}
 	
-	/**
-	* Purchases an item for this player and adds it to their loadout.
-	**/
+	public void ResetBalance()
+	{
+		this.Balance = tfgo_startmoney.IntValue;
+	}
+	
 	public void PurchaseItem(int defindex)
 	{
-		// This shouldn't even be possible but better safe than sorry?
-		if (!g_isBuyTimeActive)return;
-		
-		int index = g_availableWeapons.FindValue(defindex, 0);
-		Weapon weapon;
-		g_availableWeapons.GetArray(index, weapon, sizeof(weapon));
-		
 		TFClassType class = TF2_GetPlayerClass(this.Client);
 		int slot = TF2_GetSlotInItem(defindex, class);
 		
@@ -151,26 +130,19 @@ methodmap TFGOPlayer
 		
 		TF2_CreateAndEquipWeapon(this.Client, defindex);
 		
-		g_playerLoadoutWeaponIndexes[this][class][slot] = defindex; // Save to loadout
+		// Save to loadout
+		g_playerLoadoutWeaponIndexes[this][class][slot] = defindex;
+		
+		// Deduct balance from client
+		Weapon weapon;
+		g_availableWeapons.GetArray(g_availableWeapons.FindValue(defindex, 0), weapon, sizeof(weapon));
 		this.Balance -= weapon.cost;
 		
-		char name[255];
-		TF2_GetItemName(defindex, name, sizeof(name));
-		CPrintToChat(this.Client, "You have purchased {unique}%s{default} for {positive}$%d{default}.", name, weapon.cost);
-		
-		float pos[3];
-		GetClientAbsOrigin(this.Client, pos);
-		EmitAmbientSound("mvm/mvm_bought_upgrade.wav", pos);
-		
-		this.ShowMoneyHudDisplay(5.0);
+		float origin[3];
+		GetClientAbsOrigin(this.Client, origin);
+		EmitAmbientSound("mvm/mvm_bought_upgrade.wav", origin);
 	}
 	
-	/**
-	* Gets a weapon from the player's loadout.
-	* If this player has no purchased weapon in their loadout, this function may return the default weapon definition index.
-	*
-	* @return a valid item definition index or -1 if no weapon for the slot has been found
-	**/
 	public int GetWeaponFromLoadout(TFClassType class, int slot)
 	{
 		int defindex = g_playerLoadoutWeaponIndexes[this][class][slot];
@@ -180,9 +152,6 @@ methodmap TFGOPlayer
 			return defindex;
 	}
 	
-	/**
-	* Applies this player's current loadout.
-	**/
 	public void ApplyLoadout()
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Client);
@@ -200,9 +169,6 @@ methodmap TFGOPlayer
 		}
 	}
 	
-	/**
-    * Adds a weapon to this player's loadout.
-    **/
 	public void AddToLoadout(int defindex)
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Client);
@@ -210,14 +176,11 @@ methodmap TFGOPlayer
 		g_playerLoadoutWeaponIndexes[this.Client][view_as<int>(class)][slot] = defindex;
 	}
 	
-	/**
-	* Resets this player's loadout.
-	**/
 	public void ClearLoadout()
 	{
 		for (int class = 0; class < sizeof(g_playerLoadoutWeaponIndexes[]); class++)
-		for (int slot = 0; slot < sizeof(g_playerLoadoutWeaponIndexes[][]); slot++)
-		g_playerLoadoutWeaponIndexes[this.Client][class][slot] = -1;
+			for (int slot = 0; slot < sizeof(g_playerLoadoutWeaponIndexes[][]); slot++)
+				g_playerLoadoutWeaponIndexes[this.Client][class][slot] = -1;
 	}
 }
 
@@ -267,14 +230,7 @@ methodmap TFGOTeam
 		g_teamLosingStreaks[this] = TFGO_STARTING_LOSESTREAK;
 	}
 	
-	/**
-	 * Adds balance to every client in this team and displays
-	 * a chat message notifying them of the amount earned.
-	 *
-	 * @param val		the amount to add
-	 * @param reason	(optional) the reason for this operation
-	 */
-	public void AddToTeamBalance(int val, const char[] reason = "")
+	public void AddToTeamBalance(int val, const char[] reason = NULL_STRING)
 	{
 		for (int client = 1; client <= MaxClients; client++)
 		if (IsClientInGame(client) && TF2_GetClientTeam(client) == this.Team)
