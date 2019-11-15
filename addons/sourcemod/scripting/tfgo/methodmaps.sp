@@ -233,19 +233,7 @@ methodmap TFGOTeam
 	public void AddToTeamBalance(int val, const char[] reason = NULL_STRING)
 	{
 		for (int client = 1; client <= MaxClients; client++)
-		if (IsClientInGame(client) && TF2_GetClientTeam(client) == this.Team)
-			TFGOPlayer(client).AddToBalance(val, reason);
-	}
-	
-	public int GetHighestBalance()
-	{
-		int balance = tfgo_startmoney.IntValue;
-		for (int client = 1; client <= MaxClients; client++)
-		{
-			TFGOPlayer player = TFGOPlayer(client);
-			if (IsClientInGame(client) && TF2_GetClientTeam(client) == this.Team && player.Balance > balance)
-				balance = player.Balance;
-		}
-		return balance;
+			if (IsClientInGame(client) && TF2_GetClientTeam(client) == this.Team)
+				TFGOPlayer(client).AddToBalance(val, reason);
 	}
 }

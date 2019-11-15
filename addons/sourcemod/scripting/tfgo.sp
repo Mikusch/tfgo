@@ -260,12 +260,6 @@ public MRESReturn Hook_SetWinningTeam(Handle hParams)
 	int team = DHookGetParam(hParams, 1);
 	int winReason = DHookGetParam(hParams, 2);
 	
-	//PrintToServer("Team: %d, Win Reason: %d", team, winReason);
-	//PrintToServer("Is bomb planted: %b", g_isBombPlanted);
-	//PrintToServer("Is bomb detonated: %b", g_isBombDetonated);
-	//PrintToServer("Is bomb defused: %b", g_isBombDefused);
-	
-	
 	// Bomb is detonated but game wants to award elimination win on multi-CP maps, rewrite it to make it look like a capture
 	if (g_isBombDetonated && winReason == view_as<int>(Winreason_Elimination))
 	{
@@ -318,12 +312,21 @@ public MRESReturn Hook_SetWinningTeam(Handle hParams)
 
 public Action Event_Player_Team(Event event, const char[] name, bool dontBroadcast)
 {
-	TFGOPlayer player = TFGOPlayer(GetClientOfUserId(event.GetInt("userid")));
+	TFTeam team = view_as<TFTeam>(event.GetInt("team"));
 	
 	// Cap balance at highest of the team
-	int highestBalance = TFGOTeam(view_as<TFTeam>(event.GetInt("team"))).GetHighestBalance();
+	int highestBalance = tfgo_startmoney.IntValue;
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		int balance = TFGOPlayer(client).Balance;
+		if (IsClientInGame(client) && TF2_GetClientTeam(client) == team && balance > highestBalance)
+			highestBalance = balance;
+	}
+	
+	TFGOPlayer player = TFGOPlayer(GetClientOfUserId(event.GetInt("userid")));
 	if (player.Balance > highestBalance)
 		player.Balance = highestBalance;
+	
 	player.ClearLoadout();
 }
 
@@ -414,8 +417,6 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	
 	if (victim.ActiveBuyMenu != null)
 		victim.ActiveBuyMenu.Cancel();
-	
-	return Plugin_Continue;
 }
 
 public Action Event_Post_Inventory_Application(Event event, const char[] name, bool dontBroadcast)
@@ -435,8 +436,6 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 		if (g_mapHasRespawnRoom)
 			ShowMainBuyMenu(client);
 	}
-	
-	return Plugin_Handled;
 }
 
 public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
@@ -510,14 +509,9 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 	
 	g_isBombPlanted = !g_isBombPlanted;
 	if (g_isBombPlanted)
-	{
-		
 		PlantBomb(team, event.GetInt("cp"), capperList);
-	}
 	else
-	{
 		DefuseBomb(team, capperList);
-	}
 }
 
 void PlantBomb(int team, int cp, ArrayList cappers)
@@ -923,4 +917,3 @@ void SDK_Init()
 	
 	delete config;
 }
-
