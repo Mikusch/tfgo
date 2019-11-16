@@ -310,6 +310,13 @@ public MRESReturn Hook_SetWinningTeam(Handle hParams)
 	}
 }
 
+public MRESReturn Hook_PickupWeaponFromOther(int client, Handle returnVal, Handle params)
+{
+	int weapon = DHookGetParam(params, 1); // tf_dropped_weapon
+	int defindex = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
+	TFGOPlayer(client).AddToLoadout(defindex);
+}
+
 public Action Event_Player_Team(Event event, const char[] name, bool dontBroadcast)
 {
 	TFTeam team = view_as<TFTeam>(event.GetInt("team"));
@@ -718,9 +725,6 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	
 	// Reset game state
 	ResetGameState();
-	
-	// Everyone who survives the post-victory time gets to keep their weapons
-	CreateTimer(mp_bonusroundtime.FloatValue - 0.1, SaveWeaponsForAlivePlayers, TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public void ResetGameState()
@@ -728,22 +732,6 @@ public void ResetGameState()
 	g_isBombPlanted = false;
 	g_isBombDetonated = false;
 	g_isBombDefused = false;
-}
-
-public Action SaveWeaponsForAlivePlayers(Handle timer)
-{
-	for (int client = 1; client <= MaxClients; client++)
-	{
-		if (IsClientInGame(client) && IsPlayerAlive(client))
-		{
-			for (int slot = 0; slot <= view_as<int>(WeaponSlot_BuilderEngie); slot++)
-			{
-				int defindex = TF2_GetItemInSlot(client, slot);
-				if (defindex > -1)
-					TFGOPlayer(client).AddToLoadout(defindex);
-			}
-		}
-	}
 }
 
 public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool dontBroadcast)
@@ -848,10 +836,16 @@ void Toggle_ConVars(bool toggle)
 
 void SDK_Init()
 {
-	Handle config = LoadGameConfigFile("tfgo");
-	int offset;
+	GameData config = new GameData("tfgo");
 	
-	offset = GameConfGetOffset(config, "SetWinningTeam");
+	Handle hook = DHookCreateFromConf(config, "CTFPlayer::PickupWeaponFromOther");
+	if (hook == null)
+		LogMessage("Failed to create hook: CTFPlayer::PickupWeaponFromOther");
+	else
+		DHookEnableDetour(hook, false, Hook_PickupWeaponFromOther);
+	delete hook;
+	
+	int offset = GameConfGetOffset(config, "SetWinningTeam");
 	g_dHookSetWinningTeam = DHookCreate(offset, HookType_GameRules, ReturnType_Void, ThisPointer_Ignore, Hook_SetWinningTeam);
 	DHookAddParam(g_dHookSetWinningTeam, HookParamType_Int);
 	DHookAddParam(g_dHookSetWinningTeam, HookParamType_Int);
@@ -860,7 +854,7 @@ void SDK_Init()
 	DHookAddParam(g_dHookSetWinningTeam, HookParamType_Bool);
 	DHookAddParam(g_dHookSetWinningTeam, HookParamType_Bool);
 	if (g_dHookSetWinningTeam == null)
-		LogMessage("Failed to create DHook: SetWinningTeam");
+		LogMessage("Failed to create hook: SetWinningTeam");
 	
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "CBasePlayer::EquipWearable");
