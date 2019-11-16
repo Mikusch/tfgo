@@ -73,7 +73,7 @@ methodmap TFGOPlayer
 	
 	public void ShowMoneyHudDisplay(float time)
 	{
-		SetHudTextParams(-1.0, 0.675, time, 0, 162, 255, 71);
+		SetHudTextParams(-1.0, 0.675, time, 162, 255, 71, 0);
 		ShowSyncHudText(this.Client, g_hudSync, "$%d", this.Balance);
 	}
 	
