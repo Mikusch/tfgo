@@ -349,16 +349,22 @@ stock int SDK_GetMaxAmmo(int client, int slot)
 
 stock int SDK_CreateDroppedWeapon(int fromWeapon, int client, const float origin[3], const float angles[3])
 {
-	int itemOffset = FindSendPropInfo("CTFWeaponBase", "m_Item");
-	if (itemOffset == -1)
-		ThrowError("Failed to find m_Item on CTFWeaponBase");
+	char clsname[32];
+	if (GetEntityNetClass(fromWeapon, clsname, sizeof(clsname)))
+	{
+		int itemOffset = FindSendPropInfo(clsname, "m_Item");
+		if (itemOffset == -1)
+			ThrowError("Failed to find m_Item on %s", clsname);
+		
+		char model[PLATFORM_MAX_PATH];
+		int modelidx = GetEntProp(fromWeapon, Prop_Send, "m_iWorldModelIndex");
+		ModelIndexToString(modelidx, model, sizeof(model));
+		
+		int droppedWeapon = SDKCall(g_SDKCreateDroppedWeapon, client, origin, angles, model, GetEntityAddress(fromWeapon) + view_as<Address>(itemOffset));
+		if (droppedWeapon != INVALID_ENT_REFERENCE)
+			SDKCall(g_SDKInitDroppedWeapon, droppedWeapon, client, fromWeapon, false, false);
+		return droppedWeapon;
+	}
 	
-	char model[PLATFORM_MAX_PATH];
-	int modelidx = GetEntProp(fromWeapon, Prop_Send, "m_iWorldModelIndex");
-	ModelIndexToString(modelidx, model, sizeof(model));
-	
-	int droppedWeapon = SDKCall(g_SDKCreateDroppedWeapon, client, origin, angles, model, GetEntityAddress(fromWeapon) + view_as<Address>(itemOffset));
-	if (droppedWeapon != INVALID_ENT_REFERENCE)
-		SDKCall(g_SDKInitDroppedWeapon, droppedWeapon, client, fromWeapon, false, false);
-	return droppedWeapon;
+	return -1;
 }
