@@ -845,13 +845,24 @@ void Toggle_ConVars(bool toggle)
 		mp_bonusroundtime.IntValue = bonusRoundTime;
 	}
 }
+public MRESReturn Hook_PickupWeaponFromOther(int client, Handle returnVal, Handle params)
+{
+	int weapon = DHookGetParam(params, 1); // tf_dropped_weapon
+	// TODO add this weapon's defindex to loadout
+}
 
 void SDK_Init()
 {
-	Handle config = LoadGameConfigFile("tfgo");
-	int offset;
+	GameData config = new GameData("tfgo");
 	
-	offset = GameConfGetOffset(config, "SetWinningTeam");
+	Handle hook = DHookCreateFromConf(config, "CTFPlayer::PickupWeaponFromOther");
+	if (hook == null)
+		LogMessage("Failed to create hook: CTFPlayer::PickupWeaponFromOther");
+	else
+		DHookEnableDetour(hook, false, Hook_PickupWeaponFromOther);
+	delete hook;
+	
+	int offset = GameConfGetOffset(config, "SetWinningTeam");
 	g_dHookSetWinningTeam = DHookCreate(offset, HookType_GameRules, ReturnType_Void, ThisPointer_Ignore, Hook_SetWinningTeam);
 	DHookAddParam(g_dHookSetWinningTeam, HookParamType_Int);
 	DHookAddParam(g_dHookSetWinningTeam, HookParamType_Int);
@@ -860,7 +871,7 @@ void SDK_Init()
 	DHookAddParam(g_dHookSetWinningTeam, HookParamType_Bool);
 	DHookAddParam(g_dHookSetWinningTeam, HookParamType_Bool);
 	if (g_dHookSetWinningTeam == null)
-		LogMessage("Failed to create DHook: SetWinningTeam");
+		LogMessage("Failed to create hook: SetWinningTeam");
 	
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "CBasePlayer::EquipWearable");
