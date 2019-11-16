@@ -55,7 +55,7 @@
 	}
 	"#TF_Weapon_Wrench"
 	{
-		"en" "Wrench"
+		"en"	"Wrench"
 	}
 	"#TF_Weapon_PDA_Engineer_Builder"
 	{
@@ -115,36 +115,32 @@
 	}
 	
 	// Buy Menu Translations
-	"#buymenu_title"
+	"#BuyMenu_Title"
 	{
 		"en"	"Welcome to the buy menu!\nYou currently have $%d."
 	}
-	"#buymenu_item_primary"
+	"#BuyMenu_Primary"
 	{
 		"en"	"Primary Weapon"
 	}
-	"#buymenu_item_secondary"
+	"#BuyMenu_Secondary"
 	{
 		"en"	"Secondary Weapon"
 	}
-	"#buymenu_item_pda"
+	"#BuyMenu_Melee"
+	{
+		"en"	"Melee Weapon"
+	}
+	"#BuyMenu_PDA"
 	{
 		"en"	"PDA"
 	}
-	"#buymenu_item_pda2"
+	"#BuyMenu_Building_Spy"
 	{
-		"en"	"PDA"
+		"en"	"Sapper"
 	}
-	"#buymenu_item_building"
+	"#BuyMenu_NotInBuyZone"
 	{
-		"en"	"Building"
-	}
-	"#buymenu_item_building_spy"
-	{
-		"en"	"Sappers"
-	}
-	"#buymenu_item_pda2_spy"
-	{
-		"en"	"Invis Watch"
+		"en"	"You have left the buy zone"
 	}
 }

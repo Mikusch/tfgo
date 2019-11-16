@@ -56,19 +56,19 @@ public void CalculateDynamicBuyZones()
 
 public Action Hook_OnStartTouchBuyZone(int entity, int client)
 {
-	if (g_isBuyTimeActive && client >= 1 && client <= MaxClients && IsClientInGame(client) && GetEntProp(entity, Prop_Data, "m_iTeamNum") == GetClientTeam(client))
-		ShowMainBuyMenu(client);
+	if (g_isBuyTimeActive && 0 < client <= MaxClients && IsClientInGame(client) && GetClientTeam(client) == GetEntProp(entity, Prop_Data, "m_iTeamNum"))
+		DisplaySlotSelectionMenu(client);
 }
 
 public Action Hook_OnEndTouchBuyZone(int entity, int client)
 {
-	if (g_isBuyTimeActive && client >= 1 && client <= MaxClients && IsClientInGame(client) && GetEntProp(entity, Prop_Data, "m_iTeamNum") == GetClientTeam(client))
+	if (g_isBuyTimeActive && 0 < client <= MaxClients && IsClientInGame(client) && GetClientTeam(client) == GetEntProp(entity, Prop_Data, "m_iTeamNum"))
 	{
 		TFGOPlayer player = TFGOPlayer(client);
 		if (player.ActiveBuyMenu != null)
 		{
 			player.ActiveBuyMenu.Cancel();
-			PrintHintText(client, "You have left the buy zone");
+			PrintHintText(client, "%T", "#BuyMenu_NotInBuyZone", LANG_SERVER);
 		}
 	}
 }
@@ -89,14 +89,14 @@ public void DisplayMenuInDynamicBuyZone(int client)
 		if (distance <= radius) // Player is in buy zone
 		{
 			if (player.ActiveBuyMenu == null)
-				ShowMainBuyMenu(client);
+				DisplaySlotSelectionMenu(client);
 		}
 		else // Player has left buy zone
 		{
 			if (player.ActiveBuyMenu != null)
 			{
 				player.ActiveBuyMenu.Cancel();
-				PrintHintText(client, "You have left the buy zone");
+				PrintHintText(client, "%T", "#BuyMenu_NotInBuyZone", LANG_SERVER);
 			}
 		}
 	}

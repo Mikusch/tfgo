@@ -434,7 +434,7 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 		
 		// func_respawnroom OnStartTouch doesn't fire thus buy menu doesn't get re-opened so we do it manually
 		if (g_mapHasRespawnRoom)
-			ShowMainBuyMenu(client);
+			DisplaySlotSelectionMenu(client);
 	}
 }
 
