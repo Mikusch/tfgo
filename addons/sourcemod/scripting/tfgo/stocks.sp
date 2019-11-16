@@ -1,20 +1,20 @@
 #define WEAPON_GAS_PASSER 1180
 #define ATTRIB_MAX_HEALTH_ADDITIVE_BONUS 26
 
-stock int GetAliveTeamCount(int team)
+stock int GetAlivePlayersInTeam(int team)
 {
 	int number = 0;
 	for (int i = 1; i <= MaxClients; i++)
 	{
-		if (IsClientInGame(i) && IsPlayerAlive(i) && GetClientTeam(i) == team)number++;
+		if (IsClientInGame(i) && IsPlayerAlive(i) && GetClientTeam(i) == team)
+			number++;
 	}
 	return number;
 }
 
 stock int IntAbs(int num)
 {
-	if (num < 0)return num * -1;
-	return num;
+	return num < 0 ? num * -1 : num;
 }
 
 stock void TF2_ForceRoundWin(TFTeam team, int winReason, bool forceMapReset = true, bool switchTeams = false)
@@ -32,32 +32,31 @@ stock void TF2_ForceRoundWin(TFTeam team, int winReason, bool forceMapReset = tr
 	RemoveEntity(entity);
 }
 
-// Taken from VSH Rewrite
-stock void TF2_Explode(int iAttacker = -1, float flPos[3], float flDamage, float flRadius, const char[] strParticle, const char[] strSound)
+stock void TF2_Explode(int attacker = -1, float origin[3], float damage, float radius, const char[] particle, const char[] sound)
 {
-	int iBomb = CreateEntityByName("tf_generic_bomb");
-	DispatchKeyValueVector(iBomb, "origin", flPos);
-	DispatchKeyValueFloat(iBomb, "damage", flDamage);
-	DispatchKeyValueFloat(iBomb, "radius", flRadius);
-	DispatchKeyValue(iBomb, "health", "1");
-	DispatchKeyValue(iBomb, "explode_particle", strParticle);
-	DispatchKeyValue(iBomb, "sound", strSound);
-	DispatchSpawn(iBomb);
+	int bomb = CreateEntityByName("tf_generic_bomb");
+	DispatchKeyValueVector(bomb, "origin", origin);
+	DispatchKeyValueFloat(bomb, "damage", damage);
+	DispatchKeyValueFloat(bomb, "radius", radius);
+	DispatchKeyValue(bomb, "health", "1");
+	DispatchKeyValue(bomb, "explode_particle", particle);
+	DispatchKeyValue(bomb, "sound", sound);
+	DispatchSpawn(bomb);
 	
-	if (iAttacker == -1)
-		AcceptEntityInput(iBomb, "Detonate");
+	if (attacker == -1)
+		AcceptEntityInput(bomb, "Detonate");
 	else
-		SDKHooks_TakeDamage(iBomb, 0, iAttacker, 9999.0);
+		SDKHooks_TakeDamage(bomb, 0, attacker, 9999.0);
 }
 
 stock void TF2_RemoveItemInSlot(int client, int slot)
 {
 	TF2_RemoveWeaponSlot(client, slot);
-	int iWearable = SDK_GetEquippedWearable(client, slot);
-	if (iWearable > MaxClients)
+	int wearable = SDK_GetEquippedWearable(client, slot);
+	if (wearable > MaxClients)
 	{
-		SDK_RemoveWearable(client, iWearable);
-		AcceptEntityInput(iWearable, "Kill");
+		SDK_RemoveWearable(client, wearable);
+		AcceptEntityInput(wearable, "Kill");
 	}
 }
 
@@ -82,116 +81,109 @@ stock void TF2_GetItemName(int defindex, char[] buffer, int maxlength)
 	}
 }
 
-stock TFClassType TF2_GetRandomClass()
+stock void TF2_CreateAndEquipWeapon(int client, int defindex)
 {
-	return view_as<TFClassType>(GetRandomInt(view_as<int>(TFClass_Scout), view_as<int>(TFClass_Engineer)));
-}
-
-// Stolen from SZF
-stock void TF2_CreateAndEquipWeapon(int iClient, int defindex)
-{
-	TFClassType nClass = TF2_GetPlayerClass(iClient);
+	TFClassType nClass = TF2_GetPlayerClass(client);
 	int iSlot = TF2_GetSlotInItem(defindex, nClass);
 	
-	//Remove sniper scope and slowdown cond if have one, otherwise can cause client crashes
-	if (TF2_IsPlayerInCondition(iClient, TFCond_Zoomed))
+	// Remove sniper scope and slowdown cond if have one, otherwise can cause client crashes
+	if (TF2_IsPlayerInCondition(client, TFCond_Zoomed))
 	{
-		TF2_RemoveCondition(iClient, TFCond_Zoomed);
-		TF2_RemoveCondition(iClient, TFCond_Slowed);
+		TF2_RemoveCondition(client, TFCond_Zoomed);
+		TF2_RemoveCondition(client, TFCond_Slowed);
 	}
 	
-	//If player already have item in his inv, remove it before we generate new weapon for him, otherwise some weapons can glitch out...
-	int iEntity = GetPlayerWeaponSlot(iClient, iSlot);
-	if (iEntity > MaxClients && IsValidEdict(iEntity))
-		TF2_RemoveWeaponSlot(iClient, iSlot);
+	// If player already have item in his inv, remove it before we generate new weapon for him, otherwise some weapons can glitch out...
+	int entity = GetPlayerWeaponSlot(client, iSlot);
+	if (entity > MaxClients && IsValidEdict(entity))
+		TF2_RemoveWeaponSlot(client, iSlot);
 	
-	//Remove wearable if have one
-	int iWearable = SDK_GetEquippedWearable(iClient, iSlot);
-	if (iWearable > MaxClients)
+	// Remove wearable if have one
+	int wearable = SDK_GetEquippedWearable(client, iSlot);
+	if (wearable > MaxClients)
 	{
-		SDK_RemoveWearable(iClient, iWearable);
-		AcceptEntityInput(iWearable, "Kill");
+		SDK_RemoveWearable(client, wearable);
+		AcceptEntityInput(wearable, "Kill");
 	}
 	
-	//Generate and equip weapon
-	char sClassname[256];
-	TF2Econ_GetItemClassName(defindex, sClassname, sizeof(sClassname));
-	TF2Econ_TranslateWeaponEntForClass(sClassname, sizeof(sClassname), TF2_GetPlayerClass(iClient));
+	// Generate and equip weapon
+	char className[256];
+	TF2Econ_GetItemClassName(defindex, className, sizeof(className));
+	TF2Econ_TranslateWeaponEntForClass(className, sizeof(className), TF2_GetPlayerClass(client));
 	
-	int iWeapon = CreateEntityByName(sClassname);
-	if (IsValidEntity(iWeapon))
+	int weapon = CreateEntityByName(className);
+	if (IsValidEntity(weapon))
 	{
-		SetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex", defindex);
-		SetEntProp(iWeapon, Prop_Send, "m_bInitialized", 1);
+		SetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex", defindex);
+		SetEntProp(weapon, Prop_Send, "m_bInitialized", 1);
 		
-		if (DispatchSpawn(iWeapon))
+		if (DispatchSpawn(weapon))
 		{
-			SetEntProp(iWeapon, Prop_Send, "m_bValidatedAttachedEntity", true);
+			SetEntProp(weapon, Prop_Send, "m_bValidatedAttachedEntity", true);
 			
-			if (StrContains(sClassname, "tf_wearable") == 0)
-				SDK_EquipWearable(iClient, iWeapon);
+			if (StrContains(className, "tf_wearable") == 0)
+				SDK_EquipWearable(client, weapon);
 			else
-				EquipPlayerWeapon(iClient, iWeapon);
+				EquipPlayerWeapon(client, weapon);
 			
-			TF2_EquipWeapon(iClient, iWeapon, sClassname, sizeof(sClassname));
+			TF2_EquipWeapon(client, weapon, className, sizeof(className));
 			
-			//Set ammo as weapon's max ammo
-			if (HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType")) //Wearables dont have ammo netprop
+			// Set ammo as weapon's max ammo
+			if (HasEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType")) //Wearables dont have ammo netprop
 			{
-				int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
-				if (iAmmoType > -1)
+				int ammoType = GetEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType");
+				if (ammoType > -1)
 				{
-					//We want to set gas passer ammo empty, because thats how normal gas passer works
-					int iMaxAmmo;
+					// We want to set gas passer ammo empty, because thats how normal gas passer works
+					int maxAmmo;
 					if (defindex == WEAPON_GAS_PASSER)
-						SetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", 0.0, 1);
+						SetEntPropFloat(client, Prop_Send, "m_flItemChargeMeter", 0.0, 1);
 					else
-						iMaxAmmo = SDK_GetMaxAmmo(iClient, iAmmoType);
+						maxAmmo = SDK_GetMaxAmmo(client, ammoType);
 					
-					SetEntProp(iClient, Prop_Send, "m_iAmmo", iMaxAmmo, _, iAmmoType);
+					SetEntProp(client, Prop_Send, "m_iAmmo", maxAmmo, _, ammoType);
 				}
 			}
 			
-			//Add health to player if needed
+			// Add health to player if needed
 			ArrayList staticAttribs = TF2Econ_GetItemStaticAttributes(defindex);
 			int index = staticAttribs.FindValue(ATTRIB_MAX_HEALTH_ADDITIVE_BONUS, 0);
 			if (index > -1)
-				SetEntityHealth(iClient, GetClientHealth(iClient) + RoundFloat(staticAttribs.Get(index, 1)));
+				SetEntityHealth(client, GetClientHealth(client) + RoundFloat(staticAttribs.Get(index, 1)));
 			delete staticAttribs;
 		}
 	}
 }
 
-stock void TF2_EquipWeapon(int iClient, int iWeapon, char[] sClassname = NULL_STRING, int iClassNameLength = 0)
+stock void TF2_EquipWeapon(int client, int weapon, char[] className = NULL_STRING, int classNameLength = 0)
 {
-	if (IsValidEntity(iWeapon))
+	if (IsValidEntity(weapon))
 	{
-		int defindex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+		int defindex = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
 		
-		if (IsNullString(sClassname))
+		if (IsNullString(className))
 		{
-			TF2Econ_GetItemClassName(defindex, sClassname, iClassNameLength);
-			TF2Econ_TranslateWeaponEntForClass(sClassname, iClassNameLength, TF2_GetPlayerClass(iClient));
+			TF2Econ_GetItemClassName(defindex, className, classNameLength);
+			TF2Econ_TranslateWeaponEntForClass(className, classNameLength, TF2_GetPlayerClass(client));
 		}
 		
-		if (StrContains(sClassname, "tf_wearable") == 0 || StrContains(sClassname, "tf_weapon_parachute") == 0)
+		if (StrContains(className, "tf_wearable") == 0 || StrContains(className, "tf_weapon_parachute") == 0)
 		{
-			if (GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") <= MaxClients)
+			if (GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon") <= MaxClients)
 			{
-				//Looks like player's active weapon got replaced into wearable, fix that by using melee
-				int iMelee = GetPlayerWeaponSlot(iClient, TFWeaponSlot_Melee);
-				SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iMelee);
+				// Looks like player's active weapon got replaced into wearable, fix that by using melee
+				int iMelee = GetPlayerWeaponSlot(client, TFWeaponSlot_Melee);
+				SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", iMelee);
 			}
 		}
-		else if (StrContains(sClassname, "tf_weapon_invis") == 0)
+		else if (StrContains(className, "tf_weapon_invis") == 0)
 		{
 			// Invis watches glitch out when switched to
 			return;
 		}
-		
 		else
 		{
-			SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iWeapon);
+			SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", weapon);
 		}
 	}
 }
@@ -277,51 +269,6 @@ Action Timer_ShowGameMessage(Handle timer, int ref)
 	return Plugin_Stop;
 }
 
-// SDK stocks
-
-stock void SDK_EquipWearable(int client, int wearable)
-{
-	if (g_SDKEquipWearable != null)
-		SDKCall(g_SDKEquipWearable, client, wearable);
-}
-
-stock void SDK_RemoveWearable(int client, int wearable)
-{
-	if (g_SDKRemoveWearable != null)
-		SDKCall(g_SDKRemoveWearable, client, wearable);
-}
-
-stock int SDK_GetEquippedWearable(int client, int slot)
-{
-	if (g_SDKGetEquippedWearable != null)
-		return SDKCall(g_SDKGetEquippedWearable, client, slot);
-	
-	return -1;
-}
-
-stock int SDK_GetMaxAmmo(int client, int slot)
-{
-	if (g_SDKGetMaxAmmo != null)
-		return SDKCall(g_SDKGetMaxAmmo, client, slot, -1);
-	return -1;
-}
-
-stock int SDK_CreateDroppedWeapon(int fromWeapon, int client, const float origin[3], const float angles[3])
-{
-	int itemOffset = FindSendPropInfo("CTFWeaponBase", "m_Item");
-	if (itemOffset == -1)
-		ThrowError("Failed to find m_Item on CTFWeaponBase");
-	
-	char model[PLATFORM_MAX_PATH];
-	int modelidx = GetEntProp(fromWeapon, Prop_Send, "m_iWorldModelIndex");
-	ModelIndexToString(modelidx, model, sizeof(model));
-	
-	int droppedWeapon = SDKCall(g_SDKCreateDroppedWeapon, client, origin, angles, model, GetEntityAddress(fromWeapon) + view_as<Address>(itemOffset));
-	if (droppedWeapon != INVALID_ENT_REFERENCE)
-		SDKCall(g_SDKInitDroppedWeapon, droppedWeapon, client, fromWeapon, false, false);
-	return droppedWeapon;
-}
-
 stock void ModelIndexToString(int index, char[] model, int size)
 {
 	int table = FindStringTable("modelprecache");
@@ -369,4 +316,49 @@ stock int FindStringIndex2(int tableidx, const char[] str)
 	}
 	
 	return INVALID_STRING_INDEX;
+}
+
+// SDK stocks
+
+stock void SDK_EquipWearable(int client, int wearable)
+{
+	if (g_SDKEquipWearable != null)
+		SDKCall(g_SDKEquipWearable, client, wearable);
+}
+
+stock void SDK_RemoveWearable(int client, int wearable)
+{
+	if (g_SDKRemoveWearable != null)
+		SDKCall(g_SDKRemoveWearable, client, wearable);
+}
+
+stock int SDK_GetEquippedWearable(int client, int slot)
+{
+	if (g_SDKGetEquippedWearable != null)
+		return SDKCall(g_SDKGetEquippedWearable, client, slot);
+	
+	return -1;
+}
+
+stock int SDK_GetMaxAmmo(int client, int slot)
+{
+	if (g_SDKGetMaxAmmo != null)
+		return SDKCall(g_SDKGetMaxAmmo, client, slot, -1);
+	return -1;
+}
+
+stock int SDK_CreateDroppedWeapon(int fromWeapon, int client, const float origin[3], const float angles[3])
+{
+	int itemOffset = FindSendPropInfo("CTFWeaponBase", "m_Item");
+	if (itemOffset == -1)
+		ThrowError("Failed to find m_Item on CTFWeaponBase");
+	
+	char model[PLATFORM_MAX_PATH];
+	int modelidx = GetEntProp(fromWeapon, Prop_Send, "m_iWorldModelIndex");
+	ModelIndexToString(modelidx, model, sizeof(model));
+	
+	int droppedWeapon = SDKCall(g_SDKCreateDroppedWeapon, client, origin, angles, model, GetEntityAddress(fromWeapon) + view_as<Address>(itemOffset));
+	if (droppedWeapon != INVALID_ENT_REFERENCE)
+		SDKCall(g_SDKInitDroppedWeapon, droppedWeapon, client, fromWeapon, false, false);
+	return droppedWeapon;
 }
