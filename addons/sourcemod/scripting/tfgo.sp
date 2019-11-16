@@ -310,6 +310,13 @@ public MRESReturn Hook_SetWinningTeam(Handle hParams)
 	}
 }
 
+public MRESReturn Hook_PickupWeaponFromOther(int client, Handle returnVal, Handle params)
+{
+	int weapon = DHookGetParam(params, 1); // tf_dropped_weapon
+	int defindex = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
+	TFGOPlayer(client).AddToLoadout(defindex);
+}
+
 public Action Event_Player_Team(Event event, const char[] name, bool dontBroadcast)
 {
 	TFTeam team = view_as<TFTeam>(event.GetInt("team"));
@@ -718,9 +725,6 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	
 	// Reset game state
 	ResetGameState();
-	
-	// Everyone who survives the post-victory time gets to keep their weapons
-	CreateTimer(mp_bonusroundtime.FloatValue - 0.1, SaveWeaponsForAlivePlayers, TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public void ResetGameState()
@@ -728,22 +732,6 @@ public void ResetGameState()
 	g_isBombPlanted = false;
 	g_isBombDetonated = false;
 	g_isBombDefused = false;
-}
-
-public Action SaveWeaponsForAlivePlayers(Handle timer)
-{
-	for (int client = 1; client <= MaxClients; client++)
-	{
-		if (IsClientInGame(client) && IsPlayerAlive(client))
-		{
-			for (int slot = 0; slot <= view_as<int>(WeaponSlot_BuilderEngie); slot++)
-			{
-				int defindex = TF2_GetItemInSlot(client, slot);
-				if (defindex > -1)
-					TFGOPlayer(client).AddToLoadout(defindex);
-			}
-		}
-	}
 }
 
 public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool dontBroadcast)
@@ -844,11 +832,6 @@ void Toggle_ConVars(bool toggle)
 		tf_weapon_criticals_melee.BoolValue = weaponCriticalsMelee;
 		mp_bonusroundtime.IntValue = bonusRoundTime;
 	}
-}
-public MRESReturn Hook_PickupWeaponFromOther(int client, Handle returnVal, Handle params)
-{
-	int weapon = DHookGetParam(params, 1); // tf_dropped_weapon
-	// TODO add this weapon's defindex to loadout
 }
 
 void SDK_Init()
