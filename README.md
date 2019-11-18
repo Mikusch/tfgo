@@ -4,9 +4,10 @@ All players start with basic weaponry and can buy new gear at the start of each 
 
 ## Dependencies
 * SourceMod 1.10
-* [DHooks](https://forums.alliedmods.net/showthread.php?t=180114)
+* [DHooks with Detour Support](https://forums.alliedmods.net/showpost.php?p=2588686&postcount=589)
 * [TF2 Econ Data](https://forums.alliedmods.net/showthread.php?t=315011)
 * [More Colors](https://forums.alliedmods.net/showthread.php?t=185016)
+* [MemoryPatch](https://github.com/Kenzzer/MemoryPatch)
 
 ## Compatible Maps
 Any arena map that doesn't do wacky stuff should be compatible with this gamemode.  
