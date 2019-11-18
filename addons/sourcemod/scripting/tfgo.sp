@@ -7,6 +7,7 @@
 #include <tf2_stocks>
 #include <tf_econ_data>
 #include <dhooks>
+#include <memorypatch>
 
 #pragma newdecls required
 
@@ -25,6 +26,7 @@ Handle g_bombDetonationWarningTimer;
 Handle g_bombBeepingTimer;
 
 // Other handles
+MemoryPatch g_pickupWepPatch;
 Handle g_hudSync;
 StringMap g_availableMusicKits;
 ArrayList g_availableWeapons;
@@ -166,6 +168,7 @@ public void OnPluginStart()
 public void OnPluginEnd()
 {
 	Toggle_ConVars(false);
+	g_pickupWepPatch.Disable();
 }
 
 public void OnMapStart()
@@ -908,6 +911,11 @@ void SDK_Init()
 	g_SDKInitDroppedWeapon = EndPrepSDKCall();
 	if (g_SDKInitDroppedWeapon == null)
 		LogMessage("Failed to create call: CTFDroppedWeapon::InitDroppedWeapon");
+	
+	MemoryPatch.SetGameData(config);
+	g_pickupWepPatch = new MemoryPatch("Patch_PickupWeaponFromOther");
+	if (g_pickupWepPatch != null)
+		g_pickupWepPatch.Enable();
 	
 	delete config;
 }
