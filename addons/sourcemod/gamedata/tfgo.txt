@@ -71,5 +71,29 @@
 				"linux"		"161"
 			}
 		}
+		"Addresses"
+		{
+			"Patch_PickupWeaponFromOther"
+			{
+				"linux"
+				{
+					"signature"	"CTFPlayer::PickupWeaponFromOther"
+					"offset" "405" // 0x195
+				}
+				"windows"
+				{
+					"signature"	"CTFPlayer::PickupWeaponFromOther"
+					"offset" "282" // 0x11A
+				}
+			}
+		}
+		"Keys"
+		{
+			"Patch_PickupWeaponFromOther"
+			{
+				"windows"	"\xEB"
+				"linux"		"\x90\x90\x90\x90\x90\x90\x90\x90"
+			}
+		} 
 	}
 }
