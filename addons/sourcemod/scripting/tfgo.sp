@@ -361,69 +361,89 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	char victimName[256];
 	GetClientName(victim.Client, victimName, sizeof(victimName));
 	
-	int killAward;
-	char msg[256];
-	if (attacker.Client >= 1 && attacker.Client <= MaxClients)
+	if (0 < attacker.Client <= MaxClients)
 	{
+		int killAward;
+		char message[PLATFORM_MAX_PATH];
+		
 		// Entity kill (sentry gun, sandman ball etc.)
-		if (inflictorEntindex >= MaxClients)
+		if (inflictorEntindex > MaxClients)
 		{
 			char classname[256];
 			GetEntityClassname(inflictorEntindex, classname, sizeof(classname));
 			g_weaponClassKillAwards.GetValue(weapon, killAward);
 			// TODO: More specific messages?
-			msg = "Award for neutralizing an enemy";
+			message = "Award for neutralizing an enemy";
 		}
 		
-		if (attacker == victim) // Suicide
+		// Suicide
+		if (attacker == victim)
 		{
 			if (g_isMainRoundActive)
 			{
+				killAward = tfgo_cash_player_killed_enemy_default.IntValue;
+				
 				// Re-assign attacker to random enemy player
 				ArrayList enemies = new ArrayList();
 				for (int client = 1; client <= MaxClients; client++)
 				{
-					if (IsClientInGame(client) && GetClientTeam(client) != GetClientTeam(attacker.Client))
+					if (IsClientInGame(client) && IsPlayerAlive(client) && GetClientTeam(client) != GetClientTeam(attacker.Client))
 						enemies.Push(client);
 				}
 				attacker = TFGOPlayer(enemies.Get(GetRandomInt(0, enemies.Length - 1)));
 				delete enemies;
 				
-				killAward = tfgo_cash_player_killed_enemy_default.IntValue;
-				Format(msg, sizeof(msg), "Compensation for the suicide of %s", victimName);
-				PrintToChatAll("An enemy player was awarded compensation for the suicide of %s.", victimName);
+				// CS:GO does special chat messages for suicides
+				for (int client = 1; client <= MaxClients; client++)
+				{
+					if (!IsClientInGame(client))
+						continue;
+					
+					if (GetClientTeam(client) == GetClientTeam(victim.Client))
+					{
+						PrintToChat(client, "An enemy player was awarded compensation for the suicide of %s.", victimName);
+					}
+					else if (attacker.Client != client)
+					{
+						char attackerName[256];
+						GetClientName(attacker.Client, attackerName, sizeof(attackerName));
+						CPrintToChat(client, "Your teammate %s was awarded {positive}$%d {default}compenstion for the suicide of %s.", attackerName, RoundFloat(killAward * tfgo_cash_player_killed_enemy_factor.FloatValue), victimName);
+					}
+				}
+				
+				Format(message, sizeof(message), "Compensation for the suicide of %s", victimName);
 			}
 		}
-		else if (strcmp(weapon, "world") == 0) // Environmental kill
+		// Environmental kill
+		else if (strcmp(weapon, "world") == 0)
 		{
 			g_weaponClassKillAwards.GetValue(weapon, killAward);
-			msg = "Award for neutralizing an enemy using the environment";
+			message = "Award for neutralizing an enemy using the environment";
 		}
-		else if (killAward == 0) // Get kill award from weapon
+		// Weapon kill
+		else if (killAward == 0)
 		{
 			killAward = GetEffectiveKillAward(defindex);
 			char weaponName[256];
 			TF2_GetItemName(defindex, weaponName, sizeof(weaponName));
-			Format(msg, sizeof(msg), "Award for neutralizing an enemy with %s", weaponName);
+			Format(message, sizeof(message), "Award for neutralizing an enemy with %s", weaponName);
 		}
 		
 		// If no kill award was set at this point, use the default
 		if (killAward == 0)
 			killAward = tfgo_cash_player_killed_enemy_default.IntValue;
 		
-		if (killAward != 0)
+		killAward = RoundFloat(killAward * tfgo_cash_player_killed_enemy_factor.FloatValue);
+		
+		
+		// Grant kill award
+		attacker.AddToBalance(killAward, message);
+		
+		// Grant assist award
+		if (assister.Client >= 1 && assister.Client <= MaxClients)
 		{
-			killAward *= tfgo_cash_player_killed_enemy_factor.FloatValue;
-			
-			// Grant kill award
-			attacker.AddToBalance(killAward, msg);
-			
-			// Grant assist award
-			if (assister.Client >= 1 && assister.Client <= MaxClients)
-			{
-				Format(msg, sizeof(msg), "Award for assisting in neutralizing %s", victimName);
-				assister.AddToBalance(killAward / 2, msg);
-			}
+			Format(message, sizeof(message), "Award for assisting in neutralizing %s", victimName);
+			assister.AddToBalance(killAward / 2, message);
 		}
 	}
 	
