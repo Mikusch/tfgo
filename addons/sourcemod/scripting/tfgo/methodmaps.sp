@@ -24,7 +24,6 @@ int g_playerBalances[TF_MAXPLAYERS + 1];
 Menu g_activeBuyMenus[TF_MAXPLAYERS + 1];
 
 int g_teamLosingStreaks[view_as<int>(TFTeam_Blue) + 1] =  { TFGO_STARTING_LOSESTREAK, ... };
-int g_losingStreakCompensation[TFGO_MAX_LOSESTREAK + 1] =  { 1400, 1900, 2400, 2900, 3400 };
 
 
 methodmap TFGOPlayer
@@ -221,7 +220,7 @@ methodmap TFGOTeam
 	{
 		public get()
 		{
-			return g_losingStreakCompensation[this.LoseStreak];
+			return tfgo_cash_team_loser_bonus.IntValue + tfgo_cash_team_loser_bonus_consecutive_rounds.IntValue * this.LoseStreak;
 		}
 	}
 	
@@ -233,7 +232,7 @@ methodmap TFGOTeam
 	public void AddToTeamBalance(int val, const char[] reason = NULL_STRING)
 	{
 		for (int client = 1; client <= MaxClients; client++)
-			if (IsClientInGame(client) && TF2_GetClientTeam(client) == this.Team)
-				TFGOPlayer(client).AddToBalance(val, reason);
+		if (IsClientInGame(client) && TF2_GetClientTeam(client) == this.Team)
+			TFGOPlayer(client).AddToBalance(val, reason);
 	}
 }

@@ -51,10 +51,14 @@ ConVar tfgo_startmoney;
 ConVar tfgo_maxmoney;
 ConVar tfgo_cash_player_bomb_planted;
 ConVar tfgo_cash_player_bomb_defused;
-ConVar tfgo_cash_player_suicide_compensation;
-ConVar tfgo_cash_team_win_bomb_detonated;
-ConVar tfgo_cash_team_win_bomb_defused;
-ConVar tfgo_cash_team_win_elimination;
+ConVar tfgo_cash_player_killed_enemy_default;
+ConVar tfgo_cash_player_killed_enemy_factor;
+ConVar tfgo_cash_team_elimination;
+ConVar tfgo_cash_team_loser_bonus;
+ConVar tfgo_cash_team_loser_bonus_consecutive_rounds;
+ConVar tfgo_cash_team_terrorist_win_bomb;
+ConVar tfgo_cash_team_win_by_defusing_bomb;
+ConVar tfgo_cash_team_planted_bomb_but_defused;
 
 ConVar tf_arena_first_blood;
 ConVar tf_arena_round_time;
@@ -140,14 +144,18 @@ public void OnPluginStart()
 	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
 	tfgo_buyzone_radius_override = CreateConVar("tfgo_buyzone_radius_override", "-1", "Overrides the default calculated buyzone radius on maps with no respawn room");
 	tfgo_bomb_timer = CreateConVar("tfgo_bomb_timer", "45", "How long from when the bomb is planted until it blows", _, true, 15.0, true, tf_arena_round_time.FloatValue);
-	tfgo_startmoney = CreateConVar("tfgo_startmoney", "800", "Amount of money each player gets when they reset");
-	tfgo_maxmoney = CreateConVar("tfgo_maxmoney", "16000", "Maximum amount of money allowed in a player's account", _, true, tfgo_startmoney.FloatValue);
-	tfgo_cash_player_bomb_planted = CreateConVar("tfgo_cash_player_bomb_planted", "300", "Cash award for each player that planted the bomb");
-	tfgo_cash_player_bomb_defused = CreateConVar("tfgo_cash_player_bomb_defused", "300", "Cash award for each player that defused the bomb");
-	tfgo_cash_player_suicide_compensation = CreateConVar("tfgo_cash_player_suicide_compensation", "300", "Compensation for an enemy player suiciding");
-	tfgo_cash_team_win_bomb_detonated = CreateConVar("tfgo_cash_team_win_bomb_detonated", "3500", "Team cash award for winning by detonating the bomb");
-	tfgo_cash_team_win_bomb_defused = CreateConVar("tfgo_cash_team_win_bomb_defused", "3500", "Team cash award for winning by defusing the bomb");
-	tfgo_cash_team_win_elimination = CreateConVar("tfgo_cash_team_win_elimination", "3250", "Team cash award for winning by eliminating the enemy team");
+	tfgo_startmoney = CreateConVar("tfgo_startmoney", "1000", "Amount of money each player gets when they reset");
+	tfgo_maxmoney = CreateConVar("tfgo_maxmoney", "10000", "Maximum amount of money allowed in a player's account", _, true, tfgo_startmoney.FloatValue);
+	tfgo_cash_player_bomb_planted = CreateConVar("tfgo_cash_player_bomb_planted", "200", "Cash award for each player that planted the bomb");
+	tfgo_cash_player_bomb_defused = CreateConVar("tfgo_cash_player_bomb_defused", "200", "Cash award for each player that defused the bomb");
+	tfgo_cash_player_killed_enemy_default = CreateConVar("tfgo_cash_player_killed_enemy_default", "300", "Default cash award for eliminating an enemy player");
+	tfgo_cash_player_killed_enemy_factor = CreateConVar("tfgo_cash_player_killed_enemy_factor", "1");
+	tfgo_cash_team_elimination = CreateConVar("tfgo_cash_team_elimination", "2700", "Team cash award for winning by eliminating the enemy team");
+	tfgo_cash_team_loser_bonus = CreateConVar("tfgo_cash_team_loser_bonus", "2400", "Team cash bonus for losing");
+	tfgo_cash_team_loser_bonus_consecutive_rounds = CreateConVar("tfgo_cash_team_loser_bonus_consecutive_rounds", "0", "Team cash bonus for losing consecutive rounds");
+	tfgo_cash_team_terrorist_win_bomb = CreateConVar("tfgo_cash_team_terrorist_win_bomb", "2700", "Team cash award for winning by detonating the bomb");
+	tfgo_cash_team_win_by_defusing_bomb = CreateConVar("tfgo_cash_team_win_by_defusing_bomb", "2700", "Team cash award for winning by defusing the bomb");
+	tfgo_cash_team_planted_bomb_but_defused = CreateConVar("tfgo_cash_team_planted_bomb_but_defused", "200", "Team cash bonus for planting the bomb and losing");
 	
 	Toggle_ConVars(true);
 	
@@ -345,7 +353,6 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	TFGOPlayer attacker = TFGOPlayer(GetClientOfUserId(event.GetInt("attacker")));
 	TFGOPlayer victim = TFGOPlayer(GetClientOfUserId(event.GetInt("userid")));
 	TFGOPlayer assister = TFGOPlayer(GetClientOfUserId(event.GetInt("assister")));
-	int customkill = event.GetInt("customkill");
 	int defindex = event.GetInt("weapon_def_index");
 	int inflictorEntindex = event.GetInt("inflictor_entindex");
 	char weapon[256];
@@ -382,7 +389,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 				attacker = TFGOPlayer(enemies.Get(GetRandomInt(0, enemies.Length - 1)));
 				delete enemies;
 				
-				killAward = tfgo_cash_player_suicide_compensation.IntValue;
+				killAward = tfgo_cash_player_killed_enemy_default.IntValue;
 				Format(msg, sizeof(msg), "Compensation for the suicide of %s", victimName);
 				PrintToChatAll("An enemy player was awarded compensation for the suicide of %s.", victimName);
 			}
@@ -400,8 +407,14 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 			Format(msg, sizeof(msg), "Award for neutralizing an enemy with %s", weaponName);
 		}
 		
+		// If no kill award was set at this point, use the default
+		if (killAward == 0)
+			killAward = tfgo_cash_player_killed_enemy_default.IntValue;
+		
 		if (killAward != 0)
 		{
+			killAward *= tfgo_cash_player_killed_enemy_factor.FloatValue;
+			
 			// Grant kill award
 			attacker.AddToBalance(killAward, msg);
 			
@@ -707,16 +720,25 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	if (winreason == view_as<int>(Winreason_PointCaptured) || winreason == view_as<int>(Winreason_AllPointsCaptured))
 	{
 		if (g_bombPlantingTeam == event.GetInt("winning_team"))
-			winningTeam.AddToTeamBalance(tfgo_cash_team_win_bomb_detonated.IntValue, "Team award for detonating bomb");
+		{
+			winningTeam.AddToTeamBalance(tfgo_cash_team_terrorist_win_bomb.IntValue, "Team award for detonating bomb");
+			losingTeam.AddToTeamBalance(losingTeam.LoseIncome, "Income for losing");
+		}
 		else
-			winningTeam.AddToTeamBalance(tfgo_cash_team_win_bomb_defused.IntValue, "Team award for winning by defusing the bomb");
+		{
+			winningTeam.AddToTeamBalance(tfgo_cash_team_win_by_defusing_bomb.IntValue, "Team award for winning by defusing the bomb");
+			losingTeam.AddToTeamBalance(losingTeam.LoseIncome + tfgo_cash_team_planted_bomb_but_defused.IntValue, "Team award for planting the bomb");
+		}
 	}
 	else if (winreason == view_as<int>(Winreason_Elimination))
 	{
-		winningTeam.AddToTeamBalance(tfgo_cash_team_win_elimination.IntValue, "Team award for eliminating the enemy team");
+		winningTeam.AddToTeamBalance(tfgo_cash_team_elimination.IntValue, "Team award for eliminating the enemy team");
+		
+		if (g_isBombPlanted && losingTeam.Team == view_as<TFTeam>(g_bombPlantingTeam))
+			losingTeam.AddToTeamBalance(losingTeam.LoseIncome + tfgo_cash_team_planted_bomb_but_defused.IntValue, "Team award for planting the bomb");
+		else
+			losingTeam.AddToTeamBalance(losingTeam.LoseIncome, "Income for losing");
 	}
-	
-	losingTeam.AddToTeamBalance(losingTeam.LoseIncome, "Income for losing");
 	
 	// Adjust team losing streaks
 	losingTeam.LoseStreak++;
