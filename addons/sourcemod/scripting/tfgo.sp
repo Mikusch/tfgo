@@ -368,7 +368,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 			msg = "Award for neutralizing an enemy";
 		}
 		
-		if (customkill == TF_CUSTOM_SUICIDE && attacker == victim) // Suicide
+		if (attacker == victim) // Suicide
 		{
 			if (g_isMainRoundActive)
 			{
