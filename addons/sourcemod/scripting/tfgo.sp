@@ -8,6 +8,7 @@
 #include <tf_econ_data>
 #include <dhooks>
 #include <memorypatch>
+#include <tfgo>
 
 #pragma newdecls required
 
@@ -79,7 +80,7 @@ Handle g_SDKGetMaxAmmo;
 Handle g_SDKCreateDroppedWeapon;
 Handle g_SDKInitDroppedWeapon;
 
-#include "tfgo/include/tfgo.inc"
+
 #include "tfgo/musickits.sp"
 MusicKit g_currentMusicKit;
 
