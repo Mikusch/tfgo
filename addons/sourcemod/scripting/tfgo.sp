@@ -742,12 +742,11 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 		if (g_bombPlantingTeam == event.GetInt("winning_team"))
 		{
 			winningTeam.AddToTeamBalance(tfgo_cash_team_terrorist_win_bomb.IntValue, "Team award for detonating bomb");
-			losingTeam.AddToTeamBalance(losingTeam.LoseIncome, "Income for losing");
 		}
 		else
 		{
 			winningTeam.AddToTeamBalance(tfgo_cash_team_win_by_defusing_bomb.IntValue, "Team award for winning by defusing the bomb");
-			losingTeam.AddToTeamBalance(losingTeam.LoseIncome + tfgo_cash_team_planted_bomb_but_defused.IntValue, "Team award for planting the bomb");
+			losingTeam.AddToTeamBalance(tfgo_cash_team_planted_bomb_but_defused.IntValue, "Team award for planting the bomb");
 		}
 	}
 	else if (winreason == view_as<int>(Winreason_Elimination))
@@ -755,10 +754,10 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 		winningTeam.AddToTeamBalance(tfgo_cash_team_elimination.IntValue, "Team award for eliminating the enemy team");
 		
 		if (g_isBombPlanted && losingTeam.Team == view_as<TFTeam>(g_bombPlantingTeam))
-			losingTeam.AddToTeamBalance(losingTeam.LoseIncome + tfgo_cash_team_planted_bomb_but_defused.IntValue, "Team award for planting the bomb");
-		else
-			losingTeam.AddToTeamBalance(losingTeam.LoseIncome, "Income for losing");
+			losingTeam.AddToTeamBalance(tfgo_cash_team_planted_bomb_but_defused.IntValue, "Team award for planting the bomb");
 	}
+	
+	losingTeam.AddToTeamBalance(losingTeam.LoseIncome, "Income for losing");
 	
 	// Adjust team losing streaks
 	losingTeam.LoseStreak++;
