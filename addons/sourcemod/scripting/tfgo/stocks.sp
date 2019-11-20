@@ -1,15 +1,15 @@
 #define WEAPON_GAS_PASSER 1180
 #define ATTRIB_MAX_HEALTH_ADDITIVE_BONUS 26
 
-stock int GetAlivePlayersInTeam(int team)
+stock int GetAlivePlayersInTeam(TFTeam team)
 {
-	int number = 0;
-	for (int i = 1; i <= MaxClients; i++)
+	int count = 0;
+	for (int client = 1; client <= MaxClients; client++)
 	{
-		if (IsClientInGame(i) && IsPlayerAlive(i) && GetClientTeam(i) == team)
-			number++;
+		if (IsClientInGame(client) && IsPlayerAlive(client) && TF2_GetClientTeam(client) == team)
+			count++;
 	}
-	return number;
+	return count;
 }
 
 stock int IntAbs(int num)

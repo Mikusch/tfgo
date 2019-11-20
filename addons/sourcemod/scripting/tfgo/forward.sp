@@ -9,7 +9,7 @@ void Forward_AskLoad()
 	g_forwardBombDefused = new GlobalForward("TFGO_OnBombDefused", ET_Ignore, Param_Cell, Param_Cell);
 }
 
-void Forward_BombPlanted(int team, ArrayList cappers)
+void Forward_BombPlanted(TFTeam team, ArrayList cappers)
 {
 	Call_StartForward(g_forwardBombPlanted);
 	Call_PushCell(team);
@@ -17,14 +17,14 @@ void Forward_BombPlanted(int team, ArrayList cappers)
 	Call_Finish();
 }
 
-void Forward_BombDetonated(int team)
+void Forward_BombDetonated(TFTeam team)
 {
 	Call_StartForward(g_forwardBombDetonated);
 	Call_PushCell(team);
 	Call_Finish();
 }
 
-void Forward_BombDefused(int team, ArrayList cappers)
+void Forward_BombDefused(TFTeam team, ArrayList cappers)
 {
 	Call_StartForward(g_forwardBombDefused);
 	Call_PushCell(team);

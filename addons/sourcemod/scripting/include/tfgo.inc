@@ -3,6 +3,8 @@
 #endif
 #define _tfgo_included
 
+#include <tf2>
+
 enum
 {
 	Winreason_PointCaptured = 1, 
@@ -35,7 +37,7 @@ enum
  * @param cappers			ArrayList of clients that planted the bomb
  * @noreturn
  */
-forward void TFGO_OnBombPlanted(int team, ArrayList cappers);
+forward void TFGO_OnBombPlanted(TFTeam team, ArrayList cappers);
 
 /**
  * Forward called when the bomb was detonated.
@@ -43,7 +45,7 @@ forward void TFGO_OnBombPlanted(int team, ArrayList cappers);
  * @param team				The team that detonated the bomb
  * @noreturn
  */
-forward void TFGO_OnBombDetonated(int team);
+forward void TFGO_OnBombDetonated(TFTeam team);
 
 /**
  * Forward called when the bomb has been defused.
@@ -52,4 +54,4 @@ forward void TFGO_OnBombDetonated(int team);
  * @param cappers			ArrayList of clients that defused the bomb
  * @noreturn
  */
-forward void TFGO_OnBombDefused(int team, ArrayList cappers);
+forward void TFGO_OnBombDefused(TFTeam team, ArrayList cappers);

@@ -42,7 +42,7 @@ bool g_isBonusRoundActive;
 bool g_isBombPlanted;
 bool g_isBombDetonated;
 bool g_isBombDefused;
-int g_bombPlantingTeam;
+TFTeam g_bombPlantingTeam;
 
 // ConVars
 ConVar tfgo_buytime;
@@ -91,6 +91,7 @@ MusicKit g_currentMusicKit;
 #include "tfgo/buymenu.sp"
 #include "tfgo/buyzone.sp"
 #include "tfgo/forward.sp"
+
 
 public Plugin myinfo =  {
 	name = "Team Fortress: Global Offensive Arena", 
@@ -267,22 +268,22 @@ public void OnCaptureAreaSpawned(int entity)
 }
 
 // Prevent round from ending, called every frame after the round is supposed to end
-public MRESReturn Hook_SetWinningTeam(Handle hParams)
+public MRESReturn Hook_SetWinningTeam(Handle params)
 {
-	int team = DHookGetParam(hParams, 1);
-	int winReason = DHookGetParam(hParams, 2);
+	TFTeam team = view_as<TFTeam>(DHookGetParam(params, 1));
+	int winReason = DHookGetParam(params, 2);
 	
 	// Bomb is detonated but game wants to award elimination win on multi-CP maps, rewrite it to make it look like a capture
 	if (g_isBombDetonated && winReason == Winreason_Elimination)
 	{
-		DHookSetParam(hParams, 2, Winreason_PointCaptured);
+		DHookSetParam(params, 2, Winreason_PointCaptured);
 		return MRES_ChangedHandled;
 	}
 	
 	// Bomb is defused but game wants to award elimination win on multi-CP maps, rewrite it to make it look like a capture
 	else if (g_isBombDefused && team != g_bombPlantingTeam && winReason == Winreason_Elimination)
 	{
-		DHookSetParam(hParams, 2, Winreason_PointCaptured);
+		DHookSetParam(params, 2, Winreason_PointCaptured);
 		return MRES_ChangedHandled;
 	}
 	// Sometimes the game is stupid and gives defuse win to the planting team, this should prevent that
@@ -304,7 +305,7 @@ public MRESReturn Hook_SetWinningTeam(Handle hParams)
 	}
 	
 	// Stalemate
-	else if (team == view_as<int>(TFTeam_Unassigned) && winReason == Winreason_Stalemate)
+	else if (team == TFTeam_Unassigned && winReason == Winreason_Stalemate)
 	{
 		TFGOTeam red = TFGOTeam(TFTeam_Red);
 		TFGOTeam blue = TFGOTeam(TFTeam_Blue);
@@ -450,7 +451,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	
 	if (g_isBombPlanted)
 	{
-		int victimTeam = GetClientTeam(GetClientOfUserId(event.GetInt("userid")));
+		TFTeam victimTeam = TF2_GetClientTeam(GetClientOfUserId(event.GetInt("userid")));
 		// End the round if every member of the non-planting team died
 		if (g_bombPlantingTeam != victimTeam && GetAlivePlayersInTeam(victimTeam) - 1 <= 0) // -1 because it doesn't work properly in player_death
 			g_isBombPlanted = false;
@@ -540,7 +541,7 @@ public Action Play10SecondWarning(Handle timer)
 
 public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool dontBroadcast)
 {
-	int team = event.GetInt("team");
+	TFTeam team = view_as<TFTeam>(event.GetInt("team"));
 	char[] cappers = new char[MaxClients];
 	event.GetString("cappers", cappers, MaxClients);
 	
@@ -558,7 +559,7 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 		DefuseBomb(team, capperList);
 }
 
-void PlantBomb(int team, int cp, ArrayList cappers)
+void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 {
 	g_bombPlantingTeam = team;
 	
@@ -582,7 +583,7 @@ void PlantBomb(int team, int cp, ArrayList cappers)
 		GetEntPropString(game_text, Prop_Data, "m_iszMessage", m_iszMessage, sizeof(m_iszMessage));
 		
 		char message[256];
-		GetTeamName(team, message, sizeof(message));
+		GetTeamName(view_as<int>(team), message, sizeof(message));
 		StrCat(message, sizeof(message), " Wins the Game!");
 		
 		// To not mess with any other game_text entities
@@ -611,15 +612,15 @@ void PlantBomb(int team, int cp, ArrayList cappers)
 		{
 			// Spawn bomb prop on CP
 			// TODO: Set skin of bomb to team color
-			float m_vecOrigin[3];
-			GetEntPropVector(team_control_point, Prop_Send, "m_vecOrigin", m_vecOrigin);
-			float m_angRotation[3];
-			GetEntPropVector(team_control_point, Prop_Send, "m_angRotation", m_angRotation);
+			float origin[3];
+			GetEntPropVector(team_control_point, Prop_Send, "m_vecOrigin", origin);
+			float angles[3];
+			GetEntPropVector(team_control_point, Prop_Send, "m_angRotation", angles);
 			
 			int bomb = CreateEntityByName("prop_dynamic_override");
 			SetEntityModel(bomb, BOMB_MODEL);
 			DispatchSpawn(bomb);
-			TeleportEntity(bomb, m_vecOrigin, m_angRotation, NULL_VECTOR);
+			TeleportEntity(bomb, origin, angles, NULL_VECTOR);
 			
 			// Set up timers
 			g_10SecondBombTimer = CreateTimer(tfgo_bomb_timer.FloatValue - 10.0, Play10SecondBombWarning, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -689,7 +690,7 @@ public Action DetonateBomb(Handle timer, int bombRef)
 	g_isBombPlanted = false;
 	
 	// Only call this after we set g_isBombPlanted to false or the game softlocks
-	TF2_ForceRoundWin(view_as<TFTeam>(g_bombPlantingTeam), Winreason_AllPointsCaptured);
+	TF2_ForceRoundWin(g_bombPlantingTeam, Winreason_AllPointsCaptured);
 	
 	g_bombBeepingTimer = null; // Or else this timer will try to get m_vecOrigin from a deleted bomb
 	
@@ -702,7 +703,7 @@ public Action DetonateBomb(Handle timer, int bombRef)
 	Forward_BombDetonated(g_bombPlantingTeam);
 }
 
-void DefuseBomb(int team, ArrayList cappers)
+void DefuseBomb(TFTeam team, ArrayList cappers)
 {
 	g_bombBeepingTimer = null;
 	g_10SecondBombTimer = null;
@@ -716,7 +717,7 @@ void DefuseBomb(int team, ArrayList cappers)
 	}
 	
 	g_isBombDefused = true;
-	TF2_ForceRoundWin(view_as<TFTeam>(team), Winreason_PointCaptured);
+	TF2_ForceRoundWin(team, Winreason_PointCaptured);
 	
 	Forward_BombDefused(team, cappers);
 }
@@ -740,7 +741,7 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	int winreason = event.GetInt("winreason");
 	if (winreason == Winreason_PointCaptured || winreason == Winreason_AllPointsCaptured)
 	{
-		if (g_bombPlantingTeam == event.GetInt("winning_team"))
+		if (g_bombPlantingTeam == view_as<TFTeam>(event.GetInt("winning_team")))
 		{
 			winningTeam.AddToTeamBalance(tfgo_cash_team_terrorist_win_bomb.IntValue, "Team award for detonating bomb");
 		}
@@ -754,7 +755,7 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	{
 		winningTeam.AddToTeamBalance(tfgo_cash_team_elimination.IntValue, "Team award for eliminating the enemy team");
 		
-		if (g_isBombPlanted && losingTeam.Team == view_as<TFTeam>(g_bombPlantingTeam))
+		if (g_isBombPlanted && losingTeam.Team == g_bombPlantingTeam)
 			losingTeam.AddToTeamBalance(tfgo_cash_team_planted_bomb_but_defused.IntValue, "Team award for planting the bomb");
 	}
 	
@@ -777,6 +778,7 @@ public void ResetGameState()
 	g_isBombPlanted = false;
 	g_isBombDetonated = false;
 	g_isBombDefused = false;
+	g_bombPlantingTeam = TFTeam_Unassigned;
 }
 
 public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool dontBroadcast)
