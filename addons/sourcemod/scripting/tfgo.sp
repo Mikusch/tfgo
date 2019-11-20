@@ -846,15 +846,18 @@ void Toggle_ConVars(bool toggle)
 		arenaUseQueue = tf_arena_use_queue.BoolValue;
 		tf_arena_use_queue.BoolValue = false;
 		
+		// mp_freezetime
 		arenaPreRoundTime = tf_arena_preround_time.IntValue;
 		tf_arena_preround_time.IntValue = 15;
 		
+		// mp_roundtime
 		arenaRoundTime = tf_arena_round_time.IntValue;
 		tf_arena_round_time.IntValue = 135;
 		
 		arenaOverrideCapEnableTime = tf_arena_override_cap_enable_time.IntValue;
 		tf_arena_override_cap_enable_time.IntValue = 15;
 		
+		// mp_maxrounds
 		arenaMaxStreak = tf_arena_max_streak.IntValue;
 		tf_arena_max_streak.IntValue = 8;
 		
@@ -864,8 +867,9 @@ void Toggle_ConVars(bool toggle)
 		weaponCriticalsMelee = tf_weapon_criticals_melee.BoolValue;
 		tf_weapon_criticals_melee.BoolValue = false;
 		
+		// mp_round_restart_delay
 		bonusRoundTime = mp_bonusroundtime.IntValue;
-		mp_bonusroundtime.IntValue = 7;
+		mp_bonusroundtime.IntValue = 10;
 	}
 	else
 	{
