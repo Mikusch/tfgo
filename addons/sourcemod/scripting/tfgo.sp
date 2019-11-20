@@ -309,8 +309,8 @@ public MRESReturn Hook_SetWinningTeam(Handle params)
 	{
 		TFGOTeam red = TFGOTeam(TFTeam_Red);
 		TFGOTeam blue = TFGOTeam(TFTeam_Blue);
-		red.AddToTeamBalance(0, "No income for running out of time and surviving");
-		blue.AddToTeamBalance(0, "No income for running out of time and surviving");
+		red.AddToTeamBalance(0, "No income for running out of time and surviving.");
+		blue.AddToTeamBalance(0, "No income for running out of time and surviving.");
 		red.LoseStreak++;
 		blue.LoseStreak++;
 		return MRES_Ignored;
@@ -357,10 +357,10 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	TFGOPlayer assister = TFGOPlayer(GetClientOfUserId(event.GetInt("assister")));
 	int defindex = event.GetInt("weapon_def_index");
 	int inflictorEntindex = event.GetInt("inflictor_entindex");
-	char weapon[256];
+	char weapon[PLATFORM_MAX_PATH];
 	event.GetString("weapon", weapon, sizeof(weapon));
 	
-	char victimName[256];
+	char victimName[PLATFORM_MAX_PATH];
 	GetClientName(victim.Client, victimName, sizeof(victimName));
 	
 	if (0 < attacker.Client <= MaxClients)
@@ -371,11 +371,9 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 		// Entity kill (sentry gun, sandman ball etc.)
 		if (inflictorEntindex > MaxClients)
 		{
-			char classname[256];
+			char classname[PLATFORM_MAX_PATH];
 			GetEntityClassname(inflictorEntindex, classname, sizeof(classname));
 			g_weaponClassKillAwards.GetValue(weapon, killAward);
-			// TODO: More specific messages?
-			message = "Award for neutralizing an enemy";
 		}
 		
 		// Suicide
@@ -407,46 +405,44 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 					}
 					else if (attacker.Client != client)
 					{
-						char attackerName[256];
+						char attackerName[PLATFORM_MAX_PATH];
 						GetClientName(attacker.Client, attackerName, sizeof(attackerName));
 						CPrintToChat(client, "Your teammate %s was awarded {positive}$%d {default}compenstion for the suicide of %s.", attackerName, RoundFloat(killAward * tfgo_cash_player_killed_enemy_factor.FloatValue), victimName);
 					}
 				}
 				
-				Format(message, sizeof(message), "Compensation for the suicide of %s", victimName);
+				Format(message, sizeof(message), "Award for neutralizing an enemy.\n(You were awarded $%d compensation for the suicide of %s)", RoundFloat(killAward * tfgo_cash_player_killed_enemy_factor.FloatValue), victimName);
 			}
 		}
 		// Environmental kill
 		else if (strcmp(weapon, "world") == 0)
 		{
 			g_weaponClassKillAwards.GetValue(weapon, killAward);
-			message = "Award for neutralizing an enemy using the environment";
+			message = "Award for neutralizing an enemy using the environment.";
 		}
 		// Weapon kill
 		else if (killAward == 0)
 		{
 			killAward = GetEffectiveKillAward(defindex);
-			char weaponName[256];
+			char weaponName[PLATFORM_MAX_PATH];
 			TF2_GetItemName(defindex, weaponName, sizeof(weaponName));
-			Format(message, sizeof(message), "Award for neutralizing an enemy with %s", weaponName);
+			Format(message, sizeof(message), "Award for neutralizing an enemy with %s.", weaponName);
 		}
 		
-		// If no kill award was set at this point, use the default
+		// Fallback values for kill award and message
 		if (killAward == 0)
 			killAward = tfgo_cash_player_killed_enemy_default.IntValue;
+		if (strlen(message) == 0)
+			message = "Award for neutralizing an enemy.";
 		
 		killAward = RoundFloat(killAward * tfgo_cash_player_killed_enemy_factor.FloatValue);
-		
 		
 		// Grant kill award
 		attacker.AddToBalance(killAward, message);
 		
 		// Grant assist award
 		if (assister.Client >= 1 && assister.Client <= MaxClients)
-		{
-			Format(message, sizeof(message), "Award for assisting in neutralizing %s", victimName);
-			assister.AddToBalance(killAward / 2, message);
-		}
+			assister.AddToBalance(killAward / 2, "Award for assisting in neutralizing %s.", victimName);
 	}
 	
 	if (g_isBombPlanted)
@@ -519,7 +515,7 @@ public Action OnBuyTimeExpire(Handle timer)
 	// No one cares about the buy time if the bomb is already active
 	if (!g_isBombPlanted)
 	{
-		char message[256] = "The %d second buy period has expired";
+		char message[PLATFORM_MAX_PATH] = "The %d second buy period has expired";
 		Format(message, sizeof(message), message, tfgo_buytime.IntValue);
 		ShowGameMessage(message, "ico_notify_ten_seconds");
 	}
@@ -567,7 +563,7 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 	for (int i = 0; i < cappers.Length; i++)
 	{
 		int capper = cappers.Get(i);
-		TFGOPlayer(capper).AddToBalance(tfgo_cash_player_bomb_planted.IntValue, "Award for planting the bomb");
+		TFGOPlayer(capper).AddToBalance(tfgo_cash_player_bomb_planted.IntValue, "Award for planting the bomb.");
 	}
 	
 	// Superceding SetWinningTeam causes arena mode to force a map change on capture
@@ -579,15 +575,15 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 	int game_text;
 	while ((game_text = FindEntityByClassname(game_text, "game_text")) > -1)
 	{
-		char m_iszMessage[256];
-		GetEntPropString(game_text, Prop_Data, "m_iszMessage", m_iszMessage, sizeof(m_iszMessage));
+		char entityMessage[PLATFORM_MAX_PATH];
+		GetEntPropString(game_text, Prop_Data, "m_iszMessage", entityMessage, sizeof(entityMessage));
 		
-		char message[256];
+		char message[PLATFORM_MAX_PATH];
 		GetTeamName(view_as<int>(team), message, sizeof(message));
 		StrCat(message, sizeof(message), " Wins the Game!");
 		
 		// To not mess with any other game_text entities
-		if (StrEqual(m_iszMessage, message))
+		if (StrEqual(entityMessage, message))
 			AcceptEntityInput(game_text, "Kill");
 	}
 	
@@ -648,7 +644,7 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 	g_10SecondRoundTimer = null;
 	
 	// Show text on screen
-	char message[256] = "The bomb has been planted.\n%d seconds to detonation.";
+	char message[PLATFORM_MAX_PATH] = "The bomb has been planted.\n%d seconds to detonation.";
 	Format(message, sizeof(message), message, tfgo_bomb_timer.IntValue);
 	ShowGameMessage(message, "ico_notify_sixty_seconds");
 	
@@ -713,7 +709,7 @@ void DefuseBomb(TFTeam team, ArrayList cappers)
 	for (int i = 0; i < cappers.Length; i++)
 	{
 		int capper = cappers.Get(i);
-		TFGOPlayer(capper).AddToBalance(tfgo_cash_player_bomb_defused.IntValue, "Award for defusing the bomb");
+		TFGOPlayer(capper).AddToBalance(tfgo_cash_player_bomb_defused.IntValue, "Award for defusing the bomb.");
 	}
 	
 	g_isBombDefused = true;
@@ -743,23 +739,20 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	{
 		if (g_bombPlantingTeam == view_as<TFTeam>(event.GetInt("winning_team")))
 		{
-			winningTeam.AddToTeamBalance(tfgo_cash_team_terrorist_win_bomb.IntValue, "Team award for detonating bomb");
+			winningTeam.AddToTeamBalance(tfgo_cash_team_terrorist_win_bomb.IntValue, "Team award for detonating bomb.");
 		}
 		else
 		{
-			winningTeam.AddToTeamBalance(tfgo_cash_team_win_by_defusing_bomb.IntValue, "Team award for winning by defusing the bomb");
-			losingTeam.AddToTeamBalance(tfgo_cash_team_planted_bomb_but_defused.IntValue, "Team award for planting the bomb");
+			winningTeam.AddToTeamBalance(tfgo_cash_team_win_by_defusing_bomb.IntValue, "Team award for winning by defusing the bomb.");
+			losingTeam.AddToTeamBalance(tfgo_cash_team_planted_bomb_but_defused.IntValue, "Team award for planting the bomb.");
 		}
 	}
 	else if (winreason == Winreason_Elimination)
 	{
-		winningTeam.AddToTeamBalance(tfgo_cash_team_elimination.IntValue, "Team award for eliminating the enemy team");
-		
-		if (g_isBombPlanted && losingTeam.Team == g_bombPlantingTeam)
-			losingTeam.AddToTeamBalance(tfgo_cash_team_planted_bomb_but_defused.IntValue, "Team award for planting the bomb");
+		winningTeam.AddToTeamBalance(tfgo_cash_team_elimination.IntValue, "Team award for eliminating the enemy team.");
 	}
 	
-	losingTeam.AddToTeamBalance(losingTeam.LoseIncome, "Income for losing");
+	losingTeam.AddToTeamBalance(losingTeam.LoseIncome, "Income for losing.");
 	
 	// Adjust team losing streaks
 	losingTeam.LoseStreak++;

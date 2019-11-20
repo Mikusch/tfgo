@@ -76,31 +76,19 @@ methodmap TFGOPlayer
 		ShowSyncHudText(this.Client, g_hudSync, "$%d", this.Balance);
 	}
 	
-	public void AddToBalance(int val, const char[] reason = NULL_STRING)
+	public void AddToBalance(int val, const char[] reason, any...)
 	{
 		this.Balance += val;
+		
+		char message[PLATFORM_MAX_PATH];
+		VFormat(message, sizeof(message), reason, 3);
+		
 		if (val > 0)
-		{
-			if (IsNullString(reason))
-				CPrintToChat(this.Client, "{positive}+$%d{default}", val);
-			else
-				CPrintToChat(this.Client, "{positive}+$%d{default}: %s.", val, reason);
-		}
+			CPrintToChat(this.Client, "{positive}+$%d{default}: %s", val, message);
 		else if (val < 0)
-		{
-			val = IntAbs(val);
-			if (IsNullString(reason))
-				CPrintToChat(this.Client, "{negative}-$%d{default}", val);
-			else
-				CPrintToChat(this.Client, "{negative}-$%d{default}: %s.", val, reason);
-		}
+			CPrintToChat(this.Client, "{negative}-$%d{default}: %s", IntAbs(val), message);
 		else
-		{
-			if (IsNullString(reason))
-				CPrintToChat(this.Client, "{negative}$%d{default}", val);
-			else
-				CPrintToChat(this.Client, "{negative}$%d{default}: %s.", val, reason);
-		}
+			CPrintToChat(this.Client, "{negative}$%d{default}: %s", val, message);
 		
 		this.ShowMoneyHudDisplay(5.0);
 	}
