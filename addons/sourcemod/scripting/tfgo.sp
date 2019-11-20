@@ -42,6 +42,7 @@ bool g_isBonusRoundActive;
 bool g_isBombPlanted;
 bool g_isBombDetonated;
 bool g_isBombDefused;
+float g_bombPlantedTime;
 TFTeam g_bombPlantingTeam;
 
 // ConVars
@@ -558,6 +559,7 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 {
 	g_bombPlantingTeam = team;
+	g_bombPlantedTime = GetGameTime();
 	
 	// Award capture bonus to cappers
 	for (int i = 0; i < cappers.Length; i++)
@@ -715,7 +717,7 @@ void DefuseBomb(TFTeam team, ArrayList cappers)
 	g_isBombDefused = true;
 	TF2_ForceRoundWin(team, Winreason_PointCaptured);
 	
-	Forward_BombDefused(team, cappers);
+	Forward_BombDefused(team, cappers, tfgo_bomb_timer.FloatValue - (GetGameTime() - g_bombPlantedTime));
 }
 
 public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBroadcast)

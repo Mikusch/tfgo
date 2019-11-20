@@ -33,8 +33,8 @@ enum
 /**
  * Forward called when the bomb has been planted.
  *
- * @param team				The team that planted the bomb
- * @param cappers			ArrayList of clients that planted the bomb
+ * @param team		The team that planted the bomb
+ * @param cappers	ArrayList of clients that planted the bomb
  * @noreturn
  */
 forward void TFGO_OnBombPlanted(TFTeam team, ArrayList cappers);
@@ -42,7 +42,7 @@ forward void TFGO_OnBombPlanted(TFTeam team, ArrayList cappers);
 /**
  * Forward called when the bomb was detonated.
  *
- * @param team				The team that detonated the bomb
+ * @param team	The team that detonated the bomb
  * @noreturn
  */
 forward void TFGO_OnBombDetonated(TFTeam team);
@@ -50,8 +50,9 @@ forward void TFGO_OnBombDetonated(TFTeam team);
 /**
  * Forward called when the bomb has been defused.
  *
- * @param team				The team that defused the bomb
- * @param cappers			ArrayList of clients that defused the bomb
+ * @param team		The team that defused the bomb
+ * @param cappers	ArrayList of clients that defused the bomb
+ * @param timeLeft	Time left on the bomb detonation timer when it was defused
  * @noreturn
  */
-forward void TFGO_OnBombDefused(TFTeam team, ArrayList cappers);
+forward void TFGO_OnBombDefused(TFTeam team, ArrayList cappers, float timeLeft);
