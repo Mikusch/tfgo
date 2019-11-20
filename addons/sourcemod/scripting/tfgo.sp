@@ -273,16 +273,16 @@ public MRESReturn Hook_SetWinningTeam(Handle hParams)
 	int winReason = DHookGetParam(hParams, 2);
 	
 	// Bomb is detonated but game wants to award elimination win on multi-CP maps, rewrite it to make it look like a capture
-	if (g_isBombDetonated && winReason == view_as<int>(Winreason_Elimination))
+	if (g_isBombDetonated && winReason == Winreason_Elimination)
 	{
-		DHookSetParam(hParams, 2, view_as<int>(Winreason_PointCaptured));
+		DHookSetParam(hParams, 2, Winreason_PointCaptured);
 		return MRES_ChangedHandled;
 	}
 	
 	// Bomb is defused but game wants to award elimination win on multi-CP maps, rewrite it to make it look like a capture
-	else if (g_isBombDefused && team != g_bombPlantingTeam && winReason == view_as<int>(Winreason_Elimination))
+	else if (g_isBombDefused && team != g_bombPlantingTeam && winReason == Winreason_Elimination)
 	{
-		DHookSetParam(hParams, 2, view_as<int>(Winreason_PointCaptured));
+		DHookSetParam(hParams, 2, Winreason_PointCaptured);
 		return MRES_ChangedHandled;
 	}
 	// Sometimes the game is stupid and gives defuse win to the planting team, this should prevent that
@@ -292,19 +292,19 @@ public MRESReturn Hook_SetWinningTeam(Handle hParams)
 	}
 	
 	// If this is a capture win from planting the bomb we supercede it, otherwise ignore to grant the defusal win
-	else if (g_isBombPlanted && team == g_bombPlantingTeam && (winReason == view_as<int>(Winreason_PointCaptured) || winReason == view_as<int>(Winreason_AllPointsCaptured)))
+	else if (g_isBombPlanted && team == g_bombPlantingTeam && (winReason == Winreason_PointCaptured || winReason == Winreason_AllPointsCaptured))
 	{
 		return MRES_Supercede;
 	}
 	
 	// Planting team was killed while the bomb was active, do not give elimination win to enemy team
-	else if (g_isBombPlanted && team != g_bombPlantingTeam && winReason == view_as<int>(Winreason_Elimination))
+	else if (g_isBombPlanted && team != g_bombPlantingTeam && winReason == Winreason_Elimination)
 	{
 		return MRES_Supercede;
 	}
 	
 	// Stalemate
-	else if (team == view_as<int>(TFTeam_Unassigned) && winReason == view_as<int>(Winreason_Stalemate))
+	else if (team == view_as<int>(TFTeam_Unassigned) && winReason == Winreason_Stalemate)
 	{
 		TFGOTeam red = TFGOTeam(TFTeam_Red);
 		TFGOTeam blue = TFGOTeam(TFTeam_Blue);
@@ -689,7 +689,7 @@ public Action DetonateBomb(Handle timer, int bombRef)
 	g_isBombPlanted = false;
 	
 	// Only call this after we set g_isBombPlanted to false or the game softlocks
-	TF2_ForceRoundWin(view_as<TFTeam>(g_bombPlantingTeam), view_as<int>(Winreason_AllPointsCaptured));
+	TF2_ForceRoundWin(view_as<TFTeam>(g_bombPlantingTeam), Winreason_AllPointsCaptured);
 	
 	g_bombBeepingTimer = null; // Or else this timer will try to get m_vecOrigin from a deleted bomb
 	
@@ -716,7 +716,7 @@ void DefuseBomb(int team, ArrayList cappers)
 	}
 	
 	g_isBombDefused = true;
-	TF2_ForceRoundWin(view_as<TFTeam>(team), view_as<int>(Winreason_PointCaptured));
+	TF2_ForceRoundWin(view_as<TFTeam>(team), Winreason_PointCaptured);
 	
 	Forward_BombDefused(team, cappers);
 }
@@ -738,7 +738,7 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	
 	// Add round end team awards
 	int winreason = event.GetInt("winreason");
-	if (winreason == view_as<int>(Winreason_PointCaptured) || winreason == view_as<int>(Winreason_AllPointsCaptured))
+	if (winreason == Winreason_PointCaptured || winreason == Winreason_AllPointsCaptured)
 	{
 		if (g_bombPlantingTeam == event.GetInt("winning_team"))
 		{
@@ -750,7 +750,7 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 			losingTeam.AddToTeamBalance(tfgo_cash_team_planted_bomb_but_defused.IntValue, "Team award for planting the bomb");
 		}
 	}
-	else if (winreason == view_as<int>(Winreason_Elimination))
+	else if (winreason == Winreason_Elimination)
 	{
 		winningTeam.AddToTeamBalance(tfgo_cash_team_elimination.IntValue, "Team award for eliminating the enemy team");
 		

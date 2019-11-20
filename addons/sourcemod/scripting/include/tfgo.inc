@@ -3,7 +3,7 @@
 #endif
 #define _tfgo_included
 
-enum Arena_Winreason
+enum
 {
 	Winreason_PointCaptured = 1, 
 	Winreason_Elimination, 
@@ -26,7 +26,7 @@ enum
 	WeaponSlot_Misc1, 
 	WeaponSlot_Action, 
 	WeaponSlot_Misc2
-}; 
+};
 
 /**
  * Forward called when the bomb has been planted.

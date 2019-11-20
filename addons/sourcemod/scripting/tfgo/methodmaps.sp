@@ -18,7 +18,7 @@ int g_defaultWeaponIndexes[][] =  {
 
 float g_classViewHeights[] =  { -1.0, 65.0, 75.0, 68.0, 68.0, 75.0, 75.0, 68.0, 75.0, 68.0 };
 
-int g_playerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][view_as<int>(WeaponSlot_BuilderEngie) + 1];
+int g_playerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][WeaponSlot_BuilderEngie + 1];
 int g_playerBalances[TF_MAXPLAYERS + 1];
 
 Menu g_activeBuyMenus[TF_MAXPLAYERS + 1];
