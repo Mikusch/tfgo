@@ -257,6 +257,10 @@ public void OnEntityCreated(int entity, const char[] classname)
 		SDKHook(entity, SDKHook_StartTouch, Hook_OnStartTouchBuyZone);
 		SDKHook(entity, SDKHook_EndTouch, Hook_OnEndTouchBuyZone);
 	}
+	else if (StrEqual(classname, "tf_logic_arena"))
+	{
+		SDKHook(entity, SDKHook_SpawnPost, OnArenaLogicSpawned);
+	}
 	else if (StrEqual(classname, "trigger_capture_area"))
 	{
 		SDKHook(entity, SDKHook_SpawnPost, OnCaptureAreaSpawned);
@@ -266,6 +270,11 @@ public void OnEntityCreated(int entity, const char[] classname)
 public void OnCaptureAreaSpawned(int entity)
 {
 	SetEntPropFloat(entity, Prop_Data, "m_flCapTime", GetEntPropFloat(entity, Prop_Data, "m_flCapTime") / 2);
+}
+
+public void OnArenaLogicSpawned(int entity)
+{
+	SetEntPropFloat(entity, Prop_Data, "m_flTimeToEnableCapPoint", 0.0);
 }
 
 // Prevent round from ending, called every frame after the round is supposed to end
@@ -850,7 +859,7 @@ void Toggle_ConVars(bool toggle)
 		tf_arena_round_time.IntValue = 135;
 		
 		arenaOverrideCapEnableTime = tf_arena_override_cap_enable_time.IntValue;
-		tf_arena_override_cap_enable_time.IntValue = 15;
+		tf_arena_override_cap_enable_time.IntValue = -1;
 		
 		// mp_maxrounds
 		arenaMaxStreak = tf_arena_max_streak.IntValue;
