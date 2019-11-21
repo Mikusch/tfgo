@@ -152,7 +152,7 @@ public void OnPluginStart()
 	tfgo_cash_player_bomb_planted = CreateConVar("tfgo_cash_player_bomb_planted", "200", "Cash award for each player that planted the bomb");
 	tfgo_cash_player_bomb_defused = CreateConVar("tfgo_cash_player_bomb_defused", "200", "Cash award for each player that defused the bomb");
 	tfgo_cash_player_killed_enemy_default = CreateConVar("tfgo_cash_player_killed_enemy_default", "300", "Default cash award for eliminating an enemy player");
-	tfgo_cash_player_killed_enemy_factor = CreateConVar("tfgo_cash_player_killed_enemy_factor", "1");
+	tfgo_cash_player_killed_enemy_factor = CreateConVar("tfgo_cash_player_killed_enemy_factor", "0.5");
 	tfgo_cash_team_elimination = CreateConVar("tfgo_cash_team_elimination", "2700", "Team cash award for winning by eliminating the enemy team");
 	tfgo_cash_team_loser_bonus = CreateConVar("tfgo_cash_team_loser_bonus", "2400", "Team cash bonus for losing");
 	tfgo_cash_team_loser_bonus_consecutive_rounds = CreateConVar("tfgo_cash_team_loser_bonus_consecutive_rounds", "0", "Team cash bonus for losing consecutive rounds");
