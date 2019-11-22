@@ -119,7 +119,7 @@ methodmap TFGOPlayer
 		
 		float origin[3];
 		GetClientAbsOrigin(this.Client, origin);
-		EmitAmbientSound("mvm/mvm_bought_upgrade.wav", origin);
+		EmitAmbientSound(PLAYER_PURCHASE_SOUND, origin);
 	}
 	
 	public int GetWeaponFromLoadout(TFClassType class, int slot)

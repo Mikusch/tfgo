@@ -43,10 +43,10 @@ static char g_sBombDefusedSoldierResponses[][PLATFORM_MAX_PATH] =  {
 
 stock void PrecacheSounds()
 {
-	PrecacheSound("mvm/mvm_bomb_warning.wav");
-	PrecacheSound("mvm/mvm_bomb_explode.wav");
-	PrecacheSound("mvm/mvm_bought_upgrade.wav");
-	PrecacheSound("player/cyoa_pda_beep3.wav");
+	PrecacheSound(BOMB_WARNING_SOUND);
+	PrecacheSound(BOMB_EXPLOSION_SOUND);
+	PrecacheSound(PLAYER_PURCHASE_SOUND);
+	PrecacheSound(BOMB_BEEPING_SOUND);
 	
 	for (int i = 0; i < sizeof(g_sBombPlantedAnnouncerAlerts); i++)PrecacheSound(g_sBombPlantedAnnouncerAlerts[i]);
 	for (int i = 0; i < sizeof(g_sBombPlantedEngineerAlerts); i++)PrecacheSound(g_sBombPlantedEngineerAlerts[i]);

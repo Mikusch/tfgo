@@ -16,6 +16,10 @@
 
 #define BOMB_MODEL "models/props_td/atom_bomb.mdl"
 #define BOMB_EXPLOSION_PARTICLE "mvm_hatch_destroy"
+#define BOMB_BEEPING_SOUND "player/cyoa_pda_beep3.wav"
+#define BOMB_WARNING_SOUND "mvm/mvm_bomb_warning.wav"
+#define BOMB_EXPLOSION_SOUND "mvm/mvm_bomb_explode.wav"
+#define PLAYER_PURCHASE_SOUND "mvm/mvm_bought_upgrade.wav"
 
 
 // Timers
@@ -629,7 +633,7 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 			TeleportEntity(bomb, origin, angles, NULL_VECTOR);
 			
 			// Set up timers
-			g_10SecondBombTimer = CreateTimer(tfgo_bomb_timer.FloatValue - 10.0, Play10SecondBombWarning, _, TIMER_FLAG_NO_MAPCHANGE);
+			g_10SecondBombTimer = CreateTimer(tfgo_bomb_timer.FloatValue - 10.0, Play10SecondBombWarning, bomb, TIMER_FLAG_NO_MAPCHANGE);
 			g_bombBeepingTimer = CreateTimer(1.0, PlayBombBeep, EntIndexToEntRef(bomb), TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
 			g_bombDetonationWarningTimer = CreateTimer(tfgo_bomb_timer.FloatValue - 1.5, PlayBombExplosionWarning, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
 			g_bombDetonationTimer = CreateTimer(tfgo_bomb_timer.FloatValue, DetonateBomb, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
@@ -667,13 +671,15 @@ public Action PlayBombBeep(Handle timer, int bomb)
 	
 	float m_vecOrigin[3];
 	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", m_vecOrigin);
-	EmitAmbientSound("player/cyoa_pda_beep3.wav", m_vecOrigin, bomb);
+	EmitAmbientSound(BOMB_BEEPING_SOUND, m_vecOrigin, bomb);
 	return Plugin_Continue;
 }
 
-public Action Play10SecondBombWarning(Handle timer)
+public Action Play10SecondBombWarning(Handle timer, int bomb)
 {
 	if (g_10SecondBombTimer != timer)return;
+	
+	g_bombBeepingTimer = CreateTimer(0.5, PlayBombBeep, bomb, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
 	
 	g_currentMusicKit.StopMusicForAll(Music_BombPlanted);
 	g_currentMusicKit.PlayMusicToAll(Music_BombTenSecCount);
@@ -683,9 +689,11 @@ public Action PlayBombExplosionWarning(Handle timer, int bomb)
 {
 	if (g_bombDetonationWarningTimer != timer)return;
 	
+	g_bombBeepingTimer = null;
+	
 	float m_vecOrigin[3];
 	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", m_vecOrigin);
-	EmitAmbientSound("mvm/mvm_bomb_warning.wav", m_vecOrigin, bomb, SNDLEVEL_RAIDSIREN);
+	EmitAmbientSound(BOMB_WARNING_SOUND, m_vecOrigin, bomb, SNDLEVEL_RAIDSIREN);
 }
 
 public Action DetonateBomb(Handle timer, int bombRef)
@@ -703,7 +711,7 @@ public Action DetonateBomb(Handle timer, int bombRef)
 	int bomb = EntRefToEntIndex(bombRef);
 	float m_vecOrigin[3];
 	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", m_vecOrigin);
-	TF2_Explode(_, m_vecOrigin, 500.0, 800.0, BOMB_EXPLOSION_PARTICLE, "mvm/mvm_bomb_explode.wav");
+	TF2_Explode(_, m_vecOrigin, 500.0, 800.0, BOMB_EXPLOSION_PARTICLE, BOMB_EXPLOSION_SOUND);
 	RemoveEntity(bomb);
 	
 	Forward_BombDetonated(g_bombPlantingTeam);
