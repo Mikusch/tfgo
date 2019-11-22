@@ -234,9 +234,12 @@ public void OnGameFrame()
 
 public void OnClientDisconnect(int client)
 {
-	if (g_isBombPlanted)
+	// Force-end round if last client in team disconnects during active bomb
+	if (g_isBombPlanted && IsClientInGame(client))
 	{
-		// TODO team alive check to  end the round during bomb plant
+		TFTeam team = TF2_GetClientTeam(client);
+		if (g_bombPlantingTeam != team && GetAlivePlayersInTeam(team) <= 0)
+			g_isBombPlanted = false;
 	}
 }
 
