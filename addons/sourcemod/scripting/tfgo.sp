@@ -28,7 +28,6 @@ Handle g_bombBeepingTimer;
 
 // Other handles
 MemoryPatch g_pickupWepPatch;
-Handle g_hudSync;
 StringMap g_availableMusicKits;
 ArrayList g_availableWeapons;
 
@@ -160,7 +159,6 @@ public void OnPluginStart()
 	SDK_Init();
 	MusicKit_Init();
 	Config_Init();
-	g_hudSync = CreateHudSynchronizer();
 	
 	AddCommandListener(Client_BuildCommand, "build");
 	AddCommandListener(Client_DestroyCommand, "destroy");
@@ -213,14 +211,6 @@ public void OnMapStart()
 	}
 }
 
-public void OnClientConnected(int client)
-{
-	// Initialize new player with default values
-	TFGOPlayer player = TFGOPlayer(client);
-	player.ResetBalance();
-	player.ClearLoadout();
-}
-
 public void OnGameFrame()
 {
 	if (!g_mapHasRespawnRoom && g_isBuyTimeActive)
@@ -232,8 +222,26 @@ public void OnGameFrame()
 	}
 }
 
+public void OnClientPutInServer(int client)
+{
+	SDKHook(client, SDKHook_PreThink, OnClientThink);
+	
+	// Initialize new player with default values
+	TFGOPlayer player = TFGOPlayer(client);
+	player.ResetBalance();
+	player.ClearLoadout();
+}
+
+public void OnClientThink(int client)
+{
+	SetHudTextParams(-1.0, 0.675, 0.1, 162, 255, 71, 255, 0, 0.0, 0.0, 0.0);
+	ShowHudText(client, -1, "$%d", TFGOPlayer(client).Balance);
+}
+
 public void OnClientDisconnect(int client)
 {
+	SDKUnhook(client, SDKHook_PreThink, OnClientThink);
+	
 	// Force-end round if last client in team disconnects during active bomb
 	if (g_isBombPlanted && IsClientInGame(client))
 	{
@@ -476,7 +484,6 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 	if (IsClientInGame(client))
 	{
 		TFGOPlayer player = TFGOPlayer(client);
-		player.ShowMoneyHudDisplay(tfgo_buytime.FloatValue);
 		player.ApplyLoadout();
 		
 		// Cancel active buy menu or OnGameFrame will throw a million errors

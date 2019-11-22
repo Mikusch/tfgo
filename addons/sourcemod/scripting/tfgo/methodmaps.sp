@@ -70,12 +70,6 @@ methodmap TFGOPlayer
 		}
 	}
 	
-	public void ShowMoneyHudDisplay(float time)
-	{
-		SetHudTextParams(-1.0, 0.675, time, 162, 255, 71, 0);
-		ShowSyncHudText(this.Client, g_hudSync, "$%d", this.Balance);
-	}
-	
 	public void AddToBalance(int val, const char[] reason, any...)
 	{
 		this.Balance += val;
@@ -89,8 +83,6 @@ methodmap TFGOPlayer
 			CPrintToChat(this.Client, "{negative}-$%d{default}: %s", val * -1, message);
 		else
 			CPrintToChat(this.Client, "{negative}$%d{default}: %s", val, message);
-		
-		this.ShowMoneyHudDisplay(5.0);
 	}
 	
 	public void ResetBalance()
