@@ -84,7 +84,6 @@ public void ShoutBombWarnings()
 public Action Event_Pre_Teamplay_Broadcast_Audio(Event event, const char[] name, bool dontBroadcast)
 {
 	// Cancel various sounds that could still be playing here
-	g_currentMusicKit.StopMusicForAll(Music_StartRound);
 	g_currentMusicKit.StopMusicForAll(Music_StartAction);
 	g_currentMusicKit.StopMusicForAll(Music_BombPlanted);
 	g_currentMusicKit.StopMusicForAll(Music_RoundTenSecCount);
@@ -92,22 +91,23 @@ public Action Event_Pre_Teamplay_Broadcast_Audio(Event event, const char[] name,
 	
 	char sound[PLATFORM_MAX_PATH];
 	event.GetString("sound", sound, sizeof(sound));
-	TFTeam team = view_as<TFTeam>(event.GetInt("team"));
 	
 	if (StrEqual(sound, "Game.YourTeamWon"))
 	{
-		g_currentMusicKit.PlayMusicToTeam(team, Music_WonRound);
-		return Plugin_Handled;
+		g_currentMusicKit.GetRandomMusicFile(sound, sizeof(sound), Music_WonRound);
+		event.SetString("sound", sound);
+		return Plugin_Changed;
 	}
 	else if (StrEqual(sound, "Game.YourTeamLost") || StrEqual(sound, "Game.Stalemate"))
 	{
-		g_currentMusicKit.PlayMusicToTeam(team, Music_LostRound);
-		return Plugin_Handled;
+		g_currentMusicKit.GetRandomMusicFile(sound, sizeof(sound), Music_LostRound);
+		event.SetString("sound", sound);
+		return Plugin_Changed;
 	}
 	else if (StrEqual(sound, "Announcer.AM_RoundStartRandom"))
 	{
+		g_currentMusicKit.StopMusicForAll(Music_StartRound);
 		g_currentMusicKit.PlayMusicToAll(Music_StartAction);
-		return Plugin_Continue;
 	}
 	
 	return Plugin_Continue;
