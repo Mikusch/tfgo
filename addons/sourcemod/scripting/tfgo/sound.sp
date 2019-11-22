@@ -68,7 +68,7 @@ public void ShoutBombWarnings()
 {
 	for (int client = 1; client <= MaxClients; client++)
 	{
-		if (IsClientInGame(client) && TF2_GetClientTeam(client) != g_bombPlantingTeam)
+		if (IsClientInGame(client) && IsPlayerAlive(client) && TF2_GetClientTeam(client) != g_bombPlantingTeam)
 		{
 			switch (TF2_GetPlayerClass(client))
 			{
