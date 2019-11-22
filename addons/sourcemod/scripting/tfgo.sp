@@ -706,8 +706,6 @@ public Action DetonateBomb(Handle timer, int bombRef)
 	// Only call this after we set g_isBombPlanted to false or the game softlocks
 	TF2_ForceRoundWin(g_bombPlantingTeam, Winreason_AllPointsCaptured);
 	
-	g_bombBeepingTimer = null; // Or else this timer will try to get m_vecOrigin from a deleted bomb
-	
 	int bomb = EntRefToEntIndex(bombRef);
 	float m_vecOrigin[3];
 	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", m_vecOrigin);
