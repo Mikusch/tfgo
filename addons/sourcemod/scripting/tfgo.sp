@@ -211,17 +211,6 @@ public void OnMapStart()
 	}
 }
 
-public void OnGameFrame()
-{
-	if (!g_mapHasRespawnRoom && g_isBuyTimeActive)
-	{
-		for (int client = 1; client <= MaxClients; client++)
-		{
-			DisplayMenuInDynamicBuyZone(client);
-		}
-	}
-}
-
 public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_PreThink, OnClientThink);
@@ -234,8 +223,11 @@ public void OnClientPutInServer(int client)
 
 public void OnClientThink(int client)
 {
-	SetHudTextParams(0.05, 0.35, 0.1, 162, 255, 71, 255, _, 0.0, 0.0, 0.0);
+	SetHudTextParams(0.05, 0.345, 0.1, 162, 255, 71, 255, _, 0.0, 0.0, 0.0);
 	ShowHudText(client, -1, "$%d", TFGOPlayer(client).Balance);
+	
+	if (!g_mapHasRespawnRoom && g_isBuyTimeActive)
+		DisplayMenuInDynamicBuyZone(client);
 }
 
 public void OnClientDisconnect(int client)
