@@ -618,26 +618,6 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 			SetVariantInt(1);
 			AcceptEntityInput(team_control_point, "SetLocked");
 		}
-		else
-		{
-			// Spawn bomb prop on CP
-			// TODO: Set skin of bomb to team color
-			float origin[3];
-			GetEntPropVector(team_control_point, Prop_Send, "m_vecOrigin", origin);
-			float angles[3];
-			GetEntPropVector(team_control_point, Prop_Send, "m_angRotation", angles);
-			
-			int bomb = CreateEntityByName("prop_dynamic_override");
-			SetEntityModel(bomb, BOMB_MODEL);
-			DispatchSpawn(bomb);
-			TeleportEntity(bomb, origin, angles, NULL_VECTOR);
-			
-			// Set up timers
-			g_10SecondBombTimer = CreateTimer(tfgo_bomb_timer.FloatValue - 10.0, Play10SecondBombWarning, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
-			g_bombBeepingTimer = CreateTimer(1.0, PlayBombBeep, EntIndexToEntRef(bomb), TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
-			g_bombDetonationWarningTimer = CreateTimer(tfgo_bomb_timer.FloatValue - 1.5, PlayBombExplosionWarning, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
-			g_bombDetonationTimer = CreateTimer(tfgo_bomb_timer.FloatValue, DetonateBomb, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
-		}
 	}
 	
 	int trigger_capture_area;
@@ -646,6 +626,24 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 		// Adjust defuse time
 		SetEntPropFloat(trigger_capture_area, Prop_Data, "m_flCapTime", GetEntPropFloat(trigger_capture_area, Prop_Data, "m_flCapTime") / 0.75);
 	}
+	
+	// Spawn bomb prop on first capper
+	int capper = cappers.Get(0);
+	float origin[3];
+	GetEntPropVector(capper, Prop_Send, "m_vecOrigin", origin);
+	float angles[3];
+	GetEntPropVector(capper, Prop_Send, "m_angRotation", angles);
+	
+	int bomb = CreateEntityByName("prop_dynamic_override");
+	SetEntityModel(bomb, BOMB_MODEL);
+	DispatchSpawn(bomb);
+	TeleportEntity(bomb, origin, angles, NULL_VECTOR);
+	
+	// Set up timers
+	g_10SecondBombTimer = CreateTimer(tfgo_bomb_timer.FloatValue - 10.0, Play10SecondBombWarning, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
+	g_bombBeepingTimer = CreateTimer(1.0, PlayBombBeep, EntIndexToEntRef(bomb), TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+	g_bombDetonationWarningTimer = CreateTimer(tfgo_bomb_timer.FloatValue - 1.5, PlayBombExplosionWarning, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
+	g_bombDetonationTimer = CreateTimer(tfgo_bomb_timer.FloatValue, DetonateBomb, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
 	
 	// Play Sounds
 	g_currentMusicKit.StopMusicForAll(Music_StartAction);
