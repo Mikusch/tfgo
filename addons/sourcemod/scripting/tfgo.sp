@@ -234,7 +234,7 @@ public void OnClientPutInServer(int client)
 
 public void OnClientThink(int client)
 {
-	SetHudTextParams(-1.0, 0.675, 0.1, 162, 255, 71, 255, 0, 0.0, 0.0, 0.0);
+	SetHudTextParams(0.05, 0.35, 0.1, 162, 255, 71, 255, _, 0.0, 0.0, 0.0);
 	ShowHudText(client, -1, "$%d", TFGOPlayer(client).Balance);
 }
 
