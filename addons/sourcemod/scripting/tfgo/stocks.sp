@@ -76,7 +76,7 @@ stock void TF2_GetItemName(int defindex, char[] buffer, int maxlength)
 	}
 }
 
-stock void TF2_CreateAndEquipWeapon(int client, int defindex)
+stock void TF2_CreateAndEquipWeapon(int client, int defindex, TFQuality quality = TFQual_Normal, int level = 0)
 {
 	TFClassType nClass = TF2_GetPlayerClass(client);
 	int iSlot = TF2_GetSlotInItem(defindex, nClass);
@@ -111,6 +111,11 @@ stock void TF2_CreateAndEquipWeapon(int client, int defindex)
 	{
 		SetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex", defindex);
 		SetEntProp(weapon, Prop_Send, "m_bInitialized", 1);
+		
+		char netClass[64];
+		GetEntityNetClass(weapon, netClass, sizeof(netClass));
+		SetEntData(weapon, FindSendPropInfo(netClass, "m_iEntityQuality"), quality);
+		SetEntData(weapon, FindSendPropInfo(netClass, "m_iEntityLevel"), level);
 		
 		if (DispatchSpawn(weapon))
 		{

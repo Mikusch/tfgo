@@ -107,7 +107,7 @@ methodmap TFGOPlayer
 			SDK_CreateDroppedWeapon(currentWeapon, this.Client, origin, angles);
 		}
 		
-		TF2_CreateAndEquipWeapon(this.Client, defindex);
+		TF2_CreateAndEquipWeapon(this.Client, defindex, TFQual_Unique, GetRandomInt(1, 100));
 		
 		// Save to loadout
 		g_playerLoadoutWeaponIndexes[this][class][slot] = defindex;
@@ -141,7 +141,7 @@ methodmap TFGOPlayer
 			if (defindex != TF2_GetItemInSlot(this.Client, slot))
 			{
 				if (defindex != -1)
-					TF2_CreateAndEquipWeapon(this.Client, defindex);
+					TF2_CreateAndEquipWeapon(this.Client, defindex, TFQual_Vintage, GetRandomInt(1, 100));
 				else
 					TF2_RemoveItemInSlot(this.Client, slot);
 			}

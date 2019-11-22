@@ -13,6 +13,27 @@ enum
 	Winreason_Stalemate
 };
 
+enum TFQuality
+{
+	TFQual_None = -1, 
+	TFQual_Normal = 0, 
+	TFQual_Genuine, 
+	TFQual_Rarity2, 
+	TFQual_Vintage, 
+	TFQual_Rarity3, 
+	TFQual_Unusual, 
+	TFQual_Unique, 
+	TFQual_Community, 
+	TFQual_Developer, 
+	TFQual_Selfmade, 
+	TFQual_Customized, 
+	TFQual_Strange, 
+	TFQual_Completed, 
+	TFQual_Haunted, 
+	TFQual_Collectors, 
+	TFQual_Decorated, 
+};
+
 enum
 {
 	WeaponSlot_Primary = 0, 
