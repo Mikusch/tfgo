@@ -669,9 +669,9 @@ public Action PlayBombBeep(Handle timer, int bomb)
 {
 	if (g_bombBeepingTimer != timer)return Plugin_Stop;
 	
-	float m_vecOrigin[3];
-	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", m_vecOrigin);
-	EmitAmbientSound(BOMB_BEEPING_SOUND, m_vecOrigin, bomb);
+	float origin[3];
+	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", origin);
+	EmitAmbientSound(BOMB_BEEPING_SOUND, origin, bomb);
 	return Plugin_Continue;
 }
 
@@ -691,9 +691,9 @@ public Action PlayBombExplosionWarning(Handle timer, int bomb)
 	
 	g_bombBeepingTimer = null;
 	
-	float m_vecOrigin[3];
-	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", m_vecOrigin);
-	EmitAmbientSound(BOMB_WARNING_SOUND, m_vecOrigin, bomb, SNDLEVEL_RAIDSIREN);
+	float origin[3];
+	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", origin);
+	EmitAmbientSound(BOMB_WARNING_SOUND, origin, bomb, SNDLEVEL_RAIDSIREN);
 }
 
 public Action DetonateBomb(Handle timer, int bombRef)
@@ -707,9 +707,9 @@ public Action DetonateBomb(Handle timer, int bombRef)
 	TF2_ForceRoundWin(g_bombPlantingTeam, Winreason_AllPointsCaptured);
 	
 	int bomb = EntRefToEntIndex(bombRef);
-	float m_vecOrigin[3];
-	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", m_vecOrigin);
-	TF2_Explode(_, m_vecOrigin, 500.0, 800.0, BOMB_EXPLOSION_PARTICLE, BOMB_EXPLOSION_SOUND);
+	float origin[3];
+	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", origin);
+	TF2_Explode(_, origin, 500.0, 800.0, BOMB_EXPLOSION_PARTICLE, BOMB_EXPLOSION_SOUND);
 	RemoveEntity(bomb);
 	
 	Forward_BombDetonated(g_bombPlantingTeam);
