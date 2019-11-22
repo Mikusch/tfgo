@@ -12,11 +12,6 @@ stock int GetAlivePlayersInTeam(TFTeam team)
 	return count;
 }
 
-stock int IntAbs(int num)
-{
-	return num < 0 ? num * -1 : num;
-}
-
 stock void TF2_ForceRoundWin(TFTeam team, int winReason, bool forceMapReset = true, bool switchTeams = false)
 {
 	int entity = CreateEntityByName("game_round_win");

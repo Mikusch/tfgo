@@ -81,12 +81,12 @@ methodmap TFGOPlayer
 		this.Balance += val;
 		
 		char message[PLATFORM_MAX_PATH];
-		VFormat(message, sizeof(message), reason, 3);
+		VFormat(message, sizeof(message), reason, 4);
 		
 		if (val > 0)
 			CPrintToChat(this.Client, "{positive}+$%d{default}: %s", val, message);
 		else if (val < 0)
-			CPrintToChat(this.Client, "{negative}-$%d{default}: %s", IntAbs(val), message);
+			CPrintToChat(this.Client, "{negative}-$%d{default}: %s", val * -1, message);
 		else
 			CPrintToChat(this.Client, "{negative}$%d{default}: %s", val, message);
 		

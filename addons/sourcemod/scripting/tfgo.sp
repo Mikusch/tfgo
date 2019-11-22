@@ -115,12 +115,6 @@ public void OnPluginStart()
 	LoadTranslations("common.phrases.txt");
 	LoadTranslations("tfgo.phrases.txt");
 	
-	// Initializing globals
-	SDK_Init();
-	MusicKit_Init();
-	Config_Init();
-	g_hudSync = CreateHudSynchronizer();
-	
 	// Events
 	HookEvent("player_team", Event_Player_Team);
 	HookEvent("player_death", Event_Player_Death);
@@ -152,7 +146,7 @@ public void OnPluginStart()
 	tfgo_cash_player_bomb_planted = CreateConVar("tfgo_cash_player_bomb_planted", "200", "Cash award for each player that planted the bomb");
 	tfgo_cash_player_bomb_defused = CreateConVar("tfgo_cash_player_bomb_defused", "200", "Cash award for each player that defused the bomb");
 	tfgo_cash_player_killed_enemy_default = CreateConVar("tfgo_cash_player_killed_enemy_default", "300", "Default cash award for eliminating an enemy player");
-	tfgo_cash_player_killed_enemy_factor = CreateConVar("tfgo_cash_player_killed_enemy_factor", "0.5");
+	tfgo_cash_player_killed_enemy_factor = CreateConVar("tfgo_cash_player_killed_enemy_factor", "0.5", "The factor each kill award is multiplied with");
 	tfgo_cash_team_elimination = CreateConVar("tfgo_cash_team_elimination", "2700", "Team cash award for winning by eliminating the enemy team");
 	tfgo_cash_team_loser_bonus = CreateConVar("tfgo_cash_team_loser_bonus", "2400", "Team cash bonus for losing");
 	tfgo_cash_team_loser_bonus_consecutive_rounds = CreateConVar("tfgo_cash_team_loser_bonus_consecutive_rounds", "0", "Team cash bonus for losing consecutive rounds");
@@ -161,6 +155,12 @@ public void OnPluginStart()
 	tfgo_cash_team_planted_bomb_but_defused = CreateConVar("tfgo_cash_team_planted_bomb_but_defused", "200", "Team cash bonus for planting the bomb and losing");
 	
 	Toggle_ConVars(true);
+	
+	// Initializing globals
+	SDK_Init();
+	MusicKit_Init();
+	Config_Init();
+	g_hudSync = CreateHudSynchronizer();
 	
 	AddCommandListener(Client_BuildCommand, "build");
 	AddCommandListener(Client_DestroyCommand, "destroy");
@@ -364,94 +364,91 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 {
 	TFGOPlayer attacker = TFGOPlayer(GetClientOfUserId(event.GetInt("attacker")));
 	TFGOPlayer victim = TFGOPlayer(GetClientOfUserId(event.GetInt("userid")));
-	TFGOPlayer assister = TFGOPlayer(GetClientOfUserId(event.GetInt("assister")));
-	int defindex = event.GetInt("weapon_def_index");
-	int inflictorEntindex = event.GetInt("inflictor_entindex");
-	char weapon[PLATFORM_MAX_PATH];
-	event.GetString("weapon", weapon, sizeof(weapon));
 	
 	char victimName[PLATFORM_MAX_PATH];
 	GetClientName(victim.Client, victimName, sizeof(victimName));
 	
+	// Grant kill award to attacker/assister
 	if (0 < attacker.Client <= MaxClients)
 	{
 		int killAward;
-		char message[PLATFORM_MAX_PATH];
+		float factor = tfgo_cash_player_killed_enemy_factor.FloatValue;
 		
-		// Entity kill (sentry gun, sandman ball etc.)
-		if (inflictorEntindex > MaxClients)
+		// Entity kill (e.g. "obj_sentrygun", "tf_projectile_healing_bolt", etc.)
+		// "player" is a valid entity
+		int inflictorEntindex = event.GetInt("inflictor_entindex");
+		char classname[PLATFORM_MAX_PATH];
+		if (IsValidEntity(inflictorEntindex) && GetEntityClassname(inflictorEntindex, classname, sizeof(classname)) && g_weaponClassKillAwards.GetValue(classname, killAward))
 		{
-			char classname[PLATFORM_MAX_PATH];
-			GetEntityClassname(inflictorEntindex, classname, sizeof(classname));
-			g_weaponClassKillAwards.GetValue(weapon, killAward);
+			killAward = RoundFloat(killAward * factor);
+			attacker.AddToBalance(killAward, "Award for neutralizing an enemy.");
 		}
-		
-		// Suicide
-		if (attacker == victim)
+		else
 		{
-			if (g_isMainRoundActive)
+			if (attacker == victim) // Suicide
 			{
-				killAward = tfgo_cash_player_killed_enemy_default.IntValue;
-				
-				// Re-assign attacker to random enemy player
-				ArrayList enemies = new ArrayList();
-				for (int client = 1; client <= MaxClients; client++)
+				if (g_isMainRoundActive)
 				{
-					if (IsClientInGame(client) && IsPlayerAlive(client) && GetClientTeam(client) != GetClientTeam(attacker.Client))
-						enemies.Push(client);
-				}
-				attacker = TFGOPlayer(enemies.Get(GetRandomInt(0, enemies.Length - 1)));
-				delete enemies;
-				
-				// CS:GO does special chat messages for suicides
-				for (int client = 1; client <= MaxClients; client++)
-				{
-					if (!IsClientInGame(client))
-						continue;
+					killAward = RoundFloat(tfgo_cash_player_killed_enemy_default.IntValue * factor);
 					
-					if (GetClientTeam(client) == GetClientTeam(victim.Client))
+					// Re-assign attacker to random enemy player
+					ArrayList enemies = new ArrayList();
+					for (int client = 1; client <= MaxClients; client++)
 					{
-						PrintToChat(client, "An enemy player was awarded compensation for the suicide of %s.", victimName);
+						if (IsClientInGame(client) && IsPlayerAlive(client) && GetClientTeam(client) != GetClientTeam(attacker.Client))
+							enemies.Push(client);
 					}
-					else if (attacker.Client != client)
+					attacker = TFGOPlayer(enemies.Get(GetRandomInt(0, enemies.Length - 1)));
+					delete enemies;
+					
+					// CS:GO does special chat messages for suicides
+					for (int client = 1; client <= MaxClients; client++)
 					{
-						char attackerName[PLATFORM_MAX_PATH];
-						GetClientName(attacker.Client, attackerName, sizeof(attackerName));
-						CPrintToChat(client, "Your teammate %s was awarded {positive}$%d {default}compenstion for the suicide of %s.", attackerName, RoundFloat(killAward * tfgo_cash_player_killed_enemy_factor.FloatValue), victimName);
+						if (!IsClientInGame(client))
+							continue;
+						
+						if (GetClientTeam(client) == GetClientTeam(victim.Client))
+						{
+							PrintToChat(client, "An enemy player was awarded compensation for the suicide of %s.", victimName);
+						}
+						else if (attacker.Client != client)
+						{
+							char attackerName[PLATFORM_MAX_PATH];
+							GetClientName(attacker.Client, attackerName, sizeof(attackerName));
+							CPrintToChat(client, "Your teammate %s was awarded {positive}$%d {default}compenstion for the suicide of %s.", attackerName, killAward, victimName);
+						}
 					}
+					
+					attacker.AddToBalance(killAward, "Award for neutralizing an enemy.", victimName);
+					PrintToChat(attacker.Client, "(You were awarded $%d compensation for the suicide of %s)", killAward, victimName);
+				}
+			}
+			else // Weapon kill
+			{
+				int weaponDefIndex = event.GetInt("weapon_def_index");
+				char weapon[PLATFORM_MAX_PATH];
+				event.GetString("weapon", weapon, sizeof(weapon));
+				
+				char weaponName[PLATFORM_MAX_PATH];
+				TF2_GetItemName(weaponDefIndex, weaponName, sizeof(weaponName));
+				
+				// Specific weapon kill (e.g. "shotgun_pyro", "prinny_machete", "world", etc.)
+				// If not found, determine kill award from the weapon class
+				if (!g_weaponClassKillAwards.GetValue(weapon, killAward))
+				{
+					TF2Econ_GetItemClassName(weaponDefIndex, classname, sizeof(classname));
+					if (!g_weaponClassKillAwards.GetValue(classname, killAward))
+						killAward = tfgo_cash_player_killed_enemy_default.IntValue;
 				}
 				
-				Format(message, sizeof(message), "Award for neutralizing an enemy.\n(You were awarded $%d compensation for the suicide of %s)", RoundFloat(killAward * tfgo_cash_player_killed_enemy_factor.FloatValue), victimName);
+				killAward = RoundFloat(killAward * factor);
+				attacker.AddToBalance(killAward, "Award for neutralizing an enemy with %s.", weaponName);
 			}
 		}
-		// Environmental kill
-		else if (strcmp(weapon, "world") == 0)
-		{
-			g_weaponClassKillAwards.GetValue(weapon, killAward);
-			message = "Award for neutralizing an enemy using the environment.";
-		}
-		// Weapon kill
-		else if (killAward == 0)
-		{
-			killAward = GetEffectiveKillAward(defindex);
-			char weaponName[PLATFORM_MAX_PATH];
-			TF2_GetItemName(defindex, weaponName, sizeof(weaponName));
-			Format(message, sizeof(message), "Award for neutralizing an enemy with %s.", weaponName);
-		}
-		
-		// Fallback values for kill award and message
-		if (killAward == 0)
-			killAward = tfgo_cash_player_killed_enemy_default.IntValue;
-		if (strlen(message) == 0)
-			message = "Award for neutralizing an enemy.";
-		
-		killAward = RoundFloat(killAward * tfgo_cash_player_killed_enemy_factor.FloatValue);
-		
-		// Grant kill award
-		attacker.AddToBalance(killAward, message);
 		
 		// Grant assist award
-		if (assister.Client >= 1 && assister.Client <= MaxClients)
+		TFGOPlayer assister = TFGOPlayer(GetClientOfUserId(event.GetInt("assister")));
+		if (killAward > 0 && 0 < assister.Client <= MaxClients)
 			assister.AddToBalance(killAward / 2, "Award for assisting in neutralizing %s.", victimName);
 	}
 	

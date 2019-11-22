@@ -1,11 +1,9 @@
 #define CONFIG_FILE "configs/tfgo/tfgo.cfg"
-#define DEFAULT_KILL_AWARD  100
 
 enum struct Weapon
 {
 	int defindex;
 	int cost;
-	int killAward;
 }
 
 StringMap g_weaponClassKillAwards;
@@ -25,16 +23,6 @@ public void ReadWeaponConfig(KeyValues kv)
 				Weapon weapon;
 				weapon.defindex = StringToInt(defindex);
 				weapon.cost = kv.GetNum("cost", -1);
-				
-				// Fetch kill award
-				int killAward = kv.GetNum("killAward", -1);
-				if (killAward <= -1)
-				{
-					char class[255];
-					TF2Econ_GetItemClassName(weapon.defindex, class, sizeof(class));
-					g_weaponClassKillAwards.GetValue(class, killAward);
-				}
-				weapon.killAward = killAward;
 				
 				int length = g_availableWeapons.Length;
 				g_availableWeapons.Resize(length + 1);
@@ -56,9 +44,9 @@ void ReadKillAwardConfig(KeyValues kv)
 		{
 			do // Loop through each weapon class
 			{
-				char class[256];
+				char class[PLATFORM_MAX_PATH];
 				kv.GetSectionName(class, sizeof(class)); // Weapon class
-				g_weaponClassKillAwards.SetValue(class, kv.GetNum(NULL_STRING, DEFAULT_KILL_AWARD));
+				g_weaponClassKillAwards.SetValue(class, kv.GetNum(NULL_STRING, tfgo_cash_player_killed_enemy_default.IntValue));
 			}
 			while (kv.GotoNextKey(false));
 			kv.GoBack();
@@ -66,26 +54,6 @@ void ReadKillAwardConfig(KeyValues kv)
 		}
 		kv.GoBack();
 	}
-}
-
-public int GetEffectiveKillAward(int defindex)
-{
-	int killAward;
-	int index = g_availableWeapons.FindValue(defindex, 0);
-	if (index > -1)
-	{
-		Weapon weapon;
-		g_availableWeapons.GetArray(index, weapon, sizeof(weapon));
-		killAward = weapon.killAward;
-	}
-	else
-	{
-		char weaponclass[256];
-		TF2Econ_GetItemClassName(defindex, weaponclass, sizeof(weaponclass));
-		if (!g_weaponClassKillAwards.GetValue(weaponclass, killAward))
-			return DEFAULT_KILL_AWARD;
-	}
-	return killAward;
 }
 
 void Config_Init()
