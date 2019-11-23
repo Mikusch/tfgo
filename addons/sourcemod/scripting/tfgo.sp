@@ -95,6 +95,7 @@ MusicKit g_currentMusicKit;
 #include "tfgo/buymenu.sp"
 #include "tfgo/buyzone.sp"
 #include "tfgo/forward.sp"
+#include "tfgo/native.sp"
 
 
 public Plugin myinfo =  {
@@ -108,6 +109,7 @@ public Plugin myinfo =  {
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	Forward_AskLoad();
+	Native_AskLoad();
 	RegPluginLibrary("tfgo");
 	
 	return APLRes_Success;
