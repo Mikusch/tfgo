@@ -14,6 +14,5 @@ public int Native_GetWeaponCost(Handle plugin, int numParams)
 		return weapon.cost;
 	}
 	
-	ThrowError("Invalid weapon with index %d", defindex);
 	return -1;
 }
