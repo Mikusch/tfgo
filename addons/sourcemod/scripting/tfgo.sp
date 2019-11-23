@@ -345,6 +345,8 @@ public MRESReturn Hook_PickupWeaponFromOther(int client, Handle returnVal, Handl
 	int weapon = DHookGetParam(params, 1); // tf_dropped_weapon
 	int defindex = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
 	TFGOPlayer(client).AddToLoadout(defindex);
+	
+	Forward_WeaponPickup(client, defindex);
 }
 
 public Action Event_Player_Team(Event event, const char[] name, bool dontBroadcast)

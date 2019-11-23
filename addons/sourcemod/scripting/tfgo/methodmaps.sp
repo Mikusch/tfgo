@@ -83,6 +83,8 @@ methodmap TFGOPlayer
 			CPrintToChat(this.Client, "{negative}-$%d{default}: %s", val * -1, message);
 		else
 			CPrintToChat(this.Client, "{negative}$%d{default}: %s", val, message);
+		
+		Forward_CashAwarded(this.Client, val);
 	}
 	
 	public void ResetBalance()

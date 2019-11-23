@@ -77,3 +77,29 @@ forward void TFGO_OnBombDetonated(TFTeam team);
  * @noreturn
  */
 forward void TFGO_OnBombDefused(TFTeam team, ArrayList cappers, float timeLeft);
+
+/**
+ * Forward called when a player earns cash.
+ *
+ * @param client	The client that earned the cash
+ * @param amount	The amount of money that was earned
+ * @noreturn
+ */
+forward void TFGO_OnCashAwarded(int client, int amount);
+
+/**
+ * Forward called when a player picks up a weapon.
+ *
+ * @param client	The client that picked up the weapon
+ * @param defindex	The item definition index of the weapon
+ * @noreturn
+ */
+forward void TFGO_OnWeaponPickup(int client, int defindex);
+
+/**
+* Retrieves the cost of a weapon.
+*
+* @param defindex	The item definition index of the weapon
+* @return the cost of the weapon
+*/
+native int TFGO_GetWeaponCost(int defindex);
