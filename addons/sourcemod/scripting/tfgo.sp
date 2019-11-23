@@ -665,6 +665,7 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 	ShowGameMessage(message, "ico_notify_sixty_seconds");
 	
 	Forward_BombPlanted(team, cappers);
+	delete cappers;
 }
 
 public Action PlayBombBeep(Handle timer, int bomb)
@@ -734,6 +735,7 @@ void DefuseBomb(TFTeam team, ArrayList cappers)
 	TF2_ForceRoundWin(team, Winreason_PointCaptured);
 	
 	Forward_BombDefused(team, cappers, tfgo_bomb_timer.FloatValue - (GetGameTime() - g_bombPlantedTime));
+	delete cappers;
 }
 
 public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBroadcast)
