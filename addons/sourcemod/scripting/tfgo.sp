@@ -391,8 +391,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 		char classname[PLATFORM_MAX_PATH];
 		if (IsValidEntity(inflictorEntindex) && GetEntityClassname(inflictorEntindex, classname, sizeof(classname)) && g_weaponClassKillAwards.GetValue(classname, killAward))
 		{
-			killAward = RoundFloat(killAward * factor);
-			attacker.AddToBalance(killAward, "Award for neutralizing an enemy.");
+			attacker.AddToBalance(RoundFloat(killAward * factor), "Award for neutralizing an enemy.");
 		}
 		else
 		{
@@ -452,15 +451,25 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 						killAward = tfgo_cash_player_killed_enemy_default.IntValue;
 				}
 				
-				killAward = RoundFloat(killAward * factor);
-				attacker.AddToBalance(killAward, "Award for neutralizing an enemy with %s.", weaponName);
+				attacker.AddToBalance(RoundFloat(killAward * factor), "Award for neutralizing an enemy with %s.", weaponName);
 			}
 		}
 		
 		// Grant assist award
 		TFGOPlayer assister = TFGOPlayer(GetClientOfUserId(event.GetInt("assister")));
-		if (killAward > 0 && 0 < assister.Client <= MaxClients)
-			assister.AddToBalance(killAward / 2, "Award for assisting in neutralizing %s.", victimName);
+		if (0 < assister.Client <= MaxClients)
+		{
+			int activeWeapon = GetEntPropEnt(assister.Client, Prop_Send, "m_hActiveWeapon");
+			if (activeWeapon > -1)
+			{
+				int weaponDefIndex = GetEntProp(activeWeapon, Prop_Send, "m_iItemDefinitionIndex");
+				TF2Econ_GetItemClassName(weaponDefIndex, classname, sizeof(classname));
+				if (!g_weaponClassKillAwards.GetValue(classname, killAward))
+					killAward = tfgo_cash_player_killed_enemy_default.IntValue;
+				
+				assister.AddToBalance(RoundFloat(killAward * factor) / 2, "Award for assisting in neutralizing %s.", victimName);
+			}
+		}
 	}
 	
 	if (g_isBombPlanted)
