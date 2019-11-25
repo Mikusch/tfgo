@@ -87,7 +87,7 @@ public Action Event_Pre_Teamplay_Broadcast_Audio(Event event, const char[] name,
 	event.GetString("sound", sound, sizeof(sound));
 	TFTeam team = view_as<TFTeam>(event.GetInt("team"));
 	
-	if (strncmp(sound, "Game.YourTeam", 13) == 0)
+	if (strncmp(sound, "Game.", 5) == 0)
 	{
 		g_currentMusicKit.StopMusicForAll(Music_StartAction);
 		g_currentMusicKit.StopMusicForAll(Music_BombPlanted);
