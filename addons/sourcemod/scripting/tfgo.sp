@@ -466,9 +466,13 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 				TF2Econ_GetItemClassName(weaponDefIndex, classname, sizeof(classname));
 				if (!g_weaponClassKillAwards.GetValue(classname, killAward))
 					killAward = tfgo_cash_player_killed_enemy_default.IntValue;
-				
-				assister.AddToBalance(RoundFloat(killAward * factor) / 2, "Award for assisting in neutralizing %s.", victimName);
 			}
+			else // Assister likely has died
+			{
+				killAward = tfgo_cash_player_killed_enemy_default.IntValue;
+			}
+			
+			assister.AddToBalance(RoundFloat(killAward * factor) / 2, "Award for assisting in neutralizing %s.", victimName);
 		}
 	}
 	
