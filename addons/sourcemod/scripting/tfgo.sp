@@ -71,6 +71,7 @@ ConVar tf_arena_use_queue;
 ConVar tf_arena_preround_time;
 ConVar tf_arena_override_cap_enable_time;
 ConVar tf_arena_max_streak;
+ConVar tf_use_fixed_weaponspreads;
 ConVar tf_weapon_criticals;
 ConVar tf_weapon_criticals_melee;
 ConVar mp_bonusroundtime;
@@ -138,6 +139,7 @@ public void OnPluginStart()
 	tf_arena_preround_time = FindConVar("tf_arena_preround_time");
 	tf_arena_override_cap_enable_time = FindConVar("tf_arena_override_cap_enable_time");
 	tf_arena_max_streak = FindConVar("tf_arena_max_streak");
+	tf_use_fixed_weaponspreads = FindConVar("tf_use_fixed_weaponspreads");
 	tf_weapon_criticals = FindConVar("tf_weapon_criticals");
 	tf_weapon_criticals_melee = FindConVar("tf_weapon_criticals_melee");
 	mp_bonusroundtime = FindConVar("mp_bonusroundtime");
@@ -860,6 +862,7 @@ void Toggle_ConVars(bool toggle)
 	static int arenaRoundTime;
 	static int arenaOverrideCapEnableTime;
 	static int arenaMaxStreak;
+	static bool useFixedWeaponSpreads;
 	static bool weaponCriticals;
 	static bool weaponCriticalsMelee;
 	static int bonusRoundTime;
@@ -887,6 +890,9 @@ void Toggle_ConVars(bool toggle)
 		arenaMaxStreak = tf_arena_max_streak.IntValue;
 		tf_arena_max_streak.IntValue = 8;
 		
+		useFixedWeaponSpreads = tf_use_fixed_weaponspreads.BoolValue;
+		tf_use_fixed_weaponspreads.BoolValue = false;
+		
 		weaponCriticals = tf_weapon_criticals.BoolValue;
 		tf_weapon_criticals.BoolValue = false;
 		
@@ -905,6 +911,7 @@ void Toggle_ConVars(bool toggle)
 		tf_arena_round_time.IntValue = arenaRoundTime;
 		tf_arena_override_cap_enable_time.IntValue = arenaOverrideCapEnableTime;
 		tf_arena_max_streak.IntValue = arenaMaxStreak;
+		tf_use_fixed_weaponspreads.BoolValue = useFixedWeaponSpreads;
 		tf_weapon_criticals.BoolValue = weaponCriticals;
 		tf_weapon_criticals_melee.BoolValue = weaponCriticalsMelee;
 		mp_bonusroundtime.IntValue = bonusRoundTime;
