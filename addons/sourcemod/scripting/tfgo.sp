@@ -891,7 +891,7 @@ void Toggle_ConVars(bool toggle)
 		tf_arena_max_streak.IntValue = 8;
 		
 		useFixedWeaponSpreads = tf_use_fixed_weaponspreads.BoolValue;
-		tf_use_fixed_weaponspreads.BoolValue = false;
+		tf_use_fixed_weaponspreads.BoolValue = true;
 		
 		weaponCriticals = tf_weapon_criticals.BoolValue;
 		tf_weapon_criticals.BoolValue = false;
