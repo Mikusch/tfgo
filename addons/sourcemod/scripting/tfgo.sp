@@ -425,7 +425,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 						{
 							char attackerName[PLATFORM_MAX_PATH];
 							GetClientName(attacker.Client, attackerName, sizeof(attackerName));
-							CPrintToChat(client, "Your teammate %s was awarded {positive}$%d {default}compenstion for the suicide of %s.", attackerName, killAward, victimName);
+							CPrintToChat(client, "Your teammate %s was awarded {positive}$%d {default}compensation for the suicide of %s.", attackerName, killAward, victimName);
 						}
 					}
 					
