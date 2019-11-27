@@ -482,7 +482,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	{
 		TFTeam victimTeam = TF2_GetClientTeam(GetClientOfUserId(event.GetInt("userid")));
 		// End the round if every member of the non-planting team died
-		if (g_bombPlantingTeam != victimTeam && GetAlivePlayersInTeam(victimTeam) - 1 <= 0) // -1 because it doesn't work properly in player_death
+		if (g_bombPlantingTeam != victimTeam && GetAlivePlayersInTeam(victimTeam) - 1 <= 0 && !(event.GetInt("death_flags") & TF_DEATHFLAG_DEADRINGER)) // -1 because it doesn't work properly in player_death
 			g_isBombPlanted = false;
 	}
 	
