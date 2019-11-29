@@ -25,22 +25,6 @@ static char g_sBombPlantedSoldierAlerts[][PLATFORM_MAX_PATH] =  {
 	"vo/soldier_mvm_bomb_see03.mp3", 
 };
 
-static char g_sBombDefusedEngineerResponses[][PLATFORM_MAX_PATH] =  {
-	"vo/engineer_mvm_bomb_destroyed02.mp3"
-};
-
-static char g_sBombDefusedHeavyResponses[][PLATFORM_MAX_PATH] =  {
-	"vo/heavy_mvm_bomb_destroyed01.mp3"
-};
-
-static char g_sBombDefusedMedicResponses[][PLATFORM_MAX_PATH] =  {
-	"vo/medic_mvm_bomb_destroyed01.mp3"
-};
-
-static char g_sBombDefusedSoldierResponses[][PLATFORM_MAX_PATH] =  {
-	"vo/soldier_mvm_bomb_destroyed02.mp3"
-};
-
 stock void PrecacheSounds()
 {
 	PrecacheSound(BOMB_WARNING_SOUND);
@@ -53,10 +37,6 @@ stock void PrecacheSounds()
 	for (int i = 0; i < sizeof(g_sBombPlantedHeavyAlerts); i++)PrecacheSound(g_sBombPlantedHeavyAlerts[i]);
 	for (int i = 0; i < sizeof(g_sBombPlantedMedicAlerts); i++)PrecacheSound(g_sBombPlantedMedicAlerts[i]);
 	for (int i = 0; i < sizeof(g_sBombPlantedSoldierAlerts); i++)PrecacheSound(g_sBombPlantedSoldierAlerts[i]);
-	for (int i = 0; i < sizeof(g_sBombDefusedEngineerResponses); i++)PrecacheSound(g_sBombDefusedEngineerResponses[i]);
-	for (int i = 0; i < sizeof(g_sBombDefusedHeavyResponses); i++)PrecacheSound(g_sBombDefusedHeavyResponses[i]);
-	for (int i = 0; i < sizeof(g_sBombDefusedMedicResponses); i++)PrecacheSound(g_sBombDefusedMedicResponses[i]);
-	for (int i = 0; i < sizeof(g_sBombDefusedSoldierResponses); i++)PrecacheSound(g_sBombDefusedSoldierResponses[i]);
 }
 
 public void PlayAnnouncerBombAlert()
