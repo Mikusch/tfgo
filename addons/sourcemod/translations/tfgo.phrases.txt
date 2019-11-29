@@ -143,4 +143,8 @@
 	{
 		"en"	"You have left the buy zone"
 	}
+	"#BuyMenu_OutOfTime"
+	{
+		"en"	"The %d second buy period has expired"
+	}
 }

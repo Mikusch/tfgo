@@ -540,16 +540,11 @@ public Action OnBuyTimeExpire(Handle timer)
 		{
 			TFGOPlayer player = TFGOPlayer(client);
 			if (player.ActiveBuyMenu != null)
+			{
 				player.ActiveBuyMenu.Cancel();
+				PrintHintText(client, "%T", "#BuyMenu_OutOfTime", LANG_SERVER, tfgo_buytime.IntValue);
+			}
 		}
-	}
-	
-	// No one cares about the buy time if the bomb is already active
-	if (!g_isBombPlanted)
-	{
-		char message[PLATFORM_MAX_PATH] = "The %d second buy period has expired";
-		Format(message, sizeof(message), message, tfgo_buytime.IntValue);
-		ShowGameMessage(message, "ico_notify_ten_seconds");
 	}
 }
 
