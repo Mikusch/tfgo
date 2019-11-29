@@ -127,10 +127,10 @@ methodmap TFGOPlayer
 	public int GetWeaponFromLoadout(TFClassType class, int slot)
 	{
 		int defindex = g_playerLoadoutWeaponIndexes[this][class][slot];
-		if (defindex <= -1)
-			return g_defaultWeaponIndexes[class][slot];
-		else
+		if (defindex > -1)
 			return defindex;
+		else
+			return g_defaultWeaponIndexes[class][slot];
 	}
 	
 	public void ApplyLoadout()
@@ -142,8 +142,8 @@ methodmap TFGOPlayer
 			int defindex = this.GetWeaponFromLoadout(class, slot);
 			if (defindex != TF2_GetItemInSlot(this.Client, slot))
 			{
-				if (defindex != -1)
-					TF2_CreateAndEquipWeapon(this.Client, defindex, TFQual_Vintage, GetRandomInt(1, 100));
+				if (defindex > -1)
+					TF2_CreateAndEquipWeapon(this.Client, defindex, TFQual_Unique, GetRandomInt(1, 100));
 				else
 					TF2_RemoveItemInSlot(this.Client, slot);
 			}
@@ -154,7 +154,7 @@ methodmap TFGOPlayer
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Client);
 		int slot = TF2_GetSlotInItem(defindex, class);
-		g_playerLoadoutWeaponIndexes[this.Client][view_as<int>(class)][slot] = defindex;
+		g_playerLoadoutWeaponIndexes[this.Client][class][slot] = defindex;
 	}
 	
 	public void ClearLoadout()
@@ -169,7 +169,7 @@ methodmap TFGOTeam
 {
 	public TFGOTeam(TFTeam team)
 	{
-		return view_as<TFGOTeam>(view_as<int>(team));
+		return view_as<TFGOTeam>(team);
 	}
 	
 	property TFTeam Team
@@ -211,10 +211,10 @@ methodmap TFGOTeam
 		g_teamLosingStreaks[this] = TFGO_STARTING_LOSESTREAK;
 	}
 	
-	public void AddToTeamBalance(int val, const char[] reason = NULL_STRING)
+	public void AddToClientBalances(int val, const char[] reason)
 	{
 		for (int client = 1; client <= MaxClients; client++)
-		if (IsClientInGame(client) && TF2_GetClientTeam(client) == this.Team)
-			TFGOPlayer(client).AddToBalance(val, reason);
+			if (IsClientInGame(client) && TF2_GetClientTeam(client) == this.Team)
+				TFGOPlayer(client).AddToBalance(val, reason);
 	}
 }

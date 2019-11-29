@@ -330,8 +330,8 @@ public MRESReturn Hook_SetWinningTeam(Handle params)
 	{
 		TFGOTeam red = TFGOTeam(TFTeam_Red);
 		TFGOTeam blue = TFGOTeam(TFTeam_Blue);
-		red.AddToTeamBalance(0, "No income for running out of time and surviving.");
-		blue.AddToTeamBalance(0, "No income for running out of time and surviving.");
+		red.AddToClientBalances(0, "No income for running out of time and surviving.");
+		blue.AddToClientBalances(0, "No income for running out of time and surviving.");
 		red.LoseStreak++;
 		blue.LoseStreak++;
 		return MRES_Ignored;
@@ -774,20 +774,20 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	{
 		if (g_bombPlantingTeam == view_as<TFTeam>(event.GetInt("winning_team")))
 		{
-			winningTeam.AddToTeamBalance(tfgo_cash_team_terrorist_win_bomb.IntValue, "Team award for detonating bomb.");
+			winningTeam.AddToClientBalances(tfgo_cash_team_terrorist_win_bomb.IntValue, "Team award for detonating bomb.");
 		}
 		else
 		{
-			winningTeam.AddToTeamBalance(tfgo_cash_team_win_by_defusing_bomb.IntValue, "Team award for winning by defusing the bomb.");
-			losingTeam.AddToTeamBalance(tfgo_cash_team_planted_bomb_but_defused.IntValue, "Team award for planting the bomb.");
+			winningTeam.AddToClientBalances(tfgo_cash_team_win_by_defusing_bomb.IntValue, "Team award for winning by defusing the bomb.");
+			losingTeam.AddToClientBalances(tfgo_cash_team_planted_bomb_but_defused.IntValue, "Team award for planting the bomb.");
 		}
 	}
 	else if (winreason == Winreason_Elimination)
 	{
-		winningTeam.AddToTeamBalance(tfgo_cash_team_elimination.IntValue, "Team award for eliminating the enemy team.");
+		winningTeam.AddToClientBalances(tfgo_cash_team_elimination.IntValue, "Team award for eliminating the enemy team.");
 	}
 	
-	losingTeam.AddToTeamBalance(losingTeam.LoseIncome, "Income for losing.");
+	losingTeam.AddToClientBalances(losingTeam.LoseIncome, "Income for losing.");
 	
 	// Adjust team losing streaks
 	losingTeam.LoseStreak++;
