@@ -5,7 +5,6 @@ enum MusicType
 {
 	Music_BombPlanted, 
 	Music_BombTenSecCount, 
-	Music_ChooseTeam, 
 	Music_LostRound, 
 	Music_RoundTenSecCount, 
 	Music_WonRound, 
@@ -22,7 +21,6 @@ enum struct MusicKit
 	// Single-value sounds
 	char bombPlanted[PLATFORM_MAX_PATH];
 	char bombTenSecCount[PLATFORM_MAX_PATH];
-	char chooseTeam[PLATFORM_MAX_PATH];
 	char lostRound[PLATFORM_MAX_PATH];
 	char roundTenSecCount[PLATFORM_MAX_PATH];
 	char wonRound[PLATFORM_MAX_PATH];
@@ -38,7 +36,6 @@ enum struct MusicKit
 		{
 			case Music_BombPlanted:strcopy(buffer, maxlength, this.bombPlanted);
 			case Music_BombTenSecCount:strcopy(buffer, maxlength, this.bombTenSecCount);
-			case Music_ChooseTeam:strcopy(buffer, maxlength, this.chooseTeam);
 			case Music_LostRound:strcopy(buffer, maxlength, this.lostRound);
 			case Music_RoundTenSecCount:strcopy(buffer, maxlength, this.roundTenSecCount);
 			case Music_WonRound:strcopy(buffer, maxlength, this.wonRound);
@@ -78,7 +75,6 @@ enum struct MusicKit
 		{
 			case Music_BombPlanted:StopSound(entity, SNDCHAN_STATIC, this.bombPlanted);
 			case Music_BombTenSecCount:StopSound(entity, SNDCHAN_STATIC, this.bombTenSecCount);
-			case Music_ChooseTeam:StopSound(entity, SNDCHAN_STATIC, this.chooseTeam);
 			case Music_LostRound:StopSound(entity, SNDCHAN_STATIC, this.lostRound);
 			case Music_RoundTenSecCount:StopSound(entity, SNDCHAN_STATIC, this.roundTenSecCount);
 			case Music_WonRound:StopSound(entity, SNDCHAN_STATIC, this.wonRound);
@@ -134,11 +130,6 @@ enum struct MusicKit
 		filename = SOUND_PATH;
 		PrecacheSound(this.bombTenSecCount);
 		StrCat(filename, sizeof(filename), this.bombTenSecCount);
-		AddFileToDownloadsTable(filename);
-		
-		filename = SOUND_PATH;
-		PrecacheSound(this.chooseTeam);
-		StrCat(filename, sizeof(filename), this.chooseTeam);
 		AddFileToDownloadsTable(filename);
 		
 		filename = SOUND_PATH;
@@ -228,8 +219,6 @@ void ReadMusicKitConfig(KeyValues kv)
 						kv.GetString(NULL_STRING, kit.bombPlanted, sizeof(kit.bombPlanted));
 					else if (StrEqual(title, "bombtenseccount"))
 						kv.GetString(NULL_STRING, kit.bombTenSecCount, sizeof(kit.bombTenSecCount));
-					else if (StrEqual(title, "chooseteam"))
-						kv.GetString(NULL_STRING, kit.chooseTeam, sizeof(kit.chooseTeam));
 					else if (StrEqual(title, "lostround"))
 						kv.GetString(NULL_STRING, kit.lostRound, sizeof(kit.lostRound));
 					else if (StrEqual(title, "roundtenseccount"))
