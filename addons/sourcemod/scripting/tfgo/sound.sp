@@ -1,47 +1,47 @@
-static char g_sBombPlantedAnnouncerAlerts[][PLATFORM_MAX_PATH] =  {
+static char g_bombPlantedAnnouncerAlerts[][PLATFORM_MAX_PATH] =  {
 	"vo/mvm_bomb_alerts01.mp3", 
 	"vo/mvm_bomb_alerts02.mp3"
 };
 
-static char g_sBombPlantedEngineerAlerts[][PLATFORM_MAX_PATH] =  {
+static char g_bombPlantedEngineerAlerts[][PLATFORM_MAX_PATH] =  {
 	"vo/engineer_mvm_bomb_see01.mp3", 
 	"vo/engineer_mvm_bomb_see02.mp3", 
 	"vo/engineer_mvm_bomb_see03.mp3"
 };
 
-static char g_sBombPlantedHeavyAlerts[][PLATFORM_MAX_PATH] =  {
+static char g_bombPlantedHeavyAlerts[][PLATFORM_MAX_PATH] =  {
 	"vo/heavy_mvm_bomb_see01.mp3"
 };
 
-static char g_sBombPlantedMedicAlerts[][PLATFORM_MAX_PATH] =  {
+static char g_bombPlantedMedicAlerts[][PLATFORM_MAX_PATH] =  {
 	"vo/medic_mvm_bomb_see01.mp3", 
 	"vo/medic_mvm_bomb_see02.mp3", 
 	"vo/medic_mvm_bomb_see03.mp3"
 };
 
-static char g_sBombPlantedSoldierAlerts[][PLATFORM_MAX_PATH] =  {
+static char g_bombPlantedSoldierAlerts[][PLATFORM_MAX_PATH] =  {
 	"vo/soldier_mvm_bomb_see01.mp3", 
 	"vo/soldier_mvm_bomb_see02.mp3", 
-	"vo/soldier_mvm_bomb_see03.mp3", 
+	"vo/soldier_mvm_bomb_see03.mp3"
 };
 
-stock void PrecacheSounds()
+public void PrecacheSounds()
 {
 	PrecacheSound(BOMB_WARNING_SOUND);
 	PrecacheSound(BOMB_EXPLOSION_SOUND);
 	PrecacheSound(PLAYER_PURCHASE_SOUND);
 	PrecacheSound(BOMB_BEEPING_SOUND);
 	
-	for (int i = 0; i < sizeof(g_sBombPlantedAnnouncerAlerts); i++)PrecacheSound(g_sBombPlantedAnnouncerAlerts[i]);
-	for (int i = 0; i < sizeof(g_sBombPlantedEngineerAlerts); i++)PrecacheSound(g_sBombPlantedEngineerAlerts[i]);
-	for (int i = 0; i < sizeof(g_sBombPlantedHeavyAlerts); i++)PrecacheSound(g_sBombPlantedHeavyAlerts[i]);
-	for (int i = 0; i < sizeof(g_sBombPlantedMedicAlerts); i++)PrecacheSound(g_sBombPlantedMedicAlerts[i]);
-	for (int i = 0; i < sizeof(g_sBombPlantedSoldierAlerts); i++)PrecacheSound(g_sBombPlantedSoldierAlerts[i]);
+	for (int i = 0; i < sizeof(g_bombPlantedAnnouncerAlerts); i++)PrecacheSound(g_bombPlantedAnnouncerAlerts[i]);
+	for (int i = 0; i < sizeof(g_bombPlantedEngineerAlerts); i++)PrecacheSound(g_bombPlantedEngineerAlerts[i]);
+	for (int i = 0; i < sizeof(g_bombPlantedHeavyAlerts); i++)PrecacheSound(g_bombPlantedHeavyAlerts[i]);
+	for (int i = 0; i < sizeof(g_bombPlantedMedicAlerts); i++)PrecacheSound(g_bombPlantedMedicAlerts[i]);
+	for (int i = 0; i < sizeof(g_bombPlantedSoldierAlerts); i++)PrecacheSound(g_bombPlantedSoldierAlerts[i]);
 }
 
 public void PlayAnnouncerBombAlert()
 {
-	EmitSoundToAll(g_sBombPlantedAnnouncerAlerts[GetRandomInt(0, sizeof(g_sBombPlantedAnnouncerAlerts) - 1)], _, SNDCHAN_VOICE_BASE); // SNDCHAN_VOICE_BASE = CHAN_VOICE2
+	EmitSoundToAll(g_bombPlantedAnnouncerAlerts[GetRandomInt(0, sizeof(g_bombPlantedAnnouncerAlerts) - 1)], _, SNDCHAN_VOICE_BASE); // SNDCHAN_VOICE_BASE = CHAN_VOICE2
 }
 
 public void ShoutBombWarnings()
@@ -52,10 +52,10 @@ public void ShoutBombWarnings()
 		{
 			switch (TF2_GetPlayerClass(client))
 			{
-				case TFClass_Engineer:EmitSoundToAll(g_sBombPlantedEngineerAlerts[GetRandomInt(0, sizeof(g_sBombPlantedEngineerAlerts) - 1)], _, SNDCHAN_VOICE);
-				case TFClass_Heavy:EmitSoundToAll(g_sBombPlantedHeavyAlerts[GetRandomInt(0, sizeof(g_sBombPlantedHeavyAlerts) - 1)], _, SNDCHAN_VOICE);
-				case TFClass_Medic:EmitSoundToAll(g_sBombPlantedMedicAlerts[GetRandomInt(0, sizeof(g_sBombPlantedMedicAlerts) - 1)], _, SNDCHAN_VOICE);
-				case TFClass_Soldier:EmitSoundToAll(g_sBombPlantedSoldierAlerts[GetRandomInt(0, sizeof(g_sBombPlantedSoldierAlerts) - 1)], _, SNDCHAN_VOICE);
+				case TFClass_Engineer:EmitSoundToAll(g_bombPlantedEngineerAlerts[GetRandomInt(0, sizeof(g_bombPlantedEngineerAlerts) - 1)], _, SNDCHAN_VOICE);
+				case TFClass_Heavy:EmitSoundToAll(g_bombPlantedHeavyAlerts[GetRandomInt(0, sizeof(g_bombPlantedHeavyAlerts) - 1)], _, SNDCHAN_VOICE);
+				case TFClass_Medic:EmitSoundToAll(g_bombPlantedMedicAlerts[GetRandomInt(0, sizeof(g_bombPlantedMedicAlerts) - 1)], _, SNDCHAN_VOICE);
+				case TFClass_Soldier:EmitSoundToAll(g_bombPlantedSoldierAlerts[GetRandomInt(0, sizeof(g_bombPlantedSoldierAlerts) - 1)], _, SNDCHAN_VOICE);
 			}
 		}
 	}
