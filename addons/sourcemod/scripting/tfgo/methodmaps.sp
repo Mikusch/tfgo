@@ -218,6 +218,6 @@ methodmap TFGOTeam
 		
 		for (int client = 1; client <= MaxClients; client++)
 			if (IsClientInGame(client) && TF2_GetClientTeam(client) == this.Team)
-				TFGOPlayer(client).AddToBalance(val, reason);
+				TFGOPlayer(client).AddToBalance(val, message);
 	}
 }
