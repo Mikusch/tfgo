@@ -52,10 +52,10 @@ public void ShoutBombWarnings()
 		{
 			switch (TF2_GetPlayerClass(client))
 			{
-				case TFClass_Engineer:EmitSoundToAll(g_bombPlantedEngineerAlerts[GetRandomInt(0, sizeof(g_bombPlantedEngineerAlerts) - 1)], _, SNDCHAN_VOICE);
-				case TFClass_Heavy:EmitSoundToAll(g_bombPlantedHeavyAlerts[GetRandomInt(0, sizeof(g_bombPlantedHeavyAlerts) - 1)], _, SNDCHAN_VOICE);
-				case TFClass_Medic:EmitSoundToAll(g_bombPlantedMedicAlerts[GetRandomInt(0, sizeof(g_bombPlantedMedicAlerts) - 1)], _, SNDCHAN_VOICE);
-				case TFClass_Soldier:EmitSoundToAll(g_bombPlantedSoldierAlerts[GetRandomInt(0, sizeof(g_bombPlantedSoldierAlerts) - 1)], _, SNDCHAN_VOICE);
+				case TFClass_Engineer:EmitSoundToAll(g_bombPlantedEngineerAlerts[GetRandomInt(0, sizeof(g_bombPlantedEngineerAlerts) - 1)], _, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
+				case TFClass_Heavy:EmitSoundToAll(g_bombPlantedHeavyAlerts[GetRandomInt(0, sizeof(g_bombPlantedHeavyAlerts) - 1)], _, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
+				case TFClass_Medic:EmitSoundToAll(g_bombPlantedMedicAlerts[GetRandomInt(0, sizeof(g_bombPlantedMedicAlerts) - 1)], _, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
+				case TFClass_Soldier:EmitSoundToAll(g_bombPlantedSoldierAlerts[GetRandomInt(0, sizeof(g_bombPlantedSoldierAlerts) - 1)], _, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
 			}
 		}
 	}
