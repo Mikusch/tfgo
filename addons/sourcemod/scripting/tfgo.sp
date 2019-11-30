@@ -47,6 +47,7 @@ bool g_isBombDetonated;
 bool g_isBombDefused;
 float g_bombPlantedTime;
 TFTeam g_bombPlantingTeam;
+bool g_playerSuicides[TF_MAXPLAYERS + 1];
 
 // ConVars
 ConVar tfgo_buytime;
@@ -330,8 +331,8 @@ public MRESReturn Hook_SetWinningTeam(Handle params)
 	{
 		TFGOTeam red = TFGOTeam(TFTeam_Red);
 		TFGOTeam blue = TFGOTeam(TFTeam_Blue);
-		red.AddToClientBalances(0, "No income for running out of time and surviving.");
-		blue.AddToClientBalances(0, "No income for running out of time and surviving.");
+		red.AddToClientBalances(0, "%T", "Team_Cash_Award_no_income", LANG_SERVER);
+		blue.AddToClientBalances(0, "%T", "Team_Cash_Award_no_income", LANG_SERVER);
 		red.LoseStreak++;
 		blue.LoseStreak++;
 		return MRES_Ignored;
@@ -393,7 +394,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 		char classname[PLATFORM_MAX_PATH];
 		if (IsValidEntity(inflictorEntindex) && GetEntityClassname(inflictorEntindex, classname, sizeof(classname)) && g_weaponClassKillAwards.GetValue(classname, killAward))
 		{
-			attacker.AddToBalance(RoundFloat(killAward * factor), "Award for neutralizing an enemy.");
+			attacker.AddToBalance(RoundFloat(killAward * factor), "%T", "Player_Cash_Award_Killed_Enemy_Generic", LANG_SERVER);
 		}
 		else
 		{
@@ -401,38 +402,43 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 			{
 				if (g_isMainRoundActive)
 				{
+					g_playerSuicides[victim.Client] = true;
 					killAward = RoundFloat(tfgo_cash_player_killed_enemy_default.IntValue * factor);
 					
-					// Re-assign attacker to random enemy player
 					ArrayList enemies = new ArrayList();
 					for (int client = 1; client <= MaxClients; client++)
 					{
-						if (IsClientInGame(client) && IsPlayerAlive(client) && GetClientTeam(client) != GetClientTeam(attacker.Client))
+						if (IsClientInGame(client) && IsPlayerAlive(client) && GetClientTeam(client) != GetClientTeam(victim.Client))
 							enemies.Push(client);
 					}
-					attacker = TFGOPlayer(enemies.Get(GetRandomInt(0, enemies.Length - 1)));
-					delete enemies;
 					
-					// CS:GO does special chat messages for suicides
-					for (int client = 1; client <= MaxClients; client++)
+					// Re-assign attacker to random enemy player, if present
+					if (enemies.Length > 0)
 					{
-						if (!IsClientInGame(client))
-							continue;
+						attacker = TFGOPlayer(enemies.Get(GetRandomInt(0, enemies.Length - 1)));
 						
-						if (GetClientTeam(client) == GetClientTeam(victim.Client))
+						char attackerName[PLATFORM_MAX_PATH];
+						GetClientName(attacker.Client, attackerName, sizeof(attackerName));
+						
+						// CS:GO does special chat messages for suicides
+						for (int client = 1; client <= MaxClients; client++)
 						{
-							PrintToChat(client, "An enemy player was awarded compensation for the suicide of %s.", victimName);
+							if (!IsClientInGame(client))
+								continue;
+							
+							if (TF2_GetClientTeam(client) <= TFTeam_Spectator)
+								PrintToChat(client, "%T", "Player_Cash_Award_ExplainSuicide_Spectators", LANG_SERVER, attackerName, killAward, victimName);
+							else if (GetClientTeam(client) == GetClientTeam(victim.Client))
+								PrintToChat(client, "%T", "Player_Cash_Award_ExplainSuicide_EnemyGotCash", LANG_SERVER, victimName);
+							else if (attacker.Client != client)
+								CPrintToChat(client, "%T", "Player_Cash_Award_ExplainSuicide_TeammateGotCash", LANG_SERVER, attackerName, killAward, victimName);
 						}
-						else if (attacker.Client != client)
-						{
-							char attackerName[PLATFORM_MAX_PATH];
-							GetClientName(attacker.Client, attackerName, sizeof(attackerName));
-							CPrintToChat(client, "Your teammate %s was awarded {positive}$%d {default}compensation for the suicide of %s.", attackerName, killAward, victimName);
-						}
+						
+						attacker.AddToBalance(killAward, "%T", "Player_Cash_Award_Killed_Enemy_Generic", LANG_SERVER, victimName);
+						PrintToChat(attacker.Client, "%T", "Player_Cash_Award_ExplainSuicide_YouGotCash", LANG_SERVER, killAward, victimName);
 					}
 					
-					attacker.AddToBalance(killAward, "Award for neutralizing an enemy.", victimName);
-					PrintToChat(attacker.Client, "(You were awarded $%d compensation for the suicide of %s)", killAward, victimName);
+					delete enemies;
 				}
 			}
 			else // Weapon kill
@@ -453,7 +459,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 						killAward = tfgo_cash_player_killed_enemy_default.IntValue;
 				}
 				
-				attacker.AddToBalance(RoundFloat(killAward * factor), "Award for neutralizing an enemy with %s.", weaponName);
+				attacker.AddToBalance(RoundFloat(killAward * factor), "%T", "Player_Cash_Award_Killed_Enemy", LANG_SERVER, weaponName);
 			}
 		}
 		
@@ -474,7 +480,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 				killAward = tfgo_cash_player_killed_enemy_default.IntValue;
 			}
 			
-			assister.AddToBalance(RoundFloat(killAward * factor) / 2, "Award for assisting in neutralizing %s.", victimName);
+			assister.AddToBalance(RoundFloat(killAward * factor) / 2, "%T", "Player_Cash_Award_Assist_Enemy", LANG_SERVER, victimName);
 		}
 	}
 	
@@ -542,7 +548,7 @@ public Action OnBuyTimeExpire(Handle timer)
 			if (player.ActiveBuyMenu != null)
 			{
 				player.ActiveBuyMenu.Cancel();
-				PrintHintText(client, "%T", "#BuyMenu_OutOfTime", LANG_SERVER, tfgo_buytime.IntValue);
+				PrintHintText(client, "%T", "BuyMenu_OutOfTime", LANG_SERVER, tfgo_buytime.IntValue);
 			}
 		}
 	}
@@ -591,7 +597,7 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 	for (int i = 0; i < cappers.Length; i++)
 	{
 		int capper = cappers.Get(i);
-		TFGOPlayer(capper).AddToBalance(tfgo_cash_player_bomb_planted.IntValue, "Award for planting the bomb.");
+		TFGOPlayer(capper).AddToBalance(tfgo_cash_player_bomb_planted.IntValue, "%T", "Player_Cash_Award_Bomb_Planted", LANG_SERVER);
 	}
 	
 	// Superceding SetWinningTeam causes arena mode to force a map change on capture
@@ -738,7 +744,7 @@ void DefuseBomb(TFTeam team, ArrayList cappers)
 	for (int i = 0; i < cappers.Length; i++)
 	{
 		int capper = cappers.Get(i);
-		TFGOPlayer(capper).AddToBalance(tfgo_cash_player_bomb_defused.IntValue, "Award for defusing the bomb.");
+		TFGOPlayer(capper).AddToBalance(tfgo_cash_player_bomb_defused.IntValue, "%T", "Player_Cash_Award_Bomb_Defused", LANG_SERVER);
 	}
 	
 	g_isBombDefused = true;
@@ -769,20 +775,30 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	{
 		if (g_bombPlantingTeam == view_as<TFTeam>(event.GetInt("winning_team")))
 		{
-			winningTeam.AddToClientBalances(tfgo_cash_team_terrorist_win_bomb.IntValue, "Team award for detonating bomb.");
+			winningTeam.AddToClientBalances(tfgo_cash_team_terrorist_win_bomb.IntValue, "%T", "Team_Cash_Award_T_Win_Bomb", LANG_SERVER);
 		}
 		else
 		{
-			winningTeam.AddToClientBalances(tfgo_cash_team_win_by_defusing_bomb.IntValue, "Team award for winning by defusing the bomb.");
-			losingTeam.AddToClientBalances(tfgo_cash_team_planted_bomb_but_defused.IntValue, "Team award for planting the bomb.");
+			winningTeam.AddToClientBalances(tfgo_cash_team_win_by_defusing_bomb.IntValue, "%T", "Team_Cash_Award_Win_Defuse_Bomb", LANG_SERVER);
+			losingTeam.AddToClientBalances(tfgo_cash_team_planted_bomb_but_defused.IntValue, "%T", "Team_Cash_Award_Planted_Bomb_But_Defused", LANG_SERVER);
 		}
 	}
 	else if (winreason == Winreason_Elimination)
 	{
-		winningTeam.AddToClientBalances(tfgo_cash_team_elimination.IntValue, "Team award for eliminating the enemy team.");
+		winningTeam.AddToClientBalances(tfgo_cash_team_elimination.IntValue, "%T", "Team_Cash_Award_Elim_Bomb", LANG_SERVER);
 	}
 	
-	losingTeam.AddToClientBalances(losingTeam.LoseIncome, "Income for losing.");
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientInGame(client) && TF2_GetClientTeam(client) == losingTeam.Team)
+		{
+			// Do not give losing bonus to players that deliberately suicided
+			if (g_playerSuicides[client])
+				TFGOPlayer(client).AddToBalance(0, "%T", "Team_Cash_Award_no_income_suicide", LANG_SERVER);
+			else
+				TFGOPlayer(client).AddToBalance(losingTeam.LoseIncome, "%T", "Team_Cash_Award_Loser_Bonus", LANG_SERVER);
+		}
+	}
 	
 	// Adjust team losing streaks
 	losingTeam.LoseStreak++;
@@ -802,6 +818,7 @@ public void ResetGameState()
 	g_isBombDetonated = false;
 	g_isBombDefused = false;
 	g_bombPlantingTeam = TFTeam_Unassigned;
+	for (int i = 0; i < sizeof(g_playerSuicides); i++)g_playerSuicides[i] = false;
 }
 
 public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool dontBroadcast)

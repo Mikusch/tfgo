@@ -1,31 +1,31 @@
 public void DisplaySlotSelectionMenu(int client)
 {
 	Menu menu = new Menu(HandleSlotSelectionMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DisplayItem);
-	menu.SetTitle("%T", "#BuyMenu_Title", LANG_SERVER, TFGOPlayer(client).Balance);
+	menu.SetTitle("%T", "BuyMenu_Title", LANG_SERVER, TFGOPlayer(client).Balance);
 	
 	switch (TF2_GetPlayerClass(client))
 	{
 		case TFClass_Engineer:
 		{
-			menu.AddItem("0", "#BuyMenu_Primary");
-			menu.AddItem("1", "#BuyMenu_Secondary");
-			menu.AddItem("2", "#BuyMenu_Melee");
-			menu.AddItem("3;4", "#BuyMenu_PDA");
+			menu.AddItem("0", "BuyMenu_Primary");
+			menu.AddItem("1", "BuyMenu_Secondary");
+			menu.AddItem("2", "BuyMenu_Melee");
+			menu.AddItem("3;4", "BuyMenu_PDA");
 		}
 		
 		case TFClass_Spy:
 		{
-			menu.AddItem("0", "#BuyMenu_Secondary"); // Revolver
-			menu.AddItem("2", "#BuyMenu_Melee"); // Knife
-			menu.AddItem("3;4", "#BuyMenu_PDA"); // Disguise Kit/Invis Watch
-			//menu.AddItem("1", "#BuyMenu_Building_Spy"); // Sapper (Currently crashes the game)
+			menu.AddItem("0", "BuyMenu_Secondary"); // Revolver
+			menu.AddItem("2", "BuyMenu_Melee"); // Knife
+			menu.AddItem("3;4", "BuyMenu_PDA"); // Disguise Kit/Invis Watch
+			//menu.AddItem("1", "BuyMenu_Building_Spy"); // Sapper (Currently crashes the game)
 		}
 		
 		default:
 		{
-			menu.AddItem("0", "#BuyMenu_Primary");
-			menu.AddItem("1", "#BuyMenu_Secondary");
-			menu.AddItem("2", "#BuyMenu_Melee");
+			menu.AddItem("0", "BuyMenu_Primary");
+			menu.AddItem("1", "BuyMenu_Secondary");
+			menu.AddItem("2", "BuyMenu_Melee");
 		}
 	}
 	
@@ -78,7 +78,7 @@ public int HandleSlotSelectionMenu(Menu menu, MenuAction action, int param1, int
 public void DisplayBuyMenu(int client, ArrayList slots)
 {
 	Menu menu = new Menu(HandleBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DrawItem);
-	menu.SetTitle("%T", "#BuyMenu_Title", LANG_SERVER, TFGOPlayer(client).Balance);
+	menu.SetTitle("%T", "BuyMenu_Title", LANG_SERVER, TFGOPlayer(client).Balance);
 	
 	for (int i = 0; i < g_availableWeapons.Length; i++)
 	{

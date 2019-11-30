@@ -114,37 +114,105 @@
 		"en"	"Invis Watch"
 	}
 	
-	// Buy Menu Translations
-	"#BuyMenu_Title"
+	// Buy Menu
+	"BuyMenu_Title"
 	{
 		"en"	"Welcome to the buy menu!\nYou currently have $%d."
 	}
-	"#BuyMenu_Primary"
+	"BuyMenu_Primary"
 	{
 		"en"	"Primary Weapon"
 	}
-	"#BuyMenu_Secondary"
+	"BuyMenu_Secondary"
 	{
 		"en"	"Secondary Weapon"
 	}
-	"#BuyMenu_Melee"
+	"BuyMenu_Melee"
 	{
 		"en"	"Melee Weapon"
 	}
-	"#BuyMenu_PDA"
+	"BuyMenu_PDA"
 	{
 		"en"	"PDA"
 	}
-	"#BuyMenu_Building_Spy"
+	"BuyMenu_Building_Spy"
 	{
 		"en"	"Sapper"
 	}
-	"#BuyMenu_NotInBuyZone"
+	"BuyMenu_NotInBuyZone"
 	{
 		"en"	"You have left the buy zone"
 	}
-	"#BuyMenu_OutOfTime"
+	"BuyMenu_OutOfTime"
 	{
 		"en"	"The %d second buy period has expired"
+	}
+	
+	// Player Cash Awards
+	"Player_Cash_Award_Killed_Enemy_Generic"
+	{
+		"en"	"Award for neutralizing an enemy."
+	}
+	"Player_Cash_Award_Killed_Enemy"
+	{
+		"en"	"Award for neutralizing an enemy with %s."
+	}
+	"Player_Cash_Award_Assist_Enemy"
+	{
+		"en"	"Award for assisting in neutralizing %s."
+	}
+	"Player_Cash_Award_Bomb_Planted"
+	{
+		"en"	"Award for planting the bomb."
+	}
+	"Player_Cash_Award_Bomb_Defused"
+	{
+		"en"	"Award for defusing the bomb."
+	}
+	"Player_Cash_Award_ExplainSuicide_YouGotCash"
+	{
+		"en"	"(You were awarded +$%d compensation for the suicide of %s)"
+	}
+	"Player_Cash_Award_ExplainSuicide_TeammateGotCash"
+	{
+		"en"	"Your teammate %s was awarded {positive}$+$%d{default} compensation for the suicide of %s."
+	}
+	"Player_Cash_Award_ExplainSuicide_EnemyGotCash"
+	{
+		"en"	"An enemy player was awarded compensation for the suicide of %s."
+	}
+	"Player_Cash_Award_ExplainSuicide_Spectators"
+	{
+		"en"	"%s was awarded +$%d compensation for the suicide of %s."
+	}
+	
+	// Team Cash Awards
+	"Team_Cash_Award_T_Win_Bomb"
+	{
+		"en"	"Team award for detonating bomb."
+	}
+	"Team_Cash_Award_Elim_Bomb"
+	{
+		"en"	"Team award for eliminating the enemy team."
+	}
+	"Team_Cash_Award_Win_Defuse_Bomb"
+	{
+		"en"	"Team award for winning by defusing the bomb."
+	}
+	"Team_Cash_Award_Loser_Bonus"
+	{
+		"en"	"Income for losing."
+	}
+	"Team_Cash_Award_Planted_Bomb_But_Defused"
+	{
+		"en"	"Team award for planting the bomb."
+	}
+	"Team_Cash_Award_no_income"
+	{
+		"en"	"No income for running out of time and surviving."
+	}
+	"Team_Cash_Award_no_income_suicide"
+	{
+		"en"	"No income for suiciding."
 	}
 }

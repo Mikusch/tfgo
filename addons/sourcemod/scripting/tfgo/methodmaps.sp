@@ -211,10 +211,13 @@ methodmap TFGOTeam
 		g_teamLosingStreaks[this] = TFGO_STARTING_LOSESTREAK;
 	}
 	
-	public void AddToClientBalances(int val, const char[] reason)
+	public void AddToClientBalances(int val, const char[] reason, any...)
 	{
+		char message[PLATFORM_MAX_PATH];
+		VFormat(message, sizeof(message), reason, 4);
+		
 		for (int client = 1; client <= MaxClients; client++)
 			if (IsClientInGame(client) && TF2_GetClientTeam(client) == this.Team)
-				TFGOPlayer(client).AddToBalance(val, reason);
+				TFGOPlayer(client).AddToBalance(val, message);
 	}
 }
