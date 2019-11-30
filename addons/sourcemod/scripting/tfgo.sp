@@ -425,10 +425,10 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 						if (!IsClientInGame(client))
 							continue;
 						
-						if (GetClientTeam(client) == GetClientTeam(victim.Client))
-							PrintToChat(client, "%T", "Player_Cash_Award_ExplainSuicide_EnemyGotCash", LANG_SERVER, victimName);
-						else if (TF2_GetClientTeam(client) == TFTeam_Spectator)
+						if (TF2_GetClientTeam(client) == TFTeam_Spectator)
 							PrintToChat(client, "%T", "Player_Cash_Award_ExplainSuicide_Spectators", LANG_SERVER, attackerName, killAward, victimName);
+						else if (GetClientTeam(client) == GetClientTeam(victim.Client))
+							PrintToChat(client, "%T", "Player_Cash_Award_ExplainSuicide_EnemyGotCash", LANG_SERVER, victimName);
 						else if (attacker.Client != client)
 							CPrintToChat(client, "%T", "Player_Cash_Award_ExplainSuicide_TeammateGotCash", LANG_SERVER, attackerName, killAward, victimName);
 					}

@@ -148,6 +148,7 @@
 		"en"	"The %d second buy period has expired"
 	}
 	
+	// Player Cash Awards
 	"Player_Cash_Award_Killed_Enemy_Generic"
 	{
 		"en"	"Award for neutralizing an enemy."
@@ -168,8 +169,6 @@
 	{
 		"en"	"Award for defusing the bomb."
 	}
-	
-	// Player Cash Awards
 	"Player_Cash_Award_ExplainSuicide_YouGotCash"
 	{
 		"en"	"(You were awarded +$%s compensation for the suicide of %s)"
