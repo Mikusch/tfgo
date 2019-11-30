@@ -175,7 +175,7 @@
 	}
 	"Player_Cash_Award_ExplainSuicide_TeammateGotCash"
 	{
-		"en"	"Your teammate %s was awarded {positive}$+$%d{default} compensation for the suicide of %s."
+		"en"	"Your teammate %s was awarded {positive}+$%d{default} compensation for the suicide of %s."
 	}
 	"Player_Cash_Award_ExplainSuicide_EnemyGotCash"
 	{
