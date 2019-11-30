@@ -49,7 +49,7 @@ enum struct MusicKit
 	{
 		char sound[PLATFORM_MAX_PATH];
 		this.GetRandomMusicFile(sound, sizeof(sound), type);
-		EmitSoundToClient(client, sound, _, SNDCHAN_STATIC);
+		EmitSoundToClient(client, sound, _, SNDCHAN_STATIC, SNDLEVEL_NONE);
 	}
 	
 	void PlayMusicToTeam(TFTeam team, MusicType type)
@@ -58,14 +58,14 @@ enum struct MusicKit
 		this.GetRandomMusicFile(sound, sizeof(sound), type);
 		for (int client = 1; client <= MaxClients; client++)
 		if (IsClientInGame(client) && TF2_GetClientTeam(client) == team)
-			EmitSoundToClient(client, sound, _, SNDCHAN_STATIC);
+			EmitSoundToClient(client, sound, _, SNDCHAN_STATIC, SNDLEVEL_NONE);
 	}
 	
 	void PlayMusicToAll(MusicType type)
 	{
 		char sound[PLATFORM_MAX_PATH];
 		this.GetRandomMusicFile(sound, sizeof(sound), type);
-		EmitSoundToAll(sound, _, SNDCHAN_STATIC);
+		EmitSoundToAll(sound, _, SNDCHAN_STATIC, SNDLEVEL_NONE);
 	}
 	
 	void StopMusicForClient(int entity, MusicType type)
