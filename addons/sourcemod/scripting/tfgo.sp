@@ -405,36 +405,40 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 					g_playerSuicides[victim.Client] = true;
 					killAward = RoundFloat(tfgo_cash_player_killed_enemy_default.IntValue * factor);
 					
-					// Re-assign attacker to random enemy player
 					ArrayList enemies = new ArrayList();
 					for (int client = 1; client <= MaxClients; client++)
 					{
-						if (IsClientInGame(client) && IsPlayerAlive(client) && GetClientTeam(client) != GetClientTeam(attacker.Client))
+						if (IsClientInGame(client) && IsPlayerAlive(client) && GetClientTeam(client) != GetClientTeam(victim.Client))
 							enemies.Push(client);
 					}
-					attacker = TFGOPlayer(enemies.Get(GetRandomInt(0, enemies.Length - 1)));
-					delete enemies;
 					
-					
-					char attackerName[PLATFORM_MAX_PATH];
-					GetClientName(attacker.Client, attackerName, sizeof(attackerName));
-					
-					// CS:GO does special chat messages for suicides
-					for (int client = 1; client <= MaxClients; client++)
+					// Re-assign attacker to random enemy player, if present
+					if (enemies.Length > 0)
 					{
-						if (!IsClientInGame(client))
-							continue;
+						attacker = TFGOPlayer(enemies.Get(GetRandomInt(0, enemies.Length - 1)));
 						
-						if (TF2_GetClientTeam(client) == TFTeam_Spectator)
-							PrintToChat(client, "%T", "Player_Cash_Award_ExplainSuicide_Spectators", LANG_SERVER, attackerName, killAward, victimName);
-						else if (GetClientTeam(client) == GetClientTeam(victim.Client))
-							PrintToChat(client, "%T", "Player_Cash_Award_ExplainSuicide_EnemyGotCash", LANG_SERVER, victimName);
-						else if (attacker.Client != client)
-							CPrintToChat(client, "%T", "Player_Cash_Award_ExplainSuicide_TeammateGotCash", LANG_SERVER, attackerName, killAward, victimName);
+						char attackerName[PLATFORM_MAX_PATH];
+						GetClientName(attacker.Client, attackerName, sizeof(attackerName));
+						
+						// CS:GO does special chat messages for suicides
+						for (int client = 1; client <= MaxClients; client++)
+						{
+							if (!IsClientInGame(client))
+								continue;
+							
+							if (TF2_GetClientTeam(client) == TFTeam_Spectator)
+								PrintToChat(client, "%T", "Player_Cash_Award_ExplainSuicide_Spectators", LANG_SERVER, attackerName, killAward, victimName);
+							else if (GetClientTeam(client) == GetClientTeam(victim.Client))
+								PrintToChat(client, "%T", "Player_Cash_Award_ExplainSuicide_EnemyGotCash", LANG_SERVER, victimName);
+							else if (attacker.Client != client)
+								CPrintToChat(client, "%T", "Player_Cash_Award_ExplainSuicide_TeammateGotCash", LANG_SERVER, attackerName, killAward, victimName);
+						}
+						
+						attacker.AddToBalance(killAward, "%T", "Player_Cash_Award_Killed_Enemy_Generic", LANG_SERVER, victimName);
+						PrintToChat(attacker.Client, "%T", "Player_Cash_Award_ExplainSuicide_YouGotCash", LANG_SERVER, killAward, victimName);
 					}
 					
-					attacker.AddToBalance(killAward, "%T", "Player_Cash_Award_Killed_Enemy_Generic", LANG_SERVER, victimName);
-					PrintToChat(attacker.Client, "%T", "Player_Cash_Award_ExplainSuicide_YouGotCash", LANG_SERVER, killAward, victimName);
+					delete enemies;
 				}
 			}
 			else // Weapon kill
