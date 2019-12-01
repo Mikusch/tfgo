@@ -120,61 +120,51 @@ enum struct MusicKit
 	
 	void PrecacheSounds()
 	{
-		char filename[PLATFORM_MAX_PATH];
-		
-		filename = SOUND_PATH;
 		PrecacheSound(this.bombPlanted);
-		StrCat(filename, sizeof(filename), this.bombPlanted);
-		AddFileToDownloadsTable(filename);
+		AddMusicFileToDownloadsTable(this.bombPlanted);
 		
-		filename = SOUND_PATH;
 		PrecacheSound(this.bombTenSecCount);
-		StrCat(filename, sizeof(filename), this.bombTenSecCount);
-		AddFileToDownloadsTable(filename);
+		AddMusicFileToDownloadsTable(this.bombTenSecCount);
 		
-		filename = SOUND_PATH;
 		PrecacheSound(this.lostRound);
-		StrCat(filename, sizeof(filename), this.lostRound);
-		AddFileToDownloadsTable(filename);
+		AddMusicFileToDownloadsTable(this.lostRound);
 		
-		filename = SOUND_PATH;
 		PrecacheSound(this.roundTenSecCount);
-		StrCat(filename, sizeof(filename), this.roundTenSecCount);
-		AddFileToDownloadsTable(filename);
+		AddMusicFileToDownloadsTable(this.roundTenSecCount);
 		
-		filename = SOUND_PATH;
 		PrecacheSound(this.wonRound);
-		StrCat(filename, sizeof(filename), this.wonRound);
-		AddFileToDownloadsTable(filename);
+		AddMusicFileToDownloadsTable(this.wonRound);
 		
 		char sound[PLATFORM_MAX_PATH];
 		for (int i = 0; i < this.startRound.Length; i++)
 		{
 			this.startRound.GetString(i, sound, sizeof(sound));
 			PrecacheSound(sound);
-			filename = SOUND_PATH;
-			StrCat(filename, sizeof(filename), sound);
-			AddFileToDownloadsTable(filename);
+			AddMusicFileToDownloadsTable(sound);
 		}
 		
 		for (int i = 0; i < this.startAction.Length; i++)
 		{
 			this.startAction.GetString(i, sound, sizeof(sound));
 			PrecacheSound(sound);
-			filename = SOUND_PATH;
-			StrCat(filename, sizeof(filename), sound);
-			AddFileToDownloadsTable(filename);
+			AddMusicFileToDownloadsTable(sound);
 		}
 		
 		for (int i = 0; i < this.roundMvpAnthem.Length; i++)
 		{
 			this.roundMvpAnthem.GetString(i, sound, sizeof(sound));
 			PrecacheSound(sound);
-			filename = SOUND_PATH;
-			StrCat(filename, sizeof(filename), sound);
-			AddFileToDownloadsTable(filename);
+			AddMusicFileToDownloadsTable(sound);
 		}
 	}
+}
+
+public void AddMusicFileToDownloadsTable(char file[PLATFORM_MAX_PATH])
+{
+	char filename[PLATFORM_MAX_PATH];
+	filename = SOUND_PATH;
+	StrCat(filename, sizeof(filename), file);
+	AddFileToDownloadsTable(filename);
 }
 
 public void PrecacheMusicKits()
