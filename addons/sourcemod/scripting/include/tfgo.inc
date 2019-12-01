@@ -103,3 +103,21 @@ forward void TFGO_OnWeaponPickup(int client, int defindex);
 * @return the cost of the weapon
 */
 native int TFGO_GetWeaponCost(int defindex);
+
+public SharedPlugin __pl_tfgo =
+{
+	name = "tfgo",
+	file = "tfgo.smx",
+#if defined REQUIRE_PLUGIN
+	required = 1,
+#else
+	required = 0,
+#endif
+};
+
+#if !defined REQUIRE_PLUGIN
+public __pl_tfgo_SetNTVOptional()
+{
+	MarkNativeAsOptional("TFGO_GetWeaponCost");
+}
+#endif
