@@ -164,6 +164,7 @@ public void AddMusicFileToDownloadsTable(char file[PLATFORM_MAX_PATH])
 	char filename[PLATFORM_MAX_PATH];
 	filename = SOUND_PATH;
 	StrCat(filename, sizeof(filename), file);
+	ReplaceString(filename, sizeof(filename), "#", "");
 	AddFileToDownloadsTable(filename);
 }
 
