@@ -48,6 +48,7 @@ bool g_isBombDefused;
 float g_bombPlantedTime;
 TFTeam g_bombPlantingTeam;
 bool g_playerSuicides[TF_MAXPLAYERS + 1];
+bool g_playerExitedBuyMenu[TF_MAXPLAYERS + 1];
 
 // ConVars
 ConVar tfgo_buytime;
@@ -819,6 +820,7 @@ public void ResetGameState()
 	g_isBombDefused = false;
 	g_bombPlantingTeam = TFTeam_Unassigned;
 	for (int i = 0; i < sizeof(g_playerSuicides); i++)g_playerSuicides[i] = false;
+	for (int i = 0; i < sizeof(g_playerExitedBuyMenu); i++)g_playerExitedBuyMenu[i] = false;
 }
 
 public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool dontBroadcast)

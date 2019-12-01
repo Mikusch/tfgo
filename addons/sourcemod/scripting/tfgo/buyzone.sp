@@ -88,7 +88,7 @@ public void DisplayMenuInDynamicBuyZone(int client)
 		float radius = tfgo_buyzone_radius_override.IntValue > -1 ? tfgo_buyzone_radius_override.FloatValue : g_dynamicBuyzoneRadius[team];
 		if (distance <= radius) // Player is in buy zone
 		{
-			if (player.ActiveBuyMenu == null)
+			if (player.ActiveBuyMenu == null && !g_playerExitedBuyMenu[client])
 				DisplaySlotSelectionMenu(client);
 		}
 		else // Player has left buy zone
