@@ -496,8 +496,6 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	if (g_isMainRoundActive || g_isBonusRoundActive)
 		victim.ClearLoadout();
 	
-	g_playerInDynamicBuyZone[victim.Client] = false;
-	
 	if (victim.ActiveBuyMenu != null)
 		victim.ActiveBuyMenu.Cancel();
 }
@@ -514,15 +512,17 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 		if (player.ActiveBuyMenu != null)
 			player.ActiveBuyMenu.Cancel();
 		
-		// func_respawnroom OnStartTouch doesn't fire thus buy menu doesn't get re-opened so we do it manually
-		if (g_mapHasRespawnRoom)
-			DisplaySlotSelectionMenu(client);
+		// Open buy menu on respawn
+		DisplaySlotSelectionMenu(client);
 	}
 }
 
 public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
-	g_isBombDetonated = false;
+	// Reset game state
+	ResetGameState();
+	
+	g_isBuyTimeActive = true;
 	g_isBonusRoundActive = false;
 	g_isMainRoundActive = false;
 	g_buyTimeTimer = CreateTimer(tfgo_buytime.FloatValue, OnBuyTimeExpire, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -761,7 +761,6 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 {
 	g_isMainRoundActive = false;
 	g_isBonusRoundActive = true;
-	g_isBuyTimeActive = true;
 	
 	// Determine winning/losing team
 	TFGOTeam winningTeam = TFGOTeam(view_as<TFTeam>(event.GetInt("winning_team")));
@@ -810,9 +809,6 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	// Reset timers
 	g_10SecondRoundTimer = null;
 	g_10SecondBombTimer = null;
-	
-	// Reset game state
-	ResetGameState();
 }
 
 public void ResetGameState()
