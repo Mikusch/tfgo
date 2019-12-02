@@ -48,7 +48,7 @@ bool g_isBombDefused;
 float g_bombPlantedTime;
 TFTeam g_bombPlantingTeam;
 bool g_playerSuicides[TF_MAXPLAYERS + 1];
-bool g_playerExitedBuyMenu[TF_MAXPLAYERS + 1];
+bool g_playerInDynamicBuyZone[TF_MAXPLAYERS + 1];
 
 // ConVars
 ConVar tfgo_buytime;
@@ -496,6 +496,8 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	if (g_isMainRoundActive || g_isBonusRoundActive)
 		victim.ClearLoadout();
 	
+	g_playerInDynamicBuyZone[victim.Client] = false;
+	
 	if (victim.ActiveBuyMenu != null)
 		victim.ActiveBuyMenu.Cancel();
 }
@@ -820,7 +822,7 @@ public void ResetGameState()
 	g_isBombDefused = false;
 	g_bombPlantingTeam = TFTeam_Unassigned;
 	for (int i = 0; i < sizeof(g_playerSuicides); i++)g_playerSuicides[i] = false;
-	for (int i = 0; i < sizeof(g_playerExitedBuyMenu); i++)g_playerExitedBuyMenu[i] = false;
+	for (int i = 0; i < sizeof(g_playerInDynamicBuyZone); i++)g_playerInDynamicBuyZone[i] = false;
 }
 
 public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool dontBroadcast)
