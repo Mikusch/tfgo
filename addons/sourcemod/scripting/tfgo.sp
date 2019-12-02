@@ -48,7 +48,7 @@ bool g_isBombDefused;
 float g_bombPlantedTime;
 TFTeam g_bombPlantingTeam;
 bool g_playerSuicides[TF_MAXPLAYERS + 1];
-bool g_playerExitedBuyMenu[TF_MAXPLAYERS + 1];
+bool g_playerInDynamicBuyZone[TF_MAXPLAYERS + 1];
 
 // ConVars
 ConVar tfgo_buytime;
@@ -233,7 +233,7 @@ public void OnClientPutInServer(int client)
 
 public void OnClientThink(int client)
 {
-	SetHudTextParams(0.05, 0.345, 0.1, 162, 255, 71, 255, _, 0.0, 0.0, 0.0);
+	SetHudTextParams(0.05, 0.325, 0.1, 162, 255, 71, 255, _, 0.0, 0.0, 0.0);
 	ShowHudText(client, -1, "$%d", TFGOPlayer(client).Balance);
 	
 	if (!g_mapHasRespawnRoom && g_isBuyTimeActive)
@@ -512,15 +512,17 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 		if (player.ActiveBuyMenu != null)
 			player.ActiveBuyMenu.Cancel();
 		
-		// func_respawnroom OnStartTouch doesn't fire thus buy menu doesn't get re-opened so we do it manually
-		if (g_mapHasRespawnRoom)
-			DisplaySlotSelectionMenu(client);
+		// Open buy menu on respawn
+		DisplaySlotSelectionMenu(client);
 	}
 }
 
 public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
-	g_isBombDetonated = false;
+	// Reset game state
+	ResetGameState();
+	
+	g_isBuyTimeActive = true;
 	g_isBonusRoundActive = false;
 	g_isMainRoundActive = false;
 	g_buyTimeTimer = CreateTimer(tfgo_buytime.FloatValue, OnBuyTimeExpire, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -759,7 +761,6 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 {
 	g_isMainRoundActive = false;
 	g_isBonusRoundActive = true;
-	g_isBuyTimeActive = true;
 	
 	// Determine winning/losing team
 	TFGOTeam winningTeam = TFGOTeam(view_as<TFTeam>(event.GetInt("winning_team")));
@@ -808,9 +809,6 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	// Reset timers
 	g_10SecondRoundTimer = null;
 	g_10SecondBombTimer = null;
-	
-	// Reset game state
-	ResetGameState();
 }
 
 public void ResetGameState()
@@ -820,7 +818,7 @@ public void ResetGameState()
 	g_isBombDefused = false;
 	g_bombPlantingTeam = TFTeam_Unassigned;
 	for (int i = 0; i < sizeof(g_playerSuicides); i++)g_playerSuicides[i] = false;
-	for (int i = 0; i < sizeof(g_playerExitedBuyMenu); i++)g_playerExitedBuyMenu[i] = false;
+	for (int i = 0; i < sizeof(g_playerInDynamicBuyZone); i++)g_playerInDynamicBuyZone[i] = false;
 }
 
 public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool dontBroadcast)

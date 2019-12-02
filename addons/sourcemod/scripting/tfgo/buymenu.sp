@@ -58,12 +58,7 @@ public int HandleSlotSelectionMenu(Menu menu, MenuAction action, int param1, int
 			}
 		}
 		
-		case MenuAction_Cancel:
-		{
-			TFGOPlayer(param1).ActiveBuyMenu = null;
-			if (param2 == MenuCancel_Exit)
-				g_playerExitedBuyMenu[param1] = true;
-		}
+		case MenuAction_Cancel:TFGOPlayer(param1).ActiveBuyMenu = null;
 		
 		case MenuAction_End:delete menu;
 		
@@ -139,8 +134,6 @@ public int HandleBuyMenu(Menu menu, MenuAction action, int param1, int param2)
 			TFGOPlayer(param1).ActiveBuyMenu = null;
 			if (param2 == MenuCancel_ExitBack)
 				DisplaySlotSelectionMenu(param1);
-			else if (param2 == MenuCancel_Exit)
-				g_playerExitedBuyMenu[param1] = true;
 		}
 		
 		case MenuAction_End:delete menu;

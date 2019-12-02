@@ -84,15 +84,16 @@ public void DisplayMenuInDynamicBuyZone(int client)
 		GetClientAbsOrigin(client, origin);
 		
 		float distance = GetVectorDistance(g_avgPlayerStartOrigin[team], origin);
-		
 		float radius = tfgo_buyzone_radius_override.IntValue > -1 ? tfgo_buyzone_radius_override.FloatValue : g_dynamicBuyzoneRadius[team];
-		if (distance <= radius) // Player is in buy zone
+		if (distance <= radius && !g_playerInDynamicBuyZone[client]) // Player has entered buy zone
 		{
-			if (player.ActiveBuyMenu == null && !g_playerExitedBuyMenu[client])
+			g_playerInDynamicBuyZone[client] = !g_playerInDynamicBuyZone[client];
+			if (player.ActiveBuyMenu == null)
 				DisplaySlotSelectionMenu(client);
 		}
-		else // Player has left buy zone
+		else if (distance > radius && g_playerInDynamicBuyZone[client]) // Player has left buy zone
 		{
+			g_playerInDynamicBuyZone[client] = !g_playerInDynamicBuyZone[client];
 			if (player.ActiveBuyMenu != null)
 			{
 				player.ActiveBuyMenu.Cancel();
