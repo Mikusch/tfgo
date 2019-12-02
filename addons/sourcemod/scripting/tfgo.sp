@@ -677,8 +677,8 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 	g_10SecondRoundTimer = null;
 	
 	// Show text on screen
-	char message[PLATFORM_MAX_PATH] = "The bomb has been planted.\n%d seconds to detonation.";
-	Format(message, sizeof(message), message, tfgo_bomb_timer.IntValue);
+	char message[PLATFORM_MAX_PATH];
+	Format(message, sizeof(message), "%T", "Alert_Bomb_Planted", LANG_SERVER, tfgo_bomb_timer.IntValue);
 	ShowGameMessage(message, "ico_notify_sixty_seconds");
 	
 	Forward_BombPlanted(team, cappers);

@@ -114,6 +114,12 @@
 		"en"	"Invis Watch"
 	}
 	
+	// Alerts
+	"Alert_Bomb_Planted"
+	{
+		"en"	"The bomb has been planted.\n%d seconds to detonation."
+	}
+	
 	// Buy Menu
 	"BuyMenu_Title"
 	{
