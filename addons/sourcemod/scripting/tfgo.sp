@@ -384,7 +384,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	GetClientName(victim.Client, victimName, sizeof(victimName));
 	
 	// Grant kill award to attacker/assister
-	if (0 < attacker.Client <= MaxClients)
+	if (IsValidClient(attacker.Client))
 	{
 		int killAward;
 		float factor = tfgo_cash_player_killed_enemy_factor.FloatValue;
@@ -466,7 +466,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 		
 		// Grant assist award
 		TFGOPlayer assister = TFGOPlayer(GetClientOfUserId(event.GetInt("assister")));
-		if (0 < assister.Client <= MaxClients)
+		if (IsValidClient(assister.Client))
 		{
 			int activeWeapon = GetEntPropEnt(assister.Client, Prop_Send, "m_hActiveWeapon");
 			if (activeWeapon > -1)

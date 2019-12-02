@@ -56,13 +56,13 @@ public void CalculateDynamicBuyZones()
 
 public Action Hook_OnStartTouchBuyZone(int entity, int client)
 {
-	if (g_isBuyTimeActive && 0 < client <= MaxClients && IsClientInGame(client) && GetClientTeam(client) == GetEntProp(entity, Prop_Data, "m_iTeamNum"))
+	if (g_isBuyTimeActive && IsValidClient(client) && GetClientTeam(client) == GetEntProp(entity, Prop_Data, "m_iTeamNum"))
 		DisplaySlotSelectionMenu(client);
 }
 
 public Action Hook_OnEndTouchBuyZone(int entity, int client)
 {
-	if (g_isBuyTimeActive && 0 < client <= MaxClients && IsClientInGame(client) && GetClientTeam(client) == GetEntProp(entity, Prop_Data, "m_iTeamNum"))
+	if (g_isBuyTimeActive && IsValidClient(client) && GetClientTeam(client) == GetEntProp(entity, Prop_Data, "m_iTeamNum"))
 	{
 		TFGOPlayer player = TFGOPlayer(client);
 		if (player.ActiveBuyMenu != null)
