@@ -16,7 +16,7 @@ public void ReadWeaponConfig(KeyValues kv)
 		{
 			do // Loop through each weapon definition index
 			{
-				char defindex[256];
+				char defindex[PLATFORM_MAX_PATH];
 				kv.GetSectionName(defindex, sizeof(defindex));
 				
 				// Set basic weapon data

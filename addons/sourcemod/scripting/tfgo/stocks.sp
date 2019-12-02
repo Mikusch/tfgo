@@ -6,7 +6,7 @@ stock bool IsValidClient(int client)
 	return 0 < client <= MaxClients && IsClientInGame(client);
 }
 
-stock int GetAlivePlayersInTeam(TFTeam team)
+stock int GetAlivePlayerCountForTeam(TFTeam team)
 {
 	int count = 0;
 	for (int client = 1; client <= MaxClients; client++)
@@ -20,9 +20,9 @@ stock int GetAlivePlayersInTeam(TFTeam team)
 stock void TF2_ForceRoundWin(TFTeam team, int winReason, bool forceMapReset = true, bool switchTeams = false)
 {
 	int entity = CreateEntityByName("game_round_win");
-	char strWinReason[8];
-	IntToString(winReason, strWinReason, sizeof(strWinReason));
-	DispatchKeyValue(entity, "win_reason", strWinReason);
+	char winReasonString[8];
+	IntToString(winReason, winReasonString, sizeof(winReasonString));
+	DispatchKeyValue(entity, "win_reason", winReasonString);
 	DispatchKeyValue(entity, "force_map_reset", forceMapReset ? "1" : "0");
 	DispatchKeyValue(entity, "switch_teams", switchTeams ? "1" : "0");
 	DispatchSpawn(entity);
@@ -75,7 +75,7 @@ stock void TF2_GetItemName(int defindex, char[] buffer, int maxlength)
 	TF2Econ_GetItemName(defindex, buffer, maxlength);
 	if (StrContains(buffer, "TF_WEAPON_") > -1) // This doesn't look like a proper name
 	{
-		char localizedName[256];
+		char localizedName[PLATFORM_MAX_PATH];
 		TF2Econ_GetLocalizedItemName(defindex, localizedName, sizeof(localizedName));
 		Format(buffer, maxlength, "%T", localizedName, LANG_SERVER);
 	}
@@ -83,8 +83,8 @@ stock void TF2_GetItemName(int defindex, char[] buffer, int maxlength)
 
 stock void TF2_CreateAndEquipWeapon(int client, int defindex, TFQuality quality = TFQual_Normal, int level = 0)
 {
-	TFClassType nClass = TF2_GetPlayerClass(client);
-	int iSlot = TF2_GetSlotInItem(defindex, nClass);
+	TFClassType class = TF2_GetPlayerClass(client);
+	int slot = TF2_GetSlotInItem(defindex, class);
 	
 	// Remove sniper scope and slowdown cond if have one, otherwise can cause client crashes
 	if (TF2_IsPlayerInCondition(client, TFCond_Zoomed))
@@ -94,12 +94,12 @@ stock void TF2_CreateAndEquipWeapon(int client, int defindex, TFQuality quality 
 	}
 	
 	// If player already have item in his inv, remove it before we generate new weapon for him, otherwise some weapons can glitch out...
-	int entity = GetPlayerWeaponSlot(client, iSlot);
+	int entity = GetPlayerWeaponSlot(client, slot);
 	if (entity > MaxClients && IsValidEdict(entity))
-		TF2_RemoveWeaponSlot(client, iSlot);
+		TF2_RemoveWeaponSlot(client, slot);
 	
 	// Remove wearable if have one
-	int wearable = SDK_GetEquippedWearable(client, iSlot);
+	int wearable = SDK_GetEquippedWearable(client, slot);
 	if (wearable > MaxClients)
 	{
 		SDK_RemoveWearable(client, wearable);
@@ -107,11 +107,11 @@ stock void TF2_CreateAndEquipWeapon(int client, int defindex, TFQuality quality 
 	}
 	
 	// Generate and equip weapon
-	char className[256];
-	TF2Econ_GetItemClassName(defindex, className, sizeof(className));
-	TF2Econ_TranslateWeaponEntForClass(className, sizeof(className), TF2_GetPlayerClass(client));
+	char itemClass[PLATFORM_MAX_PATH];
+	TF2Econ_GetItemClassName(defindex, itemClass, sizeof(itemClass));
+	TF2Econ_TranslateWeaponEntForClass(itemClass, sizeof(itemClass), TF2_GetPlayerClass(client));
 	
-	int weapon = CreateEntityByName(className);
+	int weapon = CreateEntityByName(itemClass);
 	if (IsValidEntity(weapon))
 	{
 		SetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex", defindex);
@@ -126,12 +126,12 @@ stock void TF2_CreateAndEquipWeapon(int client, int defindex, TFQuality quality 
 		{
 			SetEntProp(weapon, Prop_Send, "m_bValidatedAttachedEntity", true);
 			
-			if (StrContains(className, "tf_wearable") == 0)
+			if (StrContains(itemClass, "tf_wearable") == 0)
 				SDK_EquipWearable(client, weapon);
 			else
 				EquipPlayerWeapon(client, weapon);
 			
-			TF2_EquipWeapon(client, weapon, className, sizeof(className));
+			TF2_EquipWeapon(client, weapon, itemClass, sizeof(itemClass));
 			
 			// Set ammo as weapon's max ammo
 			if (HasEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType")) //Wearables dont have ammo netprop
@@ -151,11 +151,11 @@ stock void TF2_CreateAndEquipWeapon(int client, int defindex, TFQuality quality 
 			}
 			
 			// Add health to player if needed
-			ArrayList staticAttribs = TF2Econ_GetItemStaticAttributes(defindex);
-			int index = staticAttribs.FindValue(ATTRIB_MAX_HEALTH_ADDITIVE_BONUS, 0);
+			ArrayList attribs = TF2Econ_GetItemStaticAttributes(defindex);
+			int index = attribs.FindValue(ATTRIB_MAX_HEALTH_ADDITIVE_BONUS, 0);
 			if (index > -1)
-				SetEntityHealth(client, GetClientHealth(client) + RoundFloat(staticAttribs.Get(index, 1)));
-			delete staticAttribs;
+				SetEntityHealth(client, GetClientHealth(client) + RoundFloat(attribs.Get(index, 1)));
+			delete attribs;
 		}
 	}
 }
