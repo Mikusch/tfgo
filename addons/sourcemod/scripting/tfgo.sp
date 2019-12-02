@@ -558,10 +558,10 @@ public Action OnBuyTimeExpire(Handle timer)
 public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
 	g_isMainRoundActive = true;
-	g_10SecondRoundTimer = CreateTimer(tf_arena_round_time.FloatValue - 11.0, Play10SecondWarning, _, TIMER_FLAG_NO_MAPCHANGE);
+	g_10SecondRoundTimer = CreateTimer(tf_arena_round_time.FloatValue - 10.0, Play10SecondRoundWarning, _, TIMER_FLAG_NO_MAPCHANGE);
 }
 
-public Action Play10SecondWarning(Handle timer)
+public Action Play10SecondRoundWarning(Handle timer)
 {
 	if (g_10SecondRoundTimer != timer)return;
 	
