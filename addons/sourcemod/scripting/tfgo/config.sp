@@ -6,7 +6,7 @@ enum struct Weapon
 	int cost;
 }
 
-StringMap g_weaponClassKillAwards;
+StringMap g_WeaponClassKillAwards;
 
 public void ReadWeaponConfig(KeyValues kv)
 {
@@ -46,7 +46,7 @@ void ReadKillAwardConfig(KeyValues kv)
 			{
 				char class[PLATFORM_MAX_PATH];
 				kv.GetSectionName(class, sizeof(class)); // Weapon class
-				g_weaponClassKillAwards.SetValue(class, kv.GetNum(NULL_STRING, tfgo_cash_player_killed_enemy_default.IntValue));
+				g_WeaponClassKillAwards.SetValue(class, kv.GetNum(NULL_STRING, tfgo_cash_player_killed_enemy_default.IntValue));
 			}
 			while (kv.GotoNextKey(false));
 			kv.GoBack();
@@ -58,8 +58,8 @@ void ReadKillAwardConfig(KeyValues kv)
 
 void Config_Init()
 {
-	if (g_weaponClassKillAwards == null)
-		g_weaponClassKillAwards = new StringMap();
+	if (g_WeaponClassKillAwards == null)
+		g_WeaponClassKillAwards = new StringMap();
 	
 	if (g_AvailableWeapons == null)
 	{

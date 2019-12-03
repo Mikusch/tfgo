@@ -397,7 +397,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 		// "player" is a valid entity
 		int inflictorEntindex = event.GetInt("inflictor_entindex");
 		char classname[PLATFORM_MAX_PATH];
-		if (IsValidEntity(inflictorEntindex) && GetEntityClassname(inflictorEntindex, classname, sizeof(classname)) && g_weaponClassKillAwards.GetValue(classname, killAward))
+		if (IsValidEntity(inflictorEntindex) && GetEntityClassname(inflictorEntindex, classname, sizeof(classname)) && g_WeaponClassKillAwards.GetValue(classname, killAward))
 		{
 			attacker.AddToBalance(RoundFloat(killAward * factor), "%T", "Player_Cash_Award_Killed_Enemy_Generic", LANG_SERVER);
 		}
@@ -457,10 +457,10 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 				
 				// Specific weapon kill (e.g. "shotgun_pyro", "prinny_machete", "world", etc.)
 				// If not found, determine kill award from the weapon class
-				if (!g_weaponClassKillAwards.GetValue(weapon, killAward))
+				if (!g_WeaponClassKillAwards.GetValue(weapon, killAward))
 				{
 					TF2Econ_GetItemClassName(weaponDefIndex, classname, sizeof(classname));
-					if (!g_weaponClassKillAwards.GetValue(classname, killAward))
+					if (!g_WeaponClassKillAwards.GetValue(classname, killAward))
 						killAward = tfgo_cash_player_killed_enemy_default.IntValue;
 				}
 				
@@ -477,7 +477,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 			{
 				int weaponDefIndex = GetEntProp(activeWeapon, Prop_Send, "m_iItemDefinitionIndex");
 				TF2Econ_GetItemClassName(weaponDefIndex, classname, sizeof(classname));
-				if (!g_weaponClassKillAwards.GetValue(classname, killAward))
+				if (!g_WeaponClassKillAwards.GetValue(classname, killAward))
 					killAward = tfgo_cash_player_killed_enemy_default.IntValue;
 			}
 			else // Assister likely has died
@@ -512,7 +512,6 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 		TFGOPlayer player = TFGOPlayer(client);
 		player.ApplyLoadout();
 		
-		// Cancel active buy menu or OnGameFrame will throw a million errors
 		if (player.ActiveBuyMenu != null)
 			player.ActiveBuyMenu.Cancel();
 		
@@ -523,7 +522,6 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 
 public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
-	// Reset game state
 	ResetGameState();
 	
 	g_IsBuyTimeActive = true;

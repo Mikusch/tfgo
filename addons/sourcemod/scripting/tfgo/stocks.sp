@@ -172,18 +172,18 @@ stock void TF2_EquipWeapon(int client, int weapon, char[] className = NULL_STRIN
 			TF2Econ_TranslateWeaponEntForClass(className, classNameLength, TF2_GetPlayerClass(client));
 		}
 		
-		if (StrContains(className, "tf_wearable") == 0 || StrContains(className, "tf_weapon_parachute") == 0)
+		if (strncmp(className, "tf_wearable", 11) == 0 || strncmp(className, "tf_weapon_parachute", 19) == 0)
 		{
 			if (GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon") <= MaxClients)
 			{
 				// Looks like player's active weapon got replaced into wearable, fix that by using melee
-				int iMelee = GetPlayerWeaponSlot(client, TFWeaponSlot_Melee);
-				SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", iMelee);
+				int melee = GetPlayerWeaponSlot(client, TFWeaponSlot_Melee);
+				SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", melee);
 			}
 		}
-		else if (StrContains(className, "tf_weapon_invis") == 0)
+		else if (StrEqual(className, "tf_weapon_invis"))
 		{
-			// Invis watches glitch out when switched to
+			// These weapons like to glitch out when switched to
 			return;
 		}
 		else
