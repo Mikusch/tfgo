@@ -3,7 +3,7 @@
 #define TFGO_STARTING_LOSESTREAK		1
 
 // -1 indicates the class should start with no weapon in that slot
-int g_defaultWeaponIndexes[][] =  {
+int g_DefaultWeaponIndexes[][] =  {
 	{ -1, -1, -1, -1, -1, -1 },  // Unknown
 	{ -1, 23, 30758, -1, -1, -1 },  // Scout
 	{ -1, 16, 30758, -1, -1, -1 },  // Sniper
@@ -16,14 +16,13 @@ int g_defaultWeaponIndexes[][] =  {
 	{ 9, 22, 30758, -1, -1, 28 } // Engineer
 };
 
-float g_classViewHeights[] =  { -1.0, 65.0, 75.0, 68.0, 68.0, 75.0, 75.0, 68.0, 75.0, 68.0 };
+float g_ClassViewHeights[] =  { -1.0, 65.0, 75.0, 68.0, 68.0, 75.0, 75.0, 68.0, 75.0, 68.0 };
 
-int g_playerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][WeaponSlot_BuilderEngie + 1];
-int g_playerBalances[TF_MAXPLAYERS + 1];
+int g_PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][WeaponSlot_BuilderEngie + 1];
+int g_PlayerBalances[TF_MAXPLAYERS + 1];
+Menu g_ActiveBuyMenus[TF_MAXPLAYERS + 1];
 
-Menu g_activeBuyMenus[TF_MAXPLAYERS + 1];
-
-int g_teamLosingStreaks[view_as<int>(TFTeam_Blue) + 1] =  { TFGO_STARTING_LOSESTREAK, ... };
+int g_TeamLosingStreaks[view_as<int>(TFTeam_Blue) + 1] =  { TFGO_STARTING_LOSESTREAK, ... };
 
 
 methodmap TFGOPlayer
@@ -45,16 +44,16 @@ methodmap TFGOPlayer
 	{
 		public get()
 		{
-			return g_playerBalances[this];
+			return g_PlayerBalances[this];
 		}
 		public set(int val)
 		{
 			if (val > tfgo_maxmoney.IntValue)
-				g_playerBalances[this] = tfgo_maxmoney.IntValue;
+				g_PlayerBalances[this] = tfgo_maxmoney.IntValue;
 			else if (val < 0)
-				g_playerBalances[this] = 0;
+				g_PlayerBalances[this] = 0;
 			else
-				g_playerBalances[this] = val;
+				g_PlayerBalances[this] = val;
 		}
 	}
 	
@@ -62,11 +61,11 @@ methodmap TFGOPlayer
 	{
 		public get()
 		{
-			return g_activeBuyMenus[this];
+			return g_ActiveBuyMenus[this];
 		}
 		public set(Menu val)
 		{
-			g_activeBuyMenus[this] = val;
+			g_ActiveBuyMenus[this] = val;
 		}
 	}
 	
@@ -103,7 +102,7 @@ methodmap TFGOPlayer
 		{
 			float origin[3];
 			GetClientAbsOrigin(this.Client, origin);
-			origin[2] += g_classViewHeights[class] / 2;
+			origin[2] += g_ClassViewHeights[class] / 2;
 			float angles[3];
 			GetClientAbsAngles(this.Client, angles);
 			SDK_CreateDroppedWeapon(currentWeapon, this.Client, origin, angles);
@@ -112,11 +111,11 @@ methodmap TFGOPlayer
 		TF2_CreateAndEquipWeapon(this.Client, defindex, TFQual_Unique, GetRandomInt(1, 100));
 		
 		// Save to loadout
-		g_playerLoadoutWeaponIndexes[this][class][slot] = defindex;
+		g_PlayerLoadoutWeaponIndexes[this][class][slot] = defindex;
 		
 		// Deduct balance from client
 		Weapon weapon;
-		g_availableWeapons.GetArray(g_availableWeapons.FindValue(defindex, 0), weapon, sizeof(weapon));
+		g_AvailableWeapons.GetArray(g_AvailableWeapons.FindValue(defindex, 0), weapon, sizeof(weapon));
 		this.Balance -= weapon.cost;
 		
 		float origin[3];
@@ -126,18 +125,18 @@ methodmap TFGOPlayer
 	
 	public int GetWeaponFromLoadout(TFClassType class, int slot)
 	{
-		int defindex = g_playerLoadoutWeaponIndexes[this][class][slot];
+		int defindex = g_PlayerLoadoutWeaponIndexes[this][class][slot];
 		if (defindex > -1)
 			return defindex;
 		else
-			return g_defaultWeaponIndexes[class][slot];
+			return g_DefaultWeaponIndexes[class][slot];
 	}
 	
 	public void ApplyLoadout()
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Client);
 		
-		for (int slot = sizeof(g_playerLoadoutWeaponIndexes[][]) - 1; slot >= 0; slot--)
+		for (int slot = sizeof(g_PlayerLoadoutWeaponIndexes[][]) - 1; slot >= 0; slot--)
 		{
 			int defindex = this.GetWeaponFromLoadout(class, slot);
 			if (defindex != TF2_GetItemInSlot(this.Client, slot))
@@ -154,14 +153,14 @@ methodmap TFGOPlayer
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Client);
 		int slot = TF2_GetSlotInItem(defindex, class);
-		g_playerLoadoutWeaponIndexes[this.Client][class][slot] = defindex;
+		g_PlayerLoadoutWeaponIndexes[this.Client][class][slot] = defindex;
 	}
 	
 	public void ClearLoadout()
 	{
-		for (int class = 0; class < sizeof(g_playerLoadoutWeaponIndexes[]); class++)
-			for (int slot = 0; slot < sizeof(g_playerLoadoutWeaponIndexes[][]); slot++)
-				g_playerLoadoutWeaponIndexes[this.Client][class][slot] = -1;
+		for (int class = 0; class < sizeof(g_PlayerLoadoutWeaponIndexes[]); class++)
+			for (int slot = 0; slot < sizeof(g_PlayerLoadoutWeaponIndexes[][]); slot++)
+				g_PlayerLoadoutWeaponIndexes[this.Client][class][slot] = -1;
 	}
 }
 
@@ -184,17 +183,17 @@ methodmap TFGOTeam
 	{
 		public get()
 		{
-			return g_teamLosingStreaks[this];
+			return g_TeamLosingStreaks[this];
 		}
 		
 		public set(int val)
 		{
 			if (val > TFGO_MAX_LOSESTREAK)
-				g_teamLosingStreaks[this] = TFGO_MAX_LOSESTREAK;
+				g_TeamLosingStreaks[this] = TFGO_MAX_LOSESTREAK;
 			else if (val < TFGO_MIN_LOSESTREAK)
-				g_teamLosingStreaks[this] = TFGO_MIN_LOSESTREAK;
+				g_TeamLosingStreaks[this] = TFGO_MIN_LOSESTREAK;
 			else
-				g_teamLosingStreaks[this] = val;
+				g_TeamLosingStreaks[this] = val;
 		}
 	}
 	
@@ -208,7 +207,7 @@ methodmap TFGOTeam
 	
 	public void ResetLoseStreak()
 	{
-		g_teamLosingStreaks[this] = TFGO_STARTING_LOSESTREAK;
+		g_TeamLosingStreaks[this] = TFGO_STARTING_LOSESTREAK;
 	}
 	
 	public void AddToClientBalances(int val, const char[] reason, any...)

@@ -80,10 +80,10 @@ public void DisplayBuyMenu(int client, ArrayList slots)
 	Menu menu = new Menu(HandleBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DrawItem);
 	menu.SetTitle("%T", "BuyMenu_Title", LANG_SERVER, TFGOPlayer(client).Balance);
 	
-	for (int i = 0; i < g_availableWeapons.Length; i++)
+	for (int i = 0; i < g_AvailableWeapons.Length; i++)
 	{
 		Weapon weapon;
-		g_availableWeapons.GetArray(i, weapon, sizeof(weapon));
+		g_AvailableWeapons.GetArray(i, weapon, sizeof(weapon));
 		
 		TFGOPlayer player = TFGOPlayer(client);
 		TFClassType class = TF2_GetPlayerClass(client);
@@ -144,7 +144,7 @@ public int HandleBuyMenu(Menu menu, MenuAction action, int param1, int param2)
 			menu.GetItem(param2, info, sizeof(info));
 			
 			Weapon weapon;
-			g_availableWeapons.GetArray(g_availableWeapons.FindValue(StringToInt(info), 0), weapon, sizeof(weapon));
+			g_AvailableWeapons.GetArray(g_AvailableWeapons.FindValue(StringToInt(info), 0), weapon, sizeof(weapon));
 			
 			TFGOPlayer player = TFGOPlayer(param1);
 			TFClassType class = TF2_GetPlayerClass(param1);

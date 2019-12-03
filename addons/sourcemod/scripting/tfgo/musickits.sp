@@ -171,14 +171,14 @@ public void AddMusicFileToDownloadsTable(char file[PLATFORM_MAX_PATH])
 public void PrecacheMusicKits()
 {
 	// Precache all music kit sounds
-	StringMapSnapshot snapshot = g_availableMusicKits.Snapshot();
+	StringMapSnapshot snapshot = g_AvailableMusicKits.Snapshot();
 	for (int i = 0; i < snapshot.Length; i++)
 	{
 		char name[PLATFORM_MAX_PATH];
 		snapshot.GetKey(i, name, sizeof(name));
 		
 		MusicKit kit;
-		g_availableMusicKits.GetArray(name, kit, sizeof(kit));
+		g_AvailableMusicKits.GetArray(name, kit, sizeof(kit));
 		kit.PrecacheSounds();
 	}
 	delete snapshot;
@@ -238,7 +238,7 @@ void ReadMusicKitConfig(KeyValues kv)
 			}
 			kv.GoBack();
 			
-			g_availableMusicKits.SetArray(name, kit, sizeof(kit));
+			g_AvailableMusicKits.SetArray(name, kit, sizeof(kit));
 		}
 		while (kv.GotoNextKey(false));
 		kv.GoBack();
@@ -248,8 +248,8 @@ void ReadMusicKitConfig(KeyValues kv)
 
 void MusicKit_Init()
 {
-	if (g_availableMusicKits == null)
-		g_availableMusicKits = new StringMap();
+	if (g_AvailableMusicKits == null)
+		g_AvailableMusicKits = new StringMap();
 	
 	// Read config
 	KeyValues kv = new KeyValues("MusicKits");

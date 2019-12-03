@@ -24,10 +24,10 @@ public void ReadWeaponConfig(KeyValues kv)
 				weapon.defindex = StringToInt(defindex);
 				weapon.cost = kv.GetNum("cost", -1);
 				
-				int length = g_availableWeapons.Length;
-				g_availableWeapons.Resize(length + 1);
-				g_availableWeapons.Set(length, weapon.defindex, 0);
-				g_availableWeapons.SetArray(length, weapon, sizeof(weapon));
+				int length = g_AvailableWeapons.Length;
+				g_AvailableWeapons.Resize(length + 1);
+				g_AvailableWeapons.Set(length, weapon.defindex, 0);
+				g_AvailableWeapons.SetArray(length, weapon, sizeof(weapon));
 			}
 			while (kv.GotoNextKey(false));
 			kv.GoBack();
@@ -61,10 +61,10 @@ void Config_Init()
 	if (g_weaponClassKillAwards == null)
 		g_weaponClassKillAwards = new StringMap();
 	
-	if (g_availableWeapons == null)
+	if (g_AvailableWeapons == null)
 	{
 		Weapon weapon;
-		g_availableWeapons = new ArrayList(1 + sizeof(weapon));
+		g_AvailableWeapons = new ArrayList(1 + sizeof(weapon));
 	}
 	
 	// Read config
