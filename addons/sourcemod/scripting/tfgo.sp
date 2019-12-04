@@ -53,11 +53,13 @@ float g_BombPlantedTime;
 TFTeam g_BombPlantingTeam;
 bool g_HasPlayerSuicided[TF_MAXPLAYERS + 1];
 bool g_IsPlayerInDynamicBuyZone[TF_MAXPLAYERS + 1];
+int g_RoundsPlayed;
 
 // ConVars
 ConVar tfgo_buytime;
 ConVar tfgo_buyzone_radius_override;
 ConVar tfgo_bomb_timer;
+ConVar tfgo_maxrounds;
 ConVar tfgo_startmoney;
 ConVar tfgo_maxmoney;
 ConVar tfgo_cash_player_bomb_planted;
@@ -154,6 +156,7 @@ public void OnPluginStart()
 	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
 	tfgo_buyzone_radius_override = CreateConVar("tfgo_buyzone_radius_override", "-1", "Overrides the default calculated buyzone radius on maps with no respawn room");
 	tfgo_bomb_timer = CreateConVar("tfgo_bomb_timer", "45", "How long from when the bomb is planted until it blows", _, true, 15.0, true, tf_arena_round_time.FloatValue);
+	tfgo_maxrounds = CreateConVar("tfgo_maxrounds", "15", "Maximum number of rounds to play before a team scramble occurs");
 	tfgo_startmoney = CreateConVar("tfgo_startmoney", "1000", "Amount of money each player gets when they reset");
 	tfgo_maxmoney = CreateConVar("tfgo_maxmoney", "10000", "Maximum amount of money allowed in a player's account", _, true, tfgo_startmoney.FloatValue);
 	tfgo_cash_player_bomb_planted = CreateConVar("tfgo_cash_player_bomb_planted", "200", "Cash award for each player that planted the bomb");
@@ -807,6 +810,18 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	// Adjust team losing streaks
 	losingTeam.LoseStreak++;
 	winningTeam.LoseStreak--;
+	
+	g_RoundsPlayed++;
+	if (g_RoundsPlayed == RoundFloat(tfgo_maxrounds.IntValue / 2.0))
+	{
+		ServerCommand("mp_switchteams");
+	}
+	else if (g_RoundsPlayed == tfgo_maxrounds.IntValue)
+	{
+		ServerCommand("mp_scrambleteams");
+		PlayTeamScrambleAlert();
+		g_RoundsPlayed = 0;
+	}
 	
 	// Reset timers
 	g_TenSecondRoundTimer = null;
