@@ -252,7 +252,7 @@ public void OnClientDisconnect(int client)
 	if (g_IsBombPlanted && IsValidClient(client))
 	{
 		TFTeam team = TF2_GetClientTeam(client);
-		if (g_BombPlantingTeam != team && GetAlivePlayerCountForTeam(team) <= 0)
+		if (team >= TFTeam_Red && g_BombPlantingTeam != team && GetAlivePlayerCountForTeam(team) <= 0)
 			g_IsBombPlanted = false;
 	}
 }
