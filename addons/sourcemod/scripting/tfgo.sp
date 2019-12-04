@@ -78,7 +78,6 @@ ConVar tf_arena_round_time;
 ConVar tf_arena_use_queue;
 ConVar tf_arena_preround_time;
 ConVar tf_arena_override_cap_enable_time;
-ConVar tf_arena_max_streak;
 ConVar tf_use_fixed_weaponspreads;
 ConVar tf_weapon_criticals;
 ConVar tf_weapon_criticals_melee;
@@ -138,7 +137,6 @@ public void OnPluginStart()
 	HookEvent("teamplay_broadcast_audio", Event_Pre_Teamplay_Broadcast_Audio, EventHookMode_Pre);
 	HookEvent("teamplay_point_captured", Event_Teamplay_Point_Captured);
 	HookEvent("arena_win_panel", Event_Arena_Win_Panel);
-	HookEvent("arena_match_maxstreak", Event_Arena_Match_MaxStreak);
 	
 	// Collect ConVars
 	tf_arena_first_blood = FindConVar("tf_arena_first_blood");
@@ -146,7 +144,6 @@ public void OnPluginStart()
 	tf_arena_use_queue = FindConVar("tf_arena_use_queue");
 	tf_arena_preround_time = FindConVar("tf_arena_preround_time");
 	tf_arena_override_cap_enable_time = FindConVar("tf_arena_override_cap_enable_time");
-	tf_arena_max_streak = FindConVar("tf_arena_max_streak");
 	tf_use_fixed_weaponspreads = FindConVar("tf_use_fixed_weaponspreads");
 	tf_weapon_criticals = FindConVar("tf_weapon_criticals");
 	tf_weapon_criticals_melee = FindConVar("tf_weapon_criticals_melee");
@@ -204,7 +201,7 @@ public void OnMapStart()
 	
 	DHookGamerules(g_dHookSetWinningTeam, false);
 	
-	ResetGameState();
+	ResetRoundState();
 	
 	PrecacheSounds();
 	PrecacheModels();
@@ -525,7 +522,7 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 
 public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
-	ResetGameState();
+	ResetRoundState();
 	
 	g_IsBuyTimeActive = true;
 	g_IsBonusRoundActive = false;
@@ -814,13 +811,18 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	g_RoundsPlayed++;
 	if (g_RoundsPlayed == RoundFloat(tfgo_maxrounds.IntValue / 2.0))
 	{
+		// Half-time
 		ServerCommand("mp_switchteams");
+		ResetPlayersAndTeams();
 	}
 	else if (g_RoundsPlayed == tfgo_maxrounds.IntValue)
 	{
+		// Round limit reached
+		g_RoundsPlayed = 0;
 		ServerCommand("mp_scrambleteams");
 		PlayTeamScrambleAlert();
-		g_RoundsPlayed = 0;
+		ResetPlayersAndTeams();
+		ChooseRandomMusicKit();
 	}
 	
 	// Reset timers
@@ -828,17 +830,7 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	g_TenSecondBombTimer = null;
 }
 
-public void ResetGameState()
-{
-	g_IsBombPlanted = false;
-	g_IsBombDetonated = false;
-	g_IsBombDefused = false;
-	g_BombPlantingTeam = TFTeam_Unassigned;
-	for (int i = 0; i < sizeof(g_HasPlayerSuicided); i++)g_HasPlayerSuicided[i] = false;
-	for (int i = 0; i < sizeof(g_IsPlayerInDynamicBuyZone); i++)g_IsPlayerInDynamicBuyZone[i] = false;
-}
-
-public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool dontBroadcast)
+public void ResetPlayersAndTeams()
 {
 	for (int client = 1; client <= MaxClients; client++)
 	{
@@ -847,10 +839,18 @@ public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool d
 		player.ClearLoadout();
 	}
 	
-	for (int team = 0; team < view_as<int>(TFTeam_Blue); team++)
-	TFGOTeam(view_as<TFTeam>(team)).ResetLoseStreak();
-	
-	ChooseRandomMusicKit();
+	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
+		TFGOTeam(view_as<TFTeam>(team)).ResetLoseStreak();
+}
+
+public void ResetRoundState()
+{
+	g_IsBombPlanted = false;
+	g_IsBombDetonated = false;
+	g_IsBombDefused = false;
+	g_BombPlantingTeam = TFTeam_Unassigned;
+	for (int i = 0; i < sizeof(g_HasPlayerSuicided); i++)g_HasPlayerSuicided[i] = false;
+	for (int i = 0; i < sizeof(g_IsPlayerInDynamicBuyZone); i++)g_IsPlayerInDynamicBuyZone[i] = false;
 }
 
 public Action CommandListener_Build(int client, const char[] command, int args)
@@ -890,7 +890,6 @@ void Toggle_ConVars(bool toggle)
 	static int arenaPreRoundTime;
 	static int arenaRoundTime;
 	static int arenaOverrideCapEnableTime;
-	static int arenaMaxStreak;
 	static bool useFixedWeaponSpreads;
 	static bool weaponCriticals;
 	static bool weaponCriticalsMelee;
@@ -915,10 +914,6 @@ void Toggle_ConVars(bool toggle)
 		arenaOverrideCapEnableTime = tf_arena_override_cap_enable_time.IntValue;
 		tf_arena_override_cap_enable_time.IntValue = -1;
 		
-		// mp_maxrounds
-		arenaMaxStreak = tf_arena_max_streak.IntValue;
-		tf_arena_max_streak.IntValue = 8;
-		
 		useFixedWeaponSpreads = tf_use_fixed_weaponspreads.BoolValue;
 		tf_use_fixed_weaponspreads.BoolValue = true;
 		
@@ -939,7 +934,6 @@ void Toggle_ConVars(bool toggle)
 		tf_arena_preround_time.IntValue = arenaPreRoundTime;
 		tf_arena_round_time.IntValue = arenaRoundTime;
 		tf_arena_override_cap_enable_time.IntValue = arenaOverrideCapEnableTime;
-		tf_arena_max_streak.IntValue = arenaMaxStreak;
 		tf_use_fixed_weaponspreads.BoolValue = useFixedWeaponSpreads;
 		tf_weapon_criticals.BoolValue = weaponCriticals;
 		tf_weapon_criticals_melee.BoolValue = weaponCriticalsMelee;
