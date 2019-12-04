@@ -728,7 +728,7 @@ public Action DetonateBomb(Handle timer, int bombRef)
 	g_IsBombPlanted = false;
 	
 	// Only call this after we set g_IsBombPlanted to false or the game softlocks
-	TF2_ForceRoundWin(g_BombPlantingTeam, Winreason_AllPointsCaptured);
+	TF2_ForceRoundWin(g_BombPlantingTeam, Winreason_PointCaptured);
 	
 	int bomb = EntRefToEntIndex(bombRef);
 	float origin[3];
