@@ -777,7 +777,7 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	int winreason = event.GetInt("winreason");
 	if (winreason == Winreason_PointCaptured || winreason == Winreason_AllPointsCaptured)
 	{
-		if (g_BombPlantingTeam == view_as<TFTeam>(event.GetInt("winning_team")))
+		if (g_BombPlantingTeam == winningTeam.Team)
 		{
 			winningTeam.AddToClientBalances(tfgo_cash_team_terrorist_win_bomb.IntValue, "%T", "Team_Cash_Award_T_Win_Bomb", LANG_SERVER);
 		}
