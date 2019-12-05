@@ -297,7 +297,7 @@ public void OnCaptureAreaSpawned(int entity)
 // Prevent round from ending, called every frame after the round is supposed to end
 public MRESReturn Hook_SetWinningTeam(Handle params)
 {
-	TFTeam team = view_as<TFTeam>(DHookGetParam(params, 1));
+	TFTeam team = DHookGetParam(params, 1);
 	int winReason = DHookGetParam(params, 2);
 	
 	// Bomb is detonated but game wants to award elimination win on multi-CP maps, rewrite it to make it look like a capture
