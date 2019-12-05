@@ -53,11 +53,13 @@ float g_BombPlantedTime;
 TFTeam g_BombPlantingTeam;
 bool g_HasPlayerSuicided[TF_MAXPLAYERS + 1];
 bool g_IsPlayerInDynamicBuyZone[TF_MAXPLAYERS + 1];
+int g_RoundsPlayed;
 
 // ConVars
 ConVar tfgo_buytime;
 ConVar tfgo_buyzone_radius_override;
 ConVar tfgo_bomb_timer;
+ConVar tfgo_maxrounds;
 ConVar tfgo_startmoney;
 ConVar tfgo_maxmoney;
 ConVar tfgo_cash_player_bomb_planted;
@@ -76,7 +78,6 @@ ConVar tf_arena_round_time;
 ConVar tf_arena_use_queue;
 ConVar tf_arena_preround_time;
 ConVar tf_arena_override_cap_enable_time;
-ConVar tf_arena_max_streak;
 ConVar tf_use_fixed_weaponspreads;
 ConVar tf_weapon_criticals;
 ConVar tf_weapon_criticals_melee;
@@ -90,6 +91,8 @@ Handle g_SDKGetEquippedWearable;
 Handle g_SDKGetMaxAmmo;
 Handle g_SDKCreateDroppedWeapon;
 Handle g_SDKInitDroppedWeapon;
+Handle g_SDKSetSwitchTeams;
+Handle g_SDKSetScrambleTeams;
 
 
 #include "tfgo/musickits.sp"
@@ -136,7 +139,6 @@ public void OnPluginStart()
 	HookEvent("teamplay_broadcast_audio", Event_Pre_Teamplay_Broadcast_Audio, EventHookMode_Pre);
 	HookEvent("teamplay_point_captured", Event_Teamplay_Point_Captured);
 	HookEvent("arena_win_panel", Event_Arena_Win_Panel);
-	HookEvent("arena_match_maxstreak", Event_Arena_Match_MaxStreak);
 	
 	// Collect ConVars
 	tf_arena_first_blood = FindConVar("tf_arena_first_blood");
@@ -144,7 +146,6 @@ public void OnPluginStart()
 	tf_arena_use_queue = FindConVar("tf_arena_use_queue");
 	tf_arena_preround_time = FindConVar("tf_arena_preround_time");
 	tf_arena_override_cap_enable_time = FindConVar("tf_arena_override_cap_enable_time");
-	tf_arena_max_streak = FindConVar("tf_arena_max_streak");
 	tf_use_fixed_weaponspreads = FindConVar("tf_use_fixed_weaponspreads");
 	tf_weapon_criticals = FindConVar("tf_weapon_criticals");
 	tf_weapon_criticals_melee = FindConVar("tf_weapon_criticals_melee");
@@ -154,6 +155,7 @@ public void OnPluginStart()
 	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
 	tfgo_buyzone_radius_override = CreateConVar("tfgo_buyzone_radius_override", "-1", "Overrides the default calculated buyzone radius on maps with no respawn room");
 	tfgo_bomb_timer = CreateConVar("tfgo_bomb_timer", "45", "How long from when the bomb is planted until it blows", _, true, 15.0, true, tf_arena_round_time.FloatValue);
+	tfgo_maxrounds = CreateConVar("tfgo_maxrounds", "15", "Maximum number of rounds to play before a team scramble occurs");
 	tfgo_startmoney = CreateConVar("tfgo_startmoney", "1000", "Amount of money each player gets when they reset");
 	tfgo_maxmoney = CreateConVar("tfgo_maxmoney", "10000", "Maximum amount of money allowed in a player's account", _, true, tfgo_startmoney.FloatValue);
 	tfgo_cash_player_bomb_planted = CreateConVar("tfgo_cash_player_bomb_planted", "200", "Cash award for each player that planted the bomb");
@@ -177,13 +179,6 @@ public void OnPluginStart()
 	AddCommandListener(CommandListener_Build, "build");
 	AddCommandListener(CommandListener_Destroy, "destroy");
 	
-	for (int client = 1; client <= MaxClients; client++)
-	{
-		TFGOPlayer player = TFGOPlayer(client);
-		player.ResetBalance();
-		player.ClearLoadout();
-	}
-	
 	CAddColor("negative", 0xEA4141);
 	CAddColor("positive", 0xA2FF47);
 }
@@ -201,7 +196,7 @@ public void OnMapStart()
 	
 	DHookGamerules(g_dHookSetWinningTeam, false);
 	
-	ResetGameState();
+	ResetRoundState();
 	
 	PrecacheSounds();
 	PrecacheModels();
@@ -230,6 +225,11 @@ public void OnClientPutInServer(int client)
 	SDKHook(client, SDKHook_PreThink, OnClientThink);
 	
 	// Initialize new player with default values
+	ResetPlayer(client);
+}
+
+public void ResetPlayer(int client)
+{
 	TFGOPlayer player = TFGOPlayer(client);
 	player.ResetBalance();
 	player.ClearLoadout();
@@ -522,7 +522,7 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 
 public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
-	ResetGameState();
+	ResetRoundState();
 	
 	g_IsBuyTimeActive = true;
 	g_IsBonusRoundActive = false;
@@ -808,12 +808,44 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	losingTeam.LoseStreak++;
 	winningTeam.LoseStreak--;
 	
+	g_RoundsPlayed++;
+	if (g_RoundsPlayed == RoundFloat(tfgo_maxrounds.IntValue / 2.0))
+	{
+		SDKCall(g_SDKSetSwitchTeams, true);
+		
+		for (int client = 1; client <= MaxClients; client++)
+			ResetPlayer(client);
+		
+		for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
+			TFGOTeam(view_as<TFTeam>(team)).ResetLoseStreak();
+	}
+	else if (g_RoundsPlayed == tfgo_maxrounds.IntValue)
+	{
+		g_RoundsPlayed = 0;
+		
+		SDKCall(g_SDKSetScrambleTeams, true);
+		
+		Event alert = CreateEvent("teamplay_alert");
+		alert.SetInt("alert_type", 0);
+		alert.Fire();
+		PlayTeamScrambleAlert();
+		
+		for (int client = 1; client <= MaxClients; client++)
+			ResetPlayer(client);
+		
+		for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
+		{
+			TFGOTeam(view_as<TFTeam>(team)).ResetLoseStreak();
+			SetTeamScore(team, 0);
+		}
+	}
+	
 	// Reset timers
 	g_TenSecondRoundTimer = null;
 	g_TenSecondBombTimer = null;
 }
 
-public void ResetGameState()
+public void ResetRoundState()
 {
 	g_IsBombPlanted = false;
 	g_IsBombDetonated = false;
@@ -821,21 +853,6 @@ public void ResetGameState()
 	g_BombPlantingTeam = TFTeam_Unassigned;
 	for (int i = 0; i < sizeof(g_HasPlayerSuicided); i++)g_HasPlayerSuicided[i] = false;
 	for (int i = 0; i < sizeof(g_IsPlayerInDynamicBuyZone); i++)g_IsPlayerInDynamicBuyZone[i] = false;
-}
-
-public Action Event_Arena_Match_MaxStreak(Event event, const char[] name, bool dontBroadcast)
-{
-	for (int client = 1; client <= MaxClients; client++)
-	{
-		TFGOPlayer player = TFGOPlayer(client);
-		player.ResetBalance();
-		player.ClearLoadout();
-	}
-	
-	for (int team = 0; team < view_as<int>(TFTeam_Blue); team++)
-	TFGOTeam(view_as<TFTeam>(team)).ResetLoseStreak();
-	
-	ChooseRandomMusicKit();
 }
 
 public Action CommandListener_Build(int client, const char[] command, int args)
@@ -875,7 +892,6 @@ void Toggle_ConVars(bool toggle)
 	static int arenaPreRoundTime;
 	static int arenaRoundTime;
 	static int arenaOverrideCapEnableTime;
-	static int arenaMaxStreak;
 	static bool useFixedWeaponSpreads;
 	static bool weaponCriticals;
 	static bool weaponCriticalsMelee;
@@ -900,10 +916,6 @@ void Toggle_ConVars(bool toggle)
 		arenaOverrideCapEnableTime = tf_arena_override_cap_enable_time.IntValue;
 		tf_arena_override_cap_enable_time.IntValue = -1;
 		
-		// mp_maxrounds
-		arenaMaxStreak = tf_arena_max_streak.IntValue;
-		tf_arena_max_streak.IntValue = 8;
-		
 		useFixedWeaponSpreads = tf_use_fixed_weaponspreads.BoolValue;
 		tf_use_fixed_weaponspreads.BoolValue = true;
 		
@@ -924,7 +936,6 @@ void Toggle_ConVars(bool toggle)
 		tf_arena_preround_time.IntValue = arenaPreRoundTime;
 		tf_arena_round_time.IntValue = arenaRoundTime;
 		tf_arena_override_cap_enable_time.IntValue = arenaOverrideCapEnableTime;
-		tf_arena_max_streak.IntValue = arenaMaxStreak;
 		tf_use_fixed_weaponspreads.BoolValue = useFixedWeaponSpreads;
 		tf_weapon_criticals.BoolValue = weaponCriticals;
 		tf_weapon_criticals_melee.BoolValue = weaponCriticalsMelee;
@@ -1006,6 +1017,20 @@ void SDK_Init()
 	g_SDKInitDroppedWeapon = EndPrepSDKCall();
 	if (g_SDKInitDroppedWeapon == null)
 		LogMessage("Failed to create call: CTFDroppedWeapon::InitDroppedWeapon");
+	
+	StartPrepSDKCall(SDKCall_GameRules);
+	PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "CTeamplayRules::SetSwitchTeams");
+	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
+	g_SDKSetSwitchTeams = EndPrepSDKCall();
+	if (g_SDKSetSwitchTeams == null)
+		LogMessage("Failed to create call: CTeamplayRules::SetSwitchTeams");
+	
+	StartPrepSDKCall(SDKCall_GameRules);
+	PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "CTeamplayRules::SetScrambleTeams");
+	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
+	g_SDKSetScrambleTeams = EndPrepSDKCall();
+	if (g_SDKSetScrambleTeams == null)
+		LogMessage("Failed to create call: CTeamplayRules::SetScrambleTeams");
 	
 	MemoryPatch.SetGameData(config);
 	g_PickupWeaponPatch = new MemoryPatch("Patch_PickupWeaponFromOther");

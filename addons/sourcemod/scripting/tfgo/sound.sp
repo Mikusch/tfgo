@@ -3,6 +3,12 @@ static char g_BombPlantedAnnouncerAlerts[][PLATFORM_MAX_PATH] =  {
 	"vo/mvm_bomb_alerts02.mp3"
 };
 
+static char g_TeamScrambleAlerts[][PLATFORM_MAX_PATH] =  {
+	"vo/announcer_am_teamscramble01.mp3", 
+	"vo/announcer_am_teamscramble02.mp3", 
+	"vo/announcer_am_teamscramble03.mp3"
+};
+
 static char g_BombPlantedEngineerAlerts[][PLATFORM_MAX_PATH] =  {
 	"vo/engineer_mvm_bomb_see01.mp3", 
 	"vo/engineer_mvm_bomb_see02.mp3", 
@@ -33,6 +39,7 @@ public void PrecacheSounds()
 	PrecacheSound(BOMB_BEEPING_SOUND);
 	
 	for (int i = 0; i < sizeof(g_BombPlantedAnnouncerAlerts); i++)PrecacheSound(g_BombPlantedAnnouncerAlerts[i]);
+	for (int i = 0; i < sizeof(g_TeamScrambleAlerts); i++)PrecacheSound(g_TeamScrambleAlerts[i]);
 	for (int i = 0; i < sizeof(g_BombPlantedEngineerAlerts); i++)PrecacheSound(g_BombPlantedEngineerAlerts[i]);
 	for (int i = 0; i < sizeof(g_BombPlantedHeavyAlerts); i++)PrecacheSound(g_BombPlantedHeavyAlerts[i]);
 	for (int i = 0; i < sizeof(g_BombPlantedMedicAlerts); i++)PrecacheSound(g_BombPlantedMedicAlerts[i]);
@@ -42,6 +49,11 @@ public void PrecacheSounds()
 public void PlayAnnouncerBombAlert()
 {
 	EmitSoundToAll(g_BombPlantedAnnouncerAlerts[GetRandomInt(0, sizeof(g_BombPlantedAnnouncerAlerts) - 1)], _, SNDCHAN_VOICE_BASE); // SNDCHAN_VOICE_BASE = CHAN_VOICE2
+}
+
+public void PlayTeamScrambleAlert()
+{
+	EmitSoundToAll(g_TeamScrambleAlerts[GetRandomInt(0, sizeof(g_TeamScrambleAlerts) - 1)], _, SNDCHAN_VOICE_BASE);
 }
 
 public void ShoutBombWarnings()
