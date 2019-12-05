@@ -177,13 +177,6 @@ public void OnPluginStart()
 	AddCommandListener(CommandListener_Build, "build");
 	AddCommandListener(CommandListener_Destroy, "destroy");
 	
-	for (int client = 1; client <= MaxClients; client++)
-	{
-		TFGOPlayer player = TFGOPlayer(client);
-		player.ResetBalance();
-		player.ClearLoadout();
-	}
-	
 	CAddColor("negative", 0xEA4141);
 	CAddColor("positive", 0xA2FF47);
 }
@@ -230,6 +223,11 @@ public void OnClientPutInServer(int client)
 	SDKHook(client, SDKHook_PreThink, OnClientThink);
 	
 	// Initialize new player with default values
+	ResetPlayer(client);
+}
+
+public void ResetPlayer(int client)
+{
 	TFGOPlayer player = TFGOPlayer(client);
 	player.ResetBalance();
 	player.ClearLoadout();
@@ -813,7 +811,12 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	{
 		// Half-time
 		ServerCommand("mp_switchteams");
-		ResetPlayersAndTeams();
+		
+		for (int client = 1; client <= MaxClients; client++)
+			ResetPlayer(client);
+		
+		for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
+			TFGOTeam(view_as<TFTeam>(team)).ResetLoseStreak();
 	}
 	else if (g_RoundsPlayed == tfgo_maxrounds.IntValue)
 	{
@@ -821,26 +824,21 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 		g_RoundsPlayed = 0;
 		ServerCommand("mp_scrambleteams");
 		PlayTeamScrambleAlert();
-		ResetPlayersAndTeams();
 		ChooseRandomMusicKit();
+		
+		for (int client = 1; client <= MaxClients; client++)
+			ResetPlayer(client);
+		
+		for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
+		{
+			TFGOTeam(view_as<TFTeam>(team)).ResetLoseStreak();
+			SetTeamScore(team, 0);
+		}
 	}
 	
 	// Reset timers
 	g_TenSecondRoundTimer = null;
 	g_TenSecondBombTimer = null;
-}
-
-public void ResetPlayersAndTeams()
-{
-	for (int client = 1; client <= MaxClients; client++)
-	{
-		TFGOPlayer player = TFGOPlayer(client);
-		player.ResetBalance();
-		player.ClearLoadout();
-	}
-	
-	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
-		TFGOTeam(view_as<TFTeam>(team)).ResetLoseStreak();
 }
 
 public void ResetRoundState()
