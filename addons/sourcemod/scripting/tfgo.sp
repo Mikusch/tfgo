@@ -91,6 +91,8 @@ Handle g_SDKGetEquippedWearable;
 Handle g_SDKGetMaxAmmo;
 Handle g_SDKCreateDroppedWeapon;
 Handle g_SDKInitDroppedWeapon;
+Handle g_SDKSetSwitchTeams;
+Handle g_SDKSetScrambleTeams;
 
 
 #include "tfgo/musickits.sp"
@@ -809,8 +811,7 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	g_RoundsPlayed++;
 	if (g_RoundsPlayed == RoundFloat(tfgo_maxrounds.IntValue / 2.0))
 	{
-		// Half-time
-		ServerCommand("mp_switchteams");
+		SDKCall(g_SDKSetSwitchTeams, true);
 		
 		for (int client = 1; client <= MaxClients; client++)
 			ResetPlayer(client);
@@ -820,11 +821,14 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	}
 	else if (g_RoundsPlayed == tfgo_maxrounds.IntValue)
 	{
-		// Round limit reached
 		g_RoundsPlayed = 0;
-		ServerCommand("mp_scrambleteams");
+		
+		SDKCall(g_SDKSetScrambleTeams, true);
+		
+		Event alert = CreateEvent("teamplay_alert");
+		alert.SetInt("alert_type", 0);
+		alert.Fire();
 		PlayTeamScrambleAlert();
-		ChooseRandomMusicKit();
 		
 		for (int client = 1; client <= MaxClients; client++)
 			ResetPlayer(client);
@@ -1013,6 +1017,20 @@ void SDK_Init()
 	g_SDKInitDroppedWeapon = EndPrepSDKCall();
 	if (g_SDKInitDroppedWeapon == null)
 		LogMessage("Failed to create call: CTFDroppedWeapon::InitDroppedWeapon");
+	
+	StartPrepSDKCall(SDKCall_GameRules);
+	PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "CTeamplayRules::SetSwitchTeams");
+	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
+	g_SDKSetSwitchTeams = EndPrepSDKCall();
+	if (g_SDKSetSwitchTeams == null)
+		LogMessage("Failed to create call: CTeamplayRules::SetSwitchTeams");
+	
+	StartPrepSDKCall(SDKCall_GameRules);
+	PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "CTeamplayRules::SetScrambleTeams");
+	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
+	g_SDKSetScrambleTeams = EndPrepSDKCall();
+	if (g_SDKSetScrambleTeams == null)
+		LogMessage("Failed to create call: CTeamplayRules::SetScrambleTeams");
 	
 	MemoryPatch.SetGameData(config);
 	g_PickupWeaponPatch = new MemoryPatch("Patch_PickupWeaponFromOther");

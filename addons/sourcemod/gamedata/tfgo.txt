@@ -70,6 +70,16 @@
 				"windows"	"160"
 				"linux"		"161"
 			}
+			"CTeamplayRules::SetSwitchTeams"
+			{
+				"windows"	"162"
+				"linux"		"163"
+			}
+			"CTeamplayRules::SetScrambleTeams"
+			{
+				"windows"	"165"
+				"linux"		"166"
+			}
 		}
 		"Addresses"
 		{
