@@ -181,6 +181,16 @@ public void OnPluginStart()
 	
 	CAddColor("negative", 0xEA4141);
 	CAddColor("positive", 0xA2FF47);
+	
+	// In case of late plugin load
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientConnected(client))
+			OnClientConnected(client);
+		
+		if (IsClientInGame(client))
+			OnClientPutInServer(client);
+	}
 }
 
 public void OnPluginEnd()
@@ -220,12 +230,14 @@ public void OnMapStart()
 	}
 }
 
+public void OnClientConnected(int client)
+{
+	ResetPlayer(client);
+}
+
 public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_PreThink, OnClientThink);
-	
-	// Initialize new player with default values
-	ResetPlayer(client);
 }
 
 public void ResetPlayer(int client)
