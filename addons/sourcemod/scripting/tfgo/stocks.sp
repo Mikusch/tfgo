@@ -181,7 +181,7 @@ stock void TF2_EquipWeapon(int client, int weapon, char[] className = NULL_STRIN
 				SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", melee);
 			}
 		}
-		else if (StrEqual(className, "tf_weapon_invis"))
+		else if (StrEqual(className, "tf_weapon_invis") || StrEqual(className, "tf_weapon_rocketpack"))
 		{
 			// These weapons like to glitch out when switched to
 			return;
