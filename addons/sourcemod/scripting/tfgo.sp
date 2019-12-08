@@ -13,6 +13,9 @@
 #pragma newdecls required
 
 
+#define PLUGIN_VERSION "1.0"
+#define PLUGIN_VERSION_REVISION "manual"
+
 #define TF_MAXPLAYERS 32
 
 #define BOMB_MODEL "models/props_td/atom_bomb.mdl"
@@ -112,7 +115,7 @@ public Plugin pluginInfo =  {
 	name = "Team Fortress: Global Offensive Arena", 
 	author = "Mikusch", 
 	description = "A Team Fortress 2 gamemode inspired by Counter-Strike: Global Offensive", 
-	version = "1.0", 
+	version = PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION,
 	url = "https://github.com/Mikusch/tfgo"
 };
 
