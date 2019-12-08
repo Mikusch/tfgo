@@ -2,3 +2,5 @@
 *.so
 *.smx
 *.bat
+*.exe
+build/*
