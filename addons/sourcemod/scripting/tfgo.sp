@@ -252,6 +252,9 @@ public void ResetPlayer(int client)
 	TFGOPlayer player = TFGOPlayer(client);
 	player.ResetBalance();
 	player.ClearLoadout();
+	
+	if (IsValidClient(client))
+		CPrintToChat(client, "%T", "Alert_Player_Reset", LANG_SERVER);
 }
 
 public void OnClientThink(int client)
@@ -389,13 +392,6 @@ public MRESReturn Hook_HandleSwitchTeams()
 
 public MRESReturn Hook_HandleScrambleTeams()
 {
-	// Arena informs the players of a team switch but not of a scramble, wtf?
-	Event alert = CreateEvent("teamplay_alert");
-	alert.SetInt("alert_type", 0);
-	alert.Fire();
-	PrintToChatAll("%T", "TF_TeamsScrambled", LANG_SERVER);
-	PlayTeamScrambleAlert();
-	
 	for (int client = 1; client <= MaxClients; client++)
 		ResetPlayer(client);
 	
@@ -404,6 +400,13 @@ public MRESReturn Hook_HandleScrambleTeams()
 		TFGOTeam(view_as<TFTeam>(team)).ResetLoseStreak();
 		SetTeamScore(team, 0);
 	}
+	
+	// Arena informs the players of a team switch but not of a scramble, wtf?
+	Event alert = CreateEvent("teamplay_alert");
+	alert.SetInt("alert_type", 0);
+	alert.Fire();
+	PrintToChatAll("%T", "TF_TeamsScrambled", LANG_SERVER);
+	PlayTeamScrambleAlert();
 }
 
 public Action Event_Player_Team(Event event, const char[] name, bool dontBroadcast)

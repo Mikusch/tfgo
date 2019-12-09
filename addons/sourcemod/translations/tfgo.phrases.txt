@@ -119,6 +119,10 @@
 	{
 		"en"	"The bomb has been planted.\n%d seconds to detonation."
 	}
+	"Alert_Player_Reset"
+	{
+		"en"	"{orange}Your weapons and cash have been reset."
+	}
 	
 	// Buy Menu
 	"BuyMenu_Title"
