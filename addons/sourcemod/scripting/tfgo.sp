@@ -239,7 +239,7 @@ public void OnMapStart()
 
 public void OnClientConnected(int client)
 {
-	ResetPlayer(client);
+	ResetPlayer(client, false);
 }
 
 public void OnClientPutInServer(int client)
@@ -247,13 +247,12 @@ public void OnClientPutInServer(int client)
 	SDKHook(client, SDKHook_PreThink, OnClientThink);
 }
 
-public void ResetPlayer(int client)
+stock void ResetPlayer(int client, bool notify = true)
 {
 	TFGOPlayer player = TFGOPlayer(client);
 	player.ResetBalance();
-	player.ClearLoadout();
 	
-	if (IsValidClient(client))
+	if (notify && IsValidClient(client))
 		CPrintToChat(client, "%T", "Alert_Player_Reset", LANG_SERVER);
 }
 
