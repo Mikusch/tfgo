@@ -221,4 +221,9 @@
 	{
 		"en"	"No income for suiciding."
 	}
+	
+	"TF_TeamsScrambled"
+	{
+		"en"	"Teams have been scrambled."
+	}
 }
