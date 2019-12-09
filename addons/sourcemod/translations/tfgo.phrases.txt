@@ -119,6 +119,10 @@
 	{
 		"en"	"The bomb has been planted.\n%d seconds to detonation."
 	}
+	"Alert_Player_Reset"
+	{
+		"en"	"{orange}Your weapons and cash have been reset."
+	}
 	
 	// Buy Menu
 	"BuyMenu_Title"
@@ -220,5 +224,10 @@
 	"Team_Cash_Award_no_income_suicide"
 	{
 		"en"	"No income for suiciding."
+	}
+	
+	"TF_TeamsScrambled"
+	{
+		"en"	"Teams have been scrambled."
 	}
 }

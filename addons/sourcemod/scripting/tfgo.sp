@@ -87,7 +87,9 @@ ConVar tf_weapon_criticals_melee;
 ConVar mp_bonusroundtime;
 
 // SDK functions
-Handle g_dHookSetWinningTeam;
+Handle g_DHookSetWinningTeam;
+Handle g_DHookHandleSwitchTeams;
+Handle g_DHookHandleScrambleTeams;
 Handle g_SDKEquipWearable;
 Handle g_SDKRemoveWearable;
 Handle g_SDKGetEquippedWearable;
@@ -207,7 +209,9 @@ public void OnMapStart()
 	// Allow players to buy stuff on the first round
 	g_IsBuyTimeActive = true;
 	
-	DHookGamerules(g_dHookSetWinningTeam, false);
+	DHookGamerules(g_DHookSetWinningTeam, false);
+	DHookGamerules(g_DHookHandleSwitchTeams, false);
+	DHookGamerules(g_DHookHandleScrambleTeams, false);
 	
 	ResetRoundState();
 	
@@ -235,7 +239,7 @@ public void OnMapStart()
 
 public void OnClientConnected(int client)
 {
-	ResetPlayer(client);
+	ResetPlayer(client, false);
 }
 
 public void OnClientPutInServer(int client)
@@ -243,11 +247,13 @@ public void OnClientPutInServer(int client)
 	SDKHook(client, SDKHook_PreThink, OnClientThink);
 }
 
-public void ResetPlayer(int client)
+stock void ResetPlayer(int client, bool notify = true)
 {
 	TFGOPlayer player = TFGOPlayer(client);
 	player.ResetBalance();
-	player.ClearLoadout();
+	
+	if (notify && IsValidClient(client))
+		CPrintToChat(client, "%T", "Alert_Player_Reset", LANG_SERVER);
 }
 
 public void OnClientThink(int client)
@@ -372,6 +378,34 @@ public MRESReturn Hook_PickupWeaponFromOther(int client, Handle returnVal, Handl
 	TFGOPlayer(client).AddToLoadout(defindex);
 	
 	Forward_WeaponPickup(client, defindex);
+}
+
+public MRESReturn Hook_HandleSwitchTeams()
+{
+	for (int client = 1; client <= MaxClients; client++)
+		ResetPlayer(client);
+	
+	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
+		TFGOTeam(view_as<TFTeam>(team)).ResetLoseStreak();
+}
+
+public MRESReturn Hook_HandleScrambleTeams()
+{
+	for (int client = 1; client <= MaxClients; client++)
+		ResetPlayer(client);
+	
+	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
+	{
+		TFGOTeam(view_as<TFTeam>(team)).ResetLoseStreak();
+		SetTeamScore(team, 0);
+	}
+	
+	// Arena informs the players of a team switch but not of a scramble, wtf?
+	Event alert = CreateEvent("teamplay_alert");
+	alert.SetInt("alert_type", 0);
+	alert.Fire();
+	PrintToChatAll("%T", "TF_TeamsScrambled", LANG_SERVER);
+	PlayTeamScrambleAlert();
 }
 
 public Action Event_Player_Team(Event event, const char[] name, bool dontBroadcast)
@@ -827,32 +861,11 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	if (g_RoundsPlayed == RoundFloat(tfgo_maxrounds.IntValue / 2.0))
 	{
 		SDKCall(g_SDKSetSwitchTeams, true);
-		
-		for (int client = 1; client <= MaxClients; client++)
-			ResetPlayer(client);
-		
-		for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
-			TFGOTeam(view_as<TFTeam>(team)).ResetLoseStreak();
 	}
 	else if (g_RoundsPlayed == tfgo_maxrounds.IntValue)
 	{
 		g_RoundsPlayed = 0;
-		
 		SDKCall(g_SDKSetScrambleTeams, true);
-		
-		Event alert = CreateEvent("teamplay_alert");
-		alert.SetInt("alert_type", 0);
-		alert.Fire();
-		PlayTeamScrambleAlert();
-		
-		for (int client = 1; client <= MaxClients; client++)
-			ResetPlayer(client);
-		
-		for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
-		{
-			TFGOTeam(view_as<TFTeam>(team)).ResetLoseStreak();
-			SetTeamScore(team, 0);
-		}
 	}
 	
 	// Reset timers
@@ -970,15 +983,25 @@ void SDK_Init()
 	delete hook;
 	
 	int offset = GameConfGetOffset(config, "SetWinningTeam");
-	g_dHookSetWinningTeam = DHookCreate(offset, HookType_GameRules, ReturnType_Void, ThisPointer_Ignore, Hook_SetWinningTeam);
-	DHookAddParam(g_dHookSetWinningTeam, HookParamType_Int);
-	DHookAddParam(g_dHookSetWinningTeam, HookParamType_Int);
-	DHookAddParam(g_dHookSetWinningTeam, HookParamType_Bool);
-	DHookAddParam(g_dHookSetWinningTeam, HookParamType_Bool);
-	DHookAddParam(g_dHookSetWinningTeam, HookParamType_Bool);
-	DHookAddParam(g_dHookSetWinningTeam, HookParamType_Bool);
-	if (g_dHookSetWinningTeam == null)
+	g_DHookSetWinningTeam = DHookCreate(offset, HookType_GameRules, ReturnType_Void, ThisPointer_Ignore, Hook_SetWinningTeam);
+	DHookAddParam(g_DHookSetWinningTeam, HookParamType_Int);
+	DHookAddParam(g_DHookSetWinningTeam, HookParamType_Int);
+	DHookAddParam(g_DHookSetWinningTeam, HookParamType_Bool);
+	DHookAddParam(g_DHookSetWinningTeam, HookParamType_Bool);
+	DHookAddParam(g_DHookSetWinningTeam, HookParamType_Bool);
+	DHookAddParam(g_DHookSetWinningTeam, HookParamType_Bool);
+	if (g_DHookSetWinningTeam == null)
 		LogMessage("Failed to create hook: SetWinningTeam");
+	
+	offset = GameConfGetOffset(config, "CTeamplayRules::HandleSwitchTeams");
+	g_DHookHandleSwitchTeams = DHookCreate(offset, HookType_GameRules, ReturnType_Void, ThisPointer_Ignore, Hook_HandleSwitchTeams);
+	if (g_DHookHandleSwitchTeams == null)
+		LogMessage("Failed to create hook: CTeamplayRules::HandleSwitchTeams");
+	
+	offset = GameConfGetOffset(config, "CTeamplayRules::HandleScrambleTeams");
+	g_DHookHandleScrambleTeams = DHookCreate(offset, HookType_GameRules, ReturnType_Void, ThisPointer_Ignore, Hook_HandleScrambleTeams);
+	if (g_DHookHandleScrambleTeams == null)
+		LogMessage("Failed to create hook: CTeamplayRules::HandleScrambleTeams");
 	
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "CBasePlayer::EquipWearable");
