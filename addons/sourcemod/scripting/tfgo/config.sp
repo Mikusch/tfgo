@@ -46,6 +46,7 @@ void ReadKillAwardConfig(KeyValues kv)
 			{
 				char class[PLATFORM_MAX_PATH];
 				kv.GetSectionName(class, sizeof(class)); // Weapon class
+				StrToLower(class);
 				g_WeaponClassKillAwards.SetValue(class, kv.GetNum(NULL_STRING, tfgo_cash_player_killed_enemy_default.IntValue));
 			}
 			while (kv.GotoNextKey(false));

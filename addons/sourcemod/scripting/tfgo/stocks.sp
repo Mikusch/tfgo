@@ -17,6 +17,14 @@ stock int GetAlivePlayerCountForTeam(TFTeam team)
 	return count;
 }
 
+stock void StrToLower(char[] str)
+{
+	for (int i = 0; i < strlen(str); i++)
+	{
+		str[i] = CharToLower(str[i]);
+	}
+}
+
 stock void TF2_ForceRoundWin(TFTeam team, int winReason, bool forceMapReset = true, bool switchTeams = false)
 {
 	int entity = CreateEntityByName("game_round_win");
