@@ -247,6 +247,7 @@ public void OnClientConnected(int client)
 public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_PreThink, OnClientThink);
+	SDKHook(client, SDKHook_OnTakeDamage, OnClientTakeDamage);
 }
 
 stock void ResetPlayer(int client, bool notify = true)
@@ -270,6 +271,7 @@ public void OnClientThink(int client)
 public void OnClientDisconnect(int client)
 {
 	SDKUnhook(client, SDKHook_PreThink, OnClientThink);
+	SDKUnhook(client, SDKHook_OnTakeDamage, OnClientTakeDamage);
 	
 	// Force-end round if last client in team disconnects during active bomb
 	if (g_IsBombPlanted && IsValidClient(client))
@@ -280,11 +282,11 @@ public void OnClientDisconnect(int client)
 	}
 }
 
-public Action OnTakeDamage(int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
+public Action OnClientTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
 {
-	if (tfgo_all_weapons_can_headshot.BoolValue)
+	if (tfgo_all_weapons_can_headshot.BoolValue && weapon > -1)
 	{
-		damagetype &= DMG_USE_HITLOCATIONS;
+		damagetype |= DMG_USE_HITLOCATIONS;
 		return Plugin_Changed;
 	}
 	else
