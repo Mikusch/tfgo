@@ -16,8 +16,6 @@ int g_DefaultWeaponIndexes[][] =  {
 	{ 9, 22, 30758, -1, -1, 28 } // Engineer
 };
 
-float g_ClassViewHeights[] =  { -1.0, 65.0, 75.0, 68.0, 68.0, 75.0, 75.0, 68.0, 75.0, 68.0 };
-
 int g_PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][WeaponSlot_BuilderEngie + 1];
 int g_PlayerBalances[TF_MAXPLAYERS + 1];
 Menu g_ActiveBuyMenus[TF_MAXPLAYERS + 1];
@@ -100,12 +98,11 @@ methodmap TFGOPlayer
 		int currentWeapon = GetPlayerWeaponSlot(this.Client, slot);
 		if (currentWeapon > -1)
 		{
-			float origin[3];
-			GetClientAbsOrigin(this.Client, origin);
-			origin[2] += g_ClassViewHeights[class] / 2;
+			float position[3];
+			GetClientEyePosition(this.Client, position);
 			float angles[3];
-			GetClientAbsAngles(this.Client, angles);
-			SDK_CreateDroppedWeapon(currentWeapon, this.Client, origin, angles);
+			GetClientEyeAngles(this.Client, angles);
+			SDK_CreateDroppedWeapon(currentWeapon, this.Client, position, angles);
 		}
 		
 		TF2_CreateAndEquipWeapon(this.Client, defindex, TFQual_Unique, GetRandomInt(1, 100));
