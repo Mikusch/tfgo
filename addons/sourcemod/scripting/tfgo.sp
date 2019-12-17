@@ -18,6 +18,8 @@
 
 #define TF_MAXPLAYERS 32
 
+#define HITGROUP_HEAD 1
+
 #define BOMB_MODEL "models/props_td/atom_bomb.mdl"
 #define BOMB_EXPLOSION_PARTICLE "mvm_hatch_destroy"
 #define BOMB_BEEPING_SOUND "player/cyoa_pda_beep3.wav"
@@ -59,6 +61,7 @@ bool g_IsPlayerInDynamicBuyZone[TF_MAXPLAYERS + 1];
 int g_RoundsPlayed;
 
 // ConVars
+ConVar tfgo_all_weapons_can_headshot;
 ConVar tfgo_buytime;
 ConVar tfgo_buyzone_radius_override;
 ConVar tfgo_bomb_timer;
@@ -157,6 +160,7 @@ public void OnPluginStart()
 	mp_bonusroundtime = FindConVar("mp_bonusroundtime");
 	
 	// Create TFGO ConVars
+	tfgo_all_weapons_can_headshot = CreateConVar("tfgo_all_weapons_can_headshot", "0", "Whether all weapons should be able to headshot");
 	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
 	tfgo_buyzone_radius_override = CreateConVar("tfgo_buyzone_radius_override", "-1", "Overrides the default calculated buyzone radius on maps with no respawn room");
 	tfgo_bomb_timer = CreateConVar("tfgo_bomb_timer", "45", "How long from when the bomb is planted until it blows", _, true, 15.0, true, tf_arena_round_time.FloatValue);
@@ -245,6 +249,7 @@ public void OnClientConnected(int client)
 public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_PreThink, OnClientThink);
+	SDKHook(client, SDKHook_TraceAttack, OnClientTraceAttack);
 }
 
 stock void ResetPlayer(int client, bool notify = true)
@@ -268,6 +273,7 @@ public void OnClientThink(int client)
 public void OnClientDisconnect(int client)
 {
 	SDKUnhook(client, SDKHook_PreThink, OnClientThink);
+	SDKUnhook(client, SDKHook_TraceAttack, OnClientTraceAttack);
 	
 	// Force-end round if last client in team disconnects during active bomb
 	if (g_IsBombPlanted && IsValidClient(client))
@@ -276,6 +282,18 @@ public void OnClientDisconnect(int client)
 		if (team > TFTeam_Spectator && g_BombPlantingTeam != team && GetAlivePlayerCountForTeam(team) <= 0)
 			g_IsBombPlanted = false;
 	}
+}
+
+public Action OnClientTraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
+{
+	if (tfgo_all_weapons_can_headshot.BoolValue && hitgroup == HITGROUP_HEAD)
+	{
+		// All headshots should deal critical damage
+		damagetype |= DMG_CRIT;
+		return Plugin_Changed;
+	}
+	
+	return Plugin_Continue;
 }
 
 public void ChooseRandomMusicKit()
