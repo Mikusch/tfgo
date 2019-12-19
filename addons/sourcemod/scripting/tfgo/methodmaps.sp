@@ -1,6 +1,5 @@
-#define TFGO_MIN_LOSESTREAK				0
-#define TFGO_MAX_LOSESTREAK				4
-#define TFGO_STARTING_LOSESTREAK		1
+#define TFGO_MIN_CONSECUTIVE_LOSSES		0
+#define TFGO_STARTING_CONSECUTIVE_LOSSES	1
 
 // -1 indicates the class should start with no weapon in that slot
 int g_DefaultWeaponIndexes[][] =  {
@@ -20,7 +19,7 @@ int g_PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Enginee
 int g_PlayerBalances[TF_MAXPLAYERS + 1];
 Menu g_ActiveBuyMenus[TF_MAXPLAYERS + 1];
 
-int g_TeamLosingStreaks[view_as<int>(TFTeam_Blue) + 1] =  { TFGO_STARTING_LOSESTREAK, ... };
+int g_TeamConsecutiveLosses[view_as<int>(TFTeam_Blue) + 1] =  { TFGO_STARTING_CONSECUTIVE_LOSSES, ... };
 
 
 methodmap TFGOPlayer
@@ -176,21 +175,21 @@ methodmap TFGOTeam
 		}
 	}
 	
-	property int LoseStreak
+	property int ConsecutiveLosses
 	{
 		public get()
 		{
-			return g_TeamLosingStreaks[this];
+			return g_TeamConsecutiveLosses[this];
 		}
 		
 		public set(int val)
 		{
-			if (val > TFGO_MAX_LOSESTREAK)
-				g_TeamLosingStreaks[this] = TFGO_MAX_LOSESTREAK;
-			else if (val < TFGO_MIN_LOSESTREAK)
-				g_TeamLosingStreaks[this] = TFGO_MIN_LOSESTREAK;
+			if (val > tfgo_consecutive_loss_max.IntValue)
+				g_TeamConsecutiveLosses[this] = tfgo_consecutive_loss_max.IntValue;
+			else if (val < TFGO_MIN_CONSECUTIVE_LOSSES)
+				g_TeamConsecutiveLosses[this] = TFGO_MIN_CONSECUTIVE_LOSSES;
 			else
-				g_TeamLosingStreaks[this] = val;
+				g_TeamConsecutiveLosses[this] = val;
 		}
 	}
 	
@@ -198,13 +197,13 @@ methodmap TFGOTeam
 	{
 		public get()
 		{
-			return tfgo_cash_team_loser_bonus.IntValue + tfgo_cash_team_loser_bonus_consecutive_rounds.IntValue * this.LoseStreak;
+			return tfgo_cash_team_loser_bonus.IntValue + tfgo_cash_team_loser_bonus_consecutive_rounds.IntValue * this.ConsecutiveLosses;
 		}
 	}
 	
-	public void ResetLoseStreak()
+	public void ResetConsecutiveLosses()
 	{
-		g_TeamLosingStreaks[this] = TFGO_STARTING_LOSESTREAK;
+		g_TeamConsecutiveLosses[this] = TFGO_STARTING_CONSECUTIVE_LOSSES;
 	}
 	
 	public void AddToClientBalances(int val, const char[] reason, any...)
