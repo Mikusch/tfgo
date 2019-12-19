@@ -63,6 +63,7 @@ ConVar tfgo_buytime;
 ConVar tfgo_buyzone_radius_override;
 ConVar tfgo_bomb_timer;
 ConVar tfgo_maxrounds;
+ConVar tfgo_halftime;
 ConVar tfgo_startmoney;
 ConVar tfgo_maxmoney;
 ConVar tfgo_cash_player_bomb_planted;
@@ -161,6 +162,7 @@ public void OnPluginStart()
 	tfgo_buyzone_radius_override = CreateConVar("tfgo_buyzone_radius_override", "-1", "Overrides the default calculated buyzone radius on maps with no respawn room");
 	tfgo_bomb_timer = CreateConVar("tfgo_bomb_timer", "45", "How long from when the bomb is planted until it blows", _, true, 15.0, true, tf_arena_round_time.FloatValue);
 	tfgo_maxrounds = CreateConVar("tfgo_maxrounds", "15", "Maximum number of rounds to play before a team scramble occurs");
+	tfgo_halftime = CreateConVar("tfgo_halftime", "1", "Determines whether the match switches sides in a halftime event");
 	tfgo_startmoney = CreateConVar("tfgo_startmoney", "1000", "Amount of money each player gets when they reset");
 	tfgo_maxmoney = CreateConVar("tfgo_maxmoney", "10000", "Maximum amount of money allowed in a player's account", _, true, tfgo_startmoney.FloatValue);
 	tfgo_cash_player_bomb_planted = CreateConVar("tfgo_cash_player_bomb_planted", "200", "Cash award for each player that planted the bomb");
@@ -858,7 +860,7 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	winningTeam.LoseStreak--;
 	
 	g_RoundsPlayed++;
-	if (g_RoundsPlayed == RoundFloat(tfgo_maxrounds.IntValue / 2.0))
+	if (tfgo_halftime.BoolValue && g_RoundsPlayed == RoundFloat(tfgo_maxrounds.IntValue / 2.0))
 	{
 		SDKCall(g_SDKSetSwitchTeams, true);
 	}
