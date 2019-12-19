@@ -1,6 +1,3 @@
-#define TFGO_MIN_CONSECUTIVE_LOSSES		0
-#define TFGO_STARTING_CONSECUTIVE_LOSSES	1
-
 // -1 indicates the class should start with no weapon in that slot
 int g_DefaultWeaponIndexes[][] =  {
 	{ -1, -1, -1, -1, -1, -1 },  // Unknown
@@ -19,7 +16,7 @@ int g_PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Enginee
 int g_PlayerBalances[TF_MAXPLAYERS + 1];
 Menu g_ActiveBuyMenus[TF_MAXPLAYERS + 1];
 
-int g_TeamConsecutiveLosses[view_as<int>(TFTeam_Blue) + 1] =  { TFGO_STARTING_CONSECUTIVE_LOSSES, ... };
+int g_TeamConsecutiveLosses[view_as<int>(TFTeam_Blue) + 1] =  { STARTING_CONSECUTIVE_LOSSES, ... };
 
 
 methodmap TFGOPlayer
@@ -186,8 +183,8 @@ methodmap TFGOTeam
 		{
 			if (val > tfgo_consecutive_loss_max.IntValue)
 				g_TeamConsecutiveLosses[this] = tfgo_consecutive_loss_max.IntValue;
-			else if (val < TFGO_MIN_CONSECUTIVE_LOSSES)
-				g_TeamConsecutiveLosses[this] = TFGO_MIN_CONSECUTIVE_LOSSES;
+			else if (val < MIN_CONSECUTIVE_LOSSES)
+				g_TeamConsecutiveLosses[this] = MIN_CONSECUTIVE_LOSSES;
 			else
 				g_TeamConsecutiveLosses[this] = val;
 		}
@@ -203,7 +200,7 @@ methodmap TFGOTeam
 	
 	public void ResetConsecutiveLosses()
 	{
-		g_TeamConsecutiveLosses[this] = TFGO_STARTING_CONSECUTIVE_LOSSES;
+		g_TeamConsecutiveLosses[this] = STARTING_CONSECUTIVE_LOSSES;
 	}
 	
 	public void AddToClientBalances(int val, const char[] reason, any...)

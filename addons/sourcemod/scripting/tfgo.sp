@@ -30,6 +30,9 @@
 #define BOMB_EXPLOSION_DAMAGE 500.0
 #define BOMB_EXPLOSION_RADIUS 800.0
 
+#define MIN_CONSECUTIVE_LOSSES 0
+#define STARTING_CONSECUTIVE_LOSSES 1
+
 
 // Timers
 Handle g_BuyTimeTimer;
@@ -164,7 +167,7 @@ public void OnPluginStart()
 	// Create TFGO ConVars
 	tfgo_all_weapons_can_headshot = CreateConVar("tfgo_all_weapons_can_headshot", "0", "Whether all weapons should be able to headshot");
 	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
-	tfgo_consecutive_loss_max = CreateConVar("tfgo_consecutive_loss_max", "4", "The maximum of consecutive losses for each team that will be kept track of", _, true, float(TFGO_STARTING_CONSECUTIVE_LOSSES));
+	tfgo_consecutive_loss_max = CreateConVar("tfgo_consecutive_loss_max", "4", "The maximum of consecutive losses for each team that will be kept track of", _, true, float(STARTING_CONSECUTIVE_LOSSES));
 	tfgo_buyzone_radius_override = CreateConVar("tfgo_buyzone_radius_override", "-1", "Overrides the default calculated buyzone radius on maps with no respawn room");
 	tfgo_bomb_timer = CreateConVar("tfgo_bomb_timer", "45", "How long from when the bomb is planted until it blows", _, true, 15.0, true, tf_arena_round_time.FloatValue);
 	tfgo_maxrounds = CreateConVar("tfgo_maxrounds", "15", "Maximum number of rounds to play before a team scramble occurs");
