@@ -960,7 +960,7 @@ void Toggle_ConVars(bool toggle)
 		
 		// mp_freezetime
 		arenaPreRoundTime = tf_arena_preround_time.IntValue;
-		tf_arena_preround_time.IntValue = 15;
+		tf_arena_preround_time.IntValue = 5;
 		
 		// mp_roundtime
 		arenaRoundTime = tf_arena_round_time.IntValue;
