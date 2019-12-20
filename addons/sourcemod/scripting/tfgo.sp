@@ -30,6 +30,9 @@
 #define BOMB_EXPLOSION_DAMAGE 500.0
 #define BOMB_EXPLOSION_RADIUS 800.0
 
+#define MIN_CONSECUTIVE_LOSSES 0
+#define STARTING_CONSECUTIVE_LOSSES 1
+
 
 // Timers
 Handle g_BuyTimeTimer;
@@ -63,6 +66,7 @@ int g_RoundsPlayed;
 // ConVars
 ConVar tfgo_all_weapons_can_headshot;
 ConVar tfgo_buytime;
+ConVar tfgo_consecutive_loss_max;
 ConVar tfgo_buyzone_radius_override;
 ConVar tfgo_bomb_timer;
 ConVar tfgo_maxrounds;
@@ -163,6 +167,7 @@ public void OnPluginStart()
 	// Create TFGO ConVars
 	tfgo_all_weapons_can_headshot = CreateConVar("tfgo_all_weapons_can_headshot", "0", "Whether all weapons should be able to headshot");
 	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
+	tfgo_consecutive_loss_max = CreateConVar("tfgo_consecutive_loss_max", "4", "The maximum of consecutive losses for each team that will be kept track of", _, true, float(STARTING_CONSECUTIVE_LOSSES));
 	tfgo_buyzone_radius_override = CreateConVar("tfgo_buyzone_radius_override", "-1", "Overrides the default calculated buyzone radius on maps with no respawn room");
 	tfgo_bomb_timer = CreateConVar("tfgo_bomb_timer", "45", "How long from when the bomb is planted until it blows", _, true, 15.0, true, tf_arena_round_time.FloatValue);
 	tfgo_maxrounds = CreateConVar("tfgo_maxrounds", "15", "Maximum number of rounds to play before a team scramble occurs");
@@ -379,8 +384,8 @@ public MRESReturn Hook_SetWinningTeam(Handle params)
 		TFGOTeam blue = TFGOTeam(TFTeam_Blue);
 		red.AddToClientBalances(0, "%T", "Team_Cash_Award_no_income", LANG_SERVER);
 		blue.AddToClientBalances(0, "%T", "Team_Cash_Award_no_income", LANG_SERVER);
-		red.LoseStreak++;
-		blue.LoseStreak++;
+		red.ConsecutiveLosses++;
+		blue.ConsecutiveLosses++;
 		return MRES_Ignored;
 	}
 	
@@ -406,7 +411,7 @@ public MRESReturn Hook_HandleSwitchTeams()
 		ResetPlayer(client);
 	
 	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
-		TFGOTeam(view_as<TFTeam>(team)).ResetLoseStreak();
+		TFGOTeam(view_as<TFTeam>(team)).ResetConsecutiveLosses();
 }
 
 public MRESReturn Hook_HandleScrambleTeams()
@@ -416,7 +421,7 @@ public MRESReturn Hook_HandleScrambleTeams()
 	
 	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
 	{
-		TFGOTeam(view_as<TFTeam>(team)).ResetLoseStreak();
+		TFGOTeam(view_as<TFTeam>(team)).ResetConsecutiveLosses();
 		SetTeamScore(team, 0);
 	}
 	
@@ -873,9 +878,9 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 		}
 	}
 	
-	// Adjust team losing streaks
-	losingTeam.LoseStreak++;
-	winningTeam.LoseStreak--;
+	// Adjust consecutive loss count for each team
+	losingTeam.ConsecutiveLosses++;
+	winningTeam.ConsecutiveLosses--;
 	
 	g_RoundsPlayed++;
 	if (tfgo_halftime.BoolValue && g_RoundsPlayed == RoundFloat(tfgo_maxrounds.IntValue / 2.0))
