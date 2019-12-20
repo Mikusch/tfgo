@@ -411,7 +411,7 @@ public MRESReturn Hook_HandleSwitchTeams()
 		ResetPlayer(client);
 	
 	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
-		TFGOTeam(view_as<TFTeam>(team)).ResetConsecutiveLosses();
+		TFGOTeam(view_as<TFTeam>(team)).ConsecutiveLosses = STARTING_CONSECUTIVE_LOSSES;
 }
 
 public MRESReturn Hook_HandleScrambleTeams()
@@ -421,7 +421,7 @@ public MRESReturn Hook_HandleScrambleTeams()
 	
 	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
 	{
-		TFGOTeam(view_as<TFTeam>(team)).ResetConsecutiveLosses();
+		TFGOTeam(view_as<TFTeam>(team)).ConsecutiveLosses = STARTING_CONSECUTIVE_LOSSES;
 		SetTeamScore(team, 0);
 	}
 	

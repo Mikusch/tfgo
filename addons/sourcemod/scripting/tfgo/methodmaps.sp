@@ -198,11 +198,6 @@ methodmap TFGOTeam
 		}
 	}
 	
-	public void ResetConsecutiveLosses()
-	{
-		g_TeamConsecutiveLosses[this] = STARTING_CONSECUTIVE_LOSSES;
-	}
-	
 	public void AddToClientBalances(int val, const char[] reason, any...)
 	{
 		char message[PLATFORM_MAX_PATH];
