@@ -257,7 +257,7 @@ public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_PreThink, OnClientThink);
 	SDKHook(client, SDKHook_TraceAttack, OnClientTraceAttack);
-	SDKHook(client, SDKHook_OnTakeDamage, OnClientTakeDamage);
+	SDKHook(client, SDKHook_OnTakeDamageAlive, OnClientTakeDamageAlive);
 }
 
 stock void ResetPlayer(int client, bool notify = true)
@@ -282,7 +282,7 @@ public void OnClientDisconnect(int client)
 {
 	SDKUnhook(client, SDKHook_PreThink, OnClientThink);
 	SDKUnhook(client, SDKHook_TraceAttack, OnClientTraceAttack);
-	SDKUnhook(client, SDKHook_OnTakeDamage, OnClientTakeDamage);
+	SDKUnhook(client, SDKHook_OnTakeDamageAlive, OnClientTakeDamageAlive);
 	
 	// Force-end round if last client in team disconnects during active bomb
 	if (g_IsBombPlanted && IsValidClient(client))
@@ -305,7 +305,7 @@ public Action OnClientTraceAttack(int victim, int &attacker, int &inflictor, flo
 	return Plugin_Continue;
 }
 
-public Action OnClientTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
+public Action OnClientTakeDamageAlive(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
 {
 	TFGOPlayer player = TFGOPlayer(victim);
 	
