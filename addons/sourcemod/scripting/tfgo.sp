@@ -257,6 +257,7 @@ public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_PreThink, OnClientThink);
 	SDKHook(client, SDKHook_TraceAttack, OnClientTraceAttack);
+	SDKHook(client, SDKHook_OnTakeDamage, OnClientTakeDamage);
 }
 
 stock void ResetPlayer(int client, bool notify = true)
@@ -281,6 +282,7 @@ public void OnClientDisconnect(int client)
 {
 	SDKUnhook(client, SDKHook_PreThink, OnClientThink);
 	SDKUnhook(client, SDKHook_TraceAttack, OnClientTraceAttack);
+	SDKUnhook(client, SDKHook_OnTakeDamage, OnClientTakeDamage);
 	
 	// Force-end round if last client in team disconnects during active bomb
 	if (g_IsBombPlanted && IsValidClient(client))
@@ -301,6 +303,36 @@ public Action OnClientTraceAttack(int victim, int &attacker, int &inflictor, flo
 	}
 	
 	return Plugin_Continue;
+}
+
+public Action OnClientTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
+{
+	TFGOPlayer player = TFGOPlayer(victim);
+	
+	// Ignore non-weapon damage and players with <= 0% armor 
+	if (weapon <= -1 || player.Armor <= 0)
+		return Plugin_Continue;
+	
+	// Ignore weapons not in our config
+	int defindex = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
+	int index = g_AvailableWeapons.FindValue(defindex, 0);
+	if (index <= -1)
+		return Plugin_Continue;
+	
+	Weapon tfgoWeapon;
+	g_AvailableWeapons.GetArray(index, tfgoWeapon, sizeof(tfgoWeapon));
+	
+	if (tfgoWeapon.armorPenetration < 1.0)
+	{
+		player.Armor -= damage - damage * tfgoWeapon.armorPenetration; // Deduct absorbed damage from armor points
+		damage *= tfgoWeapon.armorPenetration; // Modify damage
+		return Plugin_Changed;
+	}
+	else
+	{
+		// Ignore armor if armor penetration of weapon is >= 100%
+		return Plugin_Continue;
+	}
 }
 
 public void ChooseRandomMusicKit()
