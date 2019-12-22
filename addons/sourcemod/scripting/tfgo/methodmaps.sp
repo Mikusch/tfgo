@@ -15,6 +15,7 @@ int g_DefaultWeaponIndexes[][] =  {
 int g_PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][WeaponSlot_BuilderEngie + 1];
 int g_PlayerBalances[TF_MAXPLAYERS + 1];
 Menu g_ActiveBuyMenus[TF_MAXPLAYERS + 1];
+int g_PlayerArmor[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
 
 int g_TeamConsecutiveLosses[view_as<int>(TFTeam_Blue) + 1] =  { STARTING_CONSECUTIVE_LOSSES, ... };
 
@@ -154,6 +155,11 @@ methodmap TFGOPlayer
 		for (int class = 0; class < sizeof(g_PlayerLoadoutWeaponIndexes[]); class++)
 			for (int slot = 0; slot < sizeof(g_PlayerLoadoutWeaponIndexes[][]); slot++)
 				g_PlayerLoadoutWeaponIndexes[this.Client][class][slot] = -1;
+	}
+	
+	public int GetRemainingArmor(TFClassType class)
+	{
+		return g_PlayerArmor[this.Client][class];
 	}
 }
 
