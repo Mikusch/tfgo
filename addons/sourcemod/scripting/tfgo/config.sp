@@ -4,6 +4,7 @@ enum struct Weapon
 {
 	int defindex;
 	int cost;
+	float armorPenetration;
 }
 
 StringMap g_WeaponClassKillAwards;
@@ -23,6 +24,7 @@ public void ReadWeaponConfig(KeyValues kv)
 				Weapon weapon;
 				weapon.defindex = StringToInt(defindex);
 				weapon.cost = kv.GetNum("cost", -1);
+				weapon.armorPenetration = kv.GetFloat("armor_penetration", 0.5);
 				
 				int length = g_AvailableWeapons.Length;
 				g_AvailableWeapons.Resize(length + 1);
