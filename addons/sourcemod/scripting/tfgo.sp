@@ -68,7 +68,7 @@ ConVar tfgo_all_weapons_can_headshot;
 ConVar tfgo_buytime;
 ConVar tfgo_consecutive_loss_max;
 ConVar tfgo_buyzone_radius_override;
-ConVar tfgo_bomb_timer;
+ConVar tfgo_bombtimer;
 ConVar tfgo_maxrounds;
 ConVar tfgo_halftime;
 ConVar tfgo_startmoney;
@@ -166,14 +166,14 @@ public void OnPluginStart()
 	
 	// Create TFGO ConVars
 	tfgo_all_weapons_can_headshot = CreateConVar("tfgo_all_weapons_can_headshot", "0", "Whether all weapons should be able to headshot");
-	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
-	tfgo_consecutive_loss_max = CreateConVar("tfgo_consecutive_loss_max", "4", "The maximum of consecutive losses for each team that will be kept track of", _, true, float(STARTING_CONSECUTIVE_LOSSES));
+	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, 0.0);
+	tfgo_consecutive_loss_max = CreateConVar("tfgo_consecutive_loss_max", "4", "The maximum of consecutive losses for each team that will be kept track of", _, true, 0.0);
 	tfgo_buyzone_radius_override = CreateConVar("tfgo_buyzone_radius_override", "-1", "Overrides the default calculated buyzone radius on maps with no respawn room");
-	tfgo_bomb_timer = CreateConVar("tfgo_bomb_timer", "45", "How long from when the bomb is planted until it blows", _, true, 15.0, true, tf_arena_round_time.FloatValue);
-	tfgo_maxrounds = CreateConVar("tfgo_maxrounds", "15", "Maximum number of rounds to play before a team scramble occurs");
+	tfgo_bombtimer = CreateConVar("tfgo_bombtimer", "45", "How long from when the bomb is planted until it blows", _, true, 10.0);
+	tfgo_maxrounds = CreateConVar("tfgo_maxrounds", "15", "Maximum number of rounds to play before a team scramble occurs", _, true, 0.0);
 	tfgo_halftime = CreateConVar("tfgo_halftime", "1", "Determines whether the match switches sides in a halftime event");
-	tfgo_startmoney = CreateConVar("tfgo_startmoney", "1000", "Amount of money each player gets when they reset");
-	tfgo_maxmoney = CreateConVar("tfgo_maxmoney", "10000", "Maximum amount of money allowed in a player's account", _, true, tfgo_startmoney.FloatValue);
+	tfgo_startmoney = CreateConVar("tfgo_startmoney", "1000", "Amount of money each player gets when they reset", _, true, 0.0);
+	tfgo_maxmoney = CreateConVar("tfgo_maxmoney", "10000", "Maximum amount of money allowed in a player's account", _, true, 0.0);
 	tfgo_cash_player_bomb_planted = CreateConVar("tfgo_cash_player_bomb_planted", "200", "Cash award for each player that planted the bomb");
 	tfgo_cash_player_bomb_defused = CreateConVar("tfgo_cash_player_bomb_defused", "200", "Cash award for each player that defused the bomb");
 	tfgo_cash_player_killed_enemy_default = CreateConVar("tfgo_cash_player_killed_enemy_default", "300", "Default cash award for eliminating an enemy player");
@@ -704,7 +704,7 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 	int team_round_timer = FindEntityByClassname(-1, "team_round_timer");
 	if (team_round_timer > -1)
 	{
-		SetVariantInt(tfgo_bomb_timer.IntValue + 1);
+		SetVariantInt(tfgo_bombtimer.IntValue + 1);
 		AcceptEntityInput(team_round_timer, "SetTime");
 	}
 	
@@ -739,10 +739,10 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 	TeleportEntity(bomb, origin, angles, NULL_VECTOR);
 	
 	// Set up timers
-	g_TenSecondBombTimer = CreateTimer(tfgo_bomb_timer.FloatValue - 10.0, PlayTenSecondBombWarning, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
+	g_TenSecondBombTimer = CreateTimer(tfgo_bombtimer.FloatValue - 10.0, PlayTenSecondBombWarning, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
 	g_BombBeepingTimer = CreateTimer(1.0, PlayBombBeep, EntIndexToEntRef(bomb), TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
-	g_BombDetonationWarningTimer = CreateTimer(tfgo_bomb_timer.FloatValue - 1.5, PlayBombExplosionWarning, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
-	g_BombDetonationTimer = CreateTimer(tfgo_bomb_timer.FloatValue, DetonateBomb, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
+	g_BombDetonationWarningTimer = CreateTimer(tfgo_bombtimer.FloatValue - 1.5, PlayBombExplosionWarning, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
+	g_BombDetonationTimer = CreateTimer(tfgo_bombtimer.FloatValue, DetonateBomb, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
 	
 	// Play Sounds
 	g_CurrentMusicKit.StopMusicForAll(Music_StartAction);
@@ -756,7 +756,7 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 	
 	// Show text on screen
 	char message[PLATFORM_MAX_PATH];
-	Format(message, sizeof(message), "%T", "Alert_Bomb_Planted", LANG_SERVER, tfgo_bomb_timer.IntValue);
+	Format(message, sizeof(message), "%T", "Alert_Bomb_Planted", LANG_SERVER, tfgo_bombtimer.IntValue);
 	ShowGameMessage(message, "ico_notify_sixty_seconds");
 	
 	Forward_BombPlanted(team, cappers);
@@ -829,7 +829,7 @@ void DefuseBomb(TFTeam team, ArrayList cappers)
 	g_IsBombDefused = true;
 	TF2_ForceRoundWin(team, Winreason_PointCaptured);
 	
-	Forward_BombDefused(team, cappers, tfgo_bomb_timer.FloatValue - (GetGameTime() - g_BombPlantedTime));
+	Forward_BombDefused(team, cappers, tfgo_bombtimer.FloatValue - (GetGameTime() - g_BombPlantedTime));
 	delete cappers;
 }
 
