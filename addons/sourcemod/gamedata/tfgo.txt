@@ -56,28 +56,28 @@
 		{
 			"CTFGameRules::SetWinningTeam"
 			{
-				"windows"	"160"
 				"linux"		"161"
+				"windows"	"160"
 			}
 			"CTFGameRules::SetSwitchTeams"
 			{
-				"windows"	"162"
 				"linux"		"163"
+				"windows"	"162"
 			}
 			"CTFGameRules::HandleSwitchTeams"
 			{
-				"windows"	"164"
 				"linux"		"165"
+				"windows"	"164"
 			}
 			"CTFGameRules::SetScrambleTeams"
 			{
-				"windows"	"165"
 				"linux"		"166"
+				"windows"	"165"
 			}
 			"CTFGameRules::HandleScrambleTeams"
 			{
-				"windows"	"167"
 				"linux"		"168"
+				"windows"	"167"
 			}
 			"CBasePlayer::EquipWearable"
 			{
@@ -110,8 +110,8 @@
 		{
 			"Patch_PickupWeaponFromOther"
 			{
-				"windows"	"\xEB"
 				"linux"		"\x90\x90\x90\x90\x90\x90\x90\x90"
+				"windows"	"\xEB"
 			}
 		} 
 	}
