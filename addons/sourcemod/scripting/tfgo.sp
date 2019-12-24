@@ -94,18 +94,19 @@ ConVar tf_weapon_criticals;
 ConVar tf_weapon_criticals_melee;
 ConVar mp_bonusroundtime;
 
-// SDK functions
+// SDK Handles
+Handle g_DHookPickupWeaponFromOther;
 Handle g_DHookSetWinningTeam;
 Handle g_DHookHandleSwitchTeams;
 Handle g_DHookHandleScrambleTeams;
-Handle g_SDKEquipWearable;
-Handle g_SDKRemoveWearable;
-Handle g_SDKGetEquippedWearable;
+Handle g_SDKGetEquippedWearableForLoadoutSlot;
 Handle g_SDKGetMaxAmmo;
 Handle g_SDKCreateDroppedWeapon;
 Handle g_SDKInitDroppedWeapon;
 Handle g_SDKSetSwitchTeams;
 Handle g_SDKSetScrambleTeams;
+Handle g_SDKEquipWearable;
+Handle g_SDKRemoveWearable;
 
 
 #include "tfgo/musickits.sp"
@@ -212,7 +213,9 @@ public void OnPluginStart()
 public void OnPluginEnd()
 {
 	Toggle_ConVars(false);
-	g_PickupWeaponPatch.Disable();
+	
+	if (g_PickupWeaponPatch != null)
+		g_PickupWeaponPatch.Disable();
 }
 
 public void OnMapStart()
@@ -885,12 +888,12 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	g_RoundsPlayed++;
 	if (tfgo_halftime.BoolValue && g_RoundsPlayed == RoundFloat(tfgo_maxrounds.IntValue / 2.0))
 	{
-		SDKCall(g_SDKSetSwitchTeams, true);
+		SDK_SetSwitchTeams(true);
 	}
 	else if (g_RoundsPlayed == tfgo_maxrounds.IntValue)
 	{
 		g_RoundsPlayed = 0;
-		SDKCall(g_SDKSetScrambleTeams, true);
+		SDK_SetScrambleTeams(true);
 	}
 	
 	// Reset timers
@@ -998,60 +1001,50 @@ void Toggle_ConVars(bool toggle)
 
 void SDK_Init()
 {
-	GameData config = new GameData("tfgo");
+	GameData gameData = new GameData("tfgo");
 	
-	Handle hook = DHookCreateFromConf(config, "CTFPlayer::PickupWeaponFromOther");
-	if (hook == null)
-		LogMessage("Failed to create hook: CTFPlayer::PickupWeaponFromOther");
+	g_DHookPickupWeaponFromOther = DHookCreateFromConf(gameData, "CTFPlayer::PickupWeaponFromOther");
+	if (g_DHookPickupWeaponFromOther != null)
+		DHookEnableDetour(g_DHookPickupWeaponFromOther, false, Hook_PickupWeaponFromOther);
 	else
-		DHookEnableDetour(hook, false, Hook_PickupWeaponFromOther);
-	delete hook;
+		LogMessage("Failed to create hook: CTFPlayer::PickupWeaponFromOther");
 	
-	int offset = GameConfGetOffset(config, "SetWinningTeam");
+	int offset = GameConfGetOffset(gameData, "CTFGameRules::SetWinningTeam");
 	g_DHookSetWinningTeam = DHookCreate(offset, HookType_GameRules, ReturnType_Void, ThisPointer_Ignore, Hook_SetWinningTeam);
-	DHookAddParam(g_DHookSetWinningTeam, HookParamType_Int);
-	DHookAddParam(g_DHookSetWinningTeam, HookParamType_Int);
-	DHookAddParam(g_DHookSetWinningTeam, HookParamType_Bool);
-	DHookAddParam(g_DHookSetWinningTeam, HookParamType_Bool);
-	DHookAddParam(g_DHookSetWinningTeam, HookParamType_Bool);
-	DHookAddParam(g_DHookSetWinningTeam, HookParamType_Bool);
-	if (g_DHookSetWinningTeam == null)
-		LogMessage("Failed to create hook: SetWinningTeam");
+	if (g_DHookSetWinningTeam != null)
+	{
+		DHookAddParam(g_DHookSetWinningTeam, HookParamType_Int);
+		DHookAddParam(g_DHookSetWinningTeam, HookParamType_Int);
+		DHookAddParam(g_DHookSetWinningTeam, HookParamType_Bool);
+		DHookAddParam(g_DHookSetWinningTeam, HookParamType_Bool);
+		DHookAddParam(g_DHookSetWinningTeam, HookParamType_Bool);
+		DHookAddParam(g_DHookSetWinningTeam, HookParamType_Bool);
+	}
+	else
+	{
+		LogMessage("Failed to create hook: CTFGameRules::SetWinningTeam");
+	}
 	
-	offset = GameConfGetOffset(config, "CTeamplayRules::HandleSwitchTeams");
+	offset = GameConfGetOffset(gameData, "CTFGameRules::HandleSwitchTeams");
 	g_DHookHandleSwitchTeams = DHookCreate(offset, HookType_GameRules, ReturnType_Void, ThisPointer_Ignore, Hook_HandleSwitchTeams);
 	if (g_DHookHandleSwitchTeams == null)
-		LogMessage("Failed to create hook: CTeamplayRules::HandleSwitchTeams");
+		LogMessage("Failed to create hook: CTFGameRules::HandleSwitchTeams");
 	
-	offset = GameConfGetOffset(config, "CTeamplayRules::HandleScrambleTeams");
+	offset = GameConfGetOffset(gameData, "CTFGameRules::HandleScrambleTeams");
 	g_DHookHandleScrambleTeams = DHookCreate(offset, HookType_GameRules, ReturnType_Void, ThisPointer_Ignore, Hook_HandleScrambleTeams);
 	if (g_DHookHandleScrambleTeams == null)
-		LogMessage("Failed to create hook: CTeamplayRules::HandleScrambleTeams");
+		LogMessage("Failed to create hook: CTFGameRules::HandleScrambleTeams");
 	
 	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "CBasePlayer::EquipWearable");
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_SDKEquipWearable = EndPrepSDKCall();
-	if (g_SDKEquipWearable == null)
-		LogMessage("Failed to create call: CBasePlayer::EquipWearable");
-	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "CBasePlayer::RemoveWearable");
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_SDKRemoveWearable = EndPrepSDKCall();
-	if (g_SDKRemoveWearable == null)
-		LogMessage("Failed to create call: CBasePlayer::RemoveWearable");
-	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CTFPlayer::GetEquippedWearableForLoadoutSlot");
+	PrepSDKCall_SetFromConf(gameData, SDKConf_Signature, "CTFPlayer::GetEquippedWearableForLoadoutSlot");
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
 	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_SDKGetEquippedWearable = EndPrepSDKCall();
-	if (g_SDKGetEquippedWearable == null)
+	g_SDKGetEquippedWearableForLoadoutSlot = EndPrepSDKCall();
+	if (g_SDKGetEquippedWearableForLoadoutSlot == null)
 		LogMessage("Failed to create call: CTFPlayer::GetEquippedWearableForLoadoutSlot");
 	
 	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CTFPlayer::GetMaxAmmo");
+	PrepSDKCall_SetFromConf(gameData, SDKConf_Signature, "CTFPlayer::GetMaxAmmo");
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
 	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
@@ -1060,7 +1053,7 @@ void SDK_Init()
 		LogMessage("Failed to create call: CTFPlayer::GetMaxAmmo");
 	
 	StartPrepSDKCall(SDKCall_Static);
-	PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CTFDroppedWeapon::Create");
+	PrepSDKCall_SetFromConf(gameData, SDKConf_Signature, "CTFDroppedWeapon::Create");
 	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
 	PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
 	PrepSDKCall_AddParameter(SDKType_QAngle, SDKPass_ByRef);
@@ -1072,7 +1065,7 @@ void SDK_Init()
 		LogMessage("Failed to create call: CTFDroppedWeapon::Create");
 	
 	StartPrepSDKCall(SDKCall_Entity);
-	PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CTFDroppedWeapon::InitDroppedWeapon");
+	PrepSDKCall_SetFromConf(gameData, SDKConf_Signature, "CTFDroppedWeapon::InitDroppedWeapon");
 	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
 	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
 	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
@@ -1082,23 +1075,39 @@ void SDK_Init()
 		LogMessage("Failed to create call: CTFDroppedWeapon::InitDroppedWeapon");
 	
 	StartPrepSDKCall(SDKCall_GameRules);
-	PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "CTeamplayRules::SetSwitchTeams");
+	PrepSDKCall_SetFromConf(gameData, SDKConf_Virtual, "CTFGameRules::SetSwitchTeams");
 	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
 	g_SDKSetSwitchTeams = EndPrepSDKCall();
 	if (g_SDKSetSwitchTeams == null)
-		LogMessage("Failed to create call: CTeamplayRules::SetSwitchTeams");
+		LogMessage("Failed to create call: CTFGameRules::SetSwitchTeams");
 	
 	StartPrepSDKCall(SDKCall_GameRules);
-	PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "CTeamplayRules::SetScrambleTeams");
+	PrepSDKCall_SetFromConf(gameData, SDKConf_Virtual, "CTFGameRules::SetScrambleTeams");
 	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
 	g_SDKSetScrambleTeams = EndPrepSDKCall();
 	if (g_SDKSetScrambleTeams == null)
-		LogMessage("Failed to create call: CTeamplayRules::SetScrambleTeams");
+		LogMessage("Failed to create call: CTFGameRules::SetScrambleTeams");
 	
-	MemoryPatch.SetGameData(config);
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(gameData, SDKConf_Virtual, "CBasePlayer::EquipWearable");
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+	g_SDKEquipWearable = EndPrepSDKCall();
+	if (g_SDKEquipWearable == null)
+		LogMessage("Failed to create call: CBasePlayer::EquipWearable");
+	
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(gameData, SDKConf_Virtual, "CBasePlayer::RemoveWearable");
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+	g_SDKRemoveWearable = EndPrepSDKCall();
+	if (g_SDKRemoveWearable == null)
+		LogMessage("Failed to create call: CBasePlayer::RemoveWearable");
+	
+	MemoryPatch.SetGameData(gameData);
 	g_PickupWeaponPatch = new MemoryPatch("Patch_PickupWeaponFromOther");
 	if (g_PickupWeaponPatch != null)
 		g_PickupWeaponPatch.Enable();
+	else
+		LogMessage("Failed to create patch: Patch_PickupWeaponFromOther");
 	
-	delete config;
+	delete gameData;
 }

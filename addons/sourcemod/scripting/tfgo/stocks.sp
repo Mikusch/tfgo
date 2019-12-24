@@ -60,7 +60,7 @@ stock void TF2_Explode(int attacker = -1, float origin[3], float damage, float r
 stock void TF2_RemoveItemInSlot(int client, int slot)
 {
 	TF2_RemoveWeaponSlot(client, slot);
-	int wearable = SDK_GetEquippedWearable(client, slot);
+	int wearable = SDK_GetEquippedWearableForLoadoutSlot(client, slot);
 	if (wearable > MaxClients)
 	{
 		SDK_RemoveWearable(client, wearable);
@@ -107,7 +107,7 @@ stock void TF2_CreateAndEquipWeapon(int client, int defindex, TFQuality quality 
 		TF2_RemoveWeaponSlot(client, slot);
 	
 	// Remove wearable if have one
-	int wearable = SDK_GetEquippedWearable(client, slot);
+	int wearable = SDK_GetEquippedWearableForLoadoutSlot(client, slot);
 	if (wearable > MaxClients)
 	{
 		SDK_RemoveWearable(client, wearable);
@@ -329,6 +329,18 @@ stock int FindStringIndex2(int tableidx, const char[] str)
 
 // SDK stocks
 
+stock void SDK_SetSwitchTeams(bool shouldSwitch)
+{
+	if (g_SDKSetSwitchTeams != null)
+		SDKCall(g_SDKSetSwitchTeams, shouldSwitch);
+}
+
+stock void SDK_SetScrambleTeams(bool shouldScramble)
+{
+	if (g_SDKSetScrambleTeams != null)
+		SDKCall(g_SDKSetScrambleTeams, shouldScramble);
+}
+
 stock void SDK_EquipWearable(int client, int wearable)
 {
 	if (g_SDKEquipWearable != null)
@@ -341,19 +353,20 @@ stock void SDK_RemoveWearable(int client, int wearable)
 		SDKCall(g_SDKRemoveWearable, client, wearable);
 }
 
-stock int SDK_GetEquippedWearable(int client, int slot)
+stock int SDK_GetEquippedWearableForLoadoutSlot(int client, int slot)
 {
-	if (g_SDKGetEquippedWearable != null)
-		return SDKCall(g_SDKGetEquippedWearable, client, slot);
-	
-	return -1;
+	if (g_SDKGetEquippedWearableForLoadoutSlot != null)
+		return SDKCall(g_SDKGetEquippedWearableForLoadoutSlot, client, slot);
+	else
+		return -1;
 }
 
 stock int SDK_GetMaxAmmo(int client, int slot)
 {
 	if (g_SDKGetMaxAmmo != null)
 		return SDKCall(g_SDKGetMaxAmmo, client, slot, -1);
-	return -1;
+	else
+		return -1;
 }
 
 stock int SDK_CreateDroppedWeapon(int fromWeapon, int client, const float origin[3], const float angles[3])
@@ -362,17 +375,20 @@ stock int SDK_CreateDroppedWeapon(int fromWeapon, int client, const float origin
 	if (GetEntityNetClass(fromWeapon, clsname, sizeof(clsname)))
 	{
 		int itemOffset = FindSendPropInfo(clsname, "m_Item");
-		if (itemOffset == -1)
+		if (itemOffset <= -1)
 			ThrowError("Failed to find m_Item on %s", clsname);
 		
 		char model[PLATFORM_MAX_PATH];
-		int modelidx = GetEntProp(fromWeapon, Prop_Send, "m_iWorldModelIndex");
-		ModelIndexToString(modelidx, model, sizeof(model));
+		int worldModelIndex = GetEntProp(fromWeapon, Prop_Send, "m_iWorldModelIndex");
+		ModelIndexToString(worldModelIndex, model, sizeof(model));
 		
-		int droppedWeapon = SDKCall(g_SDKCreateDroppedWeapon, client, origin, angles, model, GetEntityAddress(fromWeapon) + view_as<Address>(itemOffset));
-		if (droppedWeapon != INVALID_ENT_REFERENCE)
-			SDKCall(g_SDKInitDroppedWeapon, droppedWeapon, client, fromWeapon, false, false);
-		return droppedWeapon;
+		if (g_SDKCreateDroppedWeapon != null)
+		{
+			int droppedWeapon = SDKCall(g_SDKCreateDroppedWeapon, client, origin, angles, model, GetEntityAddress(fromWeapon) + view_as<Address>(itemOffset));
+			if (droppedWeapon != INVALID_ENT_REFERENCE && g_SDKInitDroppedWeapon != null)
+				SDKCall(g_SDKInitDroppedWeapon, droppedWeapon, client, fromWeapon, false, false);
+			return droppedWeapon;
+		}
 	}
 	
 	return -1;
