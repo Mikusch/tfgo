@@ -16,6 +16,7 @@ int g_PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Enginee
 int g_PlayerBalances[TF_MAXPLAYERS + 1];
 Menu g_ActiveBuyMenus[TF_MAXPLAYERS + 1];
 int g_PlayerArmor[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
+bool g_PlayerHelmets[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
 
 int g_TeamConsecutiveLosses[view_as<int>(TFTeam_Blue) + 1] =  { STARTING_CONSECUTIVE_LOSSES, ... };
 
@@ -61,6 +62,18 @@ methodmap TFGOPlayer
 		public set(int val)
 		{
 			g_PlayerArmor[this.Client][TF2_GetPlayerClass(this.Client)] = val;
+		}
+	}
+	
+	property bool HasHelmet
+	{
+		public get()
+		{
+			return g_PlayerHelmets[this.Client][TF2_GetPlayerClass(this.Client)];
+		}
+		public set(bool val)
+		{
+			g_PlayerHelmets[this.Client][TF2_GetPlayerClass(this.Client)] = val;
 		}
 	}
 	

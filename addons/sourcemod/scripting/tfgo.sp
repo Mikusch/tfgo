@@ -8,6 +8,7 @@
 #include <tf_econ_data>
 #include <dhooks>
 #include <memorypatch>
+#include <tf2attributes>
 #include <tfgo>
 
 #pragma newdecls required
@@ -65,6 +66,8 @@ int g_RoundsPlayed;
 
 // ConVars
 ConVar tfgo_all_weapons_can_headshot;
+ConVar tfgo_free_armor;
+ConVar tfgo_max_armor;
 ConVar tfgo_buytime;
 ConVar tfgo_consecutive_loss_max;
 ConVar tfgo_buyzone_radius_override;
@@ -166,6 +169,8 @@ public void OnPluginStart()
 	
 	// Create TFGO ConVars
 	tfgo_all_weapons_can_headshot = CreateConVar("tfgo_all_weapons_can_headshot", "0", "Whether all weapons should be able to headshot");
+	tfgo_free_armor = CreateConVar("tfgo_free_armor", "2", "Determines whether kevlar (1+) and/or helmet (2+) are given automatically", _, true, 0.0, true, 2.0);
+	tfgo_max_armor = CreateConVar("tfgo_max_armor", "2", "Determines the highest level of armor allowed to be purchased. (0) None, (1) Kevlar, (2) Helmet", _, true, 0.0, true, 2.0);
 	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
 	tfgo_consecutive_loss_max = CreateConVar("tfgo_consecutive_loss_max", "4", "The maximum of consecutive losses for each team that will be kept track of", _, true, float(STARTING_CONSECUTIVE_LOSSES));
 	tfgo_buyzone_radius_override = CreateConVar("tfgo_buyzone_radius_override", "-1", "Overrides the default calculated buyzone radius on maps with no respawn room");
@@ -258,6 +263,7 @@ public void OnClientPutInServer(int client)
 	SDKHook(client, SDKHook_PreThink, OnClientThink);
 	SDKHook(client, SDKHook_TraceAttack, OnClientTraceAttack);
 	SDKHook(client, SDKHook_OnTakeDamageAlive, OnClientTakeDamageAlive);
+	SDKHook(client, SDKHook_OnTakeDamageAlivePost, OnClientTakeDamageAlivePost);
 }
 
 stock void ResetPlayer(int client, bool notify = true)
@@ -283,6 +289,7 @@ public void OnClientDisconnect(int client)
 	SDKUnhook(client, SDKHook_PreThink, OnClientThink);
 	SDKUnhook(client, SDKHook_TraceAttack, OnClientTraceAttack);
 	SDKUnhook(client, SDKHook_OnTakeDamageAlive, OnClientTakeDamageAlive);
+	SDKUnhook(client, SDKHook_OnTakeDamageAlivePost, OnClientTakeDamageAlivePost);
 	
 	// Force-end round if last client in team disconnects during active bomb
 	if (g_IsBombPlanted && IsValidClient(client))
@@ -324,7 +331,7 @@ public Action OnClientTakeDamageAlive(int victim, int &attacker, int &inflictor,
 	
 	if (tfgoWeapon.armorPenetration < 1.0)
 	{
-		player.Armor -= damage - damage * tfgoWeapon.armorPenetration; // Deduct absorbed damage from armor points
+		player.Armor -= RoundFloat(damage); // Deduct absorbed damage from armor points
 		damage *= tfgoWeapon.armorPenetration; // Modify damage
 		return Plugin_Changed;
 	}
@@ -332,6 +339,17 @@ public Action OnClientTakeDamageAlive(int victim, int &attacker, int &inflictor,
 	{
 		// Ignore armor if armor penetration of weapon is >= 100%
 		return Plugin_Continue;
+	}
+}
+
+public void OnClientTakeDamageAlivePost(int victim, int attacker, int inflictor, float damage, int damagetype, int weapon, const float damageForce[3], const float damagePosition[3], int damagecustom)
+{
+	TFGOPlayer player = TFGOPlayer(victim);
+	
+	if (player.HasHelmet && damagecustom == TF_CUSTOM_HEADSHOT)
+	{
+		player.HasHelmet = false;
+		TF2Attrib_RemoveByDefIndex(victim, 176);
 	}
 }
 
@@ -617,6 +635,10 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 	{
 		TFGOPlayer player = TFGOPlayer(client);
 		player.ApplyLoadout();
+		
+		if (tfgo_free_armor.IntValue >= 1) player.Armor = GetEntProp(GetPlayerResourceEntity(), Prop_Send, "m_iMaxHealth", _, client);
+		if (tfgo_free_armor.IntValue >= 2) player.HasHelmet = true;
+		if (player.HasHelmet) TF2Attrib_SetByDefIndex(client, 176, 1.0);
 		
 		if (player.ActiveBuyMenu != null)
 			player.ActiveBuyMenu.Cancel();
