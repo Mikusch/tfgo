@@ -277,8 +277,16 @@ stock void ResetPlayer(int client, bool notify = true)
 
 public void OnClientThink(int client)
 {
+	TFGOPlayer player = TFGOPlayer(client);
+	
 	SetHudTextParams(0.05, 0.325, 0.1, 162, 255, 71, 255, _, 0.0, 0.0, 0.0);
-	ShowHudText(client, -1, "$%d", TFGOPlayer(client).Balance);
+	ShowHudText(client, -1, "$%d", player.Balance);
+	
+	if (player.Armor > 0)
+	{
+		SetHudTextParams(-1.0, 0.85, 0.1, 255, 255, 255, 255, _, 0.0, 0.0, 0.0);
+		ShowHudText(client, -1, "Armor: %d", player.Armor);
+	}
 	
 	if (!g_MapHasRespawnRoom && g_IsBuyTimeActive)
 		DisplayMenuInDynamicBuyZone(client);
