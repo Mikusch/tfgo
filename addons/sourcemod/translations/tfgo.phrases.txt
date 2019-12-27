@@ -127,27 +127,31 @@
 	// Buy Menu
 	"BuyMenu_Title"
 	{
-		"en"	"Welcome to the buy menu!\nYou currently have $%d."
+		"en"	"Welcome to the TF:GO buy menu!\nSelect a weapon to purchase it."
 	}
-	"BuyMenu_Primary"
+	"BuyMenu_Primaries"
 	{
-		"en"	"Primary Weapon"
+		"en"	"Primary Weapons"
 	}
-	"BuyMenu_Secondary"
+	"BuyMenu_Secondaries"
 	{
-		"en"	"Secondary Weapon"
+		"en"	"Secondary Weapons"
 	}
-	"BuyMenu_Melee"
+	"BuyMenu_Melees"
 	{
-		"en"	"Melee Weapon"
+		"en"	"Melee Weapons"
 	}
-	"BuyMenu_PDA"
+	"BuyMenu_PDAs"
 	{
-		"en"	"PDA"
+		"en"	"PDAs"
 	}
-	"BuyMenu_Building_Spy"
+	"BuyMenu_Buildings"
 	{
-		"en"	"Sapper"
+		"en"	"Sappers"
+	}
+	"BuyMenu_AlreadyCarrying"
+	{
+		"en"	"In current inventory"
 	}
 	"BuyMenu_NotInBuyZone"
 	{

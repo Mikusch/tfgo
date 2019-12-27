@@ -1,31 +1,31 @@
 public void DisplaySlotSelectionMenu(int client)
 {
 	Menu menu = new Menu(HandleSlotSelectionMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DisplayItem);
-	menu.SetTitle("%T", "BuyMenu_Title", LANG_SERVER, TFGOPlayer(client).Balance);
+	menu.SetTitle("%T", "BuyMenu_Title", LANG_SERVER);
 	
 	switch (TF2_GetPlayerClass(client))
 	{
 		case TFClass_Engineer:
 		{
-			menu.AddItem("0", "BuyMenu_Primary");
-			menu.AddItem("1", "BuyMenu_Secondary");
-			menu.AddItem("2", "BuyMenu_Melee");
-			menu.AddItem("3;4", "BuyMenu_PDA");
+			menu.AddItem("0", "BuyMenu_Primaries");
+			menu.AddItem("1", "BuyMenu_Secondaries");
+			menu.AddItem("2", "BuyMenu_Melees");
+			menu.AddItem("3;4", "BuyMenu_PDAs");
 		}
 		
 		case TFClass_Spy:
 		{
-			menu.AddItem("0", "BuyMenu_Secondary"); // Revolver
-			menu.AddItem("2", "BuyMenu_Melee"); // Knife
-			menu.AddItem("3;4", "BuyMenu_PDA"); // Disguise Kit/Invis Watch
-			//menu.AddItem("1", "BuyMenu_Building_Spy"); // Sapper (Currently crashes the game)
+			menu.AddItem("0", "BuyMenu_Secondaries"); // Revolver
+			menu.AddItem("2", "BuyMenu_Melees"); // Knife
+			menu.AddItem("3;4", "BuyMenu_PDAs"); // Disguise Kit/Invis Watch
+			//menu.AddItem("1", "BuyMenu_Buildings"); // Sapper (Currently crashes the game)
 		}
 		
 		default:
 		{
-			menu.AddItem("0", "BuyMenu_Primary");
-			menu.AddItem("1", "BuyMenu_Secondary");
-			menu.AddItem("2", "BuyMenu_Melee");
+			menu.AddItem("0", "BuyMenu_Primaries");
+			menu.AddItem("1", "BuyMenu_Secondaries");
+			menu.AddItem("2", "BuyMenu_Melees");
 		}
 	}
 	
@@ -78,7 +78,7 @@ public int HandleSlotSelectionMenu(Menu menu, MenuAction action, int param1, int
 public void DisplayBuyMenu(int client, ArrayList slots)
 {
 	Menu menu = new Menu(HandleBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DrawItem);
-	menu.SetTitle("%T", "BuyMenu_Title", LANG_SERVER, TFGOPlayer(client).Balance);
+	menu.SetTitle("%T", "BuyMenu_Title", LANG_SERVER);
 	
 	for (int i = 0; i < g_AvailableWeapons.Length; i++)
 	{
@@ -100,9 +100,15 @@ public void DisplayBuyMenu(int client, ArrayList slots)
 			TF2_GetItemName(weapon.defindex, weaponName, sizeof(weaponName));
 			
 			if (player.GetWeaponFromLoadout(class, slot) != weapon.defindex)
+			{
 				Format(display, sizeof(display), "%s ($%d)", weaponName, weapon.cost);
+			}
 			else
-				Format(display, sizeof(display), "%s (OWNED)", weaponName);
+			{
+				char alreadyCarryingTag[PLATFORM_MAX_PATH];
+				Format(alreadyCarryingTag, sizeof(alreadyCarryingTag), "%T", "BuyMenu_AlreadyCarrying", LANG_SERVER);
+				Format(display, sizeof(display), "%s (%s)", weaponName, alreadyCarryingTag);
+			}
 			
 			menu.AddItem(info, display);
 		}
