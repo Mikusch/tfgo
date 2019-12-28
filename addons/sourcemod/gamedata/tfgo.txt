@@ -25,9 +25,8 @@
 			"CTFDroppedWeapon::InitDroppedWeapon"
 			{
 				"library"	"server"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x24\x56\x57\x8B\xF9\x8B\x4D\x08"
 				"linux"		"@_ZN16CTFDroppedWeapon17InitDroppedWeaponEP9CTFPlayerP13CTFWeaponBasebb"
-				"mac"		"@_ZN16CTFDroppedWeapon17InitDroppedWeaponEP9CTFPlayerP13CTFWeaponBasebb"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x24\x56\x57\x8B\xF9\x8B\x4D\x08"
 			}
 			"CTFPlayer::PickupWeaponFromOther"
 			{
@@ -55,6 +54,31 @@
 		}
 		"Offsets"
 		{
+			"CTFGameRules::SetWinningTeam"
+			{
+				"linux"		"161"
+				"windows"	"160"
+			}
+			"CTFGameRules::SetSwitchTeams"
+			{
+				"linux"		"163"
+				"windows"	"162"
+			}
+			"CTFGameRules::HandleSwitchTeams"
+			{
+				"linux"		"165"
+				"windows"	"164"
+			}
+			"CTFGameRules::SetScrambleTeams"
+			{
+				"linux"		"166"
+				"windows"	"165"
+			}
+			"CTFGameRules::HandleScrambleTeams"
+			{
+				"linux"		"168"
+				"windows"	"167"
+			}
 			"CBasePlayer::EquipWearable"
 			{
 				"linux"		"431"
@@ -65,31 +89,6 @@
 				"linux"		"432"
 				"windows"	"431"
 			}
-			"SetWinningTeam"
-			{
-				"windows"	"160"
-				"linux"		"161"
-			}
-			"CTeamplayRules::SetSwitchTeams"
-			{
-				"windows"	"162"
-				"linux"		"163"
-			}
-			"CTeamplayRules::HandleSwitchTeams"
-			{
-				"windows"	"164"
-				"linux"		"165"
-			}
-			"CTeamplayRules::SetScrambleTeams"
-			{
-				"windows"	"165"
-				"linux"		"166"
-			}
-			"CTeamplayRules::HandleScrambleTeams"
-			{
-				"windows"	"167"
-				"linux"		"168"
-			}
 		}
 		"Addresses"
 		{
@@ -98,12 +97,12 @@
 				"linux"
 				{
 					"signature"	"CTFPlayer::PickupWeaponFromOther"
-					"offset" "405" // 0x195
+					"offset"	"405" // 0x195
 				}
 				"windows"
 				{
 					"signature"	"CTFPlayer::PickupWeaponFromOther"
-					"offset" "282" // 0x11A
+					"offset" 	"282" // 0x11A
 				}
 			}
 		}
@@ -111,8 +110,8 @@
 		{
 			"Patch_PickupWeaponFromOther"
 			{
-				"windows"	"\xEB"
 				"linux"		"\x90\x90\x90\x90\x90\x90\x90\x90"
+				"windows"	"\xEB"
 			}
 		} 
 	}
