@@ -25,6 +25,11 @@ stock void StrToLower(char[] str)
 	}
 }
 
+stock int TF2_GetMaxHealth(int client)
+{
+	return GetEntProp(GetPlayerResourceEntity(), Prop_Send, "m_iMaxHealth", _, client);
+}
+
 stock void TF2_ForceRoundWin(TFTeam team, int winReason, bool forceMapReset = true, bool switchTeams = false)
 {
 	int entity = CreateEntityByName("game_round_win");

@@ -149,6 +149,18 @@
 	{
 		"en"	"Sapper"
 	}
+	"BuyMenu_Gear"
+	{
+		"en"	"Gear"
+	}
+	"BuyMenu_Gear_Kevlar"
+	{
+		"en"	"Kevlar Vest"
+	}
+	"BuyMenu_Gear_Kevlar_Helmet"
+	{
+		"en"	"Kevlar + Helmet"
+	}
 	"BuyMenu_NotInBuyZone"
 	{
 		"en"	"You have left the buy zone"

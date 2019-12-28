@@ -644,7 +644,7 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 		TFGOPlayer player = TFGOPlayer(client);
 		player.ApplyLoadout();
 		
-		if (tfgo_free_armor.IntValue >= 1) player.Armor = GetEntProp(GetPlayerResourceEntity(), Prop_Send, "m_iMaxHealth", _, client);
+		if (tfgo_free_armor.IntValue >= 1) player.Armor = TF2_GetMaxHealth(client);
 		if (tfgo_free_armor.IntValue >= 2) player.HasHelmet = true;
 		if (player.HasHelmet) TF2Attrib_SetByDefIndex(client, 176, 1.0);
 		

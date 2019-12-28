@@ -1,3 +1,7 @@
+#define INFO_GEAR "GEAR"
+#define INFO_GEAR_KEVLAR "KEVLAR"
+#define INFO_GEAR_KEVLAR_HELMET "KEVLAR_HELMET"
+
 public void DisplaySlotSelectionMenu(int client)
 {
 	Menu menu = new Menu(HandleSlotSelectionMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DisplayItem);
@@ -29,6 +33,8 @@ public void DisplaySlotSelectionMenu(int client)
 		}
 	}
 	
+	menu.AddItem(INFO_GEAR, "BuyMenu_Gear");
+	
 	menu.ExitButton = true;
 	menu.Display(client, MENU_TIME_FOREVER);
 }
@@ -44,17 +50,24 @@ public int HandleSlotSelectionMenu(Menu menu, MenuAction action, int param1, int
 			char info[32];
 			menu.GetItem(param2, info, sizeof(info));
 			
-			char slotStrings[TFWeaponSlot_Building + 1][32];
-			if (ExplodeString(info, ";", slotStrings, sizeof(slotStrings), sizeof(slotStrings[])) >= 1)
+			if (StrEqual(info, INFO_GEAR))
 			{
-				ArrayList slots = new ArrayList();
-				for (int i = 0; i < sizeof(slotStrings); i++)
+				DisplayGearMenu(param1);
+			}
+			else
+			{
+				char slotStrings[TFWeaponSlot_Building + 1][32];
+				if (ExplodeString(info, ";", slotStrings, sizeof(slotStrings), sizeof(slotStrings[])) >= 1)
 				{
-					TrimString(slotStrings[i]);
-					if (strlen(slotStrings[i]) > 0)
-						slots.Push(StringToInt(slotStrings[i]));
+					ArrayList slots = new ArrayList();
+					for (int i = 0; i < sizeof(slotStrings); i++)
+					{
+						TrimString(slotStrings[i]);
+						if (strlen(slotStrings[i]) > 0)
+							slots.Push(StringToInt(slotStrings[i]));
+					}
+					DisplayBuyMenu(param1, slots);
 				}
-				DisplayBuyMenu(param1, slots);
 			}
 		}
 		
@@ -154,6 +167,75 @@ public int HandleBuyMenu(Menu menu, MenuAction action, int param1, int param2)
 				return ITEMDRAW_DISABLED;
 			else
 				return ITEMDRAW_DEFAULT;
+		}
+	}
+	
+	return 0;
+}
+
+public int DisplayGearMenu(int client)
+{
+	Menu menu = new Menu(HandleGearMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DisplayItem);
+	menu.SetTitle("%T", "BuyMenu_Title", LANG_SERVER, TFGOPlayer(client).Balance);
+	
+	menu.AddItem(INFO_GEAR_KEVLAR, "BuyMenu_Gear_Kevlar");
+	menu.AddItem(INFO_GEAR_KEVLAR_HELMET, "BuyMenu_Gear_Kevlar_Helmet");
+	
+	menu.ExitButton = true;
+	menu.ExitBackButton = true;
+	
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int HandleGearMenu(Menu menu, MenuAction action, int param1, int param2)
+{
+	switch (action)
+	{
+		case MenuAction_Display:TFGOPlayer(param1).ActiveBuyMenu = menu;
+		
+		case MenuAction_Select:
+		{
+			char info[32];
+			menu.GetItem(param2, info, sizeof(info));
+			
+			if (StrEqual(info, INFO_GEAR_KEVLAR))
+			{
+				// TODO actually purchase kevlar
+			}
+			else if (StrEqual(info, INFO_GEAR_KEVLAR_HELMET))
+			{
+				// TODO actually purchase kevlar and helmet
+			}
+			
+			float origin[3];
+			GetClientAbsOrigin(param1, origin);
+			EmitAmbientSound(PLAYER_PURCHASE_SOUND, origin);
+			
+			DisplaySlotSelectionMenu(param1);
+		}
+		
+		case MenuAction_Cancel:
+		{
+			TFGOPlayer(param1).ActiveBuyMenu = null;
+			if (param2 == MenuCancel_ExitBack)
+				DisplaySlotSelectionMenu(param1);
+		}
+		
+		case MenuAction_End:delete menu;
+		
+		case MenuAction_DrawItem:
+		{
+			TFGOPlayer player = TFGOPlayer(param1);
+			
+			char info[32];
+			menu.GetItem(param2, info, sizeof(info));
+			
+			if (StrEqual(info, INFO_GEAR_KEVLAR))
+				return player.Armor >= TF2_GetMaxHealth(param1) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT;
+			else if (StrEqual(info, INFO_GEAR_KEVLAR_HELMET))
+				return player.HasHelmet ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT;
+			
+			return ITEMDRAW_DEFAULT;
 		}
 	}
 	
