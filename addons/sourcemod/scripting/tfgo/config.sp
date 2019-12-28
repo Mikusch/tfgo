@@ -51,7 +51,7 @@ public void ReadGearConfig(KeyValues kv)
 	{
 		if (kv.GotoFirstSubKey(false))
 		{
-			do // Loop through each weapon definition index
+			do
 			{
 				char id[PLATFORM_MAX_PATH];
 				kv.GetSectionName(id, sizeof(id));
