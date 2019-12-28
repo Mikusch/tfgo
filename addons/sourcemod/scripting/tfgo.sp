@@ -47,6 +47,7 @@ Handle g_BombBeepingTimer;
 MemoryPatch g_PickupWeaponPatch;
 StringMap g_AvailableMusicKits;
 ArrayList g_AvailableWeapons;
+ArrayList g_AvailableGear;
 
 // Map
 bool g_MapHasRespawnRoom;
