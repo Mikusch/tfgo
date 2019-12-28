@@ -612,6 +612,7 @@ public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool do
 	
 	// Bomb can freely tick and explode through the bonus time and we cancel it here
 	g_BombBeepingTimer = null;
+	g_TenSecondBombTimer = null;
 	g_BombDetonationWarningTimer = null;
 	g_BombDetonationTimer = null;
 }
@@ -782,8 +783,11 @@ public Action PlayTenSecondBombWarning(Handle timer, int bomb)
 	
 	g_BombBeepingTimer = CreateTimer(0.5, PlayBombBeep, bomb, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
 	
-	g_CurrentMusicKit.StopMusicForAll(Music_BombPlanted);
-	g_CurrentMusicKit.PlayMusicToAll(Music_BombTenSecCount);
+	if (g_IsMainRoundActive)
+	{
+		g_CurrentMusicKit.StopMusicForAll(Music_BombPlanted);
+		g_CurrentMusicKit.PlayMusicToAll(Music_BombTenSecCount);
+	}
 }
 
 public Action PlayBombExplosionWarning(Handle timer, int bomb)
@@ -840,6 +844,7 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 {
 	g_IsMainRoundActive = false;
 	g_IsBonusRoundActive = true;
+	g_TenSecondRoundTimer = null;
 	
 	// Determine winning/losing team
 	TFGOTeam winningTeam = TFGOTeam(view_as<TFTeam>(event.GetInt("winning_team")));
@@ -895,10 +900,6 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 		g_RoundsPlayed = 0;
 		SDK_SetScrambleTeams(true);
 	}
-	
-	// Reset timers
-	g_TenSecondRoundTimer = null;
-	g_TenSecondBombTimer = null;
 }
 
 public void ResetRoundState()
