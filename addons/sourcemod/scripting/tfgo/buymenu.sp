@@ -1,6 +1,6 @@
 #define INFO_GEAR "GEAR"
-#define INFO_GEAR_KEVLAR "KEVLAR"
-#define INFO_GEAR_KEVLAR_HELMET "KEVLAR_HELMET"
+#define INFO_GEAR_KEVLAR "0"
+#define INFO_GEAR_KEVLAR_HELMET "1"
 
 public void DisplaySlotSelectionMenu(int client)
 {
@@ -78,7 +78,7 @@ public int HandleSlotSelectionMenu(Menu menu, MenuAction action, int param1, int
 		case MenuAction_DisplayItem:
 		{
 			char info[32];
-			char display[64];
+			char display[PLATFORM_MAX_PATH];
 			menu.GetItem(param2, info, sizeof(info), _, display, sizeof(display));
 			Format(display, sizeof(display), "%T", display, LANG_SERVER);
 			return RedrawMenuItem(display);
@@ -181,11 +181,11 @@ public int HandleBuyMenu(Menu menu, MenuAction action, int param1, int param2)
 
 public int DisplayGearMenu(int client)
 {
-	Menu menu = new Menu(HandleGearMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DisplayItem);
+	Menu menu = new Menu(HandleGearMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DrawItem | MenuAction_DisplayItem);
 	menu.SetTitle("%T", "BuyMenu_Title", LANG_SERVER, TFGOPlayer(client).Balance);
 	
-	menu.AddItem(INFO_GEAR_KEVLAR, "BuyMenu_Gear_Kevlar");
-	menu.AddItem(INFO_GEAR_KEVLAR_HELMET, "BuyMenu_Gear_Kevlar_Helmet");
+	menu.AddItem(INFO_GEAR_KEVLAR, INFO_GEAR_KEVLAR_HELMET);
+	menu.AddItem(INFO_GEAR_KEVLAR_HELMET, INFO_GEAR_KEVLAR_HELMET);
 	
 	menu.ExitButton = true;
 	menu.ExitBackButton = true;
@@ -242,6 +242,19 @@ public int HandleGearMenu(Menu menu, MenuAction action, int param1, int param2)
 				return player.HasHelmet ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT;
 			
 			return ITEMDRAW_DEFAULT;
+		}
+		
+		case MenuAction_DisplayItem:
+		{
+			char info[32];
+			char display[PLATFORM_MAX_PATH];
+			menu.GetItem(param2, info, sizeof(info), _, display, sizeof(display));
+			
+			Gear gear;
+			g_AvailableGear.GetArray(g_AvailableGear.FindValue(StringToInt(info), 0), gear, sizeof(gear));
+			
+			Format(display, sizeof(display), "%T", gear.localizedName, LANG_SERVER);
+			return RedrawMenuItem(display);
 		}
 	}
 	
