@@ -1,7 +1,8 @@
-public void DisplaySlotSelectionMenu(int client)
+public bool DisplayMainBuyMenu(int client)
 {
-	Menu menu = new Menu(HandleSlotSelectionMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DisplayItem);
+	Menu menu = new Menu(MenuHandler_MainBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DisplayItem);
 	menu.SetTitle("%T", "BuyMenu_Title", LANG_SERVER);
+	menu.ExitButton = true;
 	
 	switch (TF2_GetPlayerClass(client))
 	{
@@ -18,7 +19,7 @@ public void DisplaySlotSelectionMenu(int client)
 			menu.AddItem("0", "BuyMenu_Secondaries"); // Revolver
 			menu.AddItem("2", "BuyMenu_Melees"); // Knife
 			menu.AddItem("3;4", "BuyMenu_PDAs"); // Disguise Kit/Invis Watch
-			//menu.AddItem("1", "BuyMenu_Buildings"); // Sapper (Currently crashes the game)
+			menu.AddItem("1", "BuyMenu_Buildings", ITEMDRAW_IGNORE); // Sapper (currently ignored due to client crashes)
 		}
 		
 		default:
@@ -29,43 +30,43 @@ public void DisplaySlotSelectionMenu(int client)
 		}
 	}
 	
-	menu.ExitButton = true;
-	menu.Display(client, MENU_TIME_FOREVER);
+	return menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int HandleSlotSelectionMenu(Menu menu, MenuAction action, int param1, int param2)
+public int MenuHandler_MainBuyMenu(Menu menu, MenuAction action, int param1, int param2)
 {
 	switch (action)
 	{
-		case MenuAction_Display:TFGOPlayer(param1).ActiveBuyMenu = menu;
+		case MenuAction_Display: TFGOPlayer(param1).ActiveBuyMenu = menu;
 		
 		case MenuAction_Select:
 		{
 			char info[32];
 			menu.GetItem(param2, info, sizeof(info));
 			
-			char slotStrings[TFWeaponSlot_Building + 1][32];
-			if (ExplodeString(info, ";", slotStrings, sizeof(slotStrings), sizeof(slotStrings[])) >= 1)
+			// Convert slot CSV to ArrayList
+			char slots[TFWeaponSlot_Building + 1][32];
+			if (ExplodeString(info, ";", slots, sizeof(slots), sizeof(slots[])) > 0)
 			{
-				ArrayList slots = new ArrayList();
-				for (int i = 0; i < sizeof(slotStrings); i++)
+				ArrayList slotList = new ArrayList();
+				for (int i = 0; i < sizeof(slots); i++)
 				{
-					TrimString(slotStrings[i]);
-					if (strlen(slotStrings[i]) > 0)
-						slots.Push(StringToInt(slotStrings[i]));
+					TrimString(slots[i]);
+					if (strlen(slots[i]) > 0) slotList.Push(StringToInt(slots[i]));
 				}
-				DisplayBuyMenu(param1, slots);
+				
+				DisplayWeaponBuyMenu(param1, slotList);
 			}
 		}
 		
-		case MenuAction_Cancel:TFGOPlayer(param1).ActiveBuyMenu = null;
+		case MenuAction_Cancel: TFGOPlayer(param1).ActiveBuyMenu = null;
 		
-		case MenuAction_End:delete menu;
+		case MenuAction_End: delete menu;
 		
 		case MenuAction_DisplayItem:
 		{
 			char info[32];
-			char display[64];
+			char display[PLATFORM_MAX_PATH];
 			menu.GetItem(param2, info, sizeof(info), _, display, sizeof(display));
 			Format(display, sizeof(display), "%T", display, LANG_SERVER);
 			return RedrawMenuItem(display);
@@ -75,79 +76,65 @@ public int HandleSlotSelectionMenu(Menu menu, MenuAction action, int param1, int
 	return 0;
 }
 
-public void DisplayBuyMenu(int client, ArrayList slots)
+public bool DisplayWeaponBuyMenu(int client, ArrayList slots)
 {
-	Menu menu = new Menu(HandleBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DrawItem);
+	Menu menu = new Menu(MenuHandler_WeaponBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DrawItem | MenuAction_DisplayItem);
 	menu.SetTitle("%T", "BuyMenu_Title", LANG_SERVER);
+	menu.ExitButton = true;
+	menu.ExitBackButton = true;
 	
 	for (int i = 0; i < g_AvailableWeapons.Length; i++)
 	{
 		Weapon weapon;
 		g_AvailableWeapons.GetArray(i, weapon, sizeof(weapon));
 		
-		TFGOPlayer player = TFGOPlayer(client);
 		TFClassType class = TF2_GetPlayerClass(client);
 		int slot = TF2_GetSlotInItem(weapon.defindex, class);
 		
-		int slotIndex = slots.FindValue(slot);
-		if (slotIndex > -1 && weapon.cost > -1)
+		if (slots.FindValue(slot) > -1 && weapon.cost > -1)
 		{
 			char info[32];
 			IntToString(weapon.defindex, info, sizeof(info));
 			
-			char display[PLATFORM_MAX_PATH];
-			char weaponName[PLATFORM_MAX_PATH];
-			TF2_GetItemName(weapon.defindex, weaponName, sizeof(weaponName));
+			char itemName[PLATFORM_MAX_PATH];
+			TF2_GetItemName(weapon.defindex, itemName, sizeof(itemName));
 			
-			if (player.GetWeaponFromLoadout(class, slot) != weapon.defindex)
-			{
-				Format(display, sizeof(display), "%s ($%d)", weaponName, weapon.cost);
-			}
-			else
-			{
-				char alreadyCarryingTag[PLATFORM_MAX_PATH];
-				Format(alreadyCarryingTag, sizeof(alreadyCarryingTag), "%T", "BuyMenu_AlreadyCarrying", LANG_SERVER);
-				Format(display, sizeof(display), "%s (%s)", weaponName, alreadyCarryingTag);
-			}
-			
-			menu.AddItem(info, display);
+			menu.AddItem(info, itemName);
 		}
 	}
 	delete slots;
 	
-	menu.ExitButton = true;
-	menu.ExitBackButton = true;
-	
-	menu.Display(client, MENU_TIME_FOREVER);
+	return menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int HandleBuyMenu(Menu menu, MenuAction action, int param1, int param2)
+public int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, int param2)
 {
 	switch (action)
 	{
-		case MenuAction_Display:TFGOPlayer(param1).ActiveBuyMenu = menu;
+		case MenuAction_Display: TFGOPlayer(param1).ActiveBuyMenu = menu;
 		
 		case MenuAction_Select:
 		{
-			char info[32];
+			char info[32]; // item defindex
 			menu.GetItem(param2, info, sizeof(info));
 			TFGOPlayer(param1).PurchaseItem(StringToInt(info));
-			DisplaySlotSelectionMenu(param1);
+			DisplayMainBuyMenu(param1);
 		}
 		
 		case MenuAction_Cancel:
 		{
 			TFGOPlayer(param1).ActiveBuyMenu = null;
 			if (param2 == MenuCancel_ExitBack)
-				DisplaySlotSelectionMenu(param1);
+				DisplayMainBuyMenu(param1);
 		}
 		
-		case MenuAction_End:delete menu;
+		case MenuAction_End: delete menu;
 		
 		case MenuAction_DrawItem:
 		{
-			char info[32];
-			menu.GetItem(param2, info, sizeof(info));
+			int style;
+			char info[32]; // item defindex
+			menu.GetItem(param2, info, sizeof(info), style);
 			
 			Weapon weapon;
 			g_AvailableWeapons.GetArray(g_AvailableWeapons.FindValue(StringToInt(info), 0), weapon, sizeof(weapon));
@@ -156,10 +143,28 @@ public int HandleBuyMenu(Menu menu, MenuAction action, int param1, int param2)
 			TFClassType class = TF2_GetPlayerClass(param1);
 			int slot = TF2_GetSlotInItem(weapon.defindex, class);
 			
-			if (player.GetWeaponFromLoadout(class, slot) == weapon.defindex || weapon.cost > TFGOPlayer(param1).Balance)
-				return ITEMDRAW_DISABLED;
+			return player.GetWeaponFromLoadout(class, slot) == weapon.defindex || weapon.cost > player.Balance ? ITEMDRAW_DISABLED : style;
+		}
+		
+		case MenuAction_DisplayItem:
+		{
+			char info[32]; // item defindex
+			char display[PLATFORM_MAX_PATH]; // item name
+			menu.GetItem(param2, info, sizeof(info), _, display, sizeof(display));
+			
+			Weapon weapon;
+			g_AvailableWeapons.GetArray(g_AvailableWeapons.FindValue(StringToInt(info), 0), weapon, sizeof(weapon));
+			
+			TFClassType class = TF2_GetPlayerClass(param1);
+			int slot = TF2_GetSlotInItem(weapon.defindex, class);
+			
+			TFGOPlayer player = TFGOPlayer(param1);
+			if (player.GetWeaponFromLoadout(class, slot) == weapon.defindex)
+				Format(display, sizeof(display), "%s (%T)", display, "BuyMenu_AlreadyCarrying", LANG_SERVER);
 			else
-				return ITEMDRAW_DEFAULT;
+				Format(display, sizeof(display), "%s ($%d)", display, weapon.cost);
+			
+			return RedrawMenuItem(display);
 		}
 	}
 	
