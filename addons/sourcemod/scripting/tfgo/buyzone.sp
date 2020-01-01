@@ -57,7 +57,7 @@ public void CalculateDynamicBuyZones()
 public Action Hook_OnStartTouchBuyZone(int entity, int client)
 {
 	if (g_IsBuyTimeActive && IsValidClient(client) && GetClientTeam(client) == GetEntProp(entity, Prop_Data, "m_iTeamNum"))
-		DisplaySlotSelectionMenu(client);
+		DisplayMainBuyMenu(client);
 }
 
 public Action Hook_OnEndTouchBuyZone(int entity, int client)
@@ -89,7 +89,7 @@ public void DisplayMenuInDynamicBuyZone(int client)
 		{
 			g_IsPlayerInDynamicBuyZone[client] = !g_IsPlayerInDynamicBuyZone[client];
 			if (player.ActiveBuyMenu == null)
-				DisplaySlotSelectionMenu(client);
+				DisplayMainBuyMenu(client);
 		}
 		else if (distance > radius && g_IsPlayerInDynamicBuyZone[client]) // Player has left buy zone
 		{
