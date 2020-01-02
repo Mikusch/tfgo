@@ -98,20 +98,6 @@ ConVar tf_weapon_criticals;
 ConVar tf_weapon_criticals_melee;
 ConVar mp_bonusroundtime;
 
-// SDK Handles
-Handle g_DHookPickupWeaponFromOther;
-Handle g_DHookSetWinningTeam;
-Handle g_DHookHandleSwitchTeams;
-Handle g_DHookHandleScrambleTeams;
-Handle g_SDKGetEquippedWearableForLoadoutSlot;
-Handle g_SDKGetMaxAmmo;
-Handle g_SDKCreateDroppedWeapon;
-Handle g_SDKInitDroppedWeapon;
-Handle g_SDKSetSwitchTeams;
-Handle g_SDKSetScrambleTeams;
-Handle g_SDKEquipWearable;
-Handle g_SDKRemoveWearable;
-
 
 #include "tfgo/musickits.sp"
 MusicKit g_CurrentMusicKit;
@@ -124,7 +110,7 @@ MusicKit g_CurrentMusicKit;
 #include "tfgo/buyzone.sp"
 #include "tfgo/forward.sp"
 #include "tfgo/native.sp"
-
+#include "tfgo/sdk.sp"
 
 public Plugin pluginInfo =  {
 	name = "Team Fortress: Global Offensive Arena", 
@@ -231,10 +217,7 @@ public void OnMapStart()
 	// Allow players to buy stuff on the first round
 	g_IsBuyTimeActive = true;
 	
-	DHookGamerules(g_DHookSetWinningTeam, false);
-	DHookGamerules(g_DHookHandleSwitchTeams, false);
-	DHookGamerules(g_DHookHandleScrambleTeams, false);
-	
+	SDK_HookGamerules();
 	ResetRoundState();
 	
 	PrecacheSounds();
@@ -402,99 +385,6 @@ public void OnArenaLogicSpawned(int entity)
 public void OnCaptureAreaSpawned(int entity)
 {
 	SetEntPropFloat(entity, Prop_Data, "m_flCapTime", GetEntPropFloat(entity, Prop_Data, "m_flCapTime") / 2);
-}
-
-// Prevent round from ending, called every frame after the round is supposed to end
-public MRESReturn Hook_SetWinningTeam(Handle params)
-{
-	TFTeam team = DHookGetParam(params, 1);
-	int winReason = DHookGetParam(params, 2);
-	
-	// Bomb is detonated but game wants to award elimination win on multi-CP maps, rewrite it to make it look like a capture
-	if (g_IsBombDetonated && winReason == Winreason_Elimination)
-	{
-		DHookSetParam(params, 2, Winreason_PointCaptured);
-		return MRES_ChangedHandled;
-	}
-	
-	// Bomb is defused but game wants to award elimination win on multi-CP maps, rewrite it to make it look like a capture
-	else if (g_IsBombDefused && team != g_BombPlantingTeam && winReason == Winreason_Elimination)
-	{
-		DHookSetParam(params, 2, Winreason_PointCaptured);
-		return MRES_ChangedHandled;
-	}
-	// Sometimes the game is stupid and gives defuse win to the planting team, this should prevent that
-	else if (g_IsBombDefused && team == g_BombPlantingTeam)
-	{
-		return MRES_Supercede;
-	}
-	
-	// If this is a capture win from planting the bomb we supercede it, otherwise ignore to grant the defusal win
-	else if (g_IsBombPlanted && team == g_BombPlantingTeam && (winReason == Winreason_PointCaptured || winReason == Winreason_AllPointsCaptured))
-	{
-		return MRES_Supercede;
-	}
-	
-	// Planting team was killed while the bomb was active, do not give elimination win to enemy team
-	else if (g_IsBombPlanted && team != g_BombPlantingTeam && winReason == Winreason_Elimination)
-	{
-		return MRES_Supercede;
-	}
-	
-	// Stalemate
-	else if (team == TFTeam_Unassigned && winReason == Winreason_Stalemate)
-	{
-		TFGOTeam red = TFGOTeam(TFTeam_Red);
-		TFGOTeam blue = TFGOTeam(TFTeam_Blue);
-		red.AddToClientBalances(0, "%T", "Team_Cash_Award_no_income", LANG_SERVER);
-		blue.AddToClientBalances(0, "%T", "Team_Cash_Award_no_income", LANG_SERVER);
-		red.ConsecutiveLosses++;
-		blue.ConsecutiveLosses++;
-		return MRES_Ignored;
-	}
-	
-	// Everything else that doesn't require superceding e.g. eliminating the enemy team
-	else
-	{
-		return MRES_Ignored;
-	}
-}
-
-public MRESReturn Hook_PickupWeaponFromOther(int client, Handle returnVal, Handle params)
-{
-	int weapon = DHookGetParam(params, 1); // tf_dropped_weapon
-	int defindex = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
-	TFGOPlayer(client).AddToLoadout(defindex);
-	
-	Forward_WeaponPickup(client, defindex);
-}
-
-public MRESReturn Hook_HandleSwitchTeams()
-{
-	for (int client = 1; client <= MaxClients; client++)
-		ResetPlayer(client);
-	
-	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
-		TFGOTeam(view_as<TFTeam>(team)).ConsecutiveLosses = STARTING_CONSECUTIVE_LOSSES;
-}
-
-public MRESReturn Hook_HandleScrambleTeams()
-{
-	for (int client = 1; client <= MaxClients; client++)
-		ResetPlayer(client);
-	
-	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
-	{
-		TFGOTeam(view_as<TFTeam>(team)).ConsecutiveLosses = STARTING_CONSECUTIVE_LOSSES;
-		SetTeamScore(team, 0);
-	}
-	
-	// Arena informs the players of a team switch but not of a scramble, wtf?
-	Event alert = CreateEvent("teamplay_alert");
-	alert.SetInt("alert_type", 0);
-	alert.Fire();
-	PrintToChatAll("%T", "TF_TeamsScrambled", LANG_SERVER);
-	PlayTeamScrambleAlert();
 }
 
 public Action Event_Player_Team(Event event, const char[] name, bool dontBroadcast)
@@ -1063,117 +953,4 @@ void Toggle_ConVars(bool toggle)
 		tf_weapon_criticals_melee.BoolValue = weaponCriticalsMelee;
 		mp_bonusroundtime.IntValue = bonusRoundTime;
 	}
-}
-
-void SDK_Init()
-{
-	GameData gameData = new GameData("tfgo");
-	
-	g_DHookPickupWeaponFromOther = DHookCreateFromConf(gameData, "CTFPlayer::PickupWeaponFromOther");
-	if (g_DHookPickupWeaponFromOther != null)
-		DHookEnableDetour(g_DHookPickupWeaponFromOther, false, Hook_PickupWeaponFromOther);
-	else
-		LogMessage("Failed to create hook: CTFPlayer::PickupWeaponFromOther");
-	
-	int offset = GameConfGetOffset(gameData, "CTFGameRules::SetWinningTeam");
-	g_DHookSetWinningTeam = DHookCreate(offset, HookType_GameRules, ReturnType_Void, ThisPointer_Ignore, Hook_SetWinningTeam);
-	if (g_DHookSetWinningTeam != null)
-	{
-		DHookAddParam(g_DHookSetWinningTeam, HookParamType_Int);
-		DHookAddParam(g_DHookSetWinningTeam, HookParamType_Int);
-		DHookAddParam(g_DHookSetWinningTeam, HookParamType_Bool);
-		DHookAddParam(g_DHookSetWinningTeam, HookParamType_Bool);
-		DHookAddParam(g_DHookSetWinningTeam, HookParamType_Bool);
-		DHookAddParam(g_DHookSetWinningTeam, HookParamType_Bool);
-	}
-	else
-	{
-		LogMessage("Failed to create hook: CTFGameRules::SetWinningTeam");
-	}
-	
-	offset = GameConfGetOffset(gameData, "CTFGameRules::HandleSwitchTeams");
-	g_DHookHandleSwitchTeams = DHookCreate(offset, HookType_GameRules, ReturnType_Void, ThisPointer_Ignore, Hook_HandleSwitchTeams);
-	if (g_DHookHandleSwitchTeams == null)
-		LogMessage("Failed to create hook: CTFGameRules::HandleSwitchTeams");
-	
-	offset = GameConfGetOffset(gameData, "CTFGameRules::HandleScrambleTeams");
-	g_DHookHandleScrambleTeams = DHookCreate(offset, HookType_GameRules, ReturnType_Void, ThisPointer_Ignore, Hook_HandleScrambleTeams);
-	if (g_DHookHandleScrambleTeams == null)
-		LogMessage("Failed to create hook: CTFGameRules::HandleScrambleTeams");
-	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(gameData, SDKConf_Signature, "CTFPlayer::GetEquippedWearableForLoadoutSlot");
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_SDKGetEquippedWearableForLoadoutSlot = EndPrepSDKCall();
-	if (g_SDKGetEquippedWearableForLoadoutSlot == null)
-		LogMessage("Failed to create call: CTFPlayer::GetEquippedWearableForLoadoutSlot");
-	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(gameData, SDKConf_Signature, "CTFPlayer::GetMaxAmmo");
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
-	g_SDKGetMaxAmmo = EndPrepSDKCall();
-	if (g_SDKGetMaxAmmo == null)
-		LogMessage("Failed to create call: CTFPlayer::GetMaxAmmo");
-	
-	StartPrepSDKCall(SDKCall_Static);
-	PrepSDKCall_SetFromConf(gameData, SDKConf_Signature, "CTFDroppedWeapon::Create");
-	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
-	PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
-	PrepSDKCall_AddParameter(SDKType_QAngle, SDKPass_ByRef);
-	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_SDKCreateDroppedWeapon = EndPrepSDKCall();
-	if (g_SDKCreateDroppedWeapon == null)
-		LogMessage("Failed to create call: CTFDroppedWeapon::Create");
-	
-	StartPrepSDKCall(SDKCall_Entity);
-	PrepSDKCall_SetFromConf(gameData, SDKConf_Signature, "CTFDroppedWeapon::InitDroppedWeapon");
-	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
-	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
-	g_SDKInitDroppedWeapon = EndPrepSDKCall();
-	if (g_SDKInitDroppedWeapon == null)
-		LogMessage("Failed to create call: CTFDroppedWeapon::InitDroppedWeapon");
-	
-	StartPrepSDKCall(SDKCall_GameRules);
-	PrepSDKCall_SetFromConf(gameData, SDKConf_Virtual, "CTFGameRules::SetSwitchTeams");
-	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
-	g_SDKSetSwitchTeams = EndPrepSDKCall();
-	if (g_SDKSetSwitchTeams == null)
-		LogMessage("Failed to create call: CTFGameRules::SetSwitchTeams");
-	
-	StartPrepSDKCall(SDKCall_GameRules);
-	PrepSDKCall_SetFromConf(gameData, SDKConf_Virtual, "CTFGameRules::SetScrambleTeams");
-	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
-	g_SDKSetScrambleTeams = EndPrepSDKCall();
-	if (g_SDKSetScrambleTeams == null)
-		LogMessage("Failed to create call: CTFGameRules::SetScrambleTeams");
-	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(gameData, SDKConf_Virtual, "CBasePlayer::EquipWearable");
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_SDKEquipWearable = EndPrepSDKCall();
-	if (g_SDKEquipWearable == null)
-		LogMessage("Failed to create call: CBasePlayer::EquipWearable");
-	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(gameData, SDKConf_Virtual, "CBasePlayer::RemoveWearable");
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_SDKRemoveWearable = EndPrepSDKCall();
-	if (g_SDKRemoveWearable == null)
-		LogMessage("Failed to create call: CBasePlayer::RemoveWearable");
-	
-	MemoryPatch.SetGameData(gameData);
-	g_PickupWeaponPatch = new MemoryPatch("Patch_PickupWeaponFromOther");
-	if (g_PickupWeaponPatch != null)
-		g_PickupWeaponPatch.Enable();
-	else
-		LogMessage("Failed to create patch: Patch_PickupWeaponFromOther");
-	
-	delete gameData;
 }
