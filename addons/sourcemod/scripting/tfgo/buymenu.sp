@@ -186,19 +186,18 @@ public int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, i
 
 public int DisplayGearMenu(int client)
 {
-	Menu menu = new Menu(HandleGearMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DrawItem | MenuAction_DisplayItem);
+	Menu menu = new Menu(MenuHandler_GearBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DrawItem | MenuAction_DisplayItem);
 	menu.SetTitle("%T", "BuyMenu_Title", LANG_SERVER, TFGOPlayer(client).Balance);
+	menu.ExitButton = true;
+	menu.ExitBackButton = true;
 	
 	menu.AddItem(INFO_GEAR_KEVLAR, INFO_GEAR_KEVLAR_HELMET);
 	menu.AddItem(INFO_GEAR_KEVLAR_HELMET, INFO_GEAR_KEVLAR_HELMET);
 	
-	menu.ExitButton = true;
-	menu.ExitBackButton = true;
-	
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int HandleGearMenu(Menu menu, MenuAction action, int param1, int param2)
+public int MenuHandler_GearBuyMenu(Menu menu, MenuAction action, int param1, int param2)
 {
 	switch (action)
 	{

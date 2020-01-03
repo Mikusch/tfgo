@@ -19,8 +19,6 @@
 
 #define TF_MAXPLAYERS 32
 
-#define HITGROUP_HEAD 1
-
 #define BOMB_MODEL "models/props_td/atom_bomb.mdl"
 #define BOMB_EXPLOSION_PARTICLE "mvm_hatch_destroy"
 #define BOMB_BEEPING_SOUND "player/cyoa_pda_beep3.wav"
@@ -33,6 +31,21 @@
 
 #define MIN_CONSECUTIVE_LOSSES 0
 #define STARTING_CONSECUTIVE_LOSSES 1
+
+
+// Source hit group standards
+enum
+{
+	HITGROUP_GENERIC = 0,
+	HITGROUP_HEAD,
+	HITGROUP_CHEST,
+	HITGROUP_STOMACH,
+	HITGROUP_LEFTARM,
+	HITGROUP_RIGHTARM,
+	HITGROUP_LEFTLEG,
+	HITGROUP_RIGHTLEG,
+	HITGROUP_GEAR
+}
 
 
 // Timers
@@ -111,6 +124,7 @@ MusicKit g_CurrentMusicKit;
 #include "tfgo/forward.sp"
 #include "tfgo/native.sp"
 #include "tfgo/sdk.sp"
+
 
 public Plugin pluginInfo =  {
 	name = "Team Fortress: Global Offensive Arena", 
@@ -251,8 +265,7 @@ public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_PreThink, Client_PreThink);
 	SDKHook(client, SDKHook_TraceAttack, Client_TraceAttack);
-	SDKHook(client, SDKHook_OnTakeDamageAlive, OnClientTakeDamageAlive);
-	SDKHook(client, SDKHook_OnTakeDamageAlivePost, OnClientTakeDamageAlivePost);
+	SDKHook(client, SDKHook_OnTakeDamage, Client_OnTakeDamage);
 }
 
 stock void ResetPlayer(int client, bool notify = true)
@@ -285,8 +298,7 @@ public void OnClientDisconnect(int client)
 {
 	SDKUnhook(client, SDKHook_PreThink, Client_PreThink);
 	SDKUnhook(client, SDKHook_TraceAttack, Client_TraceAttack);
-	SDKUnhook(client, SDKHook_OnTakeDamageAlive, OnClientTakeDamageAlive);
-	SDKUnhook(client, SDKHook_OnTakeDamageAlivePost, OnClientTakeDamageAlivePost);
+	SDKUnhook(client, SDKHook_OnTakeDamage, Client_OnTakeDamage);
 	
 	// Force-end round if last client in team disconnects during active bomb
 	if (g_IsBombPlanted && IsValidClient(client))
@@ -308,9 +320,12 @@ public Action Client_TraceAttack(int victim, int &attacker, int &inflictor, floa
 	return Plugin_Continue;
 }
 
-public Action OnClientTakeDamageAlive(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
+public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
 {
 	TFGOPlayer player = TFGOPlayer(victim);
+	
+	// TODO Move to TraceAttack and make armor protect chest, stomach and the arms
+	// Helmet extends protection to the head
 	
 	// Ignore non-weapon damage and players with <= 0% armor 
 	if (weapon <= -1 || player.Armor <= 0)
@@ -335,17 +350,6 @@ public Action OnClientTakeDamageAlive(int victim, int &attacker, int &inflictor,
 	{
 		// Ignore armor if armor penetration of weapon is >= 100%
 		return Plugin_Continue;
-	}
-}
-
-public void OnClientTakeDamageAlivePost(int victim, int attacker, int inflictor, float damage, int damagetype, int weapon, const float damageForce[3], const float damagePosition[3], int damagecustom)
-{
-	TFGOPlayer player = TFGOPlayer(victim);
-	
-	if (player.HasHelmet && damagecustom == TF_CUSTOM_HEADSHOT)
-	{
-		player.HasHelmet = false;
-		TF2Attrib_RemoveByDefIndex(victim, 176);
 	}
 }
 
