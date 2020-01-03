@@ -152,7 +152,7 @@ public void OnPluginStart()
 	mp_bonusroundtime = FindConVar("mp_bonusroundtime");
 	
 	// Create TFGO ConVars
-	tfgo_all_weapons_can_headshot = CreateConVar("tfgo_all_weapons_can_headshot", "0", "Whether all weapons should be able to headshot");
+	tfgo_all_weapons_can_headshot = CreateConVar("tfgo_all_weapons_can_headshot", "0", "Whether all weapons that deal bullet damage should be able to headshot");
 	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, 0.0);
 	tfgo_consecutive_loss_max = CreateConVar("tfgo_consecutive_loss_max", "4", "The maximum of consecutive losses for each team that will be kept track of", _, true, 0.0);
 	tfgo_buyzone_radius_override = CreateConVar("tfgo_buyzone_radius_override", "-1", "Overrides the default calculated buyzone radius on maps with no respawn room");
@@ -241,8 +241,8 @@ public void OnClientConnected(int client)
 
 public void OnClientPutInServer(int client)
 {
-	SDKHook(client, SDKHook_PreThink, OnClientThink);
-	SDKHook(client, SDKHook_TraceAttack, OnClientTraceAttack);
+	SDKHook(client, SDKHook_PreThink, Client_PreThink);
+	SDKHook(client, SDKHook_TraceAttack, Client_TraceAttack);
 }
 
 stock void ResetPlayer(int client, bool notify = true)
@@ -254,7 +254,7 @@ stock void ResetPlayer(int client, bool notify = true)
 		CPrintToChat(client, "%T", "Alert_Player_Reset", LANG_SERVER);
 }
 
-public void OnClientThink(int client)
+public void Client_PreThink(int client)
 {
 	SetHudTextParams(0.05, 0.325, 0.1, 162, 255, 71, 255, _, 0.0, 0.0, 0.0);
 	ShowHudText(client, -1, "$%d", TFGOPlayer(client).Balance);
@@ -265,8 +265,8 @@ public void OnClientThink(int client)
 
 public void OnClientDisconnect(int client)
 {
-	SDKUnhook(client, SDKHook_PreThink, OnClientThink);
-	SDKUnhook(client, SDKHook_TraceAttack, OnClientTraceAttack);
+	SDKUnhook(client, SDKHook_PreThink, Client_PreThink);
+	SDKUnhook(client, SDKHook_TraceAttack, Client_TraceAttack);
 	
 	// Force-end round if last client in team disconnects during active bomb
 	if (g_IsBombPlanted && IsValidClient(client))
@@ -277,12 +277,11 @@ public void OnClientDisconnect(int client)
 	}
 }
 
-public Action OnClientTraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
+public Action Client_TraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
 {
-	if (tfgo_all_weapons_can_headshot.BoolValue && hitgroup == HITGROUP_HEAD)
+	if (tfgo_all_weapons_can_headshot.BoolValue && damagetype & DMG_BULLET)
 	{
-		// All headshots should deal critical damage
-		damagetype |= DMG_CRIT;
+		damagetype |= DMG_USE_HITLOCATIONS;
 		return Plugin_Changed;
 	}
 	
