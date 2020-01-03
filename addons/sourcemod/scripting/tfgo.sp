@@ -36,14 +36,14 @@
 // Source hit group standards
 enum
 {
-	HITGROUP_GENERIC = 0,
-	HITGROUP_HEAD,
-	HITGROUP_CHEST,
-	HITGROUP_STOMACH,
-	HITGROUP_LEFTARM,
-	HITGROUP_RIGHTARM,
-	HITGROUP_LEFTLEG,
-	HITGROUP_RIGHTLEG,
+	HITGROUP_GENERIC = 0, 
+	HITGROUP_HEAD, 
+	HITGROUP_CHEST, 
+	HITGROUP_STOMACH, 
+	HITGROUP_LEFTARM, 
+	HITGROUP_RIGHTARM, 
+	HITGROUP_LEFTLEG, 
+	HITGROUP_RIGHTLEG, 
 	HITGROUP_GEAR
 }
 
@@ -130,7 +130,7 @@ public Plugin pluginInfo =  {
 	name = "Team Fortress: Global Offensive Arena", 
 	author = "Mikusch", 
 	description = "A Team Fortress 2 gamemode inspired by Counter-Strike: Global Offensive", 
-	version = PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION,
+	version = PLUGIN_VERSION..."."...PLUGIN_VERSION_REVISION, 
 	url = "https://github.com/Mikusch/tfgo"
 };
 
@@ -265,7 +265,6 @@ public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_PreThink, Client_PreThink);
 	SDKHook(client, SDKHook_TraceAttack, Client_TraceAttack);
-	SDKHook(client, SDKHook_OnTakeDamage, Client_OnTakeDamage);
 }
 
 stock void ResetPlayer(int client, bool notify = true)
@@ -298,7 +297,6 @@ public void OnClientDisconnect(int client)
 {
 	SDKUnhook(client, SDKHook_PreThink, Client_PreThink);
 	SDKUnhook(client, SDKHook_TraceAttack, Client_TraceAttack);
-	SDKUnhook(client, SDKHook_OnTakeDamage, Client_OnTakeDamage);
 	
 	// Force-end round if last client in team disconnects during active bomb
 	if (g_IsBombPlanted && IsValidClient(client))
@@ -311,46 +309,50 @@ public void OnClientDisconnect(int client)
 
 public Action Client_TraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
 {
+	bool changed;
+	
+	// Allow every weapon with damagetype DMG_BULLET to deal crits on headshot
 	if (tfgo_all_weapons_can_headshot.BoolValue && damagetype & DMG_BULLET)
 	{
 		damagetype |= DMG_USE_HITLOCATIONS;
-		return Plugin_Changed;
+		changed = true;
 	}
 	
-	return Plugin_Continue;
-}
-
-public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
-{
 	TFGOPlayer player = TFGOPlayer(victim);
 	
-	// TODO Move to TraceAttack and make armor protect chest, stomach and the arms
-	// Helmet extends protection to the head
+	float armorPenetration = 0.2; // Armor shields 80% of all damage by default
 	
-	// Ignore non-weapon damage and players with <= 0% armor 
-	if (weapon <= -1 || player.Armor <= 0)
-		return Plugin_Continue;
-	
-	// Ignore weapons not in our config
-	int defindex = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
-	int index = g_AvailableWeapons.FindValue(defindex, 0);
-	if (index <= -1)
-		return Plugin_Continue;
-	
-	Weapon tfgoWeapon;
-	g_AvailableWeapons.GetArray(index, tfgoWeapon, sizeof(tfgoWeapon));
-	
-	if (tfgoWeapon.armorPenetration < 1.0)
+	if (player.Armor > 0 && !(damagetype & (DMG_FALL | DMG_DROWN | DMG_POISON | DMG_RADIATION))) // Armor doesn't protect against fall or drown damage
 	{
-		player.Armor -= RoundFloat(damage); // Deduct absorbed damage from armor points
-		damage *= tfgoWeapon.armorPenetration; // Modify damage
-		return Plugin_Changed;
+		// Armor only shields chest, stomach and arms; helmet expands this to the head
+		if ((hitgroup >= HITGROUP_CHEST && hitgroup <= HITGROUP_RIGHTARM) || (player.HasHelmet && hitgroup == HITGROUP_HEAD))
+		{
+			// TODO: Everything in this fucking block
+			// Working with barely correct information from an outdated wiki and decade old source code really isn't fun :/
+			int activeWeapon = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
+			if (activeWeapon != -1)
+			{
+				int defindex = GetEntProp(activeWeapon, Prop_Send, "m_iItemDefinitionIndex");
+				int index = g_AvailableWeapons.FindValue(defindex, 0);
+				if (index != -1)
+				{
+					Weapon weapon;
+					g_AvailableWeapons.GetArray(index, weapon, sizeof(weapon));
+					armorPenetration = weapon.armorPenetration;
+				}
+			}
+			
+			// Armor penetration >= 100% bypasses armor entirely
+			if (armorPenetration < 1.0)
+			{
+				player.Armor -= RoundFloat(damage); // Deduct absorbed damage from armor points
+				damage *= armorPenetration; // Modify damage
+				changed = true;
+			}
+		}
 	}
-	else
-	{
-		// Ignore armor if armor penetration of weapon is >= 100%
-		return Plugin_Continue;
-	}
+	
+	return changed ? Plugin_Changed : Plugin_Continue;
 }
 
 public void ChooseRandomMusicKit()
@@ -545,7 +547,6 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 		
 		if (tfgo_free_armor.IntValue >= 1) player.Armor = TF2_GetMaxHealth(client);
 		if (tfgo_free_armor.IntValue >= 2) player.HasHelmet = true;
-		if (player.HasHelmet) TF2Attrib_SetByDefIndex(client, 176, 1.0);
 		
 		if (player.ActiveBuyMenu != null)
 			player.ActiveBuyMenu.Cancel();

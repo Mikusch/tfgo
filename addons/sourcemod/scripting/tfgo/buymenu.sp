@@ -191,8 +191,8 @@ public int DisplayGearMenu(int client)
 	menu.ExitButton = true;
 	menu.ExitBackButton = true;
 	
-	menu.AddItem(INFO_GEAR_KEVLAR, INFO_GEAR_KEVLAR_HELMET);
-	menu.AddItem(INFO_GEAR_KEVLAR_HELMET, INFO_GEAR_KEVLAR_HELMET);
+	menu.AddItem(INFO_GEAR_KEVLAR, "BuyMenu_Gear_Kevlar");
+	menu.AddItem(INFO_GEAR_KEVLAR_HELMET, "BuyMenu_Gear_Kevlar_Helmet");
 	
 	menu.Display(client, MENU_TIME_FOREVER);
 }
@@ -257,7 +257,6 @@ public int MenuHandler_GearBuyMenu(Menu menu, MenuAction action, int param1, int
 			Gear gear;
 			g_AvailableGear.GetArray(g_AvailableGear.FindValue(StringToInt(info), 0), gear, sizeof(gear));
 			
-			Format(display, sizeof(display), "%T", gear.localizedName, LANG_SERVER);
 			return RedrawMenuItem(display);
 		}
 	}

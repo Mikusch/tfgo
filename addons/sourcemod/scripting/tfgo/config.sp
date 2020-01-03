@@ -10,7 +10,6 @@ enum struct Weapon
 enum struct Gear
 {
 	int id;
-	char localizedName[PLATFORM_MAX_PATH];
 	int cost;
 }
 
@@ -58,7 +57,6 @@ public void ReadGearConfig(KeyValues kv)
 				
 				Gear gear;
 				gear.id = StringToInt(id);
-				kv.GetString("localized_name", gear.localizedName, sizeof(gear.localizedName));
 				gear.cost = kv.GetNum("cost", -1);
 				
 				int length = g_AvailableGear.Length;
