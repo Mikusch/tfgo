@@ -156,7 +156,7 @@ public void OnPluginStart()
 	mp_bonusroundtime = FindConVar("mp_bonusroundtime");
 	
 	// Create TFGO ConVars
-	tfgo_all_weapons_can_headshot = CreateConVar("tfgo_all_weapons_can_headshot", "0", "Whether all weapons should be able to headshot");
+	tfgo_all_weapons_can_headshot = CreateConVar("tfgo_all_weapons_can_headshot", "0", "Whether all weapons that deal bullet damage should be able to headshot");
 	tfgo_free_armor = CreateConVar("tfgo_free_armor", "2", "Determines whether kevlar (1+) and/or helmet (2+) are given automatically", _, true, 0.0, true, 2.0);
 	tfgo_max_armor = CreateConVar("tfgo_max_armor", "2", "Determines the highest level of armor allowed to be purchased. (0) None, (1) Kevlar, (2) Helmet", _, true, 0.0, true, 2.0);
 	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
@@ -249,8 +249,8 @@ public void OnClientConnected(int client)
 
 public void OnClientPutInServer(int client)
 {
-	SDKHook(client, SDKHook_PreThink, OnClientThink);
-	SDKHook(client, SDKHook_TraceAttack, OnClientTraceAttack);
+	SDKHook(client, SDKHook_PreThink, Client_PreThink);
+	SDKHook(client, SDKHook_TraceAttack, Client_TraceAttack);
 	SDKHook(client, SDKHook_OnTakeDamageAlive, OnClientTakeDamageAlive);
 	SDKHook(client, SDKHook_OnTakeDamageAlivePost, OnClientTakeDamageAlivePost);
 }
@@ -264,7 +264,7 @@ stock void ResetPlayer(int client, bool notify = true)
 		CPrintToChat(client, "%T", "Alert_Player_Reset", LANG_SERVER);
 }
 
-public void OnClientThink(int client)
+public void Client_PreThink(int client)
 {
 	TFGOPlayer player = TFGOPlayer(client);
 	
@@ -283,8 +283,8 @@ public void OnClientThink(int client)
 
 public void OnClientDisconnect(int client)
 {
-	SDKUnhook(client, SDKHook_PreThink, OnClientThink);
-	SDKUnhook(client, SDKHook_TraceAttack, OnClientTraceAttack);
+	SDKUnhook(client, SDKHook_PreThink, Client_PreThink);
+	SDKUnhook(client, SDKHook_TraceAttack, Client_TraceAttack);
 	SDKUnhook(client, SDKHook_OnTakeDamageAlive, OnClientTakeDamageAlive);
 	SDKUnhook(client, SDKHook_OnTakeDamageAlivePost, OnClientTakeDamageAlivePost);
 	
@@ -297,12 +297,11 @@ public void OnClientDisconnect(int client)
 	}
 }
 
-public Action OnClientTraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
+public Action Client_TraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
 {
-	if (tfgo_all_weapons_can_headshot.BoolValue && hitgroup == HITGROUP_HEAD)
+	if (tfgo_all_weapons_can_headshot.BoolValue && damagetype & DMG_BULLET)
 	{
-		// All headshots should deal critical damage
-		damagetype |= DMG_CRIT;
+		damagetype |= DMG_USE_HITLOCATIONS;
 		return Plugin_Changed;
 	}
 	
