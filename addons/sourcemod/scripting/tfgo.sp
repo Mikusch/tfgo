@@ -29,6 +29,8 @@
 #define BOMB_EXPLOSION_DAMAGE 500.0
 #define BOMB_EXPLOSION_RADIUS 800.0
 
+#define ARMOR_RATIO 0.2
+
 #define MIN_CONSECUTIVE_LOSSES 0
 #define STARTING_CONSECUTIVE_LOSSES 1
 
@@ -320,15 +322,11 @@ public Action Client_TraceAttack(int victim, int &attacker, int &inflictor, floa
 	
 	TFGOPlayer player = TFGOPlayer(victim);
 	
-	float armorPenetration = 0.2; // Armor shields 80% of all damage by default
-	
 	if (player.Armor > 0 && !(damagetype & (DMG_FALL | DMG_DROWN | DMG_POISON | DMG_RADIATION))) // Armor doesn't protect against fall or drown damage
 	{
 		// Armor only shields chest, stomach and arms; helmet expands this to the head
 		if ((hitgroup >= HITGROUP_CHEST && hitgroup <= HITGROUP_RIGHTARM) || (player.HasHelmet && hitgroup == HITGROUP_HEAD))
 		{
-			// TODO: Everything in this fucking block
-			// Working with barely correct information from an outdated wiki and decade old source code really isn't fun :/
 			int activeWeapon = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
 			if (activeWeapon != -1)
 			{
@@ -338,15 +336,20 @@ public Action Client_TraceAttack(int victim, int &attacker, int &inflictor, floa
 				{
 					Weapon weapon;
 					g_AvailableWeapons.GetArray(index, weapon, sizeof(weapon));
-					armorPenetration = weapon.armorPenetration;
+					
+					// Armor penetration >= 100% can bypass armor entirely
+					if (weapon.armorPenetration < 1.0)
+					{
+						player.Armor -= RoundFloat(damage); // Deduct absorbed damage from armor points
+						damage *= weapon.armorPenetration; // Modify damage
+						changed = true;
+					}
 				}
 			}
-			
-			// Armor penetration >= 100% bypasses armor entirely
-			if (armorPenetration < 1.0)
+			else
 			{
-				player.Armor -= RoundFloat(damage); // Deduct absorbed damage from armor points
-				damage *= armorPenetration; // Modify damage
+				player.Armor -= RoundFloat(damage);
+				damage *= ARMOR_RATIO; // Armor shields 80% of all damage from non-weapon sources by default
 				changed = true;
 			}
 		}
