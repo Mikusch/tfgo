@@ -8,7 +8,6 @@
 #include <tf_econ_data>
 #include <dhooks>
 #include <memorypatch>
-#include <tf2attributes>
 #include <tfgo>
 
 #pragma newdecls required
