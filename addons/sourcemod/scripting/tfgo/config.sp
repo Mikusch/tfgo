@@ -32,10 +32,7 @@ public void ReadWeaponConfig(KeyValues kv)
 				weapon.cost = kv.GetNum("cost", -1);
 				weapon.armorPenetration = kv.GetFloat("armor_penetration", 0.5);
 				
-				int length = g_AvailableWeapons.Length;
-				g_AvailableWeapons.Resize(length + 1);
-				g_AvailableWeapons.Set(length, weapon.defindex, 0);
-				g_AvailableWeapons.SetArray(length, weapon, sizeof(weapon));
+				g_AvailableWeapons.PushArray(weapon, sizeof(weapon));
 			}
 			while (kv.GotoNextKey(false));
 			kv.GoBack();
@@ -59,10 +56,7 @@ public void ReadGearConfig(KeyValues kv)
 				gear.id = StringToInt(id);
 				gear.cost = kv.GetNum("cost", -1);
 				
-				int length = g_AvailableGear.Length;
-				g_AvailableGear.Resize(length + 1);
-				g_AvailableGear.Set(length, gear.id, 0);
-				g_AvailableGear.SetArray(length, gear, sizeof(gear));
+				g_AvailableGear.PushArray(gear, sizeof(gear));
 			}
 			while (kv.GotoNextKey(false));
 			kv.GoBack();
@@ -95,8 +89,8 @@ void ReadKillAwardConfig(KeyValues kv)
 void Config_Init()
 {
 	if (g_WeaponClassKillAwards == null) g_WeaponClassKillAwards = new StringMap();
-	if (g_AvailableWeapons == null) g_AvailableWeapons = new ArrayList(sizeof(Weapon) + 1);
-	if (g_AvailableGear == null) g_AvailableGear = new ArrayList(sizeof(Gear) + 1);
+	if (g_AvailableWeapons == null) g_AvailableWeapons = new ArrayList(sizeof(Weapon));
+	if (g_AvailableGear == null) g_AvailableGear = new ArrayList(sizeof(Gear));
 	
 	// Read config
 	KeyValues kv = new KeyValues("Config");

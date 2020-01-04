@@ -12,13 +12,13 @@ int g_DefaultWeaponIndexes[][] =  {
 	{ 9, 22, 30758, -1, -1, 28 } // Engineer
 };
 
-int g_PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][WeaponSlot_BuilderEngie + 1];
+int g_PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClassType)][WeaponSlot_BuilderEngie + 1];
 int g_PlayerBalances[TF_MAXPLAYERS + 1];
 Menu g_ActiveBuyMenus[TF_MAXPLAYERS + 1];
-int g_PlayerArmor[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
-bool g_PlayerHelmets[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
+int g_PlayerArmor[TF_MAXPLAYERS + 1][view_as<int>(TFClassType)];
+bool g_PlayerHelmets[TF_MAXPLAYERS + 1][view_as<int>(TFClassType)];
 
-int g_TeamConsecutiveLosses[view_as<int>(TFTeam_Blue) + 1] =  { STARTING_CONSECUTIVE_LOSSES, ... };
+int g_TeamConsecutiveLosses[view_as<int>(TFTeam)] = { STARTING_CONSECUTIVE_LOSSES, ... };
 
 
 methodmap TFGOPlayer
