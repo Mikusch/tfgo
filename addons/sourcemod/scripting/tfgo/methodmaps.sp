@@ -184,6 +184,11 @@ methodmap TFGOPlayer
 		this.Armor = 0;
 		this.HasHelmet = false;
 	}
+	
+	public bool HasFullArmor()
+	{
+		return this.Armor >= TF2_GetMaxHealth(this.Client);
+	}
 }
 
 methodmap TFGOTeam

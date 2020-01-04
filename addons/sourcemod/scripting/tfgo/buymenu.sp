@@ -1,6 +1,9 @@
 #define INFO_EQUIPMENT "EQUIPMENT"
 #define INFO_EQUIPMENT_KEVLAR "0"
 #define INFO_EQUIPMENT_KEVLAR_HELMET "1"
+#define EQUIPMENT_KEVLAR_PRICE 650
+#define EQUIPMENT_KEVLAR_HELMET_PRICE 1000
+#define EQUIPMENT_HELMET_PRICE EQUIPMENT_KEVLAR_HELMET_PRICE - EQUIPMENT_KEVLAR_PRICE
 
 public bool DisplayMainBuyMenu(int client)
 {
@@ -208,13 +211,27 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 			char info[32];
 			menu.GetItem(param2, info, sizeof(info));
 			
+			TFGOPlayer player = TFGOPlayer(param1);
 			if (StrEqual(info, INFO_EQUIPMENT_KEVLAR))
 			{
-				// TODO actually purchase kevlar
+				player.Armor = TF2_GetMaxHealth(param1);
+				player.Balance -= EQUIPMENT_KEVLAR_PRICE;
 			}
 			else if (StrEqual(info, INFO_EQUIPMENT_KEVLAR_HELMET))
 			{
-				// TODO actually purchase kevlar and helmet
+				player.HasHelmet = true;
+				
+				// If player has full armor, only charge them for helmet
+				if (player.HasFullArmor())
+				{
+					player.Balance -= EQUIPMENT_HELMET_PRICE;
+				}
+				// Otherwise charge for armor as well and replenish it
+				else
+				{
+					player.Armor = TF2_GetMaxHealth(param1);
+					player.Balance -= EQUIPMENT_KEVLAR_PRICE;
+				}
 			}
 			
 			float origin[3];
@@ -240,10 +257,19 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 			menu.GetItem(param2, info, sizeof(info), style);
 			
 			TFGOPlayer player = TFGOPlayer(param1);
-			if ((StrEqual(info, INFO_EQUIPMENT_KEVLAR) && (player.Armor >= TF2_GetMaxHealth(param1) || tfgo_max_armor.IntValue < 1)))
-				return ITEMDRAW_DISABLED;
-			else if (StrEqual(info, INFO_EQUIPMENT_KEVLAR_HELMET) && (player.HasHelmet || tfgo_max_armor.IntValue < 2))
-				return ITEMDRAW_DISABLED;
+			
+			if (StrEqual(info, INFO_EQUIPMENT_KEVLAR))
+			{
+				if (player.HasFullArmor() || tfgo_max_armor.IntValue < 1 || player.Balance < EQUIPMENT_KEVLAR_PRICE) 
+					return ITEMDRAW_DISABLED;
+			}
+			else if (StrEqual(info, INFO_EQUIPMENT_KEVLAR_HELMET))
+			{
+				if (player.HasHelmet || tfgo_max_armor.IntValue < 2)
+					return ITEMDRAW_DISABLED;
+				else if (player.HasFullArmor() && player.Balance < EQUIPMENT_HELMET_PRICE || player.Balance < EQUIPMENT_KEVLAR_HELMET_PRICE)
+					return ITEMDRAW_DISABLED;
+			}
 			
 			return style;
 		}
@@ -254,13 +280,11 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 			char display[PLATFORM_MAX_PATH];
 			menu.GetItem(param2, info, sizeof(info), _, display, sizeof(display));
 			
-			Equipment equipment;
-			g_AvailableEquipment.GetArray(g_AvailableEquipment.FindValue(StringToInt(info), 0), equipment, sizeof(equipment));
-			
 			TFGOPlayer player = TFGOPlayer(param1);
-			if ((StrEqual(info, INFO_EQUIPMENT_KEVLAR) && player.Armor < TF2_GetMaxHealth(param1)) || (StrEqual(info, INFO_EQUIPMENT_KEVLAR_HELMET) && !player.HasHelmet))
-				// TODO: Reduced price when owning one part of armor
-				Format(display, sizeof(display), "%T ($%d)", display, LANG_SERVER, equipment.cost);
+			if (StrEqual(info, INFO_EQUIPMENT_KEVLAR) && !player.HasFullArmor())
+				Format(display, sizeof(display), "%T ($%d)", display, LANG_SERVER, EQUIPMENT_KEVLAR_PRICE);
+			else if (StrEqual(info, INFO_EQUIPMENT_KEVLAR_HELMET) && !player.HasHelmet)
+				Format(display, sizeof(display), "%T ($%d)", display, LANG_SERVER, player.HasFullArmor() ? EQUIPMENT_HELMET_PRICE : EQUIPMENT_KEVLAR_HELMET_PRICE);
 			else
 				Format(display, sizeof(display), "%T (%T)", display, LANG_SERVER, "BuyMenu_AlreadyCarrying", LANG_SERVER);
 			

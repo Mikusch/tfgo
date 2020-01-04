@@ -61,7 +61,6 @@ Handle g_BombBeepingTimer;
 MemoryPatch g_PickupWeaponPatch;
 StringMap g_AvailableMusicKits;
 ArrayList g_AvailableWeapons;
-ArrayList g_AvailableEquipment;
 
 // Map
 bool g_MapHasRespawnRoom;
@@ -352,6 +351,9 @@ public Action Client_TraceAttack(int victim, int &attacker, int &inflictor, floa
 				changed = true;
 			}
 		}
+		
+		// Remove helmet from player if all their armor has been stripped
+		if (player.Armor <= 0) player.HasHelmet = false;
 	}
 	
 	return changed ? Plugin_Changed : Plugin_Continue;

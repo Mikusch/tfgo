@@ -7,12 +7,6 @@ enum struct Weapon
 	float armorPenetration;
 }
 
-enum struct Equipment
-{
-	int id;
-	int cost;
-}
-
 StringMap g_WeaponClassKillAwards;
 
 public void ReadWeaponConfig(KeyValues kv)
@@ -33,30 +27,6 @@ public void ReadWeaponConfig(KeyValues kv)
 				weapon.armorPenetration = kv.GetFloat("armor_penetration", 0.5);
 				
 				g_AvailableWeapons.PushArray(weapon, sizeof(weapon));
-			}
-			while (kv.GotoNextKey(false));
-			kv.GoBack();
-		}
-		kv.GoBack();
-	}
-}
-
-public void ReadEquipmentConfig(KeyValues kv)
-{
-	if (kv.JumpToKey("Equipment", false))
-	{
-		if (kv.GotoFirstSubKey(false))
-		{
-			do
-			{
-				char id[PLATFORM_MAX_PATH];
-				kv.GetSectionName(id, sizeof(id));
-				
-				Equipment equipment;
-				equipment.id = StringToInt(id);
-				equipment.cost = kv.GetNum("cost", -1);
-				
-				g_AvailableEquipment.PushArray(equipment, sizeof(equipment));
 			}
 			while (kv.GotoNextKey(false));
 			kv.GoBack();
@@ -90,7 +60,6 @@ void Config_Init()
 {
 	if (g_WeaponClassKillAwards == null) g_WeaponClassKillAwards = new StringMap();
 	if (g_AvailableWeapons == null) g_AvailableWeapons = new ArrayList(sizeof(Weapon));
-	if (g_AvailableEquipment == null) g_AvailableEquipment = new ArrayList(sizeof(Equipment));
 	
 	// Read config
 	KeyValues kv = new KeyValues("Config");
@@ -100,7 +69,6 @@ void Config_Init()
 	{
 		ReadKillAwardConfig(kv);
 		ReadWeaponConfig(kv);
-		ReadEquipmentConfig(kv);
 		delete kv;
 	}
 }
