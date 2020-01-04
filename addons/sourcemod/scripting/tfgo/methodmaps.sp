@@ -12,11 +12,13 @@ int g_DefaultWeaponIndexes[][] =  {
 	{ 9, 22, 30758, -1, -1, 28 } // Engineer
 };
 
-int g_PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][WeaponSlot_BuilderEngie + 1];
+int g_PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClassType)][WeaponSlot_BuilderEngie + 1];
 int g_PlayerBalances[TF_MAXPLAYERS + 1];
 Menu g_ActiveBuyMenus[TF_MAXPLAYERS + 1];
+int g_PlayerArmor[TF_MAXPLAYERS + 1][view_as<int>(TFClassType)];
+bool g_PlayerHelmets[TF_MAXPLAYERS + 1][view_as<int>(TFClassType)];
 
-int g_TeamConsecutiveLosses[view_as<int>(TFTeam_Blue) + 1] =  { STARTING_CONSECUTIVE_LOSSES, ... };
+int g_TeamConsecutiveLosses[view_as<int>(TFTeam)] = { STARTING_CONSECUTIVE_LOSSES, ... };
 
 
 methodmap TFGOPlayer
@@ -48,6 +50,30 @@ methodmap TFGOPlayer
 				g_PlayerBalances[this] = 0;
 			else
 				g_PlayerBalances[this] = val;
+		}
+	}
+	
+	property int Armor
+	{
+		public get()
+		{
+			return g_PlayerArmor[this.Client][TF2_GetPlayerClass(this.Client)];
+		}
+		public set(int val)
+		{
+			g_PlayerArmor[this.Client][TF2_GetPlayerClass(this.Client)] = val;
+		}
+	}
+	
+	property bool HasHelmet
+	{
+		public get()
+		{
+			return g_PlayerHelmets[this.Client][TF2_GetPlayerClass(this.Client)];
+		}
+		public set(bool val)
+		{
+			g_PlayerHelmets[this.Client][TF2_GetPlayerClass(this.Client)] = val;
 		}
 	}
 	
@@ -154,6 +180,14 @@ methodmap TFGOPlayer
 		for (int class = 0; class < sizeof(g_PlayerLoadoutWeaponIndexes[]); class++)
 			for (int slot = 0; slot < sizeof(g_PlayerLoadoutWeaponIndexes[][]); slot++)
 				g_PlayerLoadoutWeaponIndexes[this.Client][class][slot] = -1;
+		
+		this.Armor = 0;
+		this.HasHelmet = false;
+	}
+	
+	public bool HasFullArmor()
+	{
+		return this.Armor >= TF2_GetMaxHealth(this.Client);
 	}
 }
 

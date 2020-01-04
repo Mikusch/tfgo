@@ -18,8 +18,6 @@
 
 #define TF_MAXPLAYERS 32
 
-#define HITGROUP_HEAD 1
-
 #define BOMB_MODEL "models/props_td/atom_bomb.mdl"
 #define BOMB_EXPLOSION_PARTICLE "mvm_hatch_destroy"
 #define BOMB_BEEPING_SOUND "player/cyoa_pda_beep3.wav"
@@ -30,8 +28,25 @@
 #define BOMB_EXPLOSION_DAMAGE 500.0
 #define BOMB_EXPLOSION_RADIUS 800.0
 
+#define ARMOR_RATIO 0.2
+
 #define MIN_CONSECUTIVE_LOSSES 0
 #define STARTING_CONSECUTIVE_LOSSES 1
+
+
+// Source hit group standards
+enum
+{
+	HITGROUP_GENERIC = 0, 
+	HITGROUP_HEAD, 
+	HITGROUP_CHEST, 
+	HITGROUP_STOMACH, 
+	HITGROUP_LEFTARM, 
+	HITGROUP_RIGHTARM, 
+	HITGROUP_LEFTLEG, 
+	HITGROUP_RIGHTLEG, 
+	HITGROUP_GEAR
+}
 
 
 // Timers
@@ -65,6 +80,8 @@ int g_RoundsPlayed;
 
 // ConVars
 ConVar tfgo_all_weapons_can_headshot;
+ConVar tfgo_free_armor;
+ConVar tfgo_max_armor;
 ConVar tfgo_buytime;
 ConVar tfgo_consecutive_loss_max;
 ConVar tfgo_buyzone_radius_override;
@@ -108,11 +125,12 @@ MusicKit g_CurrentMusicKit;
 #include "tfgo/native.sp"
 #include "tfgo/sdk.sp"
 
+
 public Plugin pluginInfo =  {
 	name = "Team Fortress: Global Offensive Arena", 
 	author = "Mikusch", 
 	description = "A Team Fortress 2 gamemode inspired by Counter-Strike: Global Offensive", 
-	version = PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION,
+	version = PLUGIN_VERSION..."."...PLUGIN_VERSION_REVISION, 
 	url = "https://github.com/Mikusch/tfgo"
 };
 
@@ -153,6 +171,10 @@ public void OnPluginStart()
 	
 	// Create TFGO ConVars
 	tfgo_all_weapons_can_headshot = CreateConVar("tfgo_all_weapons_can_headshot", "0", "Whether all weapons that deal bullet damage should be able to headshot");
+	tfgo_free_armor = CreateConVar("tfgo_free_armor", "2", "Determines whether kevlar (1+) and/or helmet (2+) are given automatically", _, true, 0.0, true, 2.0);
+	tfgo_max_armor = CreateConVar("tfgo_max_armor", "2", "Determines the highest level of armor allowed to be purchased. (0) None, (1) Kevlar, (2) Helmet", _, true, 0.0, true, 2.0);
+	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
+	tfgo_consecutive_loss_max = CreateConVar("tfgo_consecutive_loss_max", "4", "The maximum of consecutive losses for each team that will be kept track of", _, true, float(STARTING_CONSECUTIVE_LOSSES));
 	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, 0.0);
 	tfgo_consecutive_loss_max = CreateConVar("tfgo_consecutive_loss_max", "4", "The maximum of consecutive losses for each team that will be kept track of", _, true, 0.0);
 	tfgo_buyzone_radius_override = CreateConVar("tfgo_buyzone_radius_override", "-1", "Overrides the default calculated buyzone radius on maps with no respawn room");
@@ -251,13 +273,21 @@ stock void ResetPlayer(int client, bool notify = true)
 	player.ResetBalance();
 	
 	if (notify && IsValidClient(client))
-		CPrintToChat(client, "%T", "Alert_Player_Reset", LANG_SERVER);
+		CPrintToChat(client, "%T", "Info_Player_Reset", LANG_SERVER);
 }
 
 public void Client_PreThink(int client)
 {
+	TFGOPlayer player = TFGOPlayer(client);
+	
 	SetHudTextParams(0.05, 0.325, 0.1, 162, 255, 71, 255, _, 0.0, 0.0, 0.0);
-	ShowHudText(client, -1, "$%d", TFGOPlayer(client).Balance);
+	ShowHudText(client, -1, "$%d", player.Balance);
+	
+	if (player.Armor > 0)
+	{
+		SetHudTextParams(-1.0, 0.85, 0.1, 255, 255, 255, 255, _, 0.0, 0.0, 0.0);
+		ShowHudText(client, -1, "Armor: %d", player.Armor);
+	}
 	
 	if (!g_MapHasRespawnRoom && g_IsBuyTimeActive)
 		DisplayMenuInDynamicBuyZone(client);
@@ -279,13 +309,54 @@ public void OnClientDisconnect(int client)
 
 public Action Client_TraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
 {
-	if (tfgo_all_weapons_can_headshot.BoolValue && damagetype & DMG_BULLET)
+	bool changed;
+	
+	// Allow every weapon with damagetype DMG_BULLET to deal crits on headshot
+	if (tfgo_all_weapons_can_headshot.BoolValue && damagetype & (DMG_BULLET | DMG_BUCKSHOT))
 	{
 		damagetype |= DMG_USE_HITLOCATIONS;
-		return Plugin_Changed;
+		changed = true;
 	}
 	
-	return Plugin_Continue;
+	TFGOPlayer player = TFGOPlayer(victim);
+	
+	if (player.Armor > 0 && !(damagetype & (DMG_FALL | DMG_DROWN | DMG_POISON | DMG_RADIATION))) // Armor doesn't protect against fall or drown damage
+	{
+		// Armor only shields chest, stomach and arms; helmet expands this to the head
+		if ((hitgroup >= HITGROUP_CHEST && hitgroup <= HITGROUP_RIGHTARM) || (player.HasHelmet && hitgroup == HITGROUP_HEAD))
+		{
+			int activeWeapon = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
+			if (activeWeapon != -1)
+			{
+				int defindex = GetEntProp(activeWeapon, Prop_Send, "m_iItemDefinitionIndex");
+				int index = g_AvailableWeapons.FindValue(defindex, 0);
+				if (index != -1)
+				{
+					Weapon weapon;
+					g_AvailableWeapons.GetArray(index, weapon, sizeof(weapon));
+					
+					// Armor penetration >= 100% can bypass armor entirely
+					if (weapon.armorPenetration < 1.0)
+					{
+						player.Armor -= RoundFloat(damage); // Deduct absorbed damage from armor points
+						damage *= weapon.armorPenetration; // Modify damage
+						changed = true;
+					}
+				}
+			}
+			else
+			{
+				player.Armor -= RoundFloat(damage);
+				damage *= ARMOR_RATIO; // Armor shields 80% of all damage from non-weapon sources by default
+				changed = true;
+			}
+		}
+		
+		// Remove helmet from player if all their armor has been stripped
+		if (player.Armor <= 0) player.HasHelmet = false;
+	}
+	
+	return changed ? Plugin_Changed : Plugin_Continue;
 }
 
 public void ChooseRandomMusicKit()
@@ -477,6 +548,9 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 	{
 		TFGOPlayer player = TFGOPlayer(client);
 		player.ApplyLoadout();
+		
+		if (tfgo_free_armor.IntValue >= 1) player.Armor = TF2_GetMaxHealth(client);
+		if (tfgo_free_armor.IntValue >= 2) player.HasHelmet = true;
 		
 		if (player.ActiveBuyMenu != null)
 			player.ActiveBuyMenu.Cancel();

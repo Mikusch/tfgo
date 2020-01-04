@@ -4,6 +4,7 @@ enum struct Weapon
 {
 	int defindex;
 	int cost;
+	float armorPenetration;
 }
 
 StringMap g_WeaponClassKillAwards;
@@ -23,11 +24,9 @@ public void ReadWeaponConfig(KeyValues kv)
 				Weapon weapon;
 				weapon.defindex = StringToInt(defindex);
 				weapon.cost = kv.GetNum("cost", -1);
+				weapon.armorPenetration = kv.GetFloat("armor_penetration", 0.5);
 				
-				int length = g_AvailableWeapons.Length;
-				g_AvailableWeapons.Resize(length + 1);
-				g_AvailableWeapons.Set(length, weapon.defindex, 0);
-				g_AvailableWeapons.SetArray(length, weapon, sizeof(weapon));
+				g_AvailableWeapons.PushArray(weapon, sizeof(weapon));
 			}
 			while (kv.GotoNextKey(false));
 			kv.GoBack();
@@ -59,14 +58,8 @@ void ReadKillAwardConfig(KeyValues kv)
 
 void Config_Init()
 {
-	if (g_WeaponClassKillAwards == null)
-		g_WeaponClassKillAwards = new StringMap();
-	
-	if (g_AvailableWeapons == null)
-	{
-		Weapon weapon;
-		g_AvailableWeapons = new ArrayList(1 + sizeof(weapon));
-	}
+	if (g_WeaponClassKillAwards == null) g_WeaponClassKillAwards = new StringMap();
+	if (g_AvailableWeapons == null) g_AvailableWeapons = new ArrayList(sizeof(Weapon));
 	
 	// Read config
 	KeyValues kv = new KeyValues("Config");
