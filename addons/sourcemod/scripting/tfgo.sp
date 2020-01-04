@@ -61,7 +61,7 @@ Handle g_BombBeepingTimer;
 MemoryPatch g_PickupWeaponPatch;
 StringMap g_AvailableMusicKits;
 ArrayList g_AvailableWeapons;
-ArrayList g_AvailableGear;
+ArrayList g_AvailableEquipment;
 
 // Map
 bool g_MapHasRespawnRoom;
@@ -274,7 +274,7 @@ stock void ResetPlayer(int client, bool notify = true)
 	player.ResetBalance();
 	
 	if (notify && IsValidClient(client))
-		CPrintToChat(client, "%T", "Alert_Player_Reset", LANG_SERVER);
+		CPrintToChat(client, "%T", "Info_Player_Reset", LANG_SERVER);
 }
 
 public void Client_PreThink(int client)
@@ -313,7 +313,7 @@ public Action Client_TraceAttack(int victim, int &attacker, int &inflictor, floa
 	bool changed;
 	
 	// Allow every weapon with damagetype DMG_BULLET to deal crits on headshot
-	if (tfgo_all_weapons_can_headshot.BoolValue && damagetype & DMG_BULLET)
+	if (tfgo_all_weapons_can_headshot.BoolValue && damagetype & (DMG_BULLET | DMG_BUCKSHOT))
 	{
 		damagetype |= DMG_USE_HITLOCATIONS;
 		changed = true;

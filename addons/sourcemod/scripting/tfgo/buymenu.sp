@@ -1,11 +1,11 @@
-#define INFO_GEAR "GEAR"
-#define INFO_GEAR_KEVLAR "0"
-#define INFO_GEAR_KEVLAR_HELMET "1"
+#define INFO_EQUIPMENT "EQUIPMENT"
+#define INFO_EQUIPMENT_KEVLAR "0"
+#define INFO_EQUIPMENT_KEVLAR_HELMET "1"
 
 public bool DisplayMainBuyMenu(int client)
 {
 	Menu menu = new Menu(MenuHandler_MainBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DisplayItem);
-	menu.SetTitle("%T", "BuyMenu_Title", LANG_SERVER);
+	menu.SetTitle("%T\n%T", "BuyMenu_Title", LANG_SERVER, "BuyMenu_SubTitle_Slot", LANG_SERVER);
 	menu.ExitButton = true;
 	
 	switch (TF2_GetPlayerClass(client))
@@ -34,7 +34,7 @@ public bool DisplayMainBuyMenu(int client)
 		}
 	}
 	
-	menu.AddItem(INFO_GEAR, "BuyMenu_Gear");
+	menu.AddItem(INFO_EQUIPMENT, "BuyMenu_Equipment");
 	
 	return menu.Display(client, MENU_TIME_FOREVER);
 }
@@ -50,9 +50,9 @@ public int MenuHandler_MainBuyMenu(Menu menu, MenuAction action, int param1, int
 			char info[32];
 			menu.GetItem(param2, info, sizeof(info));
 			
-			if (StrEqual(info, INFO_GEAR))
+			if (StrEqual(info, INFO_EQUIPMENT))
 			{
-				DisplayGearMenu(param1);
+				DisplayEquipmentMenu(param1);
 			}
 			else
 			{
@@ -92,7 +92,7 @@ public int MenuHandler_MainBuyMenu(Menu menu, MenuAction action, int param1, int
 public bool DisplayWeaponBuyMenu(int client, ArrayList slots)
 {
 	Menu menu = new Menu(MenuHandler_WeaponBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DrawItem | MenuAction_DisplayItem);
-	menu.SetTitle("%T", "BuyMenu_Title", LANG_SERVER);
+	menu.SetTitle("%T\n%T", "BuyMenu_Title", LANG_SERVER, "BuyMenu_SubTitle_Weapon", LANG_SERVER);
 	menu.ExitButton = true;
 	menu.ExitBackButton = true;
 	
@@ -184,35 +184,35 @@ public int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, i
 	return 0;
 }
 
-public int DisplayGearMenu(int client)
+public int DisplayEquipmentMenu(int client)
 {
-	Menu menu = new Menu(MenuHandler_GearBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DrawItem | MenuAction_DisplayItem);
-	menu.SetTitle("%T", "BuyMenu_Title", LANG_SERVER, TFGOPlayer(client).Balance);
+	Menu menu = new Menu(MenuHandler_EquipmentBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DrawItem | MenuAction_DisplayItem);
+	menu.SetTitle("%T\n%T", "BuyMenu_Title", LANG_SERVER, "BuyMenu_SubTitle_Equipment", LANG_SERVER);
 	menu.ExitButton = true;
 	menu.ExitBackButton = true;
 	
-	menu.AddItem(INFO_GEAR_KEVLAR, "BuyMenu_Gear_Kevlar");
-	menu.AddItem(INFO_GEAR_KEVLAR_HELMET, "BuyMenu_Gear_Kevlar_Helmet");
+	menu.AddItem(INFO_EQUIPMENT_KEVLAR, "BuyMenu_Equipment_Kevlar");
+	menu.AddItem(INFO_EQUIPMENT_KEVLAR_HELMET, "BuyMenu_Equipment_Kevlar_Helmet");
 	
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int MenuHandler_GearBuyMenu(Menu menu, MenuAction action, int param1, int param2)
+public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1, int param2)
 {
 	switch (action)
 	{
-		case MenuAction_Display:TFGOPlayer(param1).ActiveBuyMenu = menu;
+		case MenuAction_Display: TFGOPlayer(param1).ActiveBuyMenu = menu;
 		
 		case MenuAction_Select:
 		{
 			char info[32];
 			menu.GetItem(param2, info, sizeof(info));
 			
-			if (StrEqual(info, INFO_GEAR_KEVLAR))
+			if (StrEqual(info, INFO_EQUIPMENT_KEVLAR))
 			{
 				// TODO actually purchase kevlar
 			}
-			else if (StrEqual(info, INFO_GEAR_KEVLAR_HELMET))
+			else if (StrEqual(info, INFO_EQUIPMENT_KEVLAR_HELMET))
 			{
 				// TODO actually purchase kevlar and helmet
 			}
@@ -231,18 +231,19 @@ public int MenuHandler_GearBuyMenu(Menu menu, MenuAction action, int param1, int
 				DisplayMainBuyMenu(param1);
 		}
 		
-		case MenuAction_End:delete menu;
+		case MenuAction_End: delete menu;
 		
 		case MenuAction_DrawItem:
 		{
+			// TODO tfgo_max_armor only changes itemdraw here
 			TFGOPlayer player = TFGOPlayer(param1);
 			
 			char info[32];
 			menu.GetItem(param2, info, sizeof(info));
 			
-			if (StrEqual(info, INFO_GEAR_KEVLAR))
+			if (StrEqual(info, INFO_EQUIPMENT_KEVLAR))
 				return player.Armor >= TF2_GetMaxHealth(param1) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT;
-			else if (StrEqual(info, INFO_GEAR_KEVLAR_HELMET))
+			else if (StrEqual(info, INFO_EQUIPMENT_KEVLAR_HELMET))
 				return player.HasHelmet ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT;
 			
 			return ITEMDRAW_DEFAULT;
@@ -250,13 +251,15 @@ public int MenuHandler_GearBuyMenu(Menu menu, MenuAction action, int param1, int
 		
 		case MenuAction_DisplayItem:
 		{
+			// TODO always calculate current price regardless of tfgo_max_armor but do not show "In current inventory" for FREE armor
 			char info[32];
 			char display[PLATFORM_MAX_PATH];
 			menu.GetItem(param2, info, sizeof(info), _, display, sizeof(display));
 			
-			Gear gear;
-			g_AvailableGear.GetArray(g_AvailableGear.FindValue(StringToInt(info), 0), gear, sizeof(gear));
+			Equipment equipment;
+			g_AvailableEquipment.GetArray(g_AvailableEquipment.FindValue(StringToInt(info), 0), equipment, sizeof(equipment));
 			
+			Format(display, sizeof(display), "%T", display, LANG_SERVER);
 			return RedrawMenuItem(display);
 		}
 	}

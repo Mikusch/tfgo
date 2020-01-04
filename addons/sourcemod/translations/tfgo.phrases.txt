@@ -119,7 +119,9 @@
 	{
 		"en"	"The bomb has been planted.\n%d seconds to detonation."
 	}
-	"Alert_Player_Reset"
+	
+	// Info
+	"Info_Player_Reset"
 	{
 		"en"	"{orange}Your weapons and cash have been reset."
 	}
@@ -127,7 +129,19 @@
 	// Buy Menu
 	"BuyMenu_Title"
 	{
-		"en"	"Welcome to the TF:GO buy menu!\nSelect a weapon to purchase it."
+		"en"	"BUY MENU"
+	}
+	"BuyMenu_SubTitle_Slot"
+	{
+		"en"	"Select Slot"
+	}
+	"BuyMenu_SubTitle_Weapon"
+	{
+		"en"	"Select Weapon"
+	}
+	"BuyMenu_SubTitle_Equipment"
+	{
+		"en"	"Select Equipment"
 	}
 	"BuyMenu_Primaries"
 	{
@@ -153,17 +167,25 @@
 	{
 		"en"	"In current inventory"
 	}
-	"BuyMenu_Gear"
+	"BuyMenu_Equipment"
 	{
-		"en"	"Gear"
+		"en"	"Equipment"
 	}
-	"BuyMenu_Gear_Kevlar"
+	"BuyMenu_Equipment_Kevlar"
 	{
 		"en"	"Kevlar Vest"
 	}
-	"BuyMenu_Gear_Kevlar_Helmet"
+	"BuyMenu_Equipment_Kevlar_Helmet"
 	{
 		"en"	"Kevlar + Helmet"
+	}
+	"BuyMenu_Already_Have_Kevlar_Bought_Helmet"
+	{
+		"en"	"You already have Kevlar. Helmet purchased."
+	}
+	"BuyMenu_Already_Have_Helmet_Bought_Kevlar"
+	{
+		"en"	"You already have Helmet. Replenished Kevlar."
 	}
 	"BuyMenu_NotInBuyZone"
 	{
