@@ -55,7 +55,7 @@ public int MenuHandler_MainBuyMenu(Menu menu, MenuAction action, int param1, int
 			
 			if (StrEqual(info, INFO_EQUIPMENT))
 			{
-				DisplayEquipmentMenu(param1);
+				DisplayEquipmentBuyMenu(param1);
 			}
 			else
 			{
@@ -187,7 +187,7 @@ public int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, i
 	return 0;
 }
 
-public int DisplayEquipmentMenu(int client)
+public int DisplayEquipmentBuyMenu(int client)
 {
 	Menu menu = new Menu(MenuHandler_EquipmentBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DrawItem | MenuAction_DisplayItem);
 	menu.SetTitle("%T\n%T", "BuyMenu_Title", LANG_SERVER, "BuyMenu_SubTitle_Equipment", LANG_SERVER);
@@ -219,18 +219,27 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 			}
 			else if (StrEqual(info, INFO_EQUIPMENT_KEVLAR_HELMET))
 			{
-				player.HasHelmet = true;
-				
 				// If player has full armor, only charge them for helmet
 				if (player.HasFullArmor())
 				{
+					player.HasHelmet = true;
 					player.Balance -= EQUIPMENT_HELMET_PRICE;
+					PrintHintText(param1, "%T", "BuyMenu_Already_Have_Kevlar_Bought_Helmet", LANG_SERVER);
 				}
 				// Otherwise charge for armor as well and replenish it
 				else
 				{
 					player.Armor = TF2_GetMaxHealth(param1);
-					player.Balance -= EQUIPMENT_KEVLAR_PRICE;
+					if (player.HasHelmet)
+					{
+						player.Balance -= EQUIPMENT_KEVLAR_PRICE;
+						PrintHintText(param1, "%T", "BuyMenu_Already_Have_Helmet_Bought_Kevlar", LANG_SERVER);
+					}
+					else
+					{
+						player.HasHelmet = true;
+						player.Balance -= EQUIPMENT_KEVLAR_HELMET_PRICE;
+					}
 				}
 			}
 			
