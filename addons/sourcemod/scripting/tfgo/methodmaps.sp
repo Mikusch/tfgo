@@ -180,6 +180,9 @@ methodmap TFGOPlayer
 		for (int class = 0; class < sizeof(g_PlayerLoadoutWeaponIndexes[]); class++)
 			for (int slot = 0; slot < sizeof(g_PlayerLoadoutWeaponIndexes[][]); slot++)
 				g_PlayerLoadoutWeaponIndexes[this.Client][class][slot] = -1;
+		
+		this.Armor = 0;
+		this.HasHelmet = false;
 	}
 }
 

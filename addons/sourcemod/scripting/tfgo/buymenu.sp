@@ -235,23 +235,21 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 		
 		case MenuAction_DrawItem:
 		{
-			// TODO tfgo_max_armor only changes itemdraw here
-			TFGOPlayer player = TFGOPlayer(param1);
-			
+			int style;
 			char info[32];
-			menu.GetItem(param2, info, sizeof(info));
+			menu.GetItem(param2, info, sizeof(info), style);
 			
-			if (StrEqual(info, INFO_EQUIPMENT_KEVLAR))
-				return player.Armor >= TF2_GetMaxHealth(param1) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT;
-			else if (StrEqual(info, INFO_EQUIPMENT_KEVLAR_HELMET))
-				return player.HasHelmet ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT;
+			TFGOPlayer player = TFGOPlayer(param1);
+			if ((StrEqual(info, INFO_EQUIPMENT_KEVLAR) && (player.Armor >= TF2_GetMaxHealth(param1) || tfgo_max_armor.IntValue < 1)))
+				return ITEMDRAW_DISABLED;
+			else if (StrEqual(info, INFO_EQUIPMENT_KEVLAR_HELMET) && (player.HasHelmet || tfgo_max_armor.IntValue < 2))
+				return ITEMDRAW_DISABLED;
 			
-			return ITEMDRAW_DEFAULT;
+			return style;
 		}
 		
 		case MenuAction_DisplayItem:
 		{
-			// TODO always calculate current price regardless of tfgo_max_armor but do not show "In current inventory" for FREE armor
 			char info[32];
 			char display[PLATFORM_MAX_PATH];
 			menu.GetItem(param2, info, sizeof(info), _, display, sizeof(display));
@@ -259,7 +257,13 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 			Equipment equipment;
 			g_AvailableEquipment.GetArray(g_AvailableEquipment.FindValue(StringToInt(info), 0), equipment, sizeof(equipment));
 			
-			Format(display, sizeof(display), "%T", display, LANG_SERVER);
+			TFGOPlayer player = TFGOPlayer(param1);
+			if ((StrEqual(info, INFO_EQUIPMENT_KEVLAR) && player.Armor < TF2_GetMaxHealth(param1)) || (StrEqual(info, INFO_EQUIPMENT_KEVLAR_HELMET) && !player.HasHelmet))
+				// TODO: Reduced price when owning one part of armor
+				Format(display, sizeof(display), "%T ($%d)", display, LANG_SERVER, equipment.cost);
+			else
+				Format(display, sizeof(display), "%T (%T)", display, LANG_SERVER, "BuyMenu_AlreadyCarrying", LANG_SERVER);
+			
 			return RedrawMenuItem(display);
 		}
 	}
