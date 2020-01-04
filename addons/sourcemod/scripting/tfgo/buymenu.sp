@@ -276,7 +276,9 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 			{
 				if (player.HasHelmet || tfgo_max_armor.IntValue < 2)
 					return ITEMDRAW_DISABLED;
-				else if (player.HasFullArmor() && player.Balance < EQUIPMENT_HELMET_PRICE || player.Balance < EQUIPMENT_KEVLAR_HELMET_PRICE)
+				else if (player.HasFullArmor() && player.Balance < EQUIPMENT_HELMET_PRICE)
+					return ITEMDRAW_DISABLED;
+				else if (!player.HasFullArmor() && player.Balance < EQUIPMENT_KEVLAR_HELMET_PRICE)
 					return ITEMDRAW_DISABLED;
 			}
 			
