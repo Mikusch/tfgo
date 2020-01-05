@@ -158,7 +158,7 @@ methodmap TFGOPlayer
 		for (int slot = sizeof(g_PlayerLoadoutWeaponIndexes[][]) - 1; slot >= 0; slot--)
 		{
 			int defindex = this.GetWeaponFromLoadout(class, slot);
-			if (defindex != TF2_GetItemInSlot(this.Client, slot) && defindex > -1)
+			if (defindex > -1)
 				TF2_CreateAndEquipWeapon(this.Client, defindex, TFQual_Unique, GetRandomInt(1, 100));
 		}
 	}
