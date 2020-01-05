@@ -374,13 +374,18 @@ public void OnEntityCreated(int entity, const char[] classname)
 		SDKHook(entity, SDKHook_StartTouch, Hook_OnStartTouchBuyZone);
 		SDKHook(entity, SDKHook_EndTouch, Hook_OnEndTouchBuyZone);
 	}
+	else if (StrEqual(classname, "game_end"))
+	{
+		// Superceding SetWinningTeam causes some maps to force a map change on capture
+		AcceptEntityInput(entity, "Kill");
+	}
 	else if (StrEqual(classname, "tf_logic_arena"))
 	{
-		SDKHook(entity, SDKHook_SpawnPost, OnArenaLogicSpawned);
+		SDKHook(entity, SDKHook_Spawn, OnArenaLogicSpawned);
 	}
 	else if (StrEqual(classname, "trigger_capture_area"))
 	{
-		SDKHook(entity, SDKHook_SpawnPost, OnCaptureAreaSpawned);
+		SDKHook(entity, SDKHook_Spawn, OnCaptureAreaSpawned);
 	}
 }
 
@@ -643,28 +648,7 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 		int capper = cappers.Get(i);
 		TFGOPlayer(capper).AddToBalance(tfgo_cash_player_bomb_planted.IntValue, "%T", "Player_Cash_Award_Bomb_Planted", LANG_SERVER);
 	}
-	
-	// Superceding SetWinningTeam causes arena mode to force a map change on capture
-	int game_end;
-	while ((game_end = FindEntityByClassname(game_end, "game_end")) > -1)
-		AcceptEntityInput(game_end, "Kill");
-	
-	// Superceding SetWinningTeam causes arena mode to create a game_text entity announcing the winning team
-	int game_text;
-	while ((game_text = FindEntityByClassname(game_text, "game_text")) > -1)
-	{
-		char entityMessage[PLATFORM_MAX_PATH];
-		GetEntPropString(game_text, Prop_Data, "m_iszMessage", entityMessage, sizeof(entityMessage));
-		
-		char message[PLATFORM_MAX_PATH];
-		GetTeamName(view_as<int>(team), message, sizeof(message));
-		StrCat(message, sizeof(message), " Wins the Game!");
-		
-		// To not mess with any other game_text entities
-		if (StrEqual(entityMessage, message))
-			AcceptEntityInput(game_text, "Kill");
-	}
-	
+
 	// Set arena round time to bomb detonation time
 	int team_round_timer = FindEntityByClassname(-1, "team_round_timer");
 	if (team_round_timer > -1)
