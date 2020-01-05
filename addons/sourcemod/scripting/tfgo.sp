@@ -175,8 +175,6 @@ public void OnPluginStart()
 	tfgo_max_armor = CreateConVar("tfgo_max_armor", "2", "Determines the highest level of armor allowed to be purchased. (0) None, (1) Kevlar, (2) Helmet", _, true, 0.0, true, 2.0);
 	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
 	tfgo_consecutive_loss_max = CreateConVar("tfgo_consecutive_loss_max", "4", "The maximum of consecutive losses for each team that will be kept track of", _, true, float(STARTING_CONSECUTIVE_LOSSES));
-	tfgo_buytime = CreateConVar("tfgo_buytime", "45", "How many seconds after spawning players can buy items for", _, true, 0.0);
-	tfgo_consecutive_loss_max = CreateConVar("tfgo_consecutive_loss_max", "4", "The maximum of consecutive losses for each team that will be kept track of", _, true, 0.0);
 	tfgo_buyzone_radius_override = CreateConVar("tfgo_buyzone_radius_override", "-1", "Overrides the default calculated buyzone radius on maps with no respawn room");
 	tfgo_bombtimer = CreateConVar("tfgo_bombtimer", "45", "How long from when the bomb is planted until it blows", _, true, 10.0);
 	tfgo_maxrounds = CreateConVar("tfgo_maxrounds", "15", "Maximum number of rounds to play before a team scramble occurs", _, true, 0.0);
@@ -564,10 +562,8 @@ public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool do
 {
 	ResetRoundState();
 	
-	g_IsBuyTimeActive = true;
 	g_IsBonusRoundActive = false;
 	g_IsMainRoundActive = false;
-	g_BuyTimeTimer = CreateTimer(tfgo_buytime.FloatValue, OnBuyTimeExpire, _, TIMER_FLAG_NO_MAPCHANGE);
 	
 	g_CurrentMusicKit.StopMusicForAll(Music_WonRound);
 	g_CurrentMusicKit.StopMusicForAll(Music_LostRound);
@@ -603,6 +599,8 @@ public Action OnBuyTimeExpire(Handle timer)
 public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
 	g_IsMainRoundActive = true;
+	g_IsBuyTimeActive = true;
+	g_BuyTimeTimer = CreateTimer(tfgo_buytime.FloatValue, OnBuyTimeExpire, _, TIMER_FLAG_NO_MAPCHANGE);
 	g_TenSecondRoundTimer = CreateTimer(tf_arena_round_time.FloatValue - 10.0, PlayTenSecondRoundWarning, _, TIMER_FLAG_NO_MAPCHANGE);
 }
 
