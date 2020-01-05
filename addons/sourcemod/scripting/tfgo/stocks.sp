@@ -62,17 +62,6 @@ stock void TF2_Explode(int attacker = -1, float origin[3], float damage, float r
 		SDKHooks_TakeDamage(bomb, 0, attacker, 9999.0);
 }
 
-stock void TF2_RemoveItemInSlot(int client, int slot)
-{
-	TF2_RemoveWeaponSlot(client, slot);
-	int wearable = SDK_GetEquippedWearableForLoadoutSlot(client, slot);
-	if (wearable > MaxClients)
-	{
-		SDK_RemoveWearable(client, wearable);
-		AcceptEntityInput(wearable, "Kill");
-	}
-}
-
 stock int TF2_GetItemInSlot(int client, int slot)
 {
 	int weapon = GetPlayerWeaponSlot(client, slot);

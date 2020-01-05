@@ -89,6 +89,11 @@
 				"linux"		"432"
 				"windows"	"431"
 			}
+			"CTFPlayer::GiveNamedItem"
+			{
+				"windows"	"475"
+				"linux"		"482"
+			}
 		}
 		"Addresses"
 		{

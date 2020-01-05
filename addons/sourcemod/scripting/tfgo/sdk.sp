@@ -2,6 +2,7 @@ static Handle g_DHookPickupWeaponFromOther;
 static Handle g_DHookSetWinningTeam;
 static Handle g_DHookHandleSwitchTeams;
 static Handle g_DHookHandleScrambleTeams;
+static Handle g_DHookGiveNamedItem;
 static Handle g_SDKGetEquippedWearableForLoadoutSlot;
 static Handle g_SDKGetMaxAmmo;
 static Handle g_SDKCreateDroppedWeapon;
@@ -35,6 +36,20 @@ void SDK_Init()
 	else
 	{
 		LogMessage("Failed to create hook: CTFGameRules::SetWinningTeam");
+	}
+	
+	offset = gameData.GetOffset("CTFPlayer::GiveNamedItem");
+	g_DHookGiveNamedItem = DHookCreate(offset, HookType_Entity, ReturnType_CBaseEntity, ThisPointer_CBaseEntity);
+	if (g_DHookGiveNamedItem != null)
+	{
+		DHookAddParam(g_DHookGiveNamedItem, HookParamType_CharPtr);
+		DHookAddParam(g_DHookGiveNamedItem, HookParamType_Int);
+		DHookAddParam(g_DHookGiveNamedItem, HookParamType_ObjectPtr);
+		DHookAddParam(g_DHookGiveNamedItem, HookParamType_Bool);
+	}
+	else
+	{
+		LogMessage("Failed to create hook: CTFPlayer::GiveNamedItem");
 	}
 	
 	offset = gameData.GetOffset("CTFGameRules::HandleSwitchTeams");
@@ -124,11 +139,16 @@ void SDK_Init()
 	delete gameData;
 }
 
-void SDK_HookGamerules()
+void HookGamerules()
 {
 	DHookGamerules(g_DHookSetWinningTeam, false, _, Hook_SetWinningTeam);
 	DHookGamerules(g_DHookHandleSwitchTeams, false, _, Hook_HandleSwitchTeams);
 	DHookGamerules(g_DHookHandleScrambleTeams, false, _, Hook_HandleScrambleTeams);
+}
+
+void HookClientEntity(int client)
+{
+	DHookEntity(g_DHookGiveNamedItem, false, client, _, Hook_GiveNamedItem);
 }
 
 public MRESReturn Hook_PickupWeaponFromOther(int client, Handle returnVal, Handle params)
@@ -221,6 +241,21 @@ public MRESReturn Hook_HandleScrambleTeams()
 	alert.Fire();
 	PrintToChatAll("%T", "TF_TeamsScrambled", LANG_SERVER);
 	PlayTeamScrambleAlert();
+}
+
+public MRESReturn Hook_GiveNamedItem(int client, Handle returnVal, Handle params)
+{
+	int defIndex = DHookGetParamObjectPtrVar(params, 3, 4, ObjectValueType_Int) & 0xFFFF;
+	int slot = TF2_GetSlotInItem(defIndex, TF2_GetPlayerClass(client));
+	TFClassType class = TF2_GetPlayerClass(client);
+	
+	if (slot <= WeaponSlot_BuilderEngie && TFGOPlayer(client).GetWeaponFromLoadout(class, slot) != defIndex)
+	{
+		DHookSetReturn(returnVal, 0);
+		return MRES_Supercede;
+	}
+	
+	return MRES_Ignored;
 }
 
 stock void SDK_SetSwitchTeams(bool shouldSwitch)

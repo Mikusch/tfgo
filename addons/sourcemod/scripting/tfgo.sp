@@ -229,7 +229,7 @@ public void OnMapStart()
 	// Allow players to buy stuff on the first round
 	g_IsBuyTimeActive = true;
 	
-	SDK_HookGamerules();
+	HookGamerules();
 	ResetRoundState();
 	
 	PrecacheSounds();
@@ -263,6 +263,7 @@ public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_PreThink, Client_PreThink);
 	SDKHook(client, SDKHook_TraceAttack, Client_TraceAttack);
+	HookClientEntity(client);
 }
 
 stock void ResetPlayer(int client, bool notify = true)
