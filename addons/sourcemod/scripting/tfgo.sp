@@ -46,7 +46,7 @@ enum
 	HITGROUP_LEFTLEG, 
 	HITGROUP_RIGHTLEG, 
 	HITGROUP_GEAR
-}
+};
 
 // TF2 arena win reasons
 enum
@@ -55,7 +55,7 @@ enum
 	WinReason_Elimination, 
 	WinReason_AllPointsCaptured = 4, 
 	WinReason_Stalemate
-}
+};
 
 // TF2 weapon loadout slots
 enum
