@@ -166,16 +166,16 @@ public MRESReturn Hook_SetWinningTeam(Handle params)
 	int winReason = DHookGetParam(params, 2);
 	
 	// Bomb is detonated but game wants to award elimination win on multi-CP maps, rewrite it to make it look like a capture
-	if (g_IsBombDetonated && winReason == Winreason_Elimination)
+	if (g_IsBombDetonated && winReason == WinReason_Elimination)
 	{
-		DHookSetParam(params, 2, Winreason_PointCaptured);
+		DHookSetParam(params, 2, WinReason_PointCaptured);
 		return MRES_ChangedHandled;
 	}
 	
 	// Bomb is defused but game wants to award elimination win on multi-CP maps, rewrite it to make it look like a capture
-	else if (g_IsBombDefused && team != g_BombPlantingTeam && winReason == Winreason_Elimination)
+	else if (g_IsBombDefused && team != g_BombPlantingTeam && winReason == WinReason_Elimination)
 	{
-		DHookSetParam(params, 2, Winreason_PointCaptured);
+		DHookSetParam(params, 2, WinReason_PointCaptured);
 		return MRES_ChangedHandled;
 	}
 	// Sometimes the game is stupid and gives defuse win to the planting team, this should prevent that
@@ -185,19 +185,19 @@ public MRESReturn Hook_SetWinningTeam(Handle params)
 	}
 	
 	// If this is a capture win from planting the bomb we supercede it, otherwise ignore to grant the defusal win
-	else if (g_IsBombPlanted && team == g_BombPlantingTeam && (winReason == Winreason_PointCaptured || winReason == Winreason_AllPointsCaptured))
+	else if (g_IsBombPlanted && team == g_BombPlantingTeam && (winReason == WinReason_PointCaptured || winReason == WinReason_AllPointsCaptured))
 	{
 		return MRES_Supercede;
 	}
 	
 	// Planting team was killed while the bomb was active, do not give elimination win to enemy team
-	else if (g_IsBombPlanted && team != g_BombPlantingTeam && winReason == Winreason_Elimination)
+	else if (g_IsBombPlanted && team != g_BombPlantingTeam && winReason == WinReason_Elimination)
 	{
 		return MRES_Supercede;
 	}
 	
 	// Stalemate
-	else if (team == TFTeam_Unassigned && winReason == Winreason_Stalemate)
+	else if (team == TFTeam_Unassigned && winReason == WinReason_Stalemate)
 	{
 		TFGOTeam red = TFGOTeam(TFTeam_Red);
 		TFGOTeam blue = TFGOTeam(TFTeam_Blue);

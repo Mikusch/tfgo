@@ -34,7 +34,7 @@
 #define STARTING_CONSECUTIVE_LOSSES 1
 
 
-// Source hit group standards
+// Source hit group standards (from shareddefs.h)
 enum
 {
 	HITGROUP_GENERIC = 0, 
@@ -47,6 +47,55 @@ enum
 	HITGROUP_RIGHTLEG, 
 	HITGROUP_GEAR
 }
+
+// TF2 arena win reasons
+enum
+{
+	WinReason_PointCaptured = 1, 
+	WinReason_Elimination, 
+	WinReason_AllPointsCaptured = 4, 
+	WinReason_Stalemate
+}
+
+// TF2 weapon loadout slots
+enum
+{
+	WeaponSlot_Primary = 0, 
+	WeaponSlot_Secondary, 
+	WeaponSlot_Melee, 
+	WeaponSlot_PDABuild, 
+	WeaponSlot_PDADisguise = 3, 
+	WeaponSlot_PDADestroy, 
+	WeaponSlot_InvisWatch = 4, 
+	WeaponSlot_BuilderEngie, 
+	WeaponSlot_Unknown1, 
+	WeaponSlot_Head, 
+	WeaponSlot_Misc1, 
+	WeaponSlot_Action, 
+	WeaponSlot_Misc2
+};
+
+// TF2 item qualities
+enum TFQuality
+{
+	TFQual_None = -1, 
+	TFQual_Normal = 0, 
+	TFQual_Genuine, 
+	TFQual_Rarity2, 
+	TFQual_Vintage, 
+	TFQual_Rarity3, 
+	TFQual_Unusual, 
+	TFQual_Unique, 
+	TFQual_Community, 
+	TFQual_Developer, 
+	TFQual_Selfmade, 
+	TFQual_Customized, 
+	TFQual_Strange, 
+	TFQual_Completed, 
+	TFQual_Haunted, 
+	TFQual_Collectors, 
+	TFQual_Decorated
+};
 
 
 // Timers
@@ -755,7 +804,7 @@ public Action DetonateBomb(Handle timer, int bombRef)
 	g_IsBombPlanted = false;
 	
 	// Only call this after we set g_IsBombPlanted to false or the game softlocks
-	TF2_ForceRoundWin(g_BombPlantingTeam, Winreason_PointCaptured);
+	TF2_ForceRoundWin(g_BombPlantingTeam, WinReason_PointCaptured);
 	
 	int bomb = EntRefToEntIndex(bombRef);
 	float origin[3];
@@ -780,7 +829,7 @@ void DefuseBomb(TFTeam team, ArrayList cappers)
 	}
 	
 	g_IsBombDefused = true;
-	TF2_ForceRoundWin(team, Winreason_PointCaptured);
+	TF2_ForceRoundWin(team, WinReason_PointCaptured);
 	
 	Forward_BombDefused(team, cappers, tfgo_bombtimer.FloatValue - (GetGameTime() - g_BombPlantedTime));
 	delete cappers;
@@ -803,7 +852,7 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	
 	// Add round end team awards
 	int winreason = event.GetInt("winreason");
-	if (winreason == Winreason_PointCaptured || winreason == Winreason_AllPointsCaptured)
+	if (winreason == WinReason_PointCaptured || winreason == WinReason_AllPointsCaptured)
 	{
 		if (g_BombPlantingTeam == winningTeam.Team)
 		{
@@ -815,7 +864,7 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 			losingTeam.AddToClientBalances(tfgo_cash_team_planted_bomb_but_defused.IntValue, "%T", "Team_Cash_Award_Planted_Bomb_But_Defused", LANG_SERVER);
 		}
 	}
-	else if (winreason == Winreason_Elimination)
+	else if (winreason == WinReason_Elimination)
 	{
 		winningTeam.AddToClientBalances(tfgo_cash_team_elimination.IntValue, "%T", "Team_Cash_Award_Elim_Bomb", LANG_SERVER);
 	}
