@@ -245,7 +245,7 @@ public MRESReturn Hook_HandleScrambleTeams()
 
 public MRESReturn Hook_GiveNamedItem(int client, Handle returnVal, Handle params)
 {
-	if (DHookIsNullParam(hParams, 1) || DHookIsNullParam(hParams, 3)) return MRES_Ignored;
+	if (DHookIsNullParam(params, 1) || DHookIsNullParam(params, 3)) return MRES_Ignored;
 	
 	int defIndex = DHookGetParamObjectPtrVar(params, 3, 4, ObjectValueType_Int) & 0xFFFF;
 	int slot = TF2_GetSlotInItem(defIndex, TF2_GetPlayerClass(client));
