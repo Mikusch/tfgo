@@ -12,6 +12,8 @@ static Handle g_SDKSetScrambleTeams;
 static Handle g_SDKEquipWearable;
 static Handle g_SDKRemoveWearable;
 
+static int g_DHookIdGiveNamedItem[TF_MAXPLAYERS + 1] = {-1, ...};
+
 void SDK_Init()
 {
 	GameData gameData = new GameData("tfgo");
@@ -148,7 +150,16 @@ void HookGamerules()
 
 void HookClientEntity(int client)
 {
-	DHookEntity(g_DHookGiveNamedItem, false, client, _, Hook_GiveNamedItem);
+	g_DHookIdGiveNamedItem[client] = DHookEntity(g_DHookGiveNamedItem, false, client, Unhook_GiveNamedItem, Hook_GiveNamedItem);
+}
+
+void UnhookClientEntity(int client)
+{
+	if (g_DHookIdGiveNamedItem[client] != -1)
+	{
+		DHookRemoveHookID(g_DHookIdGiveNamedItem[client]);
+		g_DHookIdGiveNamedItem[client] = -1;
+	}
 }
 
 public MRESReturn Hook_PickupWeaponFromOther(int client, Handle returnVal, Handle params)
@@ -258,6 +269,18 @@ public MRESReturn Hook_GiveNamedItem(int client, Handle returnVal, Handle params
 	}
 	
 	return MRES_Ignored;
+}
+
+public void Unhook_GiveNamedItem(int hookId)
+{
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (g_DHookIdGiveNamedItem[client] == hookId)
+		{
+			g_DHookIdGiveNamedItem[client] = -1;
+			return;
+		}
+	}
 }
 
 stock void SDK_SetSwitchTeams(bool shouldSwitch)

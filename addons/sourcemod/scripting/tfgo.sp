@@ -269,6 +269,11 @@ public void OnPluginEnd()
 {
 	Toggle_ConVars(false);
 	
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		UnhookClientEntity(client);
+	}
+	
 	if (g_PickupWeaponPatch != null)
 		g_PickupWeaponPatch.Disable();
 }
@@ -345,6 +350,7 @@ public void OnClientDisconnect(int client)
 {
 	SDKUnhook(client, SDKHook_PreThink, Client_PreThink);
 	SDKUnhook(client, SDKHook_TraceAttack, Client_TraceAttack);
+	UnhookClientEntity(client);
 	
 	// Force-end round if last client in team disconnects during active bomb
 	if (g_IsBombPlanted && IsValidClient(client))
