@@ -1,8 +1,8 @@
-static Handle g_DHookPickupWeaponFromOther;
-static Handle g_DHookSetWinningTeam;
-static Handle g_DHookHandleSwitchTeams;
-static Handle g_DHookHandleScrambleTeams;
-static Handle g_DHookGiveNamedItem;
+static Handle g_HookPickupWeaponFromOther;
+static Handle g_HookSetWinningTeam;
+static Handle g_HookHandleSwitchTeams;
+static Handle g_HookHandleScrambleTeams;
+static Handle g_HookGiveNamedItem;
 static Handle g_SDKGetEquippedWearableForLoadoutSlot;
 static Handle g_SDKGetMaxAmmo;
 static Handle g_SDKCreateDroppedWeapon;
@@ -12,28 +12,28 @@ static Handle g_SDKSetScrambleTeams;
 static Handle g_SDKEquipWearable;
 static Handle g_SDKRemoveWearable;
 
-static int g_DHookIdGiveNamedItem[TF_MAXPLAYERS + 1] = {-1, ...};
+static int g_HookIdsGiveNamedItem[TF_MAXPLAYERS + 1] =  { -1, ... };
 
 void SDK_Init()
 {
 	GameData gameData = new GameData("tfgo");
 	
-	g_DHookPickupWeaponFromOther = DHookCreateFromConf(gameData, "CTFPlayer::PickupWeaponFromOther");
-	if (g_DHookPickupWeaponFromOther != null)
-		DHookEnableDetour(g_DHookPickupWeaponFromOther, false, Hook_PickupWeaponFromOther);
+	g_HookPickupWeaponFromOther = DHookCreateFromConf(gameData, "CTFPlayer::PickupWeaponFromOther");
+	if (g_HookPickupWeaponFromOther != null)
+		DHookEnableDetour(g_HookPickupWeaponFromOther, false, Hook_PickupWeaponFromOther);
 	else
 		LogMessage("Failed to create hook: CTFPlayer::PickupWeaponFromOther");
 	
 	int offset = gameData.GetOffset("CTFGameRules::SetWinningTeam");
-	g_DHookSetWinningTeam = DHookCreate(offset, HookType_GameRules, ReturnType_Void, ThisPointer_Ignore);
-	if (g_DHookSetWinningTeam != null)
+	g_HookSetWinningTeam = DHookCreate(offset, HookType_GameRules, ReturnType_Void, ThisPointer_Ignore);
+	if (g_HookSetWinningTeam != null)
 	{
-		DHookAddParam(g_DHookSetWinningTeam, HookParamType_Int);
-		DHookAddParam(g_DHookSetWinningTeam, HookParamType_Int);
-		DHookAddParam(g_DHookSetWinningTeam, HookParamType_Bool);
-		DHookAddParam(g_DHookSetWinningTeam, HookParamType_Bool);
-		DHookAddParam(g_DHookSetWinningTeam, HookParamType_Bool);
-		DHookAddParam(g_DHookSetWinningTeam, HookParamType_Bool);
+		DHookAddParam(g_HookSetWinningTeam, HookParamType_Int);
+		DHookAddParam(g_HookSetWinningTeam, HookParamType_Int);
+		DHookAddParam(g_HookSetWinningTeam, HookParamType_Bool);
+		DHookAddParam(g_HookSetWinningTeam, HookParamType_Bool);
+		DHookAddParam(g_HookSetWinningTeam, HookParamType_Bool);
+		DHookAddParam(g_HookSetWinningTeam, HookParamType_Bool);
 	}
 	else
 	{
@@ -41,13 +41,13 @@ void SDK_Init()
 	}
 	
 	offset = gameData.GetOffset("CTFPlayer::GiveNamedItem");
-	g_DHookGiveNamedItem = DHookCreate(offset, HookType_Entity, ReturnType_CBaseEntity, ThisPointer_CBaseEntity);
-	if (g_DHookGiveNamedItem != null)
+	g_HookGiveNamedItem = DHookCreate(offset, HookType_Entity, ReturnType_CBaseEntity, ThisPointer_CBaseEntity);
+	if (g_HookGiveNamedItem != null)
 	{
-		DHookAddParam(g_DHookGiveNamedItem, HookParamType_CharPtr);
-		DHookAddParam(g_DHookGiveNamedItem, HookParamType_Int);
-		DHookAddParam(g_DHookGiveNamedItem, HookParamType_ObjectPtr);
-		DHookAddParam(g_DHookGiveNamedItem, HookParamType_Bool);
+		DHookAddParam(g_HookGiveNamedItem, HookParamType_CharPtr);
+		DHookAddParam(g_HookGiveNamedItem, HookParamType_Int);
+		DHookAddParam(g_HookGiveNamedItem, HookParamType_ObjectPtr);
+		DHookAddParam(g_HookGiveNamedItem, HookParamType_Bool);
 	}
 	else
 	{
@@ -55,13 +55,13 @@ void SDK_Init()
 	}
 	
 	offset = gameData.GetOffset("CTFGameRules::HandleSwitchTeams");
-	g_DHookHandleSwitchTeams = DHookCreate(offset, HookType_GameRules, ReturnType_Void, ThisPointer_Ignore);
-	if (g_DHookHandleSwitchTeams == null)
+	g_HookHandleSwitchTeams = DHookCreate(offset, HookType_GameRules, ReturnType_Void, ThisPointer_Ignore);
+	if (g_HookHandleSwitchTeams == null)
 		LogMessage("Failed to create hook: CTFGameRules::HandleSwitchTeams");
 	
 	offset = gameData.GetOffset("CTFGameRules::HandleScrambleTeams");
-	g_DHookHandleScrambleTeams = DHookCreate(offset, HookType_GameRules, ReturnType_Void, ThisPointer_Ignore);
-	if (g_DHookHandleScrambleTeams == null)
+	g_HookHandleScrambleTeams = DHookCreate(offset, HookType_GameRules, ReturnType_Void, ThisPointer_Ignore);
+	if (g_HookHandleScrambleTeams == null)
 		LogMessage("Failed to create hook: CTFGameRules::HandleScrambleTeams");
 	
 	StartPrepSDKCall(SDKCall_Player);
@@ -141,24 +141,25 @@ void SDK_Init()
 	delete gameData;
 }
 
-void HookGamerules()
+void SDK_HookGamerules()
 {
-	DHookGamerules(g_DHookSetWinningTeam, false, _, Hook_SetWinningTeam);
-	DHookGamerules(g_DHookHandleSwitchTeams, false, _, Hook_HandleSwitchTeams);
-	DHookGamerules(g_DHookHandleScrambleTeams, false, _, Hook_HandleScrambleTeams);
+	DHookGamerules(g_HookSetWinningTeam, false, _, Hook_SetWinningTeam);
+	DHookGamerules(g_HookHandleSwitchTeams, false, _, Hook_HandleSwitchTeams);
+	DHookGamerules(g_HookHandleScrambleTeams, false, _, Hook_HandleScrambleTeams);
 }
 
-void HookClientEntity(int client)
+void SDK_HookClientEntity(int client)
 {
-	g_DHookIdGiveNamedItem[client] = DHookEntity(g_DHookGiveNamedItem, false, client, Unhook_GiveNamedItem, Hook_GiveNamedItem);
+	if (g_HookGiveNamedItem)
+		g_HookIdsGiveNamedItem[client] = DHookEntity(g_HookGiveNamedItem, false, client, HookRemoval_GiveNamedItem, Hook_GiveNamedItem);
 }
 
-void UnhookClientEntity(int client)
+void SDK_UnhookClientEntity(int client)
 {
-	if (g_DHookIdGiveNamedItem[client] != -1)
+	if (g_HookIdsGiveNamedItem[client] != -1)
 	{
-		DHookRemoveHookID(g_DHookIdGiveNamedItem[client]);
-		g_DHookIdGiveNamedItem[client] = -1;
+		DHookRemoveHookID(g_HookIdsGiveNamedItem[client]);
+		g_HookIdsGiveNamedItem[client] = -1;
 	}
 }
 
@@ -212,8 +213,8 @@ public MRESReturn Hook_SetWinningTeam(Handle params)
 	{
 		TFGOTeam red = TFGOTeam(TFTeam_Red);
 		TFGOTeam blue = TFGOTeam(TFTeam_Blue);
-		red.AddToClientBalances(0, "%T", "Team_Cash_Award_no_income", LANG_SERVER);
-		blue.AddToClientBalances(0, "%T", "Team_Cash_Award_no_income", LANG_SERVER);
+		red.AddToClientAccounts(0, "%T", "Team_Cash_Award_no_income", LANG_SERVER);
+		blue.AddToClientAccounts(0, "%T", "Team_Cash_Award_no_income", LANG_SERVER);
 		red.ConsecutiveLosses++;
 		blue.ConsecutiveLosses++;
 		return MRES_Ignored;
@@ -229,16 +230,22 @@ public MRESReturn Hook_SetWinningTeam(Handle params)
 public MRESReturn Hook_HandleSwitchTeams()
 {
 	for (int client = 1; client <= MaxClients; client++)
+	{
 		ResetPlayer(client);
+	}
 	
 	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
+	{
 		TFGOTeam(view_as<TFTeam>(team)).ConsecutiveLosses = STARTING_CONSECUTIVE_LOSSES;
+	}
 }
 
 public MRESReturn Hook_HandleScrambleTeams()
 {
 	for (int client = 1; client <= MaxClients; client++)
+	{
 		ResetPlayer(client);
+	}
 	
 	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
 	{
@@ -256,7 +263,8 @@ public MRESReturn Hook_HandleScrambleTeams()
 
 public MRESReturn Hook_GiveNamedItem(int client, Handle returnVal, Handle params)
 {
-	if (DHookIsNullParam(params, 1) || DHookIsNullParam(params, 3)) return MRES_Ignored;
+	if (DHookIsNullParam(params, 1) || DHookIsNullParam(params, 3))
+		return MRES_Ignored;
 	
 	int defIndex = DHookGetParamObjectPtrVar(params, 3, 4, ObjectValueType_Int) & 0xFFFF;
 	int slot = TF2_GetSlotInItem(defIndex, TF2_GetPlayerClass(client));
@@ -271,13 +279,13 @@ public MRESReturn Hook_GiveNamedItem(int client, Handle returnVal, Handle params
 	return MRES_Ignored;
 }
 
-public void Unhook_GiveNamedItem(int hookId)
+public void HookRemoval_GiveNamedItem(int hookId)
 {
 	for (int client = 1; client <= MaxClients; client++)
 	{
-		if (g_DHookIdGiveNamedItem[client] == hookId)
+		if (g_HookIdsGiveNamedItem[client] == hookId)
 		{
-			g_DHookIdGiveNamedItem[client] = -1;
+			g_HookIdsGiveNamedItem[client] = -1;
 			return;
 		}
 	}

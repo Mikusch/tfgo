@@ -1,13 +1,13 @@
 #pragma semicolon 1
 
-#include <morecolors>
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
-#include <tf2_stocks>
-#include <tf_econ_data>
 #include <dhooks>
 #include <memorypatch>
+#include <morecolors>
+#include <tf2_stocks>
+#include <tf_econ_data>
 #include <tfgo>
 
 #pragma newdecls required
@@ -271,7 +271,7 @@ public void OnPluginEnd()
 	
 	for (int client = 1; client <= MaxClients; client++)
 	{
-		UnhookClientEntity(client);
+		SDK_UnhookClientEntity(client);
 	}
 	
 	if (g_PickupWeaponPatch != null)
@@ -283,7 +283,7 @@ public void OnMapStart()
 	// Allow players to buy stuff on the first round
 	g_IsBuyTimeActive = true;
 	
-	HookGamerules();
+	SDK_HookGamerules();
 	ResetRoundState();
 	
 	PrecacheSounds();
@@ -294,17 +294,15 @@ public void OnMapStart()
 	// Pick random music kit for the game
 	ChooseRandomMusicKit();
 	
-	int func_respawnroom = FindEntityByClassname(-1, "func_respawnroom");
-	if (func_respawnroom <= -1)
+	int respawnRoom = FindEntityByClassname(-1, "func_respawnroom");
+	if (respawnRoom > -1)
 	{
-		g_MapHasRespawnRoom = false;
-		
-		LogMessage("This map is missing a func_respawnroom entity, calculating buy zones based on info_player_teamspawn entities");
-		CalculateDynamicBuyZones();
+		g_MapHasRespawnRoom = true;
 	}
 	else
 	{
-		g_MapHasRespawnRoom = true;
+		g_MapHasRespawnRoom = false;
+		CalculateDynamicBuyZones();
 	}
 }
 
@@ -317,13 +315,13 @@ public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_PreThink, Client_PreThink);
 	SDKHook(client, SDKHook_TraceAttack, Client_TraceAttack);
-	HookClientEntity(client);
+	SDK_HookClientEntity(client);
 }
 
 stock void ResetPlayer(int client, bool notify = true)
 {
 	TFGOPlayer player = TFGOPlayer(client);
-	player.ResetBalance();
+	player.ResetAccount();
 	
 	if (notify && IsValidClient(client))
 		CPrintToChat(client, "%T", "Info_Player_Reset", LANG_SERVER);
@@ -334,12 +332,12 @@ public void Client_PreThink(int client)
 	TFGOPlayer player = TFGOPlayer(client);
 	
 	SetHudTextParams(0.05, 0.325, 0.1, 162, 255, 71, 255, _, 0.0, 0.0, 0.0);
-	ShowHudText(client, -1, "$%d", player.Balance);
+	ShowHudText(client, -1, "$%d", player.Account);
 	
-	if (player.Armor > 0)
+	if (player.ArmorValue > 0)
 	{
 		SetHudTextParams(-1.0, 0.85, 0.1, 255, 255, 255, 255, _, 0.0, 0.0, 0.0);
-		ShowHudText(client, -1, "Armor: %d", player.Armor);
+		ShowHudText(client, -1, "Armor: %d", player.ArmorValue);
 	}
 	
 	if (!g_MapHasRespawnRoom && g_IsBuyTimeActive)
@@ -350,7 +348,7 @@ public void OnClientDisconnect(int client)
 {
 	SDKUnhook(client, SDKHook_PreThink, Client_PreThink);
 	SDKUnhook(client, SDKHook_TraceAttack, Client_TraceAttack);
-	UnhookClientEntity(client);
+	SDK_UnhookClientEntity(client);
 	
 	// Force-end round if last client in team disconnects during active bomb
 	if (g_IsBombPlanted && IsValidClient(client))
@@ -374,40 +372,40 @@ public Action Client_TraceAttack(int victim, int &attacker, int &inflictor, floa
 	
 	TFGOPlayer player = TFGOPlayer(victim);
 	
-	if (player.Armor > 0 && !(damagetype & (DMG_FALL | DMG_DROWN | DMG_POISON | DMG_RADIATION))) // Armor doesn't protect against fall or drown damage
+	if (player.ArmorValue > 0 && !(damagetype & (DMG_FALL | DMG_DROWN | DMG_POISON | DMG_RADIATION))) // Armor doesn't protect against fall or drown damage
 	{
 		// Armor only shields chest, stomach and arms; helmet expands this to the head
 		if ((hitgroup >= HITGROUP_CHEST && hitgroup <= HITGROUP_RIGHTARM) || (player.HasHelmet && hitgroup == HITGROUP_HEAD))
 		{
-			int activeWeapon = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
-			if (activeWeapon != -1)
+			int weapon = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
+			if (weapon != -1)
 			{
-				int defindex = GetEntProp(activeWeapon, Prop_Send, "m_iItemDefinitionIndex");
-				int index = g_AvailableWeapons.FindValue(defindex, 0);
+				int defIndex = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
+				int index = g_AvailableWeapons.FindValue(defIndex, 0);
 				if (index != -1)
 				{
-					Weapon weapon;
-					g_AvailableWeapons.GetArray(index, weapon, sizeof(weapon));
+					WeaponConfig config;
+					g_AvailableWeapons.GetArray(index, config, sizeof(config));
 					
 					// Armor penetration >= 100% can bypass armor entirely
-					if (weapon.armorPenetration < 1.0)
+					if (config.armorPenetration < 1.0)
 					{
-						player.Armor -= RoundFloat(damage); // Deduct absorbed damage from armor points
-						damage *= weapon.armorPenetration; // Modify damage
+						player.ArmorValue -= RoundFloat(damage); // Deduct absorbed damage from armor points
+						damage *= config.armorPenetration; // Modify damage
 						changed = true;
 					}
 				}
 			}
 			else
 			{
-				player.Armor -= RoundFloat(damage);
+				player.ArmorValue -= RoundFloat(damage);
 				damage *= ARMOR_RATIO; // Armor shields 80% of all damage from non-weapon sources by default
 				changed = true;
 			}
 		}
 		
 		// Remove helmet from player if all their armor has been stripped
-		if (player.Armor <= 0) player.HasHelmet = false;
+		if (player.ArmorValue <= 0) player.HasHelmet = false;
 	}
 	
 	return changed ? Plugin_Changed : Plugin_Continue;
@@ -427,8 +425,8 @@ public void OnEntityCreated(int entity, const char[] classname)
 {
 	if (StrEqual(classname, "func_respawnroom"))
 	{
-		SDKHook(entity, SDKHook_StartTouch, Hook_OnStartTouchBuyZone);
-		SDKHook(entity, SDKHook_EndTouch, Hook_OnEndTouchBuyZone);
+		SDKHook(entity, SDKHook_StartTouch, Hook_RespawnRoom_StartTouch);
+		SDKHook(entity, SDKHook_EndTouch, Hook_RespawnRoom_EndTouch);
 	}
 	else if (StrEqual(classname, "game_end"))
 	{
@@ -437,20 +435,20 @@ public void OnEntityCreated(int entity, const char[] classname)
 	}
 	else if (StrEqual(classname, "tf_logic_arena"))
 	{
-		SDKHook(entity, SDKHook_Spawn, OnArenaLogicSpawned);
+		SDKHook(entity, SDKHook_Spawn, Hook_LogicArena_Spawn);
 	}
 	else if (StrEqual(classname, "trigger_capture_area"))
 	{
-		SDKHook(entity, SDKHook_Spawn, OnCaptureAreaSpawned);
+		SDKHook(entity, SDKHook_Spawn, Hook_CaptureArea_Spawn);
 	}
 }
 
-public void OnArenaLogicSpawned(int entity)
+public void Hook_LogicArena_Spawn(int entity)
 {
 	SetEntPropFloat(entity, Prop_Data, "m_flTimeToEnableCapPoint", 0.0);
 }
 
-public void OnCaptureAreaSpawned(int entity)
+public void Hook_CaptureArea_Spawn(int entity)
 {
 	SetEntPropFloat(entity, Prop_Data, "m_flCapTime", GetEntPropFloat(entity, Prop_Data, "m_flCapTime") / 2);
 }
@@ -459,18 +457,18 @@ public Action Event_Player_Team(Event event, const char[] name, bool dontBroadca
 {
 	TFTeam team = view_as<TFTeam>(event.GetInt("team"));
 	
-	// Cap balance at highest of the team
-	int highestBalance = tfgo_startmoney.IntValue;
+	// Cap player account at highest of the team
+	int highestAccount = tfgo_startmoney.IntValue;
 	for (int client = 1; client <= MaxClients; client++)
 	{
-		int balance = TFGOPlayer(client).Balance;
-		if (IsClientInGame(client) && TF2_GetClientTeam(client) == team && balance > highestBalance)
-			highestBalance = balance;
+		int account = TFGOPlayer(client).Account;
+		if (IsClientInGame(client) && TF2_GetClientTeam(client) == team && account > highestAccount)
+			highestAccount = account;
 	}
 	
 	TFGOPlayer player = TFGOPlayer(GetClientOfUserId(event.GetInt("userid")));
-	if (player.Balance > highestBalance)
-		player.Balance = highestBalance;
+	if (player.Account > highestAccount)
+		player.Account = highestAccount;
 	
 	player.ClearLoadout();
 }
@@ -495,7 +493,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 		char classname[PLATFORM_MAX_PATH];
 		if (IsValidEntity(inflictorEntindex) && GetEntityClassname(inflictorEntindex, classname, sizeof(classname)) && g_WeaponClassKillAwards.GetValue(classname, killAward))
 		{
-			attacker.AddToBalance(RoundFloat(killAward * factor), "%T", "Player_Cash_Award_Killed_Enemy_Generic", LANG_SERVER);
+			attacker.AddToAccount(RoundFloat(killAward * factor), "%T", "Player_Cash_Award_Killed_Enemy_Generic", LANG_SERVER);
 		}
 		else
 		{
@@ -535,7 +533,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 								CPrintToChat(client, "%T", "Player_Cash_Award_ExplainSuicide_TeammateGotCash", LANG_SERVER, attackerName, killAward, victimName);
 						}
 						
-						attacker.AddToBalance(killAward, "%T", "Player_Cash_Award_Killed_Enemy_Generic", LANG_SERVER, victimName);
+						attacker.AddToAccount(killAward, "%T", "Player_Cash_Award_Killed_Enemy_Generic", LANG_SERVER, victimName);
 						PrintToChat(attacker.Client, "%T", "Player_Cash_Award_ExplainSuicide_YouGotCash", LANG_SERVER, killAward, victimName);
 					}
 					
@@ -544,23 +542,23 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 			}
 			else // Weapon kill
 			{
-				int weaponDefIndex = event.GetInt("weapon_def_index");
+				int defIndex = event.GetInt("weapon_def_index");
 				char weapon[PLATFORM_MAX_PATH];
 				event.GetString("weapon", weapon, sizeof(weapon));
 				
 				char weaponName[PLATFORM_MAX_PATH];
-				TF2_GetItemName(weaponDefIndex, weaponName, sizeof(weaponName));
+				TF2_GetItemName(defIndex, weaponName, sizeof(weaponName));
 				
 				// Specific weapon kill (e.g. "shotgun_pyro", "prinny_machete", "world", etc.)
 				// If not found, determine kill award from the weapon class
 				if (!g_WeaponClassKillAwards.GetValue(weapon, killAward))
 				{
-					TF2Econ_GetItemClassName(weaponDefIndex, classname, sizeof(classname));
+					TF2Econ_GetItemClassName(defIndex, classname, sizeof(classname));
 					if (!g_WeaponClassKillAwards.GetValue(classname, killAward))
 						killAward = tfgo_cash_player_killed_enemy_default.IntValue;
 				}
 				
-				attacker.AddToBalance(RoundFloat(killAward * factor), "%T", "Player_Cash_Award_Killed_Enemy", LANG_SERVER, weaponName);
+				attacker.AddToAccount(RoundFloat(killAward * factor), "%T", "Player_Cash_Award_Killed_Enemy", LANG_SERVER, weaponName);
 			}
 		}
 		
@@ -571,8 +569,8 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 			int activeWeapon = GetEntPropEnt(assister.Client, Prop_Send, "m_hActiveWeapon");
 			if (activeWeapon > -1)
 			{
-				int weaponDefIndex = GetEntProp(activeWeapon, Prop_Send, "m_iItemDefinitionIndex");
-				TF2Econ_GetItemClassName(weaponDefIndex, classname, sizeof(classname));
+				int defIndex = GetEntProp(activeWeapon, Prop_Send, "m_iItemDefinitionIndex");
+				TF2Econ_GetItemClassName(defIndex, classname, sizeof(classname));
 				if (!g_WeaponClassKillAwards.GetValue(classname, killAward))
 					killAward = tfgo_cash_player_killed_enemy_default.IntValue;
 			}
@@ -581,7 +579,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 				killAward = tfgo_cash_player_killed_enemy_default.IntValue;
 			}
 			
-			assister.AddToBalance(RoundFloat(killAward * factor) / 2, "%T", "Player_Cash_Award_Assist_Enemy", LANG_SERVER, victimName);
+			assister.AddToAccount(RoundFloat(killAward * factor) / 2, "%T", "Player_Cash_Award_Assist_Enemy", LANG_SERVER, victimName);
 		}
 	}
 	
@@ -608,7 +606,7 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 		TFGOPlayer player = TFGOPlayer(client);
 		player.ApplyLoadout();
 		
-		if (tfgo_free_armor.IntValue >= 1) player.Armor = TF2_GetMaxHealth(client);
+		if (tfgo_free_armor.IntValue >= 1) player.ArmorValue = TF2_GetMaxHealth(client);
 		if (tfgo_free_armor.IntValue >= 2) player.HasHelmet = true;
 		
 		if (player.ActiveBuyMenu != null)
@@ -702,33 +700,33 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 	for (int i = 0; i < cappers.Length; i++)
 	{
 		int capper = cappers.Get(i);
-		TFGOPlayer(capper).AddToBalance(tfgo_cash_player_bomb_planted.IntValue, "%T", "Player_Cash_Award_Bomb_Planted", LANG_SERVER);
-	}
-
-	// Set arena round time to bomb detonation time
-	int team_round_timer = FindEntityByClassname(-1, "team_round_timer");
-	if (team_round_timer > -1)
-	{
-		SetVariantInt(tfgo_bombtimer.IntValue + 1);
-		AcceptEntityInput(team_round_timer, "SetTime");
+		TFGOPlayer(capper).AddToAccount(tfgo_cash_player_bomb_planted.IntValue, "%T", "Player_Cash_Award_Bomb_Planted", LANG_SERVER);
 	}
 	
-	int team_control_point;
-	while ((team_control_point = FindEntityByClassname(team_control_point, "team_control_point")) > -1)
+	// Set arena round time to bomb detonation time
+	int roundTimer = FindEntityByClassname(-1, "team_round_timer");
+	if (roundTimer > -1)
 	{
-		// Lock every other control point in the map
-		if (GetEntProp(team_control_point, Prop_Data, "m_iPointIndex") != cp)
+		SetVariantInt(tfgo_bombtimer.IntValue + 1);
+		AcceptEntityInput(roundTimer, "SetTime");
+	}
+	
+	// Lock every other control point in the map
+	int controlPoint;
+	while ((controlPoint = FindEntityByClassname(controlPoint, "team_control_point")) > -1)
+	{
+		if (GetEntProp(controlPoint, Prop_Data, "m_iPointIndex") != cp)
 		{
 			SetVariantInt(1);
-			AcceptEntityInput(team_control_point, "SetLocked");
+			AcceptEntityInput(controlPoint, "SetLocked");
 		}
 	}
 	
-	int trigger_capture_area;
-	while ((trigger_capture_area = FindEntityByClassname(trigger_capture_area, "trigger_capture_area")) > -1)
+	// Adjust defuse time
+	int captureArea;
+	while ((captureArea = FindEntityByClassname(captureArea, "trigger_capture_area")) > -1)
 	{
-		// Adjust defuse time
-		SetEntPropFloat(trigger_capture_area, Prop_Data, "m_flCapTime", GetEntPropFloat(trigger_capture_area, Prop_Data, "m_flCapTime") / 0.75);
+		SetEntPropFloat(captureArea, Prop_Data, "m_flCapTime", GetEntPropFloat(captureArea, Prop_Data, "m_flCapTime") / 0.75);
 	}
 	
 	// Spawn bomb prop on first capper
@@ -831,7 +829,7 @@ void DefuseBomb(TFTeam team, ArrayList cappers)
 	for (int i = 0; i < cappers.Length; i++)
 	{
 		int capper = cappers.Get(i);
-		TFGOPlayer(capper).AddToBalance(tfgo_cash_player_bomb_defused.IntValue, "%T", "Player_Cash_Award_Bomb_Defused", LANG_SERVER);
+		TFGOPlayer(capper).AddToAccount(tfgo_cash_player_bomb_defused.IntValue, "%T", "Player_Cash_Award_Bomb_Defused", LANG_SERVER);
 	}
 	
 	g_IsBombDefused = true;
@@ -862,17 +860,17 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	{
 		if (g_BombPlantingTeam == winningTeam.Team)
 		{
-			winningTeam.AddToClientBalances(tfgo_cash_team_terrorist_win_bomb.IntValue, "%T", "Team_Cash_Award_T_Win_Bomb", LANG_SERVER);
+			winningTeam.AddToClientAccounts(tfgo_cash_team_terrorist_win_bomb.IntValue, "%T", "Team_Cash_Award_T_Win_Bomb", LANG_SERVER);
 		}
 		else
 		{
-			winningTeam.AddToClientBalances(tfgo_cash_team_win_by_defusing_bomb.IntValue, "%T", "Team_Cash_Award_Win_Defuse_Bomb", LANG_SERVER);
-			losingTeam.AddToClientBalances(tfgo_cash_team_planted_bomb_but_defused.IntValue, "%T", "Team_Cash_Award_Planted_Bomb_But_Defused", LANG_SERVER);
+			winningTeam.AddToClientAccounts(tfgo_cash_team_win_by_defusing_bomb.IntValue, "%T", "Team_Cash_Award_Win_Defuse_Bomb", LANG_SERVER);
+			losingTeam.AddToClientAccounts(tfgo_cash_team_planted_bomb_but_defused.IntValue, "%T", "Team_Cash_Award_Planted_Bomb_But_Defused", LANG_SERVER);
 		}
 	}
 	else if (winreason == WinReason_Elimination)
 	{
-		winningTeam.AddToClientBalances(tfgo_cash_team_elimination.IntValue, "%T", "Team_Cash_Award_Elim_Bomb", LANG_SERVER);
+		winningTeam.AddToClientAccounts(tfgo_cash_team_elimination.IntValue, "%T", "Team_Cash_Award_Elim_Bomb", LANG_SERVER);
 	}
 	
 	for (int client = 1; client <= MaxClients; client++)
@@ -881,9 +879,9 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 		{
 			// Do not give losing bonus to players that deliberately suicided
 			if (g_HasPlayerSuicided[client])
-				TFGOPlayer(client).AddToBalance(0, "%T", "Team_Cash_Award_no_income_suicide", LANG_SERVER);
+				TFGOPlayer(client).AddToAccount(0, "%T", "Team_Cash_Award_no_income_suicide", LANG_SERVER);
 			else
-				TFGOPlayer(client).AddToBalance(losingTeam.LoseIncome, "%T", "Team_Cash_Award_Loser_Bonus", LANG_SERVER);
+				TFGOPlayer(client).AddToAccount(losingTeam.LoseIncome, "%T", "Team_Cash_Award_Loser_Bonus", LANG_SERVER);
 		}
 	}
 	
@@ -909,8 +907,16 @@ public void ResetRoundState()
 	g_IsBombDetonated = false;
 	g_IsBombDefused = false;
 	g_BombPlantingTeam = TFTeam_Unassigned;
-	for (int i = 0; i < sizeof(g_HasPlayerSuicided); i++)g_HasPlayerSuicided[i] = false;
-	for (int i = 0; i < sizeof(g_IsPlayerInDynamicBuyZone); i++)g_IsPlayerInDynamicBuyZone[i] = false;
+	
+	for (int i = 0; i < sizeof(g_HasPlayerSuicided); i++)
+	{
+		g_HasPlayerSuicided[i] = false;
+	}
+	
+	for (int i = 0; i < sizeof(g_IsPlayerInDynamicBuyZone); i++)
+	{
+		g_IsPlayerInDynamicBuyZone[i] = false;
+	}
 }
 
 public Action CommandListener_Build(int client, const char[] command, int args)

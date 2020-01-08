@@ -1,9 +1,9 @@
 #define CONFIG_FILE "configs/tfgo/tfgo.cfg"
 
-enum struct Weapon
+enum struct WeaponConfig
 {
-	int defindex;
-	int cost;
+	int defIndex;
+	int price;
 	float armorPenetration;
 }
 
@@ -17,16 +17,16 @@ public void ReadWeaponConfig(KeyValues kv)
 		{
 			do // Loop through each weapon definition index
 			{
-				char defindex[PLATFORM_MAX_PATH];
-				kv.GetSectionName(defindex, sizeof(defindex));
+				char defIndex[PLATFORM_MAX_PATH];
+				kv.GetSectionName(defIndex, sizeof(defIndex));
 				
 				// Set basic weapon data
-				Weapon weapon;
-				weapon.defindex = StringToInt(defindex);
-				weapon.cost = kv.GetNum("cost", -1);
-				weapon.armorPenetration = kv.GetFloat("armor_penetration", 0.5);
+				WeaponConfig config;
+				config.defIndex = StringToInt(defIndex);
+				config.price = kv.GetNum("price", -1);
+				config.armorPenetration = kv.GetFloat("armor_penetration", 1.0);
 				
-				g_AvailableWeapons.PushArray(weapon, sizeof(weapon));
+				g_AvailableWeapons.PushArray(config, sizeof(config));
 			}
 			while (kv.GotoNextKey(false));
 			kv.GoBack();
@@ -59,7 +59,7 @@ void ReadKillAwardConfig(KeyValues kv)
 void Config_Init()
 {
 	if (g_WeaponClassKillAwards == null) g_WeaponClassKillAwards = new StringMap();
-	if (g_AvailableWeapons == null) g_AvailableWeapons = new ArrayList(sizeof(Weapon));
+	if (g_AvailableWeapons == null) g_AvailableWeapons = new ArrayList(sizeof(WeaponConfig));
 	
 	// Read config
 	KeyValues kv = new KeyValues("Config");

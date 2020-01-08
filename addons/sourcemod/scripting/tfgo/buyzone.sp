@@ -5,11 +5,17 @@ public void CalculateDynamicBuyZones()
 {
 	// Reset buy zones from previous map
 	for (int i = 0; i < sizeof(g_DynamicBuyZoneCenters); i++)
+	{
 		for (int j = 0; j < sizeof(g_DynamicBuyZoneCenters[]); j++)
+		{
 			g_DynamicBuyZoneCenters[i][j] = 0.0;
+		}
+	}
 	
 	for (int i = 0; i < sizeof(g_DynamicBuyzoneRadii); i++)
+	{
 		g_DynamicBuyzoneRadii[i] = 0.0;
+	}
 	
 	// Calculate average position of each info_player_start for each team
 	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
@@ -36,7 +42,9 @@ public void CalculateDynamicBuyZones()
 			teamspawns.GetArray(i, origin, sizeof(origin));
 			
 			for (int j = 0; j < sizeof(origin); j++)
+			{
 				g_DynamicBuyZoneCenters[team][j] += origin[j] / teamspawns.Length;
+			}
 			
 			// Find maximum distance between all spawns
 			for (int j = 0; j < teamspawns.Length; j++)
@@ -54,13 +62,13 @@ public void CalculateDynamicBuyZones()
 	}
 }
 
-public Action Hook_OnStartTouchBuyZone(int entity, int client)
+public Action Hook_RespawnRoom_StartTouch(int entity, int client)
 {
 	if (g_IsBuyTimeActive && IsValidClient(client) && GetClientTeam(client) == GetEntProp(entity, Prop_Data, "m_iTeamNum"))
 		DisplayMainBuyMenu(client);
 }
 
-public Action Hook_OnEndTouchBuyZone(int entity, int client)
+public Action Hook_RespawnRoom_EndTouch(int entity, int client)
 {
 	if (g_IsBuyTimeActive && IsValidClient(client) && GetClientTeam(client) == GetEntProp(entity, Prop_Data, "m_iTeamNum"))
 	{

@@ -101,19 +101,19 @@ public bool DisplayWeaponBuyMenu(int client, ArrayList slots)
 	
 	for (int i = 0; i < g_AvailableWeapons.Length; i++)
 	{
-		Weapon weapon;
-		g_AvailableWeapons.GetArray(i, weapon, sizeof(weapon));
+		WeaponConfig config;
+		g_AvailableWeapons.GetArray(i, config, sizeof(config));
 		
 		TFClassType class = TF2_GetPlayerClass(client);
-		int slot = TF2_GetSlotInItem(weapon.defindex, class);
+		int slot = TF2_GetSlotInItem(config.defIndex, class);
 		
-		if (slots.FindValue(slot) > -1 && weapon.cost > -1)
+		if (slots.FindValue(slot) > -1 && config.price > -1)
 		{
 			char info[32];
-			IntToString(weapon.defindex, info, sizeof(info));
+			IntToString(config.defIndex, info, sizeof(info));
 			
 			char itemName[PLATFORM_MAX_PATH];
-			TF2_GetItemName(weapon.defindex, itemName, sizeof(itemName));
+			TF2_GetItemName(config.defIndex, itemName, sizeof(itemName));
 			
 			menu.AddItem(info, itemName);
 		}
@@ -131,7 +131,7 @@ public int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, i
 		
 		case MenuAction_Select:
 		{
-			char info[32]; // item defindex
+			char info[32]; // item def index
 			menu.GetItem(param2, info, sizeof(info));
 			TFGOPlayer(param1).PurchaseItem(StringToInt(info));
 			DisplayMainBuyMenu(param1);
@@ -149,36 +149,36 @@ public int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, i
 		case MenuAction_DrawItem:
 		{
 			int style;
-			char info[32]; // item defindex
+			char info[32]; // item def index
 			menu.GetItem(param2, info, sizeof(info), style);
 			
-			Weapon weapon;
-			g_AvailableWeapons.GetArray(g_AvailableWeapons.FindValue(StringToInt(info), 0), weapon, sizeof(weapon));
+			WeaponConfig config;
+			g_AvailableWeapons.GetArray(g_AvailableWeapons.FindValue(StringToInt(info), 0), config, sizeof(config));
 			
 			TFGOPlayer player = TFGOPlayer(param1);
 			TFClassType class = TF2_GetPlayerClass(param1);
-			int slot = TF2_GetSlotInItem(weapon.defindex, class);
+			int slot = TF2_GetSlotInItem(config.defIndex, class);
 			
-			return player.GetWeaponFromLoadout(class, slot) == weapon.defindex || weapon.cost > player.Balance ? ITEMDRAW_DISABLED : style;
+			return player.GetWeaponFromLoadout(class, slot) == config.defIndex || config.price > player.Account ? ITEMDRAW_DISABLED : style;
 		}
 		
 		case MenuAction_DisplayItem:
 		{
-			char info[32]; // item defindex
+			char info[32]; // item def index
 			char display[PLATFORM_MAX_PATH]; // item name
 			menu.GetItem(param2, info, sizeof(info), _, display, sizeof(display));
 			
-			Weapon weapon;
-			g_AvailableWeapons.GetArray(g_AvailableWeapons.FindValue(StringToInt(info), 0), weapon, sizeof(weapon));
+			WeaponConfig config;
+			g_AvailableWeapons.GetArray(g_AvailableWeapons.FindValue(StringToInt(info), 0), config, sizeof(config));
 			
 			TFClassType class = TF2_GetPlayerClass(param1);
-			int slot = TF2_GetSlotInItem(weapon.defindex, class);
+			int slot = TF2_GetSlotInItem(config.defIndex, class);
 			
 			TFGOPlayer player = TFGOPlayer(param1);
-			if (player.GetWeaponFromLoadout(class, slot) == weapon.defindex)
+			if (player.GetWeaponFromLoadout(class, slot) == config.defIndex)
 				Format(display, sizeof(display), "%s (%T)", display, "BuyMenu_AlreadyCarrying", LANG_SERVER);
 			else
-				Format(display, sizeof(display), "%s ($%d)", display, weapon.cost);
+				Format(display, sizeof(display), "%s ($%d)", display, config.price);
 			
 			return RedrawMenuItem(display);
 		}
@@ -214,8 +214,8 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 			TFGOPlayer player = TFGOPlayer(param1);
 			if (StrEqual(info, INFO_EQUIPMENT_KEVLAR))
 			{
-				player.Armor = TF2_GetMaxHealth(param1);
-				player.Balance -= EQUIPMENT_KEVLAR_PRICE;
+				player.ArmorValue = TF2_GetMaxHealth(param1);
+				player.Account -= EQUIPMENT_KEVLAR_PRICE;
 			}
 			else if (StrEqual(info, INFO_EQUIPMENT_KEVLAR_HELMET))
 			{
@@ -223,22 +223,22 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 				if (player.HasFullArmor())
 				{
 					player.HasHelmet = true;
-					player.Balance -= EQUIPMENT_HELMET_PRICE;
+					player.Account -= EQUIPMENT_HELMET_PRICE;
 					PrintHintText(param1, "%T", "BuyMenu_Already_Have_Kevlar_Bought_Helmet", LANG_SERVER);
 				}
 				// Otherwise charge for armor as well and replenish it
 				else
 				{
-					player.Armor = TF2_GetMaxHealth(param1);
+					player.ArmorValue = TF2_GetMaxHealth(param1);
 					if (player.HasHelmet)
 					{
-						player.Balance -= EQUIPMENT_KEVLAR_PRICE;
+						player.Account -= EQUIPMENT_KEVLAR_PRICE;
 						PrintHintText(param1, "%T", "BuyMenu_Already_Have_Helmet_Bought_Kevlar", LANG_SERVER);
 					}
 					else
 					{
 						player.HasHelmet = true;
-						player.Balance -= EQUIPMENT_KEVLAR_HELMET_PRICE;
+						player.Account -= EQUIPMENT_KEVLAR_HELMET_PRICE;
 					}
 				}
 			}
@@ -269,16 +269,16 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 			
 			if (StrEqual(info, INFO_EQUIPMENT_KEVLAR))
 			{
-				if (player.HasFullArmor() || tfgo_max_armor.IntValue < 1 || player.Balance < EQUIPMENT_KEVLAR_PRICE) 
+				if (player.HasFullArmor() || tfgo_max_armor.IntValue < 1 || player.Account < EQUIPMENT_KEVLAR_PRICE) 
 					return ITEMDRAW_DISABLED;
 			}
 			else if (StrEqual(info, INFO_EQUIPMENT_KEVLAR_HELMET))
 			{
 				if (player.HasHelmet || tfgo_max_armor.IntValue < 2)
 					return ITEMDRAW_DISABLED;
-				else if (player.HasFullArmor() && player.Balance < EQUIPMENT_HELMET_PRICE)
+				else if (player.HasFullArmor() && player.Account < EQUIPMENT_HELMET_PRICE)
 					return ITEMDRAW_DISABLED;
-				else if (!player.HasFullArmor() && player.Balance < EQUIPMENT_KEVLAR_HELMET_PRICE)
+				else if (!player.HasFullArmor() && player.Account < EQUIPMENT_KEVLAR_HELMET_PRICE)
 					return ITEMDRAW_DISABLED;
 			}
 			
