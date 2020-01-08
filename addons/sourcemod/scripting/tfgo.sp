@@ -294,7 +294,7 @@ public void OnMapStart()
 	// Pick random music kit for the game
 	ChooseRandomMusicKit();
 	
-	if (FindEntityByClassname(MaxClients, "func_respawnroom") > -1)
+	if (FindEntityByClassname(MaxClients + 1, "func_respawnroom") > -1)
 	{
 		g_MapHasRespawnRoom = true;
 	}
@@ -703,7 +703,7 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 	}
 	
 	// Set arena round time to bomb detonation time
-	int roundTimer = FindEntityByClassname(MaxClients, "team_round_timer");
+	int roundTimer = FindEntityByClassname(MaxClients + 1, "team_round_timer");
 	if (roundTimer > -1)
 	{
 		SetVariantInt(tfgo_bombtimer.IntValue + 1);
@@ -711,7 +711,7 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 	}
 	
 	// Lock every other control point in the map
-	int controlPoint = MaxClients;
+	int controlPoint = MaxClients + 1;
 	while ((controlPoint = FindEntityByClassname(controlPoint, "team_control_point")) > -1)
 	{
 		if (GetEntProp(controlPoint, Prop_Data, "m_iPointIndex") != cp)
@@ -722,7 +722,7 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 	}
 	
 	// Adjust defuse time
-	int captureArea = MaxClients;
+	int captureArea = MaxClients + 1;
 	while ((captureArea = FindEntityByClassname(captureArea, "trigger_capture_area")) > -1)
 	{
 		SetEntPropFloat(captureArea, Prop_Data, "m_flCapTime", GetEntPropFloat(captureArea, Prop_Data, "m_flCapTime") / 0.75);

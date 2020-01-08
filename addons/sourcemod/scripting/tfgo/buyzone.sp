@@ -23,7 +23,7 @@ public void CalculateDynamicBuyZones()
 		ArrayList teamspawns = new ArrayList(view_as<int>(TFTeam_Blue));
 		
 		// Collect info_player_teamspawns for team
-		int teamspawn = MaxClients;
+		int teamspawn = MaxClients + 1;
 		while ((teamspawn = FindEntityByClassname(teamspawn, "info_player_teamspawn")) > -1)
 		{
 			int initialTeamNum = GetEntProp(teamspawn, Prop_Data, "m_iInitialTeamNum");
