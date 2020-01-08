@@ -635,7 +635,7 @@ public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool do
 	g_BombDetonationTimer = null;
 }
 
-public Action OnBuyTimeExpire(Handle timer)
+public Action Timer_OnBuyTimeExpire(Handle timer)
 {
 	if (g_BuyTimeTimer != timer)return;
 	
@@ -659,11 +659,11 @@ public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontB
 {
 	g_IsMainRoundActive = true;
 	g_IsBuyTimeActive = true;
-	g_BuyTimeTimer = CreateTimer(tfgo_buytime.FloatValue, OnBuyTimeExpire, _, TIMER_FLAG_NO_MAPCHANGE);
-	g_TenSecondRoundTimer = CreateTimer(tf_arena_round_time.FloatValue - 10.0, PlayTenSecondRoundWarning, _, TIMER_FLAG_NO_MAPCHANGE);
+	g_BuyTimeTimer = CreateTimer(tfgo_buytime.FloatValue, Timer_OnBuyTimeExpire, _, TIMER_FLAG_NO_MAPCHANGE);
+	g_TenSecondRoundTimer = CreateTimer(tf_arena_round_time.FloatValue - 10.0, Timer_PlayTenSecondRoundWarning, _, TIMER_FLAG_NO_MAPCHANGE);
 }
 
-public Action PlayTenSecondRoundWarning(Handle timer)
+public Action Timer_PlayTenSecondRoundWarning(Handle timer)
 {
 	if (g_TenSecondRoundTimer != timer)return;
 	
@@ -742,10 +742,10 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 	TeleportEntity(bomb, origin, angles, NULL_VECTOR);
 	
 	// Set up timers
-	g_TenSecondBombTimer = CreateTimer(tfgo_bombtimer.FloatValue - 10.0, PlayTenSecondBombWarning, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
-	g_BombBeepingTimer = CreateTimer(1.0, PlayBombBeep, EntIndexToEntRef(bomb), TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
-	g_BombDetonationWarningTimer = CreateTimer(tfgo_bombtimer.FloatValue - 1.5, PlayBombExplosionWarning, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
-	g_BombDetonationTimer = CreateTimer(tfgo_bombtimer.FloatValue, DetonateBomb, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
+	g_TenSecondBombTimer = CreateTimer(tfgo_bombtimer.FloatValue - 10.0, Timer_PlayTenSecondBombWarning, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
+	g_BombBeepingTimer = CreateTimer(1.0, Timer_PlayBombBeeping, EntIndexToEntRef(bomb), TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+	g_BombDetonationWarningTimer = CreateTimer(tfgo_bombtimer.FloatValue - 1.5, Timer_PlayBombExplosionWarning, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
+	g_BombDetonationTimer = CreateTimer(tfgo_bombtimer.FloatValue, Timer_DetonateBomb, EntIndexToEntRef(bomb), TIMER_FLAG_NO_MAPCHANGE);
 	
 	// Play Sounds
 	g_CurrentMusicKit.StopMusicForAll(Music_StartAction);
@@ -766,7 +766,7 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 	delete cappers;
 }
 
-public Action PlayBombBeep(Handle timer, int bomb)
+public Action Timer_PlayBombBeeping(Handle timer, int bomb)
 {
 	if (g_BombBeepingTimer != timer)return Plugin_Stop;
 	
@@ -776,11 +776,11 @@ public Action PlayBombBeep(Handle timer, int bomb)
 	return Plugin_Continue;
 }
 
-public Action PlayTenSecondBombWarning(Handle timer, int bomb)
+public Action Timer_PlayTenSecondBombWarning(Handle timer, int bomb)
 {
 	if (g_TenSecondBombTimer != timer)return;
 	
-	g_BombBeepingTimer = CreateTimer(0.5, PlayBombBeep, bomb, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+	g_BombBeepingTimer = CreateTimer(0.5, Timer_PlayBombBeeping, bomb, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
 	
 	if (g_IsMainRoundActive)
 	{
@@ -789,7 +789,7 @@ public Action PlayTenSecondBombWarning(Handle timer, int bomb)
 	}
 }
 
-public Action PlayBombExplosionWarning(Handle timer, int bomb)
+public Action Timer_PlayBombExplosionWarning(Handle timer, int bomb)
 {
 	if (g_BombDetonationWarningTimer != timer)return;
 	
@@ -800,7 +800,7 @@ public Action PlayBombExplosionWarning(Handle timer, int bomb)
 	EmitAmbientSound(BOMB_WARNING_SOUND, origin, bomb, SNDLEVEL_RAIDSIREN);
 }
 
-public Action DetonateBomb(Handle timer, int bombRef)
+public Action Timer_DetonateBomb(Handle timer, int bombRef)
 {
 	if (g_BombDetonationTimer != timer)return;
 	
