@@ -1,6 +1,6 @@
 #define INFO_EQUIPMENT "EQUIPMENT"
-#define INFO_EQUIPMENT_KEVLAR "0"
-#define INFO_EQUIPMENT_ASSAULTSUIT "1"
+#define INFO_EQUIPMENT_KEVLAR "KEVLAR"
+#define INFO_EQUIPMENT_ASSAULTSUIT "ASSAULTSUIT"
 
 public bool DisplayMainBuyMenu(int client)
 {
@@ -133,9 +133,10 @@ public int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, i
 			menu.GetItem(param2, info, sizeof(info));
 			
 			if (TFGOPlayer(param1).AttemptToBuyWeapon(StringToInt(info)) == BUY_BOUGHT)
+			{
 				PlayPurchaseSound(param1);
-			
-			DisplayMainBuyMenu(param1);
+				DisplayMainBuyMenu(param1);
+			}
 		}
 		
 		case MenuAction_Cancel:
@@ -221,9 +222,10 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 				result = player.AttemptToBuyAssaultSuit();
 			
 			if (result == BUY_BOUGHT)
+			{
 				PlayPurchaseSound(param1);
-			
-			DisplayMainBuyMenu(param1);
+				DisplayMainBuyMenu(param1);
+			}
 		}
 		
 		case MenuAction_Cancel:
