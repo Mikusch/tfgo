@@ -231,7 +231,7 @@ public MRESReturn Hook_HandleSwitchTeams()
 {
 	for (int client = 1; client <= MaxClients; client++)
 	{
-		ResetPlayer(client);
+		TFGOPlayer(client).Reset();
 	}
 	
 	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
@@ -244,7 +244,7 @@ public MRESReturn Hook_HandleScrambleTeams()
 {
 	for (int client = 1; client <= MaxClients; client++)
 	{
-		ResetPlayer(client);
+		TFGOPlayer(client).Reset();
 	}
 	
 	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)

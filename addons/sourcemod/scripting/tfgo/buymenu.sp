@@ -1,9 +1,6 @@
 #define INFO_EQUIPMENT "EQUIPMENT"
 #define INFO_EQUIPMENT_KEVLAR "0"
-#define INFO_EQUIPMENT_KEVLAR_HELMET "1"
-#define EQUIPMENT_KEVLAR_PRICE 650
-#define EQUIPMENT_KEVLAR_HELMET_PRICE 1000
-#define EQUIPMENT_HELMET_PRICE EQUIPMENT_KEVLAR_HELMET_PRICE - EQUIPMENT_KEVLAR_PRICE
+#define INFO_EQUIPMENT_ASSAULTSUIT "1"
 
 public bool DisplayMainBuyMenu(int client)
 {
@@ -67,7 +64,8 @@ public int MenuHandler_MainBuyMenu(Menu menu, MenuAction action, int param1, int
 					for (int i = 0; i < sizeof(slots); i++)
 					{
 						TrimString(slots[i]);
-						if (strlen(slots[i]) > 0) slotList.Push(StringToInt(slots[i]));
+						if (strlen(slots[i]) > 0)
+							slotList.Push(StringToInt(slots[i]));
 					}
 					
 					DisplayWeaponBuyMenu(param1, slotList);
@@ -195,7 +193,7 @@ public int DisplayEquipmentBuyMenu(int client)
 	menu.ExitBackButton = true;
 	
 	menu.AddItem(INFO_EQUIPMENT_KEVLAR, "BuyMenu_Equipment_Kevlar");
-	menu.AddItem(INFO_EQUIPMENT_KEVLAR_HELMET, "BuyMenu_Equipment_Kevlar_Helmet");
+	menu.AddItem(INFO_EQUIPMENT_ASSAULTSUIT, "BuyMenu_Equipment_Kevlar_Helmet");
 	
 	menu.Display(client, MENU_TIME_FOREVER);
 }
@@ -213,35 +211,9 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 			
 			TFGOPlayer player = TFGOPlayer(param1);
 			if (StrEqual(info, INFO_EQUIPMENT_KEVLAR))
-			{
-				player.ArmorValue = TF2_GetMaxHealth(param1);
-				player.Account -= EQUIPMENT_KEVLAR_PRICE;
-			}
-			else if (StrEqual(info, INFO_EQUIPMENT_KEVLAR_HELMET))
-			{
-				// If player has full armor, only charge them for helmet
-				if (player.HasFullArmor())
-				{
-					player.HasHelmet = true;
-					player.Account -= EQUIPMENT_HELMET_PRICE;
-					PrintHintText(param1, "%T", "BuyMenu_Already_Have_Kevlar_Bought_Helmet", LANG_SERVER);
-				}
-				// Otherwise charge for armor as well and replenish it
-				else
-				{
-					player.ArmorValue = TF2_GetMaxHealth(param1);
-					if (player.HasHelmet)
-					{
-						player.Account -= EQUIPMENT_KEVLAR_PRICE;
-						PrintHintText(param1, "%T", "BuyMenu_Already_Have_Helmet_Bought_Kevlar", LANG_SERVER);
-					}
-					else
-					{
-						player.HasHelmet = true;
-						player.Account -= EQUIPMENT_KEVLAR_HELMET_PRICE;
-					}
-				}
-			}
+				player.AttemptToBuyVest();
+			else if (StrEqual(info, INFO_EQUIPMENT_ASSAULTSUIT))
+				player.AttemptToBuyAssaultSuit();
 			
 			float origin[3];
 			GetClientAbsOrigin(param1, origin);
@@ -269,16 +241,16 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 			
 			if (StrEqual(info, INFO_EQUIPMENT_KEVLAR))
 			{
-				if (player.HasFullArmor() || tfgo_max_armor.IntValue < 1 || player.Account < EQUIPMENT_KEVLAR_PRICE) 
+				if (player.HasFullArmor() || tfgo_max_armor.IntValue < 1 || player.Account < EQUIPMENT_KEVLAR_PRICE)
 					return ITEMDRAW_DISABLED;
 			}
-			else if (StrEqual(info, INFO_EQUIPMENT_KEVLAR_HELMET))
+			else if (StrEqual(info, INFO_EQUIPMENT_ASSAULTSUIT))
 			{
 				if (player.HasHelmet || tfgo_max_armor.IntValue < 2)
 					return ITEMDRAW_DISABLED;
 				else if (player.HasFullArmor() && player.Account < EQUIPMENT_HELMET_PRICE)
 					return ITEMDRAW_DISABLED;
-				else if (!player.HasFullArmor() && player.Account < EQUIPMENT_KEVLAR_HELMET_PRICE)
+				else if (!player.HasFullArmor() && player.Account < EQUIPMENT_ASSAULTSUIT_PRICE)
 					return ITEMDRAW_DISABLED;
 			}
 			
@@ -294,8 +266,8 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 			TFGOPlayer player = TFGOPlayer(param1);
 			if (StrEqual(info, INFO_EQUIPMENT_KEVLAR) && !player.HasFullArmor())
 				Format(display, sizeof(display), "%T ($%d)", display, LANG_SERVER, EQUIPMENT_KEVLAR_PRICE);
-			else if (StrEqual(info, INFO_EQUIPMENT_KEVLAR_HELMET) && !player.HasHelmet)
-				Format(display, sizeof(display), "%T ($%d)", display, LANG_SERVER, player.HasFullArmor() ? EQUIPMENT_HELMET_PRICE : EQUIPMENT_KEVLAR_HELMET_PRICE);
+			else if (StrEqual(info, INFO_EQUIPMENT_ASSAULTSUIT) && !player.HasHelmet)
+				Format(display, sizeof(display), "%T ($%d)", display, LANG_SERVER, player.HasFullArmor() ? EQUIPMENT_HELMET_PRICE : EQUIPMENT_ASSAULTSUIT_PRICE);
 			else
 				Format(display, sizeof(display), "%T (%T)", display, LANG_SERVER, "BuyMenu_AlreadyCarrying", LANG_SERVER);
 			

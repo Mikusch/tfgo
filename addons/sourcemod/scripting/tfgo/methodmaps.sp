@@ -106,11 +106,6 @@ methodmap TFGOPlayer
 		Forward_CashAwarded(this.Client, val);
 	}
 	
-	public void ResetAccount()
-	{
-		this.Account = tfgo_startmoney.IntValue;
-	}
-	
 	public void PurchaseItem(int defIndex)
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Client);
@@ -170,7 +165,7 @@ methodmap TFGOPlayer
 		g_PlayerLoadoutWeaponIndexes[this.Client][class][slot] = defIndex;
 	}
 	
-	public void ClearLoadout()
+	public void RemoveAllItems(bool removeArmor)
 	{
 		for (int class = 0; class < sizeof(g_PlayerLoadoutWeaponIndexes[]); class++)
 		{
@@ -180,13 +175,73 @@ methodmap TFGOPlayer
 			}
 		}
 		
-		this.ArmorValue = 0;
-		this.HasHelmet = false;
+		if (removeArmor)
+		{
+			this.HasHelmet = false;
+			this.ArmorValue = 0;
+		}
+	}
+	
+	public void Reset()
+	{
+		this.RemoveAllItems(true);
+		this.Account = tfgo_startmoney.IntValue;
+	}
+	
+	public bool IsArmored(int hitgroup)
+	{
+		switch (hitgroup)
+		{
+			case HITGROUP_GENERIC, HITGROUP_CHEST, HITGROUP_STOMACH, HITGROUP_LEFTARM, HITGROUP_RIGHTARM:
+			{
+				return this.ArmorValue > 0;
+			}
+			case HITGROUP_HEAD:
+			{
+				return this.ArmorValue > 0 && this.HasHelmet;
+			}
+			default:
+			{
+				return false;
+			}
+		}
 	}
 	
 	public bool HasFullArmor()
 	{
 		return this.ArmorValue >= TF2_GetMaxHealth(this.Client);
+	}
+	
+	public void AttemptToBuyVest()
+	{
+		this.ArmorValue = TF2_GetMaxHealth(this.Client);
+		this.Account -= EQUIPMENT_KEVLAR_PRICE;
+	}
+	
+	public void AttemptToBuyAssaultSuit()
+	{
+		// If player has full armor, only charge them for helmet
+		if (this.HasFullArmor())
+		{
+			this.HasHelmet = true;
+			this.Account -= EQUIPMENT_HELMET_PRICE;
+			PrintHintText(this.Client, "%T", "BuyMenu_Already_Have_Kevlar_Bought_Helmet", LANG_SERVER);
+		}
+		// Otherwise charge for armor as well and replenish it
+		else
+		{
+			this.ArmorValue = TF2_GetMaxHealth(this.Client);
+			if (this.HasHelmet)
+			{
+				this.Account -= EQUIPMENT_KEVLAR_PRICE;
+				PrintHintText(this.Client, "%T", "BuyMenu_Already_Have_Helmet_Bought_Kevlar", LANG_SERVER);
+			}
+			else
+			{
+				this.HasHelmet = true;
+				this.Account -= EQUIPMENT_ASSAULTSUIT_PRICE;
+			}
+		}
 	}
 }
 

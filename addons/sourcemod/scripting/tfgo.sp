@@ -28,11 +28,12 @@
 #define BOMB_EXPLOSION_DAMAGE 500.0
 #define BOMB_EXPLOSION_RADIUS 800.0
 
-#define ARMOR_RATIO 0.2
-
 #define MIN_CONSECUTIVE_LOSSES 0
 #define STARTING_CONSECUTIVE_LOSSES 1
 
+#define EQUIPMENT_KEVLAR_PRICE 650
+#define EQUIPMENT_ASSAULTSUIT_PRICE 1000
+#define EQUIPMENT_HELMET_PRICE EQUIPMENT_ASSAULTSUIT_PRICE - EQUIPMENT_KEVLAR_PRICE
 
 // Source hit group standards (from shareddefs.h)
 enum
@@ -307,7 +308,7 @@ public void OnMapStart()
 
 public void OnClientConnected(int client)
 {
-	ResetPlayer(client, false);
+	TFGOPlayer(client).Reset();
 }
 
 public void OnClientPutInServer(int client)
@@ -315,15 +316,6 @@ public void OnClientPutInServer(int client)
 	SDKHook(client, SDKHook_PreThink, Client_PreThink);
 	SDKHook(client, SDKHook_TraceAttack, Client_TraceAttack);
 	SDK_HookClientEntity(client);
-}
-
-stock void ResetPlayer(int client, bool notify = true)
-{
-	TFGOPlayer player = TFGOPlayer(client);
-	player.ResetAccount();
-	
-	if (notify && IsValidClient(client))
-		CPrintToChat(client, "%T", "Info_Player_Reset", LANG_SERVER);
 }
 
 public void Client_PreThink(int client)
@@ -362,49 +354,53 @@ public Action Client_TraceAttack(int victim, int &attacker, int &inflictor, floa
 {
 	bool changed;
 	
-	// Allow every weapon with damagetype DMG_BULLET to deal crits on headshot
+	// Allow every weapon with damagetype DMG_BULLET or DMG_BUCKSHOT to deal crits on headshot
 	if (tfgo_all_weapons_can_headshot.BoolValue && damagetype & (DMG_BULLET | DMG_BUCKSHOT))
 	{
 		damagetype |= DMG_USE_HITLOCATIONS;
 		changed = true;
 	}
 	
-	TFGOPlayer player = TFGOPlayer(victim);
-	
-	if (player.ArmorValue > 0 && !(damagetype & (DMG_FALL | DMG_DROWN | DMG_POISON | DMG_RADIATION))) // Armor doesn't protect against fall or drown damage
+	// Hitgroup damage modifiers (headshots are already covered by DMG_USE_HITLOCATIONS)
+	switch (hitgroup)
 	{
-		// Armor only shields chest, stomach and arms; helmet expands this to the head
-		if ((hitgroup >= HITGROUP_CHEST && hitgroup <= HITGROUP_RIGHTARM) || (player.HasHelmet && hitgroup == HITGROUP_HEAD))
+		case HITGROUP_STOMACH:
 		{
-			int weapon = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
-			if (weapon != -1)
+			damage *= 1.25;
+			changed = true;
+		}
+		case HITGROUP_LEFTLEG, HITGROUP_RIGHTLEG:
+		{
+			damage *= 0.75;
+			changed = true;
+		}
+	}
+	
+	// Armor damage reduction
+	TFGOPlayer player = TFGOPlayer(victim);
+	if (!(damagetype & (DMG_FALL | DMG_DROWN)) && player.IsArmored(hitgroup))
+	{
+		int weapon = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
+		if (weapon != -1)
+		{
+			int defIndex = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
+			int index = g_AvailableWeapons.FindValue(defIndex, 0);
+			if (index != -1)
 			{
-				int defIndex = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
-				int index = g_AvailableWeapons.FindValue(defIndex, 0);
-				if (index != -1)
+				WeaponConfig config;
+				g_AvailableWeapons.GetArray(index, config, sizeof(config));
+				
+				if (config.armorPenetration < 1.0) // Armor penetration >= 100% bypasses armor
 				{
-					WeaponConfig config;
-					g_AvailableWeapons.GetArray(index, config, sizeof(config));
-					
-					// Armor penetration >= 100% can bypass armor entirely
-					if (config.armorPenetration < 1.0)
-					{
-						player.ArmorValue -= RoundFloat(damage); // Deduct absorbed damage from armor points
-						damage *= config.armorPenetration; // Modify damage
-						changed = true;
-					}
+					player.ArmorValue -= RoundFloat(damage);
+					damage *= config.armorPenetration;
+					changed = true;
 				}
-			}
-			else
-			{
-				player.ArmorValue -= RoundFloat(damage);
-				damage *= ARMOR_RATIO; // Armor shields 80% of all damage from non-weapon sources by default
-				changed = true;
 			}
 		}
 		
-		// Remove helmet from player if all their armor has been stripped
-		if (player.ArmorValue <= 0) player.HasHelmet = false;
+		if (player.ArmorValue <= 0)
+			player.HasHelmet = false;
 	}
 	
 	return changed ? Plugin_Changed : Plugin_Continue;
@@ -469,7 +465,7 @@ public Action Event_Player_Team(Event event, const char[] name, bool dontBroadca
 	if (player.Account > highestAccount)
 		player.Account = highestAccount;
 	
-	player.ClearLoadout();
+	player.RemoveAllItems(true);
 }
 
 public Action Event_Player_Death(Event event, const char[] name, bool dontBroadcast)
@@ -591,7 +587,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 	}
 	
 	if (g_IsMainRoundActive || g_IsBonusRoundActive)
-		victim.ClearLoadout();
+		victim.RemoveAllItems(true);
 	
 	if (victim.ActiveBuyMenu != null)
 		victim.ActiveBuyMenu.Cancel();
