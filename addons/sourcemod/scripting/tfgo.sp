@@ -634,6 +634,7 @@ public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool do
 	g_CurrentMusicKit.PlayMusicToAll(Music_StartRound);
 	
 	// Bomb can freely tick and explode through the bonus time and we cancel it here
+	g_BuyTimeTimer = null;
 	g_BombBeepingTimer = null;
 	g_TenSecondBombTimer = null;
 	g_BombDetonationWarningTimer = null;
