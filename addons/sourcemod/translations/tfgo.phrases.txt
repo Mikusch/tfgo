@@ -173,14 +173,6 @@
 	{
 		"en"	"Kevlar + Helmet"
 	}
-	"BuyMenu_Already_Have_Kevlar_Bought_Helmet"
-	{
-		"en"	"You already have Kevlar. Helmet purchased."
-	}
-	"BuyMenu_Already_Have_Helmet_Bought_Kevlar"
-	{
-		"en"	"You already have Helmet. Replenished Kevlar."
-	}
 	"BuyMenu_NotInBuyZone"
 	{
 		"en"	"You have left the buy zone"
@@ -188,6 +180,27 @@
 	"BuyMenu_OutOfTime"
 	{
 		"en"	"The %d second buy period has expired"
+	}
+	
+	"Already_Have_Kevlar"
+	{
+		"en"	"You already have Kevlar!"
+	}
+	"Already_Have_Kevlar_Helmet"
+	{
+		"en"	"You already have Kevlar and a helmet!"
+	}
+	"Already_Have_Kevlar_Bought_Helmet"
+	{
+		"en"	"You already have Kevlar. Helmet purchased."
+	}
+	"Already_Have_Helmet_Bought_Kevlar"
+	{
+		"en"	"You already have Helmet. Replenished Kevlar."
+	}
+	"Not_Enough_Money"
+	{
+		"en"	"You have insufficient funds."
 	}
 	
 	// Player Cash Awards

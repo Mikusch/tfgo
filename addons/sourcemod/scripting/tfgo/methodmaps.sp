@@ -57,11 +57,11 @@ methodmap TFGOPlayer
 	{
 		public get()
 		{
-			return g_PlayerArmorValues[this.Client][TF2_GetPlayerClass(this.Client)];
+			return g_PlayerArmorValues[this][TF2_GetPlayerClass(this.Client)];
 		}
 		public set(int val)
 		{
-			g_PlayerArmorValues[this.Client][TF2_GetPlayerClass(this.Client)] = val;
+			g_PlayerArmorValues[this][TF2_GetPlayerClass(this.Client)] = val;
 		}
 	}
 	
@@ -69,11 +69,11 @@ methodmap TFGOPlayer
 	{
 		public get()
 		{
-			return g_PlayerHelmets[this.Client][TF2_GetPlayerClass(this.Client)];
+			return g_PlayerHelmets[this][TF2_GetPlayerClass(this.Client)];
 		}
 		public set(bool val)
 		{
-			g_PlayerHelmets[this.Client][TF2_GetPlayerClass(this.Client)] = val;
+			g_PlayerHelmets[this][TF2_GetPlayerClass(this.Client)] = val;
 		}
 	}
 	
@@ -207,40 +207,71 @@ methodmap TFGOPlayer
 		}
 	}
 	
-	public bool HasFullArmor()
+	public BuyResult AttemptToBuyVest()
 	{
-		return this.ArmorValue >= TF2_GetMaxHealth(this.Client);
-	}
-	
-	public void AttemptToBuyVest()
-	{
-		this.ArmorValue = TF2_GetMaxHealth(this.Client);
-		this.Account -= EQUIPMENT_KEVLAR_PRICE;
-	}
-	
-	public void AttemptToBuyAssaultSuit()
-	{
-		// If player has full armor, only charge them for helmet
-		if (this.HasFullArmor())
+		if (this.ArmorValue >= TF2_GetMaxHealth(this.Client))
 		{
-			this.HasHelmet = true;
-			this.Account -= EQUIPMENT_HELMET_PRICE;
-			PrintHintText(this.Client, "%T", "BuyMenu_Already_Have_Kevlar_Bought_Helmet", LANG_SERVER);
+			PrintHintText(this.Client, "%T", "Already_Have_Kevlar");
+			return BUY_ALREADY_HAVE;
 		}
-		// Otherwise charge for armor as well and replenish it
+		else if (this.Account < KEVLAR_PRICE)
+		{
+			PrintHintText(this.Client, "%T", "Not_Enough_Money");
+			return BUY_CANT_AFFORD;
+		}
 		else
 		{
-			this.ArmorValue = TF2_GetMaxHealth(this.Client);
 			if (this.HasHelmet)
-			{
-				this.Account -= EQUIPMENT_KEVLAR_PRICE;
-				PrintHintText(this.Client, "%T", "BuyMenu_Already_Have_Helmet_Bought_Kevlar", LANG_SERVER);
-			}
-			else
-			{
-				this.HasHelmet = true;
-				this.Account -= EQUIPMENT_ASSAULTSUIT_PRICE;
-			}
+				PrintHintText(this.Client, "%T", "Already_Have_Helmet_Bought_Kevlar");
+			
+			this.ArmorValue = TF2_GetMaxHealth(this.Client);
+			this.Account -= KEVLAR_PRICE;
+			return BUY_BOUGHT;
+		}
+	}
+	
+	public BuyResult AttemptToBuyAssaultSuit()
+	{
+		bool fullArmor = this.ArmorValue >= TF2_GetMaxHealth(this.Client);
+		
+		bool enoughMoney;
+		int price;
+		
+		if (fullArmor && this.HasHelmet)
+		{
+			PrintHintText(this.Client, "%T", "Already_Have_Kevlar_Helmet");
+			return BUY_ALREADY_HAVE;
+		}
+		else if (fullArmor && !this.HasHelmet && this.Account >= HELMET_PRICE)
+		{
+			enoughMoney = true;
+			price = HELMET_PRICE;
+			PrintHintText(this.Client, "%T", "Already_Have_Kevlar_Bought_Helmet");
+		}
+		else if (!fullArmor && this.HasHelmet && this.Account >= KEVLAR_PRICE)
+		{
+			enoughMoney = true;
+			price = KEVLAR_PRICE;
+			PrintHintText(this.Client, "%T", "Already_Have_Helmet_Bought_Kevlar");
+		}
+		else if (this.Account >= ASSAULTSUIT_PRICE)
+		{
+			enoughMoney = true;
+			price = ASSAULTSUIT_PRICE;
+		}
+		
+		// Process the result
+		if (!enoughMoney)
+		{
+			PrintHintText(this.Client, "%T", "Not_Enough_Money");
+			return BUY_CANT_AFFORD;
+		}
+		else
+		{
+			this.HasHelmet = true;
+			this.ArmorValue = TF2_GetMaxHealth(this.Client);
+			this.Account -= price;
+			return BUY_BOUGHT;
 		}
 	}
 }

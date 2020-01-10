@@ -238,19 +238,20 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 			menu.GetItem(param2, info, sizeof(info), style);
 			
 			TFGOPlayer player = TFGOPlayer(param1);
+			bool fullArmor = player.ArmorValue >= TF2_GetMaxHealth(param1);
 			
 			if (StrEqual(info, INFO_EQUIPMENT_KEVLAR))
 			{
-				if (player.HasFullArmor() || tfgo_max_armor.IntValue < 1 || player.Account < EQUIPMENT_KEVLAR_PRICE)
+				if (fullArmor || tfgo_max_armor.IntValue < 1 || player.Account < KEVLAR_PRICE)
 					return ITEMDRAW_DISABLED;
 			}
 			else if (StrEqual(info, INFO_EQUIPMENT_ASSAULTSUIT))
 			{
 				if (player.HasHelmet || tfgo_max_armor.IntValue < 2)
 					return ITEMDRAW_DISABLED;
-				else if (player.HasFullArmor() && player.Account < EQUIPMENT_HELMET_PRICE)
+				else if (fullArmor && player.Account < HELMET_PRICE)
 					return ITEMDRAW_DISABLED;
-				else if (!player.HasFullArmor() && player.Account < EQUIPMENT_ASSAULTSUIT_PRICE)
+				else if (!fullArmor && player.Account < ASSAULTSUIT_PRICE)
 					return ITEMDRAW_DISABLED;
 			}
 			
@@ -264,10 +265,12 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 			menu.GetItem(param2, info, sizeof(info), _, display, sizeof(display));
 			
 			TFGOPlayer player = TFGOPlayer(param1);
-			if (StrEqual(info, INFO_EQUIPMENT_KEVLAR) && !player.HasFullArmor())
-				Format(display, sizeof(display), "%T ($%d)", display, LANG_SERVER, EQUIPMENT_KEVLAR_PRICE);
+			bool fullArmor = player.ArmorValue >= TF2_GetMaxHealth(param1);
+			
+			if (StrEqual(info, INFO_EQUIPMENT_KEVLAR) && !fullArmor)
+				Format(display, sizeof(display), "%T ($%d)", display, LANG_SERVER, KEVLAR_PRICE);
 			else if (StrEqual(info, INFO_EQUIPMENT_ASSAULTSUIT) && !player.HasHelmet)
-				Format(display, sizeof(display), "%T ($%d)", display, LANG_SERVER, player.HasFullArmor() ? EQUIPMENT_HELMET_PRICE : EQUIPMENT_ASSAULTSUIT_PRICE);
+				Format(display, sizeof(display), "%T ($%d)", display, LANG_SERVER, fullArmor ? HELMET_PRICE : ASSAULTSUIT_PRICE);
 			else
 				Format(display, sizeof(display), "%T (%T)", display, LANG_SERVER, "BuyMenu_AlreadyCarrying", LANG_SERVER);
 			
