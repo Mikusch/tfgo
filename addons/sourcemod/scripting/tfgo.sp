@@ -23,7 +23,6 @@
 #define BOMB_BEEPING_SOUND "player/cyoa_pda_beep3.wav"
 #define BOMB_WARNING_SOUND "mvm/mvm_bomb_warning.wav"
 #define BOMB_EXPLOSION_SOUND "mvm/mvm_bomb_explode.wav"
-#define PLAYER_PURCHASE_SOUND "mvm/mvm_bought_upgrade.wav"
 
 #define BOMB_EXPLOSION_DAMAGE 500.0
 #define BOMB_EXPLOSION_RADIUS 800.0

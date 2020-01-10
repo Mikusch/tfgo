@@ -198,6 +198,10 @@
 	{
 		"en"	"You already have Helmet. Replenished Kevlar."
 	}
+	"Already_Have_One"
+	{
+		"en"	"You already have one!"
+	}
 	"Not_Enough_Money"
 	{
 		"en"	"You have insufficient funds."

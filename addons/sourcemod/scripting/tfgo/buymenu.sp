@@ -131,7 +131,10 @@ public int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, i
 		{
 			char info[32]; // item def index
 			menu.GetItem(param2, info, sizeof(info));
-			TFGOPlayer(param1).PurchaseItem(StringToInt(info));
+			
+			if (TFGOPlayer(param1).AttemptToBuyWeapon(StringToInt(info)) == BUY_BOUGHT)
+				PlayPurchaseSound(param1);
+			
 			DisplayMainBuyMenu(param1);
 		}
 		
@@ -210,14 +213,15 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 			menu.GetItem(param2, info, sizeof(info));
 			
 			TFGOPlayer player = TFGOPlayer(param1);
-			if (StrEqual(info, INFO_EQUIPMENT_KEVLAR))
-				player.AttemptToBuyVest();
-			else if (StrEqual(info, INFO_EQUIPMENT_ASSAULTSUIT))
-				player.AttemptToBuyAssaultSuit();
 			
-			float origin[3];
-			GetClientAbsOrigin(param1, origin);
-			EmitAmbientSound(PLAYER_PURCHASE_SOUND, origin);
+			BuyResult result;
+			if (StrEqual(info, INFO_EQUIPMENT_KEVLAR))
+				result = player.AttemptToBuyVest();
+			else if (StrEqual(info, INFO_EQUIPMENT_ASSAULTSUIT))
+				result = player.AttemptToBuyAssaultSuit();
+			
+			if (result == BUY_BOUGHT)
+				PlayPurchaseSound(param1);
 			
 			DisplayMainBuyMenu(param1);
 		}

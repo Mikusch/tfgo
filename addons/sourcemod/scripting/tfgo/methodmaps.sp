@@ -106,35 +106,41 @@ methodmap TFGOPlayer
 		Forward_CashAwarded(this.Client, val);
 	}
 	
-	public void PurchaseItem(int defIndex)
+	public BuyResult AttemptToBuyWeapon(int defIndex)
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Client);
 		int slot = TF2_GetSlotInItem(defIndex, class);
+		int weapon = GetPlayerWeaponSlot(this.Client, slot);
 		
-		// Drop old weapon, if present
-		int currentWeapon = GetPlayerWeaponSlot(this.Client, slot);
-		if (currentWeapon > -1)
-		{
-			float position[3];
-			GetClientEyePosition(this.Client, position);
-			float angles[3];
-			GetClientEyeAngles(this.Client, angles);
-			SDK_CreateDroppedWeapon(currentWeapon, this.Client, position, angles);
-		}
-		
-		TF2_CreateAndEquipWeapon(this.Client, defIndex, TFQual_Unique, GetRandomInt(1, 100));
-		
-		// Save to loadout
-		g_PlayerLoadoutWeaponIndexes[this][class][slot] = defIndex;
-		
-		// Take money from account
 		WeaponConfig config;
 		g_AvailableWeapons.GetArray(g_AvailableWeapons.FindValue(defIndex, 0), config, sizeof(config));
-		this.Account -= config.price;
 		
-		float origin[3];
-		GetClientAbsOrigin(this.Client, origin);
-		EmitAmbientSound(PLAYER_PURCHASE_SOUND, origin);
+		if (weapon > -1 && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") == defIndex)
+		{
+			PrintHintText(this.Client, "%T", "Already_Have_One");
+			return BUY_ALREADY_HAVE;
+		}
+		else if (this.Account < config.price)
+		{
+			PrintHintText(this.Client, "%T", "Not_Enough_Money");
+			return BUY_CANT_AFFORD;
+		}
+		else
+		{
+			if (weapon > -1) // Drop old weapon, if present
+			{
+				float position[3];
+				GetClientEyePosition(this.Client, position);
+				float angles[3];
+				GetClientEyeAngles(this.Client, angles);
+				SDK_CreateDroppedWeapon(weapon, this.Client, position, angles);
+			}
+			
+			TF2_CreateAndEquipWeapon(this.Client, defIndex, TFQual_Unique, GetRandomInt(1, 100));
+			g_PlayerLoadoutWeaponIndexes[this][class][slot] = defIndex;
+			this.Account -= config.price;
+			return BUY_BOUGHT;
+		}
 	}
 	
 	public int GetWeaponFromLoadout(TFClassType class, int slot)

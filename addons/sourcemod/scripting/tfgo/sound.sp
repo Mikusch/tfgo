@@ -1,3 +1,5 @@
+#define PLAYER_PURCHASE_SOUND "mvm/mvm_bought_upgrade.wav"
+
 static char g_BombPlantedAnnouncerAlerts[][PLATFORM_MAX_PATH] =  {
 	"vo/mvm_bomb_alerts01.mp3", 
 	"vo/mvm_bomb_alerts02.mp3"
@@ -71,6 +73,13 @@ public void ShoutBombWarnings()
 			}
 		}
 	}
+}
+
+public void PlayPurchaseSound(int client)
+{
+	float origin[3];
+	GetClientAbsOrigin(client, origin);
+	EmitAmbientSound(PLAYER_PURCHASE_SOUND, origin);
 }
 
 public Action Event_Pre_Teamplay_Broadcast_Audio(Event event, const char[] name, bool dontBroadcast)
