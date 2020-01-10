@@ -222,6 +222,11 @@ methodmap TFGOPlayer
 	
 	public BuyResult AttemptToBuyVest()
 	{
+		if (tfgo_max_armor.IntValue < 1)
+		{
+			PrintHintText(this.Client, "%T", "Cannot_Buy_This", LANG_SERVER);
+			return BUY_NOT_ALLOWED;
+		}
 		if (this.ArmorValue >= TF2_GetMaxHealth(this.Client))
 		{
 			PrintHintText(this.Client, "%T", "Already_Have_Kevlar", LANG_SERVER);
@@ -250,7 +255,12 @@ methodmap TFGOPlayer
 		bool enoughMoney;
 		int price;
 		
-		if (fullArmor && this.HasHelmet)
+		if (tfgo_max_armor.IntValue < 2)
+		{
+			PrintHintText(this.Client, "%T", "Cannot_Buy_This", LANG_SERVER);
+			return BUY_NOT_ALLOWED;
+		}
+		else if (fullArmor && this.HasHelmet)
 		{
 			PrintHintText(this.Client, "%T", "Already_Have_Kevlar_Helmet", LANG_SERVER);
 			return BUY_ALREADY_HAVE;
