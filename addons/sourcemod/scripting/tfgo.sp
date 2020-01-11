@@ -338,7 +338,7 @@ public void Client_PreThink(int client)
 	if (player.ArmorValue > 0)
 	{
 		SetHudTextParams(-1.0, 0.85, 0.1, 255, 255, 255, 255, _, 0.0, 0.0, 0.0);
-		ShowHudText(client, -1, "Armor: %d", player.ArmorValue);
+		ShowHudText(client, -1, "%T", "HUD_Display_Armor", LANG_SERVER, player.ArmorValue);
 	}
 	
 	if (!g_MapHasRespawnRoom && g_IsBuyTimeActive)

@@ -279,6 +279,11 @@
 		"en"	"No income for suiciding."
 	}
 	
+	"HUD_Display_Armor"
+	{
+		"en"	"Armor: %d"
+	}
+	
 	"TF_TeamsScrambled"
 	{
 		"en"	"Teams have been scrambled."
