@@ -270,7 +270,7 @@ public MRESReturn Hook_GiveNamedItem(int client, Handle returnVal, Handle params
 	int slot = TF2_GetSlotInItem(defIndex, TF2_GetPlayerClass(client));
 	TFClassType class = TF2_GetPlayerClass(client);
 	
-	if (slot <= WeaponSlot_BuilderEngie && TFGOPlayer(client).GetWeaponFromLoadout(class, slot) != defIndex)
+	if (0 <= slot <= WeaponSlot_BuilderEngie && TFGOPlayer(client).GetWeaponFromLoadout(class, slot) != defIndex)
 	{
 		DHookSetReturn(returnVal, 0);
 		return MRES_Supercede;
