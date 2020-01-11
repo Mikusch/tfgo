@@ -57,11 +57,11 @@ methodmap TFGOPlayer
 	{
 		public get()
 		{
-			return g_PlayerArmorValues[this.Client][TF2_GetPlayerClass(this.Client)];
+			return g_PlayerArmorValues[this][TF2_GetPlayerClass(this.Client)];
 		}
 		public set(int val)
 		{
-			g_PlayerArmorValues[this.Client][TF2_GetPlayerClass(this.Client)] = val;
+			g_PlayerArmorValues[this][TF2_GetPlayerClass(this.Client)] = val;
 		}
 	}
 	
@@ -69,11 +69,11 @@ methodmap TFGOPlayer
 	{
 		public get()
 		{
-			return g_PlayerHelmets[this.Client][TF2_GetPlayerClass(this.Client)];
+			return g_PlayerHelmets[this][TF2_GetPlayerClass(this.Client)];
 		}
 		public set(bool val)
 		{
-			g_PlayerHelmets[this.Client][TF2_GetPlayerClass(this.Client)] = val;
+			g_PlayerHelmets[this][TF2_GetPlayerClass(this.Client)] = val;
 		}
 	}
 	
@@ -106,40 +106,41 @@ methodmap TFGOPlayer
 		Forward_CashAwarded(this.Client, val);
 	}
 	
-	public void ResetAccount()
-	{
-		this.Account = tfgo_startmoney.IntValue;
-	}
-	
-	public void PurchaseItem(int defIndex)
+	public BuyResult AttemptToBuyWeapon(int defIndex)
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Client);
 		int slot = TF2_GetSlotInItem(defIndex, class);
+		int weapon = GetPlayerWeaponSlot(this.Client, slot);
 		
-		// Drop old weapon, if present
-		int currentWeapon = GetPlayerWeaponSlot(this.Client, slot);
-		if (currentWeapon > -1)
-		{
-			float position[3];
-			GetClientEyePosition(this.Client, position);
-			float angles[3];
-			GetClientEyeAngles(this.Client, angles);
-			SDK_CreateDroppedWeapon(currentWeapon, this.Client, position, angles);
-		}
-		
-		TF2_CreateAndEquipWeapon(this.Client, defIndex, TFQual_Unique, GetRandomInt(1, 100));
-		
-		// Save to loadout
-		g_PlayerLoadoutWeaponIndexes[this][class][slot] = defIndex;
-		
-		// Take money from account
 		WeaponConfig config;
 		g_AvailableWeapons.GetArray(g_AvailableWeapons.FindValue(defIndex, 0), config, sizeof(config));
-		this.Account -= config.price;
 		
-		float origin[3];
-		GetClientAbsOrigin(this.Client, origin);
-		EmitAmbientSound(PLAYER_PURCHASE_SOUND, origin);
+		if (weapon > -1 && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") == defIndex)
+		{
+			PrintHintText(this.Client, "%T", "Already_Have_One", LANG_SERVER);
+			return BUY_ALREADY_HAVE;
+		}
+		else if (this.Account < config.price)
+		{
+			PrintHintText(this.Client, "%T", "Not_Enough_Money", LANG_SERVER);
+			return BUY_CANT_AFFORD;
+		}
+		else
+		{
+			if (weapon > -1) // Drop old weapon, if present
+			{
+				float position[3];
+				GetClientEyePosition(this.Client, position);
+				float angles[3];
+				GetClientEyeAngles(this.Client, angles);
+				SDK_CreateDroppedWeapon(weapon, this.Client, position, angles);
+			}
+			
+			TF2_CreateAndEquipWeapon(this.Client, defIndex, TFQual_Unique, GetRandomInt(1, 100));
+			g_PlayerLoadoutWeaponIndexes[this][class][slot] = defIndex;
+			this.Account -= config.price;
+			return BUY_BOUGHT;
+		}
 	}
 	
 	public int GetWeaponFromLoadout(TFClassType class, int slot)
@@ -170,23 +171,131 @@ methodmap TFGOPlayer
 		g_PlayerLoadoutWeaponIndexes[this.Client][class][slot] = defIndex;
 	}
 	
-	public void ClearLoadout()
+	public void RemoveAllItems(bool removeArmor)
 	{
-		for (int class = 0; class < sizeof(g_PlayerLoadoutWeaponIndexes[]); class++)
+		for (int i = 0; i < sizeof(g_PlayerLoadoutWeaponIndexes[]); i++)
 		{
-			for (int slot = 0; slot < sizeof(g_PlayerLoadoutWeaponIndexes[][]); slot++)
+			for (int j = 0; j < sizeof(g_PlayerLoadoutWeaponIndexes[][]); j++)
 			{
-				g_PlayerLoadoutWeaponIndexes[this.Client][class][slot] = -1;
+				g_PlayerLoadoutWeaponIndexes[this.Client][i][j] = -1;
 			}
 		}
 		
-		this.ArmorValue = 0;
-		this.HasHelmet = false;
+		if (removeArmor)
+		{
+			for (int i = 0; i < sizeof(g_PlayerHelmets[]); i++)
+			{
+				g_PlayerHelmets[this.Client][i] = false;
+			}
+			
+			for (int i = 0; i < sizeof(g_PlayerArmorValues[]); i++)
+			{
+				g_PlayerArmorValues[this.Client][i] = 0;
+			}
+		}
 	}
 	
-	public bool HasFullArmor()
+	public void Reset()
 	{
-		return this.ArmorValue >= TF2_GetMaxHealth(this.Client);
+		this.RemoveAllItems(true);
+		this.Account = tfgo_startmoney.IntValue;
+	}
+	
+	public bool IsArmored(int hitgroup)
+	{
+		switch (hitgroup)
+		{
+			case HITGROUP_GENERIC, HITGROUP_CHEST, HITGROUP_STOMACH, HITGROUP_LEFTARM, HITGROUP_RIGHTARM:
+			{
+				return this.ArmorValue > 0;
+			}
+			case HITGROUP_HEAD:
+			{
+				return this.ArmorValue > 0 && this.HasHelmet;
+			}
+			default:
+			{
+				return false;
+			}
+		}
+	}
+	
+	public BuyResult AttemptToBuyVest()
+	{
+		if (tfgo_max_armor.IntValue < 1)
+		{
+			PrintHintText(this.Client, "%T", "Cannot_Buy_This", LANG_SERVER);
+			return BUY_NOT_ALLOWED;
+		}
+		if (this.ArmorValue >= TF2_GetMaxHealth(this.Client))
+		{
+			PrintHintText(this.Client, "%T", "Already_Have_Kevlar", LANG_SERVER);
+			return BUY_ALREADY_HAVE;
+		}
+		else if (this.Account < KEVLAR_PRICE)
+		{
+			PrintHintText(this.Client, "%T", "Not_Enough_Money", LANG_SERVER);
+			return BUY_CANT_AFFORD;
+		}
+		else
+		{
+			if (this.HasHelmet)
+				PrintHintText(this.Client, "%T", "Already_Have_Helmet_Bought_Kevlar", LANG_SERVER);
+			
+			this.ArmorValue = TF2_GetMaxHealth(this.Client);
+			this.Account -= KEVLAR_PRICE;
+			return BUY_BOUGHT;
+		}
+	}
+	
+	public BuyResult AttemptToBuyAssaultSuit()
+	{
+		bool fullArmor = this.ArmorValue >= TF2_GetMaxHealth(this.Client);
+		
+		bool enoughMoney;
+		int price;
+		
+		if (tfgo_max_armor.IntValue < 2)
+		{
+			PrintHintText(this.Client, "%T", "Cannot_Buy_This", LANG_SERVER);
+			return BUY_NOT_ALLOWED;
+		}
+		else if (fullArmor && this.HasHelmet)
+		{
+			PrintHintText(this.Client, "%T", "Already_Have_Kevlar_Helmet", LANG_SERVER);
+			return BUY_ALREADY_HAVE;
+		}
+		else if (fullArmor && !this.HasHelmet && this.Account >= HELMET_PRICE)
+		{
+			enoughMoney = true;
+			price = HELMET_PRICE;
+			PrintHintText(this.Client, "%T", "Already_Have_Kevlar_Bought_Helmet", LANG_SERVER);
+		}
+		else if (!fullArmor && this.HasHelmet && this.Account >= KEVLAR_PRICE)
+		{
+			enoughMoney = true;
+			price = KEVLAR_PRICE;
+			PrintHintText(this.Client, "%T", "Already_Have_Helmet_Bought_Kevlar", LANG_SERVER);
+		}
+		else if (this.Account >= ASSAULTSUIT_PRICE)
+		{
+			enoughMoney = true;
+			price = ASSAULTSUIT_PRICE;
+		}
+		
+		// Process the result
+		if (!enoughMoney)
+		{
+			PrintHintText(this.Client, "%T", "Not_Enough_Money", LANG_SERVER);
+			return BUY_CANT_AFFORD;
+		}
+		else
+		{
+			this.HasHelmet = true;
+			this.ArmorValue = TF2_GetMaxHealth(this.Client);
+			this.Account -= price;
+			return BUY_BOUGHT;
+		}
 	}
 }
 
