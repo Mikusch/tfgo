@@ -43,7 +43,10 @@ public int MenuHandler_MainBuyMenu(Menu menu, MenuAction action, int param1, int
 {
 	switch (action)
 	{
-		case MenuAction_Display: TFGOPlayer(param1).ActiveBuyMenu = menu;
+		case MenuAction_Display:
+		{
+			TFGOPlayer(param1).ActiveBuyMenu = menu;
+		}
 		
 		case MenuAction_Select:
 		{
@@ -73,9 +76,15 @@ public int MenuHandler_MainBuyMenu(Menu menu, MenuAction action, int param1, int
 			}
 		}
 		
-		case MenuAction_Cancel: TFGOPlayer(param1).ActiveBuyMenu = null;
+		case MenuAction_Cancel:
+		{
+			TFGOPlayer(param1).ActiveBuyMenu = null;
+		}
 		
-		case MenuAction_End: delete menu;
+		case MenuAction_End:
+		{
+			delete menu;
+		}
 		
 		case MenuAction_DisplayItem:
 		{
@@ -125,7 +134,10 @@ public int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, i
 {
 	switch (action)
 	{
-		case MenuAction_Display: TFGOPlayer(param1).ActiveBuyMenu = menu;
+		case MenuAction_Display:
+		{
+			TFGOPlayer(param1).ActiveBuyMenu = menu;
+		}
 		
 		case MenuAction_Select:
 		{
@@ -146,7 +158,10 @@ public int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, i
 				DisplayMainBuyMenu(param1);
 		}
 		
-		case MenuAction_End: delete menu;
+		case MenuAction_End:
+		{
+			delete menu;
+		}
 		
 		case MenuAction_DrawItem:
 		{
@@ -206,7 +221,10 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 {
 	switch (action)
 	{
-		case MenuAction_Display: TFGOPlayer(param1).ActiveBuyMenu = menu;
+		case MenuAction_Display:
+		{
+			TFGOPlayer(param1).ActiveBuyMenu = menu;
+		}
 		
 		case MenuAction_Select:
 		{
@@ -235,7 +253,10 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 				DisplayMainBuyMenu(param1);
 		}
 		
-		case MenuAction_End: delete menu;
+		case MenuAction_End:
+		{
+			delete menu;
+		}
 		
 		case MenuAction_DrawItem:
 		{
@@ -248,16 +269,12 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 			
 			if (StrEqual(info, INFO_EQUIPMENT_KEVLAR))
 			{
-				if (fullArmor || tfgo_max_armor.IntValue < 1 || player.Account < KEVLAR_PRICE)
+				if (tfgo_max_armor.IntValue < 1 || fullArmor || player.Account < KEVLAR_PRICE)
 					return ITEMDRAW_DISABLED;
 			}
 			else if (StrEqual(info, INFO_EQUIPMENT_ASSAULTSUIT))
 			{
-				if (player.HasHelmet || tfgo_max_armor.IntValue < 2)
-					return ITEMDRAW_DISABLED;
-				else if (fullArmor && player.Account < HELMET_PRICE)
-					return ITEMDRAW_DISABLED;
-				else if (!fullArmor && player.Account < ASSAULTSUIT_PRICE)
+				if (tfgo_max_armor.IntValue < 2 || player.HasHelmet || fullArmor && player.Account < HELMET_PRICE || !fullArmor && player.Account < ASSAULTSUIT_PRICE)
 					return ITEMDRAW_DISABLED;
 			}
 			
@@ -273,12 +290,22 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 			TFGOPlayer player = TFGOPlayer(param1);
 			bool fullArmor = player.ArmorValue >= TF2_GetMaxHealth(param1);
 			
-			if (StrEqual(info, INFO_EQUIPMENT_KEVLAR) && !fullArmor)
-				Format(display, sizeof(display), "%T ($%d)", display, LANG_SERVER, KEVLAR_PRICE);
-			else if (StrEqual(info, INFO_EQUIPMENT_ASSAULTSUIT) && !player.HasHelmet)
-				Format(display, sizeof(display), "%T ($%d)", display, LANG_SERVER, fullArmor ? HELMET_PRICE : ASSAULTSUIT_PRICE);
-			else
-				Format(display, sizeof(display), "%T (%T)", display, LANG_SERVER, "BuyMenu_AlreadyCarrying", LANG_SERVER);
+			if (StrEqual(info, INFO_EQUIPMENT_KEVLAR))
+			{
+				if (fullArmor)
+					Format(display, sizeof(display), "%T (%T)", display, LANG_SERVER, "BuyMenu_AlreadyCarrying", LANG_SERVER);
+				else
+					Format(display, sizeof(display), "%T ($%d)", display, LANG_SERVER, KEVLAR_PRICE);
+			}
+			else if (StrEqual(info, INFO_EQUIPMENT_ASSAULTSUIT))
+			{
+				if (player.HasHelmet)
+					Format(display, sizeof(display), "%T (%T)", display, LANG_SERVER, "BuyMenu_AlreadyCarrying", LANG_SERVER);
+				else if (fullArmor)
+					Format(display, sizeof(display), "%T ($%d)", display, LANG_SERVER, HELMET_PRICE);
+				else
+					Format(display, sizeof(display), "%T ($%d)", display, LANG_SERVER, ASSAULTSUIT_PRICE);
+			}
 			
 			return RedrawMenuItem(display);
 		}
