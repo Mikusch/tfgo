@@ -168,7 +168,7 @@ methodmap TFGOPlayer
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Client);
 		int slot = TF2_GetSlotInItem(defIndex, class);
-		g_PlayerLoadoutWeaponIndexes[this.Client][class][slot] = defIndex;
+		g_PlayerLoadoutWeaponIndexes[this][class][slot] = defIndex;
 	}
 	
 	public void RemoveAllItems(bool removeArmor)
@@ -177,7 +177,7 @@ methodmap TFGOPlayer
 		{
 			for (int j = 0; j < sizeof(g_PlayerLoadoutWeaponIndexes[][]); j++)
 			{
-				g_PlayerLoadoutWeaponIndexes[this.Client][i][j] = -1;
+				g_PlayerLoadoutWeaponIndexes[this][i][j] = -1;
 			}
 		}
 		
@@ -185,12 +185,12 @@ methodmap TFGOPlayer
 		{
 			for (int i = 0; i < sizeof(g_PlayerHelmets[]); i++)
 			{
-				g_PlayerHelmets[this.Client][i] = false;
+				g_PlayerHelmets[this][i] = false;
 			}
 			
 			for (int i = 0; i < sizeof(g_PlayerArmorValues[]); i++)
 			{
-				g_PlayerArmorValues[this.Client][i] = 0;
+				g_PlayerArmorValues[this][i] = 0;
 			}
 		}
 	}
