@@ -117,12 +117,12 @@ methodmap TFGOPlayer
 		
 		if (weapon > -1 && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") == defIndex)
 		{
-			PrintHintText(this.Client, "%T", "Already_Have_One", LANG_SERVER);
+			PrintCenterText(this.Client, "%T", "Already_Have_One", LANG_SERVER);
 			return BUY_ALREADY_HAVE;
 		}
 		else if (this.Account < config.price)
 		{
-			PrintHintText(this.Client, "%T", "Not_Enough_Money", LANG_SERVER);
+			PrintCenterText(this.Client, "%T", "Not_Enough_Money", LANG_SERVER);
 			return BUY_CANT_AFFORD;
 		}
 		else
@@ -224,23 +224,23 @@ methodmap TFGOPlayer
 	{
 		if (tfgo_max_armor.IntValue < 1)
 		{
-			PrintHintText(this.Client, "%T", "Cannot_Buy_This", LANG_SERVER);
+			PrintCenterText(this.Client, "%T", "Cannot_Buy_This", LANG_SERVER);
 			return BUY_NOT_ALLOWED;
 		}
 		if (this.ArmorValue >= TF2_GetMaxHealth(this.Client))
 		{
-			PrintHintText(this.Client, "%T", "Already_Have_Kevlar", LANG_SERVER);
+			PrintCenterText(this.Client, "%T", "Already_Have_Kevlar", LANG_SERVER);
 			return BUY_ALREADY_HAVE;
 		}
 		else if (this.Account < KEVLAR_PRICE)
 		{
-			PrintHintText(this.Client, "%T", "Not_Enough_Money", LANG_SERVER);
+			PrintCenterText(this.Client, "%T", "Not_Enough_Money", LANG_SERVER);
 			return BUY_CANT_AFFORD;
 		}
 		else
 		{
 			if (this.HasHelmet)
-				PrintHintText(this.Client, "%T", "Already_Have_Helmet_Bought_Kevlar", LANG_SERVER);
+				PrintCenterText(this.Client, "%T", "Already_Have_Helmet_Bought_Kevlar", LANG_SERVER);
 			
 			this.ArmorValue = TF2_GetMaxHealth(this.Client);
 			this.Account -= KEVLAR_PRICE;
@@ -257,25 +257,25 @@ methodmap TFGOPlayer
 		
 		if (tfgo_max_armor.IntValue < 2)
 		{
-			PrintHintText(this.Client, "%T", "Cannot_Buy_This", LANG_SERVER);
+			PrintCenterText(this.Client, "%T", "Cannot_Buy_This", LANG_SERVER);
 			return BUY_NOT_ALLOWED;
 		}
 		else if (fullArmor && this.HasHelmet)
 		{
-			PrintHintText(this.Client, "%T", "Already_Have_Kevlar_Helmet", LANG_SERVER);
+			PrintCenterText(this.Client, "%T", "Already_Have_Kevlar_Helmet", LANG_SERVER);
 			return BUY_ALREADY_HAVE;
 		}
 		else if (fullArmor && !this.HasHelmet && this.Account >= HELMET_PRICE)
 		{
 			enoughMoney = true;
 			price = HELMET_PRICE;
-			PrintHintText(this.Client, "%T", "Already_Have_Kevlar_Bought_Helmet", LANG_SERVER);
+			PrintCenterText(this.Client, "%T", "Already_Have_Kevlar_Bought_Helmet", LANG_SERVER);
 		}
 		else if (!fullArmor && this.HasHelmet && this.Account >= KEVLAR_PRICE)
 		{
 			enoughMoney = true;
 			price = KEVLAR_PRICE;
-			PrintHintText(this.Client, "%T", "Already_Have_Helmet_Bought_Kevlar", LANG_SERVER);
+			PrintCenterText(this.Client, "%T", "Already_Have_Helmet_Bought_Kevlar", LANG_SERVER);
 		}
 		else if (this.Account >= ASSAULTSUIT_PRICE)
 		{
@@ -286,7 +286,7 @@ methodmap TFGOPlayer
 		// Process the result
 		if (!enoughMoney)
 		{
-			PrintHintText(this.Client, "%T", "Not_Enough_Money", LANG_SERVER);
+			PrintCenterText(this.Client, "%T", "Not_Enough_Money", LANG_SERVER);
 			return BUY_CANT_AFFORD;
 		}
 		else

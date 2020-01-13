@@ -3,10 +3,10 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
+#include <tf2_stocks>
 #include <dhooks>
 #include <memorypatch>
 #include <morecolors>
-#include <tf2_stocks>
 #include <tf_econ_data>
 #include <tfgo>
 
@@ -34,6 +34,9 @@
 #define KEVLAR_PRICE 650
 #define ASSAULTSUIT_PRICE 1000
 
+const TFTeam TFTeam_CT = TFTeam_Red;
+const TFTeam TFTeam_T = TFTeam_Blue;
+
 // Source hit group standards (from shareddefs.h)
 enum
 {
@@ -51,12 +54,12 @@ enum
 // Buy menu results (from cs_player.h)
 enum BuyResult
 {
-	BUY_BOUGHT,
-	BUY_ALREADY_HAVE,
-	BUY_CANT_AFFORD,
-	BUY_PLAYER_CANT_BUY,
-	BUY_NOT_ALLOWED,
-	BUY_INVALID_ITEM,
+	BUY_BOUGHT, 
+	BUY_ALREADY_HAVE, 
+	BUY_CANT_AFFORD, 
+	BUY_PLAYER_CANT_BUY, 
+	BUY_NOT_ALLOWED, 
+	BUY_INVALID_ITEM, 
 };
 
 // TF2 arena win reasons
@@ -896,7 +899,7 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	winningTeam.ConsecutiveLosses--;
 	
 	g_RoundsPlayed++;
-	if (tfgo_halftime.BoolValue && g_RoundsPlayed == RoundFloat(tfgo_maxrounds.IntValue / 2.0))
+	if (tfgo_halftime.BoolValue && g_RoundsPlayed == tfgo_maxrounds.IntValue / 2)
 	{
 		SDK_SetSwitchTeams(true);
 	}
