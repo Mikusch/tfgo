@@ -365,14 +365,14 @@ public Action Client_TraceAttack(int victim, int &attacker, int &inflictor, floa
 {
 	bool changed;
 	
-	// Allow all weapons to headshot
-	if (tfgo_all_weapons_can_headshot.BoolValue)
+	// Allow every weapon with damagetype DMG_BULLET or DMG_BUCKSHOT to deal crits on headshot
+	if (tfgo_all_weapons_can_headshot.BoolValue && damagetype & (DMG_BULLET | DMG_BUCKSHOT))
 	{
 		damagetype |= DMG_USE_HITLOCATIONS;
 		changed = true;
 	}
 	
-	// Hitgroup damage modifiers (HITGROUP_HEAD covered by DMG_USE_HITLOCATIONS)
+	// Hitgroup damage modifiers (headshots are already covered by DMG_USE_HITLOCATIONS)
 	switch (hitgroup)
 	{
 		case HITGROUP_STOMACH:
