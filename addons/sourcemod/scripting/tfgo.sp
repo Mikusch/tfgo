@@ -614,8 +614,10 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 		TFGOPlayer player = TFGOPlayer(client);
 		player.ApplyLoadout();
 		
-		if (tfgo_free_armor.IntValue >= 1) player.ArmorValue = TF2_GetMaxHealth(client);
-		if (tfgo_free_armor.IntValue >= 2) player.HasHelmet = true;
+		if (tfgo_free_armor.IntValue >= 1)
+			player.ArmorValue = TF2_GetMaxHealth(client);
+		if (tfgo_free_armor.IntValue >= 2)
+			player.HasHelmet = true;
 		
 		if (player.ActiveBuyMenu != null)
 			player.ActiveBuyMenu.Cancel();
@@ -856,12 +858,7 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	
 	// Determine winning/losing team
 	TFGOTeam winningTeam = TFGOTeam(view_as<TFTeam>(event.GetInt("winning_team")));
-	TFGOTeam losingTeam;
-	switch (winningTeam.Team)
-	{
-		case TFTeam_Red:losingTeam = TFGOTeam(TFTeam_Blue);
-		case TFTeam_Blue:losingTeam = TFGOTeam(TFTeam_Red);
-	}
+	TFGOTeam losingTeam = winningTeam.Team == TFTeam_Red ? TFGOTeam(TFTeam_Blue) : TFGOTeam(TFTeam_Red);
 	
 	// Add round end team awards
 	int winreason = event.GetInt("winreason");

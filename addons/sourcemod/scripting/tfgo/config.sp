@@ -58,8 +58,10 @@ void ReadKillAwardConfig(KeyValues kv)
 
 void Config_Init()
 {
-	if (g_WeaponClassKillAwards == null) g_WeaponClassKillAwards = new StringMap();
-	if (g_AvailableWeapons == null) g_AvailableWeapons = new ArrayList(sizeof(WeaponConfig));
+	if (g_WeaponClassKillAwards == null)
+		g_WeaponClassKillAwards = new StringMap();
+	if (g_AvailableWeapons == null)
+		g_AvailableWeapons = new ArrayList(sizeof(WeaponConfig));
 	
 	// Read config
 	KeyValues kv = new KeyValues("Config");
