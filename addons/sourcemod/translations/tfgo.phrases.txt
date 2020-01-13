@@ -1,6 +1,6 @@
 "Phrases"
 {
-	// Translations for weapons TF2 Econ can't provide
+	// TF2 Econ Data fails to provide names for stock weapons
 	"#TF_Weapon_Pistol"
 	{
 		"en"	"Pistol"
@@ -114,26 +114,20 @@
 		"en"	"Invis Watch"
 	}
 	
-	// Alerts
-	"Alert_Bomb_Planted"
-	{
-		"en"	"The bomb has been planted.\n%d seconds to detonation."
-	}
-	
 	// Buy Menu
 	"BuyMenu_Title"
 	{
 		"en"	"BUY MENU"
 	}
-	"BuyMenu_SubTitle_Slot"
+	"BuyMenu_SelectSlot"
 	{
 		"en"	"Select Slot"
 	}
-	"BuyMenu_SubTitle_Weapon"
+	"BuyMenu_SelectWeapon"
 	{
 		"en"	"Select Weapon"
 	}
-	"BuyMenu_SubTitle_Equipment"
+	"BuyMenu_SelectEquipment"
 	{
 		"en"	"Select Equipment"
 	}
@@ -155,23 +149,15 @@
 	}
 	"BuyMenu_Buildings"
 	{
-		"en"	"Sappers"
-	}
-	"BuyMenu_AlreadyCarrying"
-	{
-		"en"	"In current inventory"
+		"en"	"Buildings"
 	}
 	"BuyMenu_Equipment"
 	{
 		"en"	"Equipment"
 	}
-	"BuyMenu_Equipment_Kevlar"
+	"BuyMenu_AlreadyCarrying"
 	{
-		"en"	"Kevlar Vest"
-	}
-	"BuyMenu_Equipment_Kevlar_Helmet"
-	{
-		"en"	"Kevlar + Helmet"
+		"en"	"In current inventory"
 	}
 	"BuyMenu_NotInBuyZone"
 	{
@@ -182,6 +168,23 @@
 		"en"	"The %d second buy period has expired"
 	}
 	
+	// Item Names
+	"Kevlar"
+	{
+		"en"	"Kevlar Vest"
+	}
+	"AssaultSuit"
+	{
+		"en"	"Kevlar + Helmet"
+	}
+	
+	// Alerts
+	"Bomb_Planted"
+	{
+		"en"	"The bomb has been planted.\n%d seconds to detonation."
+	}
+	
+	// Misc. Info Text
 	"Already_Have_Kevlar"
 	{
 		"en"	"You already have Kevlar!"
@@ -279,7 +282,8 @@
 		"en"	"No income for suiciding."
 	}
 	
-	"HUD_Display_Armor"
+	// HUD Text
+	"HUD_Armor"
 	{
 		"en"	"Armor: %d"
 	}

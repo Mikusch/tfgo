@@ -1,11 +1,11 @@
 #define INFO_EQUIPMENT "EQUIPMENT"
-#define INFO_EQUIPMENT_KEVLAR "KEVLAR"
-#define INFO_EQUIPMENT_ASSAULTSUIT "ASSAULTSUIT"
+#define INFO_KEVLAR "KEVLAR"
+#define INFO_ASSAULTSUIT "ASSAULTSUIT"
 
 public bool DisplayMainBuyMenu(int client)
 {
 	Menu menu = new Menu(MenuHandler_MainBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DisplayItem);
-	menu.SetTitle("%T\n%T", "BuyMenu_Title", LANG_SERVER, "BuyMenu_SubTitle_Slot", LANG_SERVER);
+	menu.SetTitle("%T\n%T", "BuyMenu_Title", LANG_SERVER, "BuyMenu_SelectSlot", LANG_SERVER);
 	menu.ExitButton = true;
 	
 	switch (TF2_GetPlayerClass(client))
@@ -102,7 +102,7 @@ public int MenuHandler_MainBuyMenu(Menu menu, MenuAction action, int param1, int
 public bool DisplayWeaponBuyMenu(int client, ArrayList slots)
 {
 	Menu menu = new Menu(MenuHandler_WeaponBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DrawItem | MenuAction_DisplayItem);
-	menu.SetTitle("%T\n%T", "BuyMenu_Title", LANG_SERVER, "BuyMenu_SubTitle_Weapon", LANG_SERVER);
+	menu.SetTitle("%T\n%T", "BuyMenu_Title", LANG_SERVER, "BuyMenu_SelectWeapon", LANG_SERVER);
 	menu.ExitButton = true;
 	menu.ExitBackButton = true;
 	
@@ -207,12 +207,12 @@ public int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, i
 public int DisplayEquipmentBuyMenu(int client)
 {
 	Menu menu = new Menu(MenuHandler_EquipmentBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DrawItem | MenuAction_DisplayItem);
-	menu.SetTitle("%T\n%T", "BuyMenu_Title", LANG_SERVER, "BuyMenu_SubTitle_Equipment", LANG_SERVER);
+	menu.SetTitle("%T\n%T", "BuyMenu_Title", LANG_SERVER, "BuyMenu_SelectEquipment", LANG_SERVER);
 	menu.ExitButton = true;
 	menu.ExitBackButton = true;
 	
-	menu.AddItem(INFO_EQUIPMENT_KEVLAR, "BuyMenu_Equipment_Kevlar");
-	menu.AddItem(INFO_EQUIPMENT_ASSAULTSUIT, "BuyMenu_Equipment_Kevlar_Helmet");
+	menu.AddItem(INFO_KEVLAR, "Kevlar");
+	menu.AddItem(INFO_ASSAULTSUIT, "AssaultSuit");
 	
 	menu.Display(client, MENU_TIME_FOREVER);
 }
@@ -234,9 +234,9 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 			TFGOPlayer player = TFGOPlayer(param1);
 			
 			BuyResult result;
-			if (StrEqual(info, INFO_EQUIPMENT_KEVLAR))
+			if (StrEqual(info, INFO_KEVLAR))
 				result = player.AttemptToBuyVest();
-			else if (StrEqual(info, INFO_EQUIPMENT_ASSAULTSUIT))
+			else if (StrEqual(info, INFO_ASSAULTSUIT))
 				result = player.AttemptToBuyAssaultSuit();
 			
 			if (result == BUY_BOUGHT)
@@ -267,12 +267,12 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 			TFGOPlayer player = TFGOPlayer(param1);
 			bool fullArmor = player.ArmorValue >= TF2_GetMaxHealth(param1);
 			
-			if (StrEqual(info, INFO_EQUIPMENT_KEVLAR))
+			if (StrEqual(info, INFO_KEVLAR))
 			{
 				if (tfgo_max_armor.IntValue < 1 || fullArmor || player.Account < KEVLAR_PRICE)
 					return ITEMDRAW_DISABLED;
 			}
-			else if (StrEqual(info, INFO_EQUIPMENT_ASSAULTSUIT))
+			else if (StrEqual(info, INFO_ASSAULTSUIT))
 			{
 				if (tfgo_max_armor.IntValue < 2 || player.HasHelmet || fullArmor && player.Account < HELMET_PRICE || !fullArmor && player.Account < ASSAULTSUIT_PRICE)
 					return ITEMDRAW_DISABLED;
@@ -290,14 +290,14 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 			TFGOPlayer player = TFGOPlayer(param1);
 			bool fullArmor = player.ArmorValue >= TF2_GetMaxHealth(param1);
 			
-			if (StrEqual(info, INFO_EQUIPMENT_KEVLAR))
+			if (StrEqual(info, INFO_KEVLAR))
 			{
 				if (fullArmor)
 					Format(display, sizeof(display), "%T (%T)", display, LANG_SERVER, "BuyMenu_AlreadyCarrying", LANG_SERVER);
 				else
 					Format(display, sizeof(display), "%T ($%d)", display, LANG_SERVER, KEVLAR_PRICE);
 			}
-			else if (StrEqual(info, INFO_EQUIPMENT_ASSAULTSUIT))
+			else if (StrEqual(info, INFO_ASSAULTSUIT))
 			{
 				if (player.HasHelmet)
 					Format(display, sizeof(display), "%T (%T)", display, LANG_SERVER, "BuyMenu_AlreadyCarrying", LANG_SERVER);

@@ -341,7 +341,7 @@ public void Client_PreThink(int client)
 	if (player.ArmorValue > 0)
 	{
 		SetHudTextParams(-1.0, 0.85, 0.1, 255, 255, 255, 255, _, 0.0, 0.0, 0.0);
-		ShowHudText(client, -1, "%T", "HUD_Display_Armor", LANG_SERVER, player.ArmorValue);
+		ShowHudText(client, -1, "%T", "HUD_Armor", LANG_SERVER, player.ArmorValue);
 	}
 	
 	if (!g_MapHasRespawnRoom && g_IsBuyTimeActive)
@@ -770,7 +770,7 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 	
 	// Show text on screen
 	char message[PLATFORM_MAX_PATH];
-	Format(message, sizeof(message), "%T", "Alert_Bomb_Planted", LANG_SERVER, tfgo_bombtimer.IntValue);
+	Format(message, sizeof(message), "%T", "Bomb_Planted", LANG_SERVER, tfgo_bombtimer.IntValue);
 	ShowGameMessage(message, "ico_notify_sixty_seconds");
 	
 	Forward_BombPlanted(team, cappers);
