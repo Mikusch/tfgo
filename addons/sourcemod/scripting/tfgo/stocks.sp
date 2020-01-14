@@ -45,7 +45,7 @@ stock void TF2_ForceRoundWin(TFTeam team, int winReason, bool forceMapReset = tr
 	RemoveEntity(entity);
 }
 
-stock void TF2_Explode(int attacker = -1, float origin[3], float damage, float radius, const char[] particle, const char[] sound)
+stock void TF2_Explode(int attacker = -1, float origin[3], float damage, float radius, const char[] particle = NULL_STRING, const char[] sound = NULL_STRING)
 {
 	int bomb = CreateEntityByName("tf_generic_bomb");
 	DispatchKeyValueVector(bomb, "origin", origin);
