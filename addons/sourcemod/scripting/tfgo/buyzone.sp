@@ -1,5 +1,5 @@
-float g_DynamicBuyZoneCenters[view_as<int>(TFTeam_Blue) + 1][3];
-float g_DynamicBuyzoneRadii[view_as<int>(TFTeam_Blue) + 1];
+static float g_DynamicBuyZoneCenters[view_as<int>(TFTeam_Blue) + 1][3];
+static float g_DynamicBuyzoneRadii[view_as<int>(TFTeam_Blue) + 1];
 
 public void CalculateDynamicBuyZones()
 {

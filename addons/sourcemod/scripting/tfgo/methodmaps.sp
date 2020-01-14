@@ -1,5 +1,5 @@
 // -1 indicates the class should start with no weapon in that slot
-int g_DefaultWeaponIndexes[][] =  {
+static int g_DefaultWeaponIndexes[][] =  {
 	{ -1, -1, -1, -1, -1, -1 },  // Unknown
 	{ -1, 23, 30758, -1, -1, -1 },  // Scout
 	{ -1, 16, 30758, -1, -1, -1 },  // Sniper
@@ -12,13 +12,13 @@ int g_DefaultWeaponIndexes[][] =  {
 	{ 9, 22, 30758, -1, -1, 28 } // Engineer
 };
 
-int g_PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClassType)][WeaponSlot_BuilderEngie + 1];
-int g_PlayerAccounts[TF_MAXPLAYERS + 1];
-int g_PlayerArmorValues[TF_MAXPLAYERS + 1][view_as<int>(TFClassType)];
-bool g_PlayerHelmets[TF_MAXPLAYERS + 1][view_as<int>(TFClassType)];
-Menu g_ActiveBuyMenus[TF_MAXPLAYERS + 1];
+static int g_PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClassType)][WeaponSlot_BuilderEngie + 1];
+static int g_PlayerAccounts[TF_MAXPLAYERS + 1];
+static int g_PlayerArmorValues[TF_MAXPLAYERS + 1][view_as<int>(TFClassType)];
+static bool g_PlayerHelmets[TF_MAXPLAYERS + 1][view_as<int>(TFClassType)];
+static Menu g_ActiveBuyMenus[TF_MAXPLAYERS + 1];
 
-int g_TeamConsecutiveLosses[view_as<int>(TFTeam)] =  { STARTING_CONSECUTIVE_LOSSES, ... };
+static int g_TeamConsecutiveLosses[view_as<int>(TFTeam)] =  { STARTING_CONSECUTIVE_LOSSES, ... };
 
 
 methodmap TFGOPlayer
