@@ -18,11 +18,16 @@
 
 #define TF_MAXPLAYERS 32
 
-#define BOMB_MODEL "models/props_td/atom_bomb.mdl"
-#define BOMB_EXPLOSION_PARTICLE "mvm_hatch_destroy"
-#define BOMB_BEEPING_SOUND "player/cyoa_pda_beep3.wav"
-#define BOMB_WARNING_SOUND "mvm/mvm_bomb_warning.wav"
-#define BOMB_EXPLOSION_SOUND "mvm/mvm_bomb_explode.wav"
+#define MODEL_BOMB "models/props_td/atom_bomb.mdl"
+
+#define PARTICLE_BOMB_EXPLOSION "mvm_hatch_destroy"
+
+#define SOUND_BOMB_BEEPING "player/cyoa_pda_beep3.wav"
+#define GAMESOUND_BOMB_EXPLOSION "MVM.BombExplodes"
+#define GAMESOUND_BOMB_WARNING "MVM.BombWarning"
+#define GAMESOUND_PLAYER_PURCHASE "MVM.PlayerUpgraded"
+#define GAMESOUND_ANNOUNCER_BOMB_PLANTED "Announcer.MVM_Bomb_Alert_Entered"
+#define GAMESOUND_ANNOUNCER_TEAM_SCRAMBLE "Announcer.AM_TeamScrambleRandom"
 
 #define BOMB_EXPLOSION_DAMAGE 500.0
 #define BOMB_EXPLOSION_RADIUS 800.0
@@ -33,6 +38,7 @@
 #define HELMET_PRICE 350
 #define KEVLAR_PRICE 650
 #define ASSAULTSUIT_PRICE 1000
+
 
 const TFTeam TFTeam_CT = TFTeam_Red;
 const TFTeam TFTeam_T = TFTeam_Blue;
@@ -746,7 +752,7 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 	GetEntPropVector(capper, Prop_Send, "m_angRotation", angles);
 	
 	int bomb = CreateEntityByName("prop_dynamic_override");
-	SetEntityModel(bomb, BOMB_MODEL);
+	SetEntityModel(bomb, MODEL_BOMB);
 	DispatchSpawn(bomb);
 	TeleportEntity(bomb, origin, angles, NULL_VECTOR);
 	
@@ -760,8 +766,8 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 	g_CurrentMusicKit.StopMusicForAll(Music_StartAction);
 	g_CurrentMusicKit.StopMusicForAll(Music_RoundTenSecCount);
 	g_CurrentMusicKit.PlayMusicToAll(Music_BombPlanted);
-	PlayAnnouncerBombAlert();
-	ShoutBombWarnings();
+	EmitGameSoundToAll(GAMESOUND_ANNOUNCER_BOMB_PLANTED);
+	EmitBombSeeGameSounds();
 	
 	// Reset timers
 	g_TenSecondRoundTimer = null;
@@ -781,7 +787,7 @@ public Action Timer_PlayBombBeeping(Handle timer, int bomb)
 	
 	float origin[3];
 	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", origin);
-	EmitAmbientSound(BOMB_BEEPING_SOUND, origin, bomb);
+	EmitAmbientSound(SOUND_BOMB_BEEPING, origin, bomb);
 	return Plugin_Continue;
 }
 
@@ -806,7 +812,7 @@ public Action Timer_PlayBombExplosionWarning(Handle timer, int bomb)
 	
 	float origin[3];
 	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", origin);
-	EmitAmbientSound(BOMB_WARNING_SOUND, origin, bomb, SNDLEVEL_RAIDSIREN);
+	EmitAmbientGameSound(GAMESOUND_BOMB_WARNING, origin, bomb);
 }
 
 public Action Timer_DetonateBomb(Handle timer, int bombRef)
@@ -822,7 +828,7 @@ public Action Timer_DetonateBomb(Handle timer, int bombRef)
 	int bomb = EntRefToEntIndex(bombRef);
 	float origin[3];
 	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", origin);
-	TF2_Explode(_, origin, BOMB_EXPLOSION_DAMAGE, BOMB_EXPLOSION_RADIUS, BOMB_EXPLOSION_PARTICLE, BOMB_EXPLOSION_SOUND);
+	TF2_Explode(_, origin, BOMB_EXPLOSION_DAMAGE, BOMB_EXPLOSION_RADIUS, PARTICLE_BOMB_EXPLOSION, GAMESOUND_BOMB_EXPLOSION);
 	RemoveEntity(bomb);
 	
 	Forward_BombDetonated(g_BombPlantingTeam);
@@ -945,12 +951,12 @@ public Action CommandListener_Destroy(int client, const char[] command, int args
 
 void PrecacheModels()
 {
-	PrecacheModel(BOMB_MODEL);
+	PrecacheModel(MODEL_BOMB);
 }
 
 void PrecacheParticleSystems()
 {
-	PrecacheParticleSystem(BOMB_EXPLOSION_PARTICLE);
+	PrecacheParticleSystem(PARTICLE_BOMB_EXPLOSION);
 }
 
 void Toggle_ConVars(bool toggle)

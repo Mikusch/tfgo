@@ -258,7 +258,7 @@ public MRESReturn Hook_HandleScrambleTeams()
 	alert.SetInt("alert_type", 0);
 	alert.Fire();
 	PrintToChatAll("%T", "TF_TeamsScrambled", LANG_SERVER);
-	PlayTeamScrambleAlert();
+	EmitGameSoundToAll(GAMESOUND_ANNOUNCER_TEAM_SCRAMBLE);
 }
 
 public MRESReturn Hook_GiveNamedItem(int client, Handle returnVal, Handle params)
