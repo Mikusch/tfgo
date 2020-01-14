@@ -26,7 +26,7 @@
 #define GAMESOUND_BOMB_EXPLOSION "MVM.BombExplodes"
 #define GAMESOUND_BOMB_WARNING "MVM.BombWarning"
 #define GAMESOUND_PLAYER_PURCHASE "MVM.PlayerUpgraded"
-#define GAMESOUND_ANNOUNCER_BOMB_PLANTED "Announcer.MVM_Bomb_Alert_Entered"
+#define GAMESOUND_ANNOUNCER_BOMB_PLANTED "Announcer.SecurityAlert"
 #define GAMESOUND_ANNOUNCER_TEAM_SCRAMBLE "Announcer.AM_TeamScrambleRandom"
 
 #define BOMB_EXPLOSION_DAMAGE 500.0
@@ -812,7 +812,7 @@ public Action Timer_PlayBombExplosionWarning(Handle timer, int bomb)
 	
 	float origin[3];
 	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", origin);
-	EmitAmbientGameSound(GAMESOUND_BOMB_WARNING, origin, bomb);
+	EmitGameSoundToAll(GAMESOUND_BOMB_WARNING, bomb);
 }
 
 public Action Timer_DetonateBomb(Handle timer, int bombRef)
@@ -828,7 +828,8 @@ public Action Timer_DetonateBomb(Handle timer, int bombRef)
 	int bomb = EntRefToEntIndex(bombRef);
 	float origin[3];
 	GetEntPropVector(bomb, Prop_Send, "m_vecOrigin", origin);
-	TF2_Explode(_, origin, BOMB_EXPLOSION_DAMAGE, BOMB_EXPLOSION_RADIUS, PARTICLE_BOMB_EXPLOSION, GAMESOUND_BOMB_EXPLOSION);
+	TF2_Explode(_, origin, BOMB_EXPLOSION_DAMAGE, BOMB_EXPLOSION_RADIUS, PARTICLE_BOMB_EXPLOSION);
+	EmitGameSoundToAll(GAMESOUND_BOMB_EXPLOSION, bomb);
 	RemoveEntity(bomb);
 	
 	Forward_BombDetonated(g_BombPlantingTeam);

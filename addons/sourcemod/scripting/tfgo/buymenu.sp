@@ -146,7 +146,7 @@ public int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, i
 			
 			if (TFGOPlayer(param1).AttemptToBuyWeapon(StringToInt(info)) == BUY_BOUGHT)
 			{
-				EmitPurchaseGameSound(param1);
+				EmitGameSoundToAll(GAMESOUND_PLAYER_PURCHASE, param1);
 				DisplayMainBuyMenu(param1);
 			}
 		}
@@ -241,7 +241,7 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 			
 			if (result == BUY_BOUGHT)
 			{
-				EmitPurchaseGameSound(param1);
+				EmitGameSoundToAll(GAMESOUND_PLAYER_PURCHASE, param1);
 				DisplayMainBuyMenu(param1);
 			}
 		}

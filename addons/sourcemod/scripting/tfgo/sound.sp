@@ -53,13 +53,6 @@ public void EmitBombSeeGameSounds()
 	}
 }
 
-public void EmitPurchaseGameSound(int client)
-{
-	float origin[3];
-	GetClientAbsOrigin(client, origin);
-	EmitAmbientGameSound(GAMESOUND_PLAYER_PURCHASE, origin, client);
-}
-
 public Action Event_Pre_Teamplay_Broadcast_Audio(Event event, const char[] name, bool dontBroadcast)
 {
 	char sound[PLATFORM_MAX_PATH];
