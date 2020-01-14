@@ -121,9 +121,10 @@ enum TFQuality
 // Timers
 Handle g_BuyTimeTimer;
 Handle g_TenSecondRoundTimer;
+Handle g_BombBeepingTimer;
 Handle g_TenSecondBombTimer;
 Handle g_BombDetonationTimer;
-Handle g_BombBeepingTimer;
+Handle g_BombExplosionTimer;
 
 // Other handles
 MemoryPatch g_PickupWeaponPatch;
@@ -646,6 +647,7 @@ public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool do
 	g_BombBeepingTimer = null;
 	g_TenSecondBombTimer = null;
 	g_BombDetonationTimer = null;
+	g_BombExplosionTimer = null;
 }
 
 public Action Timer_OnBuyTimeExpire(Handle timer)
@@ -751,8 +753,8 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 	
 	// Set up timers
 	int bombRef = EntIndexToEntRef(bomb);
-	g_TenSecondBombTimer = CreateTimer(tfgo_bombtimer.FloatValue - 10.0, Timer_PlayTenSecondBombWarning, bombRef, TIMER_FLAG_NO_MAPCHANGE);
 	g_BombBeepingTimer = CreateTimer(1.0, Timer_PlayBombBeeping, EntIndexToEntRef(bomb), TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+	g_TenSecondBombTimer = CreateTimer(tfgo_bombtimer.FloatValue - 10.0, Timer_PlayTenSecondBombWarning, bombRef, TIMER_FLAG_NO_MAPCHANGE);
 	g_BombDetonationTimer = CreateTimer(tfgo_bombtimer.FloatValue, Timer_DetonateBomb, bombRef, TIMER_FLAG_NO_MAPCHANGE);
 	
 	// Play Sounds
@@ -813,11 +815,13 @@ public Action Timer_DetonateBomb(Handle timer, int bombRef)
 	}
 	
 	// For dramatic effect
-	CreateTimer(1.0, Timer_ExplodeBomb, bombRef, TIMER_FLAG_NO_MAPCHANGE);
+	g_BombExplosionTimer = CreateTimer(1.0, Timer_ExplodeBomb, bombRef, TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public Action Timer_ExplodeBomb(Handle timer, int bombRef)
 {
+	if (g_BombExplosionTimer != timer) return;
+	
 	g_IsBombDetonated = true;
 	g_IsBombPlanted = false;
 	
