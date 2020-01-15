@@ -729,7 +729,7 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 		if (GetEntProp(cp, Prop_Data, "m_iPointIndex") == cpIndex)
 		{
 			// Remember the active bomb site
-			g_BombSiteRef = cp;
+			g_BombSiteRef = EntIndexToEntRef(cp);
 		}
 		else
 		{
