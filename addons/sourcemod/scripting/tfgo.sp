@@ -760,9 +760,9 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	
 	g_BombRef = EntIndexToEntRef(bomb);
 	
-	g_BombBeepingTimer = CreateTimer(1.0, Timer_PlayBombBeeping, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
-	g_TenSecondBombTimer = CreateTimer(tfgo_bombtimer.FloatValue - 10.0, Timer_PlayTenSecondBombWarning, TIMER_FLAG_NO_MAPCHANGE);
-	g_BombDetonationTimer = CreateTimer(tfgo_bombtimer.FloatValue, Timer_DetonateBomb, TIMER_FLAG_NO_MAPCHANGE);
+	g_BombBeepingTimer = CreateTimer(1.0, Timer_PlayBombBeeping, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+	g_TenSecondBombTimer = CreateTimer(tfgo_bombtimer.FloatValue - 10.0, Timer_PlayTenSecondBombWarning, _, TIMER_FLAG_NO_MAPCHANGE);
+	g_BombDetonationTimer = CreateTimer(tfgo_bombtimer.FloatValue, Timer_DetonateBomb, _, TIMER_FLAG_NO_MAPCHANGE);
 	
 	// Play Sounds
 	g_CurrentMusicKit.StopMusicForAll(Music_StartAction);
@@ -797,7 +797,7 @@ public Action Timer_PlayTenSecondBombWarning(Handle timer)
 {
 	if (g_TenSecondBombTimer != timer) return;
 	
-	g_BombBeepingTimer = CreateTimer(0.5, Timer_PlayBombBeeping, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+	g_BombBeepingTimer = CreateTimer(0.5, Timer_PlayBombBeeping, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
 	
 	if (g_IsMainRoundActive)
 	{
@@ -818,7 +818,7 @@ public Action Timer_DetonateBomb(Handle timer)
 	AcceptEntityInput(g_BombSiteRef, "SetLocked");
 	
 	// For dramatic effect
-	g_BombExplosionTimer = CreateTimer(1.0, Timer_ExplodeBomb, TIMER_FLAG_NO_MAPCHANGE);
+	g_BombExplosionTimer = CreateTimer(1.0, Timer_ExplodeBomb, _, TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public Action Timer_ExplodeBomb(Handle timer)
