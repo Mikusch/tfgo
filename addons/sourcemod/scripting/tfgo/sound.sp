@@ -23,6 +23,7 @@ static char g_SoldierBombSeeGameSounds[][] =  {
 public void PrecacheSounds()
 {
 	PrecacheSound(SOUND_BOMB_BEEPING);
+	PrecacheSound("mvm/mvm_bomb_explode.wav");
 	
 	PrecacheScriptSound(GAMESOUND_BOMB_EXPLOSION);
 	PrecacheScriptSound(GAMESOUND_BOMB_WARNING);

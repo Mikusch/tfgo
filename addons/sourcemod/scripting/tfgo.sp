@@ -135,6 +135,8 @@ ArrayList g_AvailableWeapons;
 bool g_MapHasRespawnRoom;
 
 // Game state
+int g_BombRef;
+int g_BombSiteRef;
 bool g_IsBuyTimeActive;
 bool g_IsMainRoundActive;
 bool g_IsBonusRoundActive;
@@ -706,7 +708,7 @@ public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool
 		DefuseBomb(team, capperList);
 }
 
-void PlantBomb(TFTeam team, int cp, ArrayList cappers)
+void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 {
 	g_BombPlantingTeam = team;
 	g_BombPlantedTime = GetGameTime();
@@ -721,14 +723,19 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 	// Cancel arena timer
 	RemoveEntity(FindEntityByClassname(MaxClients + 1, "team_round_timer"));
 	
-	// Lock every other control point in the map
-	int controlPoint = MaxClients + 1;
-	while ((controlPoint = FindEntityByClassname(controlPoint, "team_control_point")) > -1)
+	int cp = MaxClients + 1;
+	while ((cp = FindEntityByClassname(cp, "team_control_point")) > -1)
 	{
-		if (GetEntProp(controlPoint, Prop_Data, "m_iPointIndex") != cp)
+		if (GetEntProp(cp, Prop_Data, "m_iPointIndex") == cpIndex)
 		{
+			// Remember the active bomb site
+			g_BombSiteRef = cp;
+		}
+		else
+		{
+			// Lock every other control point in the map
 			SetVariantInt(1);
-			AcceptEntityInput(controlPoint, "SetLocked");
+			AcceptEntityInput(cp, "SetLocked");
 		}
 	}
 	
@@ -751,11 +758,11 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 	DispatchSpawn(bomb);
 	TeleportEntity(bomb, origin, angles, NULL_VECTOR);
 	
-	// Set up timers
-	int bombRef = EntIndexToEntRef(bomb);
-	g_BombBeepingTimer = CreateTimer(1.0, Timer_PlayBombBeeping, EntIndexToEntRef(bomb), TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
-	g_TenSecondBombTimer = CreateTimer(tfgo_bombtimer.FloatValue - 10.0, Timer_PlayTenSecondBombWarning, bombRef, TIMER_FLAG_NO_MAPCHANGE);
-	g_BombDetonationTimer = CreateTimer(tfgo_bombtimer.FloatValue, Timer_DetonateBomb, bombRef, TIMER_FLAG_NO_MAPCHANGE);
+	g_BombRef = EntIndexToEntRef(bomb);
+	
+	g_BombBeepingTimer = CreateTimer(1.0, Timer_PlayBombBeeping, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+	g_TenSecondBombTimer = CreateTimer(tfgo_bombtimer.FloatValue - 10.0, Timer_PlayTenSecondBombWarning, TIMER_FLAG_NO_MAPCHANGE);
+	g_BombDetonationTimer = CreateTimer(tfgo_bombtimer.FloatValue, Timer_DetonateBomb, TIMER_FLAG_NO_MAPCHANGE);
 	
 	// Play Sounds
 	g_CurrentMusicKit.StopMusicForAll(Music_StartAction);
@@ -776,21 +783,21 @@ void PlantBomb(TFTeam team, int cp, ArrayList cappers)
 	delete cappers;
 }
 
-public Action Timer_PlayBombBeeping(Handle timer, int bombRef)
+public Action Timer_PlayBombBeeping(Handle timer)
 {
 	if (g_BombBeepingTimer != timer) return Plugin_Stop;
 	
 	float origin[3];
-	GetEntPropVector(bombRef, Prop_Send, "m_vecOrigin", origin);
-	EmitAmbientSound(SOUND_BOMB_BEEPING, origin, bombRef);
+	GetEntPropVector(g_BombRef, Prop_Send, "m_vecOrigin", origin);
+	EmitAmbientSound(SOUND_BOMB_BEEPING, origin, g_BombRef);
 	return Plugin_Continue;
 }
 
-public Action Timer_PlayTenSecondBombWarning(Handle timer, int bomb)
+public Action Timer_PlayTenSecondBombWarning(Handle timer)
 {
 	if (g_TenSecondBombTimer != timer) return;
 	
-	g_BombBeepingTimer = CreateTimer(0.5, Timer_PlayBombBeeping, bomb, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+	g_BombBeepingTimer = CreateTimer(0.5, Timer_PlayBombBeeping, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
 	
 	if (g_IsMainRoundActive)
 	{
@@ -799,26 +806,22 @@ public Action Timer_PlayTenSecondBombWarning(Handle timer, int bomb)
 	}
 }
 
-public Action Timer_DetonateBomb(Handle timer, int bombRef)
+public Action Timer_DetonateBomb(Handle timer)
 {
 	if (g_BombDetonationTimer != timer) return;
 	
 	g_BombBeepingTimer = null; // Stop the bomb from beeping
-	EmitGameSoundToAll(GAMESOUND_BOMB_WARNING, bombRef);
+	EmitGameSoundToAll(GAMESOUND_BOMB_WARNING, g_BombRef);
 	
 	// Time's up, no more capturing
-	int cp = MaxClients + 1;
-	while ((cp = FindEntityByClassname(cp, "team_control_point")) > -1)
-	{
-		SetVariantInt(1);
-		AcceptEntityInput(cp, "SetLocked");
-	}
+	SetVariantInt(1);
+	AcceptEntityInput(g_BombSiteRef, "SetLocked");
 	
 	// For dramatic effect
-	g_BombExplosionTimer = CreateTimer(1.0, Timer_ExplodeBomb, bombRef, TIMER_FLAG_NO_MAPCHANGE);
+	g_BombExplosionTimer = CreateTimer(1.0, Timer_ExplodeBomb, TIMER_FLAG_NO_MAPCHANGE);
 }
 
-public Action Timer_ExplodeBomb(Handle timer, int bombRef)
+public Action Timer_ExplodeBomb(Handle timer)
 {
 	if (g_BombExplosionTimer != timer) return;
 	
@@ -829,10 +832,10 @@ public Action Timer_ExplodeBomb(Handle timer, int bombRef)
 	TF2_ForceRoundWin(g_BombPlantingTeam, WinReason_PointCaptured);
 	
 	float origin[3];
-	GetEntPropVector(bombRef, Prop_Send, "m_vecOrigin", origin);
+	GetEntPropVector(g_BombRef, Prop_Send, "m_vecOrigin", origin);
 	TF2_Explode(_, origin, BOMB_EXPLOSION_DAMAGE, BOMB_EXPLOSION_RADIUS, PARTICLE_BOMB_EXPLOSION);
-	EmitGameSoundToAll(GAMESOUND_BOMB_EXPLOSION, bombRef);
-	RemoveEntity(bombRef);
+	EmitGameSoundToAll(GAMESOUND_BOMB_EXPLOSION, g_BombRef);
+	RemoveEntity(g_BombRef);
 	
 	Forward_BombDetonated(g_BombPlantingTeam);
 }
