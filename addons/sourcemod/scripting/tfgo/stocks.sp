@@ -17,6 +17,21 @@ stock int GetAlivePlayerCountForTeam(TFTeam team)
 	return count;
 }
 
+stock any min(any a, any b)
+{
+	return (a < b) ? a : b;
+}
+
+stock any max(any a, any b)
+{
+	return (a > b) ? a : b;
+}
+
+stock any clamp(any val, any min, any max)
+{
+	return (val < min) ? min : (max < val) ? max : val;
+}
+
 stock void StrToLower(char[] str)
 {
 	for (int i = 0; i < strlen(str); i++)

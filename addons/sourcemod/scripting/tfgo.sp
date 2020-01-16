@@ -121,7 +121,6 @@ enum TFQuality
 // Timers
 Handle g_BuyTimeTimer;
 Handle g_TenSecondRoundTimer;
-Handle g_BombBeepingTimer;
 Handle g_TenSecondBombTimer;
 Handle g_BombDetonationTimer;
 Handle g_BombExplosionTimer;
@@ -134,16 +133,21 @@ ArrayList g_AvailableWeapons;
 // Map
 bool g_MapHasRespawnRoom;
 
-// Game state
+// Bomb & Bomb Site
 int g_BombRef;
 int g_BombSiteRef;
+float g_BombPlantedTime;
+float g_BombNextBeepTime;
+bool g_IsBombTicking;
+
+// Game state
 bool g_IsBuyTimeActive;
 bool g_IsMainRoundActive;
 bool g_IsBonusRoundActive;
 bool g_IsBombPlanted;
 bool g_IsBombDetonated;
 bool g_IsBombDefused;
-float g_BombPlantedTime;
+
 TFTeam g_BombPlantingTeam;
 bool g_HasPlayerSuicided[TF_MAXPLAYERS + 1];
 bool g_IsPlayerInDynamicBuyZone[TF_MAXPLAYERS + 1];
@@ -425,6 +429,23 @@ public Action Client_TraceAttack(int victim, int &attacker, int &inflictor, floa
 	return changed ? Plugin_Changed : Plugin_Continue;
 }
 
+public void OnGameFrame()
+{
+	if (!g_IsBombTicking || g_BombRef == INVALID_ENT_REFERENCE)return;
+	
+	if (GetGameTime() > g_BombNextBeepTime)
+	{
+		float timerLength = tfgo_bombtimer.FloatValue;
+		float complete = ((g_BombPlantedTime + timerLength - GetGameTime()) / timerLength);
+		complete = clamp(complete, 0.0, 1.0);
+		
+		float attenuation = min(0.3 + 0.6 * complete, 1.0);
+		EmitSoundToAll(SOUND_BOMB_BEEPING, g_BombRef, ATTN_TO_SNDLEVEL(attenuation));
+		float freq = max(0.1 + 0.9 * complete, 0.15);
+		g_BombNextBeepTime = GetGameTime() + freq;
+	}
+}
+
 public void ChooseRandomMusicKit()
 {
 	StringMapSnapshot snapshot = g_AvailableMusicKits.Snapshot();
@@ -645,8 +666,8 @@ public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool do
 	g_CurrentMusicKit.PlayMusicToAll(Music_StartRound);
 	
 	// Bomb can freely tick and explode through the bonus time and we cancel it here
+	g_IsBombTicking = false;
 	g_BuyTimeTimer = null;
-	g_BombBeepingTimer = null;
 	g_TenSecondBombTimer = null;
 	g_BombDetonationTimer = null;
 	g_BombExplosionTimer = null;
@@ -712,6 +733,8 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 {
 	g_BombPlantingTeam = team;
 	g_BombPlantedTime = GetGameTime();
+	g_BombNextBeepTime = g_BombPlantedTime + 1.0;
+	g_IsBombTicking = true;
 	
 	// Award capture bonus to cappers
 	for (int i = 0; i < cappers.Length; i++)
@@ -753,14 +776,13 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	float angles[3];
 	GetEntPropVector(capper, Prop_Send, "m_angRotation", angles);
 	
-	int bomb = CreateEntityByName("prop_dynamic_override");
-	SetEntityModel(bomb, MODEL_BOMB);
-	DispatchSpawn(bomb);
-	TeleportEntity(bomb, origin, angles, NULL_VECTOR);
+	// Create a new bomb
+	int prop = CreateEntityByName("prop_dynamic_override");
+	SetEntityModel(prop, MODEL_BOMB);
+	DispatchSpawn(prop);
+	TeleportEntity(prop, origin, angles, NULL_VECTOR);
+	g_BombRef = EntIndexToEntRef(prop);
 	
-	g_BombRef = EntIndexToEntRef(bomb);
-	
-	g_BombBeepingTimer = CreateTimer(1.0, Timer_PlayBombBeeping, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
 	g_TenSecondBombTimer = CreateTimer(tfgo_bombtimer.FloatValue - 10.0, Timer_PlayTenSecondBombWarning, _, TIMER_FLAG_NO_MAPCHANGE);
 	g_BombDetonationTimer = CreateTimer(tfgo_bombtimer.FloatValue, Timer_DetonateBomb, _, TIMER_FLAG_NO_MAPCHANGE);
 	
@@ -783,37 +805,22 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	delete cappers;
 }
 
-public Action Timer_PlayBombBeeping(Handle timer)
-{
-	if (g_BombBeepingTimer != timer) return Plugin_Stop;
-	
-	float origin[3];
-	GetEntPropVector(g_BombRef, Prop_Send, "m_vecOrigin", origin);
-	EmitAmbientSound(SOUND_BOMB_BEEPING, origin, g_BombRef);
-	return Plugin_Continue;
-}
-
 public Action Timer_PlayTenSecondBombWarning(Handle timer)
 {
-	if (g_TenSecondBombTimer != timer) return;
+	if (g_TenSecondBombTimer != timer || !g_IsMainRoundActive) return;
 	
-	g_BombBeepingTimer = CreateTimer(0.5, Timer_PlayBombBeeping, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
-	
-	if (g_IsMainRoundActive)
-	{
-		g_CurrentMusicKit.StopMusicForAll(Music_BombPlanted);
-		g_CurrentMusicKit.PlayMusicToAll(Music_BombTenSecCount);
-	}
+	g_CurrentMusicKit.StopMusicForAll(Music_BombPlanted);
+	g_CurrentMusicKit.PlayMusicToAll(Music_BombTenSecCount);
 }
 
 public Action Timer_DetonateBomb(Handle timer)
 {
 	if (g_BombDetonationTimer != timer) return;
 	
-	g_BombBeepingTimer = null; // Stop the bomb from beeping
+	g_IsBombTicking = false;
 	EmitGameSoundToAll(GAMESOUND_BOMB_WARNING, g_BombRef);
 	
-	// Time's up, no more capturing
+	// Time's up, no more defusing
 	SetVariantInt(1);
 	AcceptEntityInput(g_BombSiteRef, "SetLocked");
 	
@@ -842,7 +849,7 @@ public Action Timer_ExplodeBomb(Handle timer)
 
 void DefuseBomb(TFTeam team, ArrayList cappers)
 {
-	g_BombBeepingTimer = null;
+	g_IsBombTicking = false;
 	g_TenSecondBombTimer = null;
 	g_BombDetonationTimer = null;
 	
