@@ -440,7 +440,7 @@ public void OnGameFrame()
 		complete = clamp(complete, 0.0, 1.0);
 		
 		float attenuation = min(0.3 + 0.6 * complete, 1.0);
-		EmitSoundToAll(SOUND_BOMB_BEEPING, g_BombRef, ATTN_TO_SNDLEVEL(attenuation));
+		EmitSoundToAll(SOUND_BOMB_BEEPING, g_BombRef, SNDCHAN_AUTO, ATTN_TO_SNDLEVEL(attenuation));
 		float freq = max(0.1 + 0.9 * complete, 0.15);
 		g_BombNextBeepTime = GetGameTime() + freq;
 	}
