@@ -476,23 +476,18 @@ public void OnEntityCreated(int entity, const char[] classname)
 	}
 	else if (StrEqual(classname, "team_control_point_master"))
 	{
-		SDKHook(entity, SDKHook_Spawn, Hook_ControlPointMaster_Spawn);
+		DispatchKeyValue(entity, "cpm_restrict_team_cap_win", "1");
 	}
 }
 
 public void Hook_LogicArena_Spawn(int entity)
 {
-	SetEntPropFloat(entity, Prop_Data, "m_flTimeToEnableCapPoint", 0.0);
+	DispatchKeyValueFloat(entity, "CapEnableDelay", 0.0);
 }
 
 public void Hook_CaptureArea_Spawn(int entity)
 {
 	SetEntPropFloat(entity, Prop_Data, "m_flCapTime", GetEntPropFloat(entity, Prop_Data, "m_flCapTime") / 2);
-}
-
-public void Hook_ControlPointMaster_Spawn(int entity)
-{
-	DispatchKeyValue(entity, "cpm_restrict_team_cap_win", "1");
 }
 
 public Action Event_Player_Team(Event event, const char[] name, bool dontBroadcast)
