@@ -145,8 +145,6 @@ bool g_IsBuyTimeActive;
 bool g_IsMainRoundActive;
 bool g_IsBonusRoundActive;
 bool g_IsBombPlanted;
-bool g_IsBombDetonated;
-bool g_IsBombDefused;
 
 TFTeam g_BombPlantingTeam;
 bool g_HasPlayerSuicided[TF_MAXPLAYERS + 1];
@@ -476,6 +474,10 @@ public void OnEntityCreated(int entity, const char[] classname)
 	{
 		SDKHook(entity, SDKHook_Spawn, Hook_CaptureArea_Spawn);
 	}
+	else if (StrEqual(classname, "team_control_point_master"))
+	{
+		SDKHook(entity, SDKHook_Spawn, Hook_ControlPointMaster_Spawn);
+	}
 }
 
 public void Hook_LogicArena_Spawn(int entity)
@@ -486,6 +488,11 @@ public void Hook_LogicArena_Spawn(int entity)
 public void Hook_CaptureArea_Spawn(int entity)
 {
 	SetEntPropFloat(entity, Prop_Data, "m_flCapTime", GetEntPropFloat(entity, Prop_Data, "m_flCapTime") / 2);
+}
+
+public void Hook_ControlPointMaster_Spawn(int entity)
+{
+	DispatchKeyValue(entity, "cpm_restrict_team_cap_win", "1");
 }
 
 public Action Event_Player_Team(Event event, const char[] name, bool dontBroadcast)
@@ -616,14 +623,6 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 			
 			assister.AddToAccount(RoundFloat(killAward * factor) / 2, "%T", "Player_Cash_Award_Assist_Enemy", LANG_SERVER, victimName);
 		}
-	}
-	
-	if (g_IsBombPlanted)
-	{
-		TFTeam victimTeam = TF2_GetClientTeam(victim.Client);
-		// End the round if every member of the non-planting team died
-		if (g_BombPlantingTeam != victimTeam && GetAlivePlayerCountForTeam(victimTeam) - 1 <= 0 && !(event.GetInt("death_flags") & TF_DEATHFLAG_DEADRINGER))
-			g_IsBombPlanted = false;
 	}
 	
 	if (g_IsMainRoundActive || g_IsBonusRoundActive)
@@ -832,10 +831,8 @@ public Action Timer_ExplodeBomb(Handle timer)
 {
 	if (g_BombExplosionTimer != timer) return;
 	
-	g_IsBombDetonated = true;
 	g_IsBombPlanted = false;
 	
-	// Only call this after we set g_IsBombPlanted to false or the game softlocks
 	TF2_ForceRoundWin(g_BombPlantingTeam, WinReason_PointCaptured);
 	
 	float origin[3];
@@ -859,7 +856,6 @@ void DefuseBomb(TFTeam team, ArrayList cappers)
 		TFGOPlayer(capper).AddToAccount(tfgo_cash_player_bomb_defused.IntValue, "%T", "Player_Cash_Award_Bomb_Defused", LANG_SERVER);
 	}
 	
-	g_IsBombDefused = true;
 	TF2_ForceRoundWin(team, WinReason_PointCaptured);
 	
 	Forward_BombDefused(team, cappers, tfgo_bombtimer.FloatValue - (GetGameTime() - g_BombPlantedTime));
@@ -926,8 +922,6 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 public void ResetRoundState()
 {
 	g_IsBombPlanted = false;
-	g_IsBombDetonated = false;
-	g_IsBombDefused = false;
 	g_BombPlantingTeam = TFTeam_Unassigned;
 	
 	for (int i = 0; i < sizeof(g_HasPlayerSuicided); i++)
