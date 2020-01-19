@@ -485,7 +485,8 @@ public void Hook_LogicArena_Spawn(int entity)
 
 public void Hook_CaptureArea_Spawn(int entity)
 {
-	SetEntPropFloat(entity, Prop_Data, "m_flCapTime", GetEntPropFloat(entity, Prop_Data, "m_flCapTime") / 2);
+	// Arena maps typically have very long capture times, allow maps a bit of control and cut them in half
+	DispatchKeyValueFloat(entity, "area_time_to_cap", GetEntPropFloat(entity, Prop_Data, "m_flCapTime") / 2);
 }
 
 public Action Event_Player_Team(Event event, const char[] name, bool dontBroadcast)
@@ -760,13 +761,6 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 			SetVariantInt(1);
 			AcceptEntityInput(cp, "SetLocked");
 		}
-	}
-	
-	// Adjust defuse time
-	int captureArea = MaxClients + 1;
-	while ((captureArea = FindEntityByClassname(captureArea, "trigger_capture_area")) > -1)
-	{
-		SetEntPropFloat(captureArea, Prop_Data, "m_flCapTime", GetEntPropFloat(captureArea, Prop_Data, "m_flCapTime") / 0.75);
 	}
 	
 	// Spawn bomb prop on first capper
