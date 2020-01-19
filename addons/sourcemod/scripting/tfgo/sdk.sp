@@ -208,18 +208,6 @@ public MRESReturn Hook_SetWinningTeam(Handle params)
 		return MRES_Supercede;
 	}
 	
-	// Stalemate
-	else if (team == TFTeam_Unassigned && winReason == WinReason_Stalemate)
-	{
-		TFGOTeam red = TFGOTeam(TFTeam_Red);
-		TFGOTeam blue = TFGOTeam(TFTeam_Blue);
-		red.AddToClientAccounts(0, "%T", "Team_Cash_Award_no_income", LANG_SERVER);
-		blue.AddToClientAccounts(0, "%T", "Team_Cash_Award_no_income", LANG_SERVER);
-		red.ConsecutiveLosses++;
-		blue.ConsecutiveLosses++;
-		return MRES_Ignored;
-	}
-	
 	// Everything else that doesn't require superceding e.g. eliminating the enemy team
 	else
 	{
