@@ -181,18 +181,6 @@ public MRESReturn Hook_SetWinningTeam(Handle params)
 	if (g_IsBombPlanted && team != g_BombPlantingTeam && winReason == WinReason_Elimination)
 		return MRES_Supercede;
 	
-	// Award no cash on a stalemate
-	if (team == TFTeam_Unassigned && winReason == WinReason_Stalemate)
-	{
-		TFGOTeam red = TFGOTeam(TFTeam_Red);
-		TFGOTeam blue = TFGOTeam(TFTeam_Blue);
-		red.AddToClientAccounts(0, "%T", "Team_Cash_Award_no_income", LANG_SERVER);
-		blue.AddToClientAccounts(0, "%T", "Team_Cash_Award_no_income", LANG_SERVER);
-		red.ConsecutiveLosses++;
-		blue.ConsecutiveLosses++;
-		return MRES_Ignored;
-	}
-	
 	return MRES_Ignored;
 }
 
