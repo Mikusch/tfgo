@@ -476,7 +476,7 @@ public void OnEntityCreated(int entity, const char[] classname)
 	}
 	else if (StrEqual(classname, "team_control_point_master"))
 	{
-		DispatchKeyValue(entity, "cpm_restrict_team_cap_win", "1");
+		SDKHook(entity, SDKHook_Spawn, Hook_ControlPointMaster_Spawn);
 	}
 }
 
@@ -489,6 +489,11 @@ public void Hook_CaptureArea_Spawn(int entity)
 {
 	// Arena maps typically have very long capture times, allow maps a bit of control and cut them in half
 	DispatchKeyValueFloat(entity, "area_time_to_cap", GetEntPropFloat(entity, Prop_Data, "m_flCapTime") / 2);
+}
+
+public void Hook_ControlPointMaster_Spawn(int entity)
+{
+	DispatchKeyValue(entity, "cpm_restrict_team_cap_win", "1");
 }
 
 public Action Event_Player_Team(Event event, const char[] name, bool dontBroadcast)
