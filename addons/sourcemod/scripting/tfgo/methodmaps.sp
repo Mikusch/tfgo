@@ -16,6 +16,7 @@ static int g_PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClassT
 static int g_PlayerAccounts[TF_MAXPLAYERS + 1];
 static int g_PlayerArmorValues[TF_MAXPLAYERS + 1][view_as<int>(TFClassType)];
 static bool g_PlayerHelmets[TF_MAXPLAYERS + 1][view_as<int>(TFClassType)];
+static bool g_PlayerDefuseKits[TF_MAXPLAYERS + 1][view_as<int>(TFClassType)];
 static Menu g_ActiveBuyMenus[TF_MAXPLAYERS + 1];
 
 static int g_TeamConsecutiveLosses[view_as<int>(TFTeam)] =  { STARTING_CONSECUTIVE_LOSSES, ... };
@@ -74,6 +75,18 @@ methodmap TFGOPlayer
 		public set(bool val)
 		{
 			g_PlayerHelmets[this][TF2_GetPlayerClass(this.Client)] = val;
+		}
+	}
+	
+	property bool HasDefuseKit
+	{
+		public get()
+		{
+			return g_PlayerDefuseKits[this][TF2_GetPlayerClass(this.Client)];
+		}
+		public set(bool val)
+		{
+			g_PlayerDefuseKits[this][TF2_GetPlayerClass(this.Client)] = val;
 		}
 	}
 	
@@ -193,6 +206,11 @@ methodmap TFGOPlayer
 				g_PlayerArmorValues[this][i] = 0;
 			}
 		}
+		
+		for (int i = 0; i < sizeof(g_PlayerDefuseKits[]); i++)
+		{
+			g_PlayerDefuseKits[this][i] = false;
+		}
 	}
 	
 	public void Reset()
@@ -294,6 +312,27 @@ methodmap TFGOPlayer
 			this.HasHelmet = true;
 			this.ArmorValue = TF2_GetMaxHealth(this.Client);
 			this.Account -= price;
+			return BUY_BOUGHT;
+		}
+	}
+	
+	public BuyResult AttemptToBuyDefuseKit()
+	{
+		if (this.HasDefuseKit)
+		{
+			PrintCenterText(this.Client, "#Already_Have_One", LANG_SERVER);
+			return BUY_ALREADY_HAVE;
+		}
+		else if (this.Account < DEFUSEKIT_PRICE)
+		{
+			PrintCenterText(this.Client, "#Not_Enough_Money", LANG_SERVER);
+			return BUY_CANT_AFFORD;
+		}
+		else
+		{
+			this.HasDefuseKit = true;
+			
+			this.Account -= DEFUSEKIT_PRICE;
 			return BUY_BOUGHT;
 		}
 	}

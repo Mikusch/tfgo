@@ -1,3 +1,4 @@
+static Handle g_HookGetCaptureValueForPlayer;
 static Handle g_HookPickupWeaponFromOther;
 static Handle g_HookSetWinningTeam;
 static Handle g_HookHandleSwitchTeams;
@@ -24,7 +25,14 @@ void SDK_Init()
 	else
 		LogMessage("Failed to create hook: CTFPlayer::PickupWeaponFromOther");
 	
-	int offset = gameData.GetOffset("CTFGameRules::SetWinningTeam");
+	int offset = gameData.GetOffset("CTFGameRules::GetCaptureValueForPlayer");
+	g_HookGetCaptureValueForPlayer = DHookCreate(offset, HookType_GameRules, ReturnType_Int, ThisPointer_Ignore);
+	if (g_HookGetCaptureValueForPlayer == null)
+		LogMessage("Failed to create hook: CTFGameRules::GetCaptureValueForPlayer");
+	else
+		DHookAddParam(g_HookGetCaptureValueForPlayer, HookParamType_CBaseEntity);
+	
+	offset = gameData.GetOffset("CTFGameRules::SetWinningTeam");
 	g_HookSetWinningTeam = DHookCreate(offset, HookType_GameRules, ReturnType_Void, ThisPointer_Ignore);
 	if (g_HookSetWinningTeam != null)
 	{
@@ -143,6 +151,7 @@ void SDK_Init()
 
 void SDK_HookGamerules()
 {
+	DHookGamerules(g_HookGetCaptureValueForPlayer, true, _, Hook_GetCaptureValueForPlayer);
 	DHookGamerules(g_HookSetWinningTeam, false, _, Hook_SetWinningTeam);
 	DHookGamerules(g_HookHandleSwitchTeams, false, _, Hook_HandleSwitchTeams);
 	DHookGamerules(g_HookHandleScrambleTeams, false, _, Hook_HandleScrambleTeams);
@@ -170,6 +179,18 @@ public MRESReturn Hook_PickupWeaponFromOther(int client, Handle returnVal, Handl
 	TFGOPlayer(client).AddToLoadout(defindex);
 	
 	Forward_WeaponPickup(client, defindex);
+}
+
+public MRESReturn Hook_GetCaptureValueForPlayer(Handle returnVal, Handle params)
+{
+	int client = DHookGetParam(params, 1);
+	if (TFGOPlayer(client).HasDefuseKit && g_IsBombPlanted) // Defuser only comes into effect
+	{
+		DHookSetReturn(returnVal, DHookGetReturn(returnVal) + 1);
+		return MRES_Supercede;
+	}
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn Hook_SetWinningTeam(Handle params)

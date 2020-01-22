@@ -177,6 +177,10 @@
 	{
 		"en"	"Kevlar + Helmet"
 	}
+	"DefuseKit"
+	{
+		"en"	"Defuse Kit"
+	}
 	
 	// Alerts
 	"Bomb_Planted"
