@@ -184,7 +184,7 @@ public MRESReturn Hook_PickupWeaponFromOther(int client, Handle returnVal, Handl
 public MRESReturn Hook_GetCaptureValueForPlayer(Handle returnVal, Handle params)
 {
 	int client = DHookGetParam(params, 1);
-	if (TFGOPlayer(client).HasDefuseKit && g_IsBombPlanted) // Defuser only comes into effect
+	if (TFGOPlayer(client).HasDefuseKit && g_IsBombPlanted) // Defuse kit only takes effect when the bomb is planted
 	{
 		DHookSetReturn(returnVal, DHookGetReturn(returnVal) + 1);
 		return MRES_Supercede;
