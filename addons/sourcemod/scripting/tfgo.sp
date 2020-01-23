@@ -38,6 +38,7 @@
 #define HELMET_PRICE 350
 #define KEVLAR_PRICE 650
 #define ASSAULTSUIT_PRICE 1000
+#define DEFUSEKIT_PRICE 400
 
 
 const TFTeam TFTeam_CT = TFTeam_Red;

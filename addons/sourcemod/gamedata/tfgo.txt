@@ -54,6 +54,11 @@
 		}
 		"Offsets"
 		{
+			"CTFGameRules::GetCaptureValueForPlayer"
+			{
+				"linux"		"154"
+				"windows"	"153"
+			}
 			"CTFGameRules::SetWinningTeam"
 			{
 				"linux"		"161"

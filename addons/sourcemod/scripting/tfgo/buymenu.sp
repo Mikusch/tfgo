@@ -1,6 +1,7 @@
 #define INFO_EQUIPMENT "EQUIPMENT"
 #define INFO_KEVLAR "KEVLAR"
 #define INFO_ASSAULTSUIT "ASSAULTSUIT"
+#define INFO_DEFUSEKIT "DEFUSEKIT"
 
 public bool DisplayMainBuyMenu(int client)
 {
@@ -213,6 +214,7 @@ public int DisplayEquipmentBuyMenu(int client)
 	
 	menu.AddItem(INFO_KEVLAR, "Kevlar");
 	menu.AddItem(INFO_ASSAULTSUIT, "AssaultSuit");
+	menu.AddItem(INFO_DEFUSEKIT, "DefuseKit");
 	
 	menu.Display(client, MENU_TIME_FOREVER);
 }
@@ -238,6 +240,8 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 				result = player.AttemptToBuyVest();
 			else if (StrEqual(info, INFO_ASSAULTSUIT))
 				result = player.AttemptToBuyAssaultSuit();
+			else if (StrEqual(info, INFO_DEFUSEKIT))
+				result = player.AttemptToBuyDefuseKit();
 			
 			if (result == BUY_BOUGHT)
 			{
@@ -277,6 +281,11 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 				if (tfgo_max_armor.IntValue < 2 || player.HasHelmet || fullArmor && player.Account < HELMET_PRICE || !fullArmor && player.Account < ASSAULTSUIT_PRICE)
 					return ITEMDRAW_DISABLED;
 			}
+			else if (StrEqual(info, INFO_DEFUSEKIT))
+			{
+				if (player.HasDefuseKit || player.Account < DEFUSEKIT_PRICE)
+					return ITEMDRAW_DISABLED;
+			}
 			
 			return style;
 		}
@@ -305,6 +314,13 @@ public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1
 					Format(display, sizeof(display), "%T ($%d)", display, LANG_SERVER, HELMET_PRICE);
 				else
 					Format(display, sizeof(display), "%T ($%d)", display, LANG_SERVER, ASSAULTSUIT_PRICE);
+			}
+			else if (StrEqual(info, INFO_DEFUSEKIT))
+			{
+				if (player.HasDefuseKit)
+					Format(display, sizeof(display), "%T (%T)", display, LANG_SERVER, "BuyMenu_AlreadyCarrying", LANG_SERVER);
+				else
+					Format(display, sizeof(display), "%T ($%d)", display, LANG_SERVER, DEFUSEKIT_PRICE);
 			}
 			
 			return RedrawMenuItem(display);
