@@ -274,6 +274,8 @@ public void OnPluginStart()
 	AddCommandListener(CommandListener_Build, "build");
 	AddCommandListener(CommandListener_Destroy, "destroy");
 	
+	AddNormalSoundHook(NormalSoundHook);
+	
 	CAddColor("negative", 0xEA4141);
 	CAddColor("positive", 0xA2FF47);
 	
