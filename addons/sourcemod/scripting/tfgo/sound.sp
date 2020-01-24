@@ -1,5 +1,4 @@
-static char g_IgnoredSounds[][] = {
-	// Spatialized minigun crit sounds from headshots loop forever so we block them entirely
+static char g_MinigunShootCritSounds[][] = {
 	")weapons/dragon_gun_motor_loop_crit.wav",
 	")weapons/gatling_shoot_crit.wav",
 	")weapons/minifun_shoot_crit.wav",
@@ -95,10 +94,14 @@ public Action Event_Pre_Teamplay_Broadcast_Audio(Event event, const char[] name,
 
 public Action NormalSoundHook(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &entity, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
 {
-	for (int i = 0; i < sizeof(g_IgnoredSounds); i++)
+	if (strncmp(sample, "weapons/", 8) == 0)
 	{
-		if (StrEqual(sample, g_IgnoredSounds[i]))
-			return Plugin_Handled;
+		// Spatialized minigun crit sounds from headshots loop forever, block them entirely
+		for (int i = 0; i < sizeof(g_MinigunShootCritSounds); i++)
+		{
+			if (StrEqual(sample, g_MinigunShootCritSounds[i]))
+				return Plugin_Handled;
+		}
 	}
 	
 	return Plugin_Continue;
