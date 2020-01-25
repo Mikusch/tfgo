@@ -153,7 +153,7 @@ bool g_IsPlayerInDynamicBuyZone[TF_MAXPLAYERS + 1];
 int g_RoundsPlayed;
 
 // ConVars
-ConVar tfgo_all_weapons_can_headshot;
+ConVar tfgo_use_hitlocation_dmg;
 ConVar tfgo_free_armor;
 ConVar tfgo_max_armor;
 ConVar tfgo_buytime;
@@ -242,7 +242,7 @@ public void OnPluginStart()
 	mp_bonusroundtime = FindConVar("mp_bonusroundtime");
 	
 	// Create TFGO ConVars
-	tfgo_all_weapons_can_headshot = CreateConVar("tfgo_all_weapons_can_headshot", "0", "Whether all weapons that deal bullet damage should be able to headshot");
+	tfgo_use_hitlocation_dmg = CreateConVar("tfgo_use_hitlocation_dmg", "1", "Determines whether weapons deal hit location damage");
 	tfgo_free_armor = CreateConVar("tfgo_free_armor", "0", "Determines whether kevlar (1+) and/or helmet (2+) are given automatically", _, true, 0.0, true, 2.0);
 	tfgo_max_armor = CreateConVar("tfgo_max_armor", "2", "Determines the highest level of armor allowed to be purchased. (0) None, (1) Kevlar, (2) Helmet", _, true, 0.0, true, 2.0);
 	tfgo_buytime = CreateConVar("tfgo_buytime", "20", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
@@ -376,27 +376,30 @@ public void OnClientDisconnect(int client)
 
 public Action Client_TraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
 {
-	bool changed;
+	Action action = Plugin_Continue;
 	
-	// Allow every weapon with damagetype DMG_BULLET or DMG_BUCKSHOT to deal crits on headshot
-	if (tfgo_all_weapons_can_headshot.BoolValue && damagetype & (DMG_BULLET | DMG_BUCKSHOT))
+	if (tfgo_use_hitlocation_dmg.BoolValue)
 	{
-		damagetype |= DMG_USE_HITLOCATIONS;
-		changed = true;
-	}
-	
-	// Hitgroup damage modifiers (headshots are already covered by DMG_USE_HITLOCATIONS)
-	switch (hitgroup)
-	{
-		case HITGROUP_STOMACH:
+		// Allow every weapon with damagetype DMG_BULLET to deal crits on headshot
+		if (damagetype & DMG_BULLET)
 		{
-			damage *= 1.25;
-			changed = true;
+			damagetype |= DMG_USE_HITLOCATIONS;
+			action = Plugin_Changed;
 		}
-		case HITGROUP_LEFTLEG, HITGROUP_RIGHTLEG:
+		
+		// Other hitgroup damage modifiers
+		switch (hitgroup)
 		{
-			damage *= 0.75;
-			changed = true;
+			case HITGROUP_STOMACH:
+			{
+				damage *= 1.25;
+				action = Plugin_Changed;
+			}
+			case HITGROUP_LEFTLEG, HITGROUP_RIGHTLEG:
+			{
+				damage *= 0.75;
+				action = Plugin_Changed;
+			}
 		}
 	}
 	
@@ -418,7 +421,7 @@ public Action Client_TraceAttack(int victim, int &attacker, int &inflictor, floa
 				{
 					player.ArmorValue -= RoundFloat(damage);
 					damage *= config.armorPenetration;
-					changed = true;
+					action = Plugin_Changed;
 				}
 			}
 		}
@@ -427,7 +430,7 @@ public Action Client_TraceAttack(int victim, int &attacker, int &inflictor, floa
 			player.HasHelmet = false;
 	}
 	
-	return changed ? Plugin_Changed : Plugin_Continue;
+	return action;
 }
 
 public void OnGameFrame()
