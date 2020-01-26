@@ -750,7 +750,9 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	}
 	
 	// Cancel arena timer
-	RemoveEntity(FindEntityByClassname(MaxClients + 1, "team_round_timer"));
+	int timer = MaxClients + 1;
+	while ((timer = FindEntityByClassname(timer, "team_round_timer")) > -1)
+		RemoveEntity(timer);
 	
 	int cp = MaxClients + 1;
 	while ((cp = FindEntityByClassname(cp, "team_control_point")) > -1)
