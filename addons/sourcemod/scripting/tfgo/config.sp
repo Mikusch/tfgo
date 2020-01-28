@@ -73,4 +73,23 @@ void Config_Init()
 		ReadWeaponConfig(kv);
 		delete kv;
 	}
+	
+	g_AvailableWeapons.SortCustom(SortFunc_SortAvailableWeaponsByName);
+}
+
+int SortFunc_SortAvailableWeaponsByName(int index1, int index2, Handle array, Handle hndl)
+{
+	ArrayList list = view_as<ArrayList>(array);
+	
+	WeaponConfig config1;
+	list.GetArray(index1, config1, sizeof(config1));
+	WeaponConfig config2;
+	list.GetArray(index2, config2, sizeof(config2));
+	
+	char name1[PLATFORM_MAX_PATH];
+	TF2_GetItemName(config1.defIndex, name1, sizeof(name1));
+	char name2[PLATFORM_MAX_PATH];
+	TF2_GetItemName(config2.defIndex, name2, sizeof(name2));
+	
+	return strcmp(name1, name2);
 }
