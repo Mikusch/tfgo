@@ -378,7 +378,7 @@ public void OnClientDisconnect(int client)
 
 public Action Client_TraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
 {
-	if (!mp_friendlyfire.BoolValue && TF2_GetClientTeam(victim) == TF2_GetClientTeam(attacker)) return Plugin_Continue;
+	if (!mp_friendlyfire.BoolValue && TF2_GetClientTeam(victim) == TF2_GetClientTeam(attacker) && victim != attacker) return Plugin_Continue;
 	
 	Action action = Plugin_Continue;
 	
