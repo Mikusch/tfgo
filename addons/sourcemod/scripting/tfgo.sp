@@ -183,6 +183,7 @@ ConVar tf_arena_override_cap_enable_time;
 ConVar tf_weapon_criticals;
 ConVar tf_weapon_criticals_melee;
 ConVar mp_bonusroundtime;
+ConVar mp_friendlyfire;
 
 
 #include "tfgo/musickits.sp"
@@ -240,6 +241,7 @@ public void OnPluginStart()
 	tf_weapon_criticals = FindConVar("tf_weapon_criticals");
 	tf_weapon_criticals_melee = FindConVar("tf_weapon_criticals_melee");
 	mp_bonusroundtime = FindConVar("mp_bonusroundtime");
+	mp_friendlyfire = FindConVar("mp_friendlyfire");
 	
 	// Create TFGO ConVars
 	tfgo_use_hitlocation_dmg = CreateConVar("tfgo_use_hitlocation_dmg", "1", "Determines whether weapons deal hit location damage");
@@ -376,6 +378,8 @@ public void OnClientDisconnect(int client)
 
 public Action Client_TraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
 {
+	if (!mp_friendlyfire.BoolValue && TF2_GetClientTeam(victim) == TF2_GetClientTeam(attacker)) return Plugin_Continue;
+	
 	Action action = Plugin_Continue;
 	
 	if (tfgo_use_hitlocation_dmg.BoolValue)
