@@ -12,14 +12,14 @@ static int g_DefaultWeaponIndexes[][] =  {
 	{ 9, 22, 30758, -1, -1, 28 } // Engineer
 };
 
-static int g_PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClassType)][WeaponSlot_BuilderEngie + 1];
+static int g_PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][WeaponSlot_BuilderEngie + 1];
 static int g_PlayerAccounts[TF_MAXPLAYERS + 1];
-static int g_PlayerArmorValues[TF_MAXPLAYERS + 1][view_as<int>(TFClassType)];
-static bool g_PlayerHelmets[TF_MAXPLAYERS + 1][view_as<int>(TFClassType)];
-static bool g_PlayerDefuseKits[TF_MAXPLAYERS + 1][view_as<int>(TFClassType)];
+static int g_PlayerArmorValues[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
+static bool g_PlayerHelmets[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
+static bool g_PlayerDefuseKits[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
 static Menu g_ActiveBuyMenus[TF_MAXPLAYERS + 1];
 
-static int g_TeamConsecutiveLosses[view_as<int>(TFTeam)] =  { STARTING_CONSECUTIVE_LOSSES, ... };
+static int g_TeamConsecutiveLosses[view_as<int>(TFTeam_Blue) + 1] =  { STARTING_CONSECUTIVE_LOSSES, ... };
 
 
 methodmap TFGOPlayer
