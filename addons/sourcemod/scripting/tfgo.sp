@@ -1,5 +1,3 @@
-#pragma semicolon 1
-
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
@@ -10,6 +8,7 @@
 #include <tf_econ_data>
 #include <tfgo>
 
+#pragma semicolon 1
 #pragma newdecls required
 
 
@@ -40,9 +39,6 @@
 #define ASSAULTSUIT_PRICE 1000
 #define DEFUSEKIT_PRICE 400
 
-
-const TFTeam TFTeam_CT = TFTeam_Red;
-const TFTeam TFTeam_T = TFTeam_Blue;
 
 // Source hit group standards (from shareddefs.h)
 enum
@@ -187,8 +183,6 @@ ConVar mp_friendlyfire;
 
 
 #include "tfgo/musickits.sp"
-MusicKit g_CurrentMusicKit;
-
 #include "tfgo/stocks.sp"
 #include "tfgo/config.sp"
 #include "tfgo/methodmaps.sp"
@@ -208,6 +202,10 @@ public Plugin pluginInfo =  {
 	url = "https://github.com/Mikusch/tfgo"
 };
 
+//-----------------------------------------------------------------------------
+// Forwards
+//-----------------------------------------------------------------------------
+
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	Forward_AskLoad();
@@ -223,14 +221,14 @@ public void OnPluginStart()
 	LoadTranslations("tfgo.phrases.txt");
 	
 	// Events
-	HookEvent("player_team", Event_Player_Team);
-	HookEvent("player_death", Event_Player_Death);
-	HookEvent("post_inventory_application", Event_Post_Inventory_Application);
-	HookEvent("teamplay_round_start", Event_Teamplay_Round_Start);
-	HookEvent("arena_round_start", Event_Arena_Round_Start);
-	HookEvent("teamplay_broadcast_audio", Event_Pre_Teamplay_Broadcast_Audio, EventHookMode_Pre);
-	HookEvent("teamplay_point_captured", Event_Teamplay_Point_Captured);
-	HookEvent("arena_win_panel", Event_Arena_Win_Panel);
+	HookEvent("player_team", Event_PlayerTeam);
+	HookEvent("player_death", Event_PlayerDeath);
+	HookEvent("post_inventory_application", Event_PostInventoryApplication);
+	HookEvent("arena_round_start", Event_ArenaRoundStart);
+	HookEvent("arena_win_panel", Event_ArenaWinPanel);
+	HookEvent("teamplay_round_start", Event_TeamplayRoundStart);
+	HookEvent("teamplay_point_captured", Event_TeamplayPointCaptured);
+	HookEvent("teamplay_broadcast_audio", Event_Pre_TeamplayBroadcastAudio, EventHookMode_Pre);
 	
 	// Collect ConVars
 	tf_arena_first_blood = FindConVar("tf_arena_first_blood");
@@ -339,12 +337,69 @@ public void OnClientConnected(int client)
 
 public void OnClientPutInServer(int client)
 {
-	SDKHook(client, SDKHook_PreThink, Client_PreThink);
-	SDKHook(client, SDKHook_TraceAttack, Client_TraceAttack);
+	SDKHook(client, SDKHook_PreThink, SDKHook_Client_PreThink);
+	SDKHook(client, SDKHook_TraceAttack, SDKHook_Client_TraceAttack);
 	SDK_HookClientEntity(client);
 }
 
-public void Client_PreThink(int client)
+public void OnClientDisconnect(int client)
+{
+	SDKUnhook(client, SDKHook_PreThink, SDKHook_Client_PreThink);
+	SDKUnhook(client, SDKHook_TraceAttack, SDKHook_Client_TraceAttack);
+	SDK_UnhookClientEntity(client);
+	
+	// Force-end round if last client in team disconnects during active bomb
+	if (g_IsBombPlanted && IsValidClient(client))
+	{
+		TFTeam team = TF2_GetClientTeam(client);
+		if (team > TFTeam_Spectator && g_BombPlantingTeam != team && TF2_GetAlivePlayerCountForTeam(team) <= 0)
+			g_IsBombPlanted = false;
+	}
+}
+
+public void OnGameFrame()
+{
+	if (!g_IsBombTicking || g_BombRef == INVALID_ENT_REFERENCE) return;
+	
+	if (GetGameTime() > g_BombNextBeepTime)
+	{
+		float timerLength = tfgo_bombtimer.FloatValue;
+		float complete = ((g_BombPlantedTime + timerLength - GetGameTime()) / timerLength);
+		complete = FloatClamp(complete, 0.0, 1.0);
+		
+		float attenuation = FloatMin(0.3 + 0.6 * complete, 1.0);
+		EmitSoundToAll(SOUND_BOMB_BEEPING, g_BombRef, SNDCHAN_AUTO, ATTN_TO_SNDLEVEL(attenuation));
+		float freq = FloatMax(0.1 + 0.9 * complete, 0.15);
+		g_BombNextBeepTime = GetGameTime() + freq;
+	}
+}
+
+public void OnEntityCreated(int entity, const char[] classname)
+{
+	if (StrEqual(classname, "func_respawnroom"))
+	{
+		SDKHook(entity, SDKHook_StartTouch, SDKHook_FuncRespawnRoom_StartTouch);
+		SDKHook(entity, SDKHook_EndTouch, SDKHook_FuncRespawnRoom_EndTouch);
+	}
+	else if (StrEqual(classname, "tf_logic_arena"))
+	{
+		SDKHook(entity, SDKHook_Spawn, SDKHook_TFLogicArena_Spawn);
+	}
+	else if (StrEqual(classname, "trigger_capture_area"))
+	{
+		SDKHook(entity, SDKHook_Spawn, SDKHook_TriggerCaptureArea_Spawn);
+	}
+	else if (StrEqual(classname, "team_control_point_master"))
+	{
+		SDKHook(entity, SDKHook_Spawn, SDKHook_TeamControlPointMaster_Spawn);
+	}
+}
+
+//-----------------------------------------------------------------------------
+// SDKHook Callbacks
+//-----------------------------------------------------------------------------
+
+Action SDKHook_Client_PreThink(int client)
 {
 	TFGOPlayer player = TFGOPlayer(client);
 	
@@ -361,22 +416,7 @@ public void Client_PreThink(int client)
 		DisplayMenuInDynamicBuyZone(client);
 }
 
-public void OnClientDisconnect(int client)
-{
-	SDKUnhook(client, SDKHook_PreThink, Client_PreThink);
-	SDKUnhook(client, SDKHook_TraceAttack, Client_TraceAttack);
-	SDK_UnhookClientEntity(client);
-	
-	// Force-end round if last client in team disconnects during active bomb
-	if (g_IsBombPlanted && IsValidClient(client))
-	{
-		TFTeam team = TF2_GetClientTeam(client);
-		if (team > TFTeam_Spectator && g_BombPlantingTeam != team && GetAlivePlayerCountForTeam(team) <= 0)
-			g_IsBombPlanted = false;
-	}
-}
-
-public Action Client_TraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
+Action SDKHook_Client_TraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
 {
 	if (!mp_friendlyfire.BoolValue && TF2_GetClientTeam(victim) == TF2_GetClientTeam(attacker) && victim != attacker) return Plugin_Continue;
 	
@@ -437,76 +477,46 @@ public Action Client_TraceAttack(int victim, int &attacker, int &inflictor, floa
 	return action;
 }
 
-public void OnGameFrame()
+Action SDKHook_FuncRespawnRoom_StartTouch(int entity, int client)
 {
-	if (!g_IsBombTicking || g_BombRef == INVALID_ENT_REFERENCE)return;
-	
-	if (GetGameTime() > g_BombNextBeepTime)
+	if (g_IsBuyTimeActive && IsValidClient(client) && GetClientTeam(client) == GetEntProp(entity, Prop_Data, "m_iTeamNum"))
+		DisplayMainBuyMenu(client);
+}
+
+Action SDKHook_FuncRespawnRoom_EndTouch(int entity, int client)
+{
+	if (g_IsBuyTimeActive && IsValidClient(client) && GetClientTeam(client) == GetEntProp(entity, Prop_Data, "m_iTeamNum"))
 	{
-		float timerLength = tfgo_bombtimer.FloatValue;
-		float complete = ((g_BombPlantedTime + timerLength - GetGameTime()) / timerLength);
-		complete = clamp(complete, 0.0, 1.0);
-		
-		float attenuation = min(0.3 + 0.6 * complete, 1.0);
-		EmitSoundToAll(SOUND_BOMB_BEEPING, g_BombRef, SNDCHAN_AUTO, ATTN_TO_SNDLEVEL(attenuation));
-		float freq = max(0.1 + 0.9 * complete, 0.15);
-		g_BombNextBeepTime = GetGameTime() + freq;
+		TFGOPlayer player = TFGOPlayer(client);
+		if (player.ActiveBuyMenu != null)
+		{
+			player.ActiveBuyMenu.Cancel();
+			PrintHintText(client, "%T", "BuyMenu_NotInBuyZone", LANG_SERVER);
+		}
 	}
 }
 
-public void ChooseRandomMusicKit()
-{
-	StringMapSnapshot snapshot = g_AvailableMusicKits.Snapshot();
-	char name[PLATFORM_MAX_PATH];
-	snapshot.GetKey(GetRandomInt(0, snapshot.Length - 1), name, sizeof(name));
-	delete snapshot;
-	
-	g_AvailableMusicKits.GetArray(name, g_CurrentMusicKit, sizeof(g_CurrentMusicKit));
-}
-
-public void OnEntityCreated(int entity, const char[] classname)
-{
-	if (StrEqual(classname, "func_respawnroom"))
-	{
-		SDKHook(entity, SDKHook_StartTouch, Hook_RespawnRoom_StartTouch);
-		SDKHook(entity, SDKHook_EndTouch, Hook_RespawnRoom_EndTouch);
-	}
-	else if (StrEqual(classname, "game_end"))
-	{
-		// Superceding SetWinningTeam causes some maps to force a map change on capture
-		RemoveEntity(entity);
-	}
-	else if (StrEqual(classname, "tf_logic_arena"))
-	{
-		SDKHook(entity, SDKHook_Spawn, Hook_LogicArena_Spawn);
-	}
-	else if (StrEqual(classname, "trigger_capture_area"))
-	{
-		SDKHook(entity, SDKHook_Spawn, Hook_CaptureArea_Spawn);
-	}
-	else if (StrEqual(classname, "team_control_point_master"))
-	{
-		SDKHook(entity, SDKHook_Spawn, Hook_ControlPointMaster_Spawn);
-	}
-}
-
-public void Hook_LogicArena_Spawn(int entity)
+Action SDKHook_TFLogicArena_Spawn(int entity)
 {
 	DispatchKeyValueFloat(entity, "CapEnableDelay", 0.0);
 }
 
-public void Hook_CaptureArea_Spawn(int entity)
+Action SDKHook_TriggerCaptureArea_Spawn(int entity)
 {
 	// Arena maps typically have very long capture times, allow maps a bit of control and cut them in half
 	DispatchKeyValueFloat(entity, "area_time_to_cap", GetEntPropFloat(entity, Prop_Data, "m_flCapTime") / 2);
 }
 
-public void Hook_ControlPointMaster_Spawn(int entity)
+Action SDKHook_TeamControlPointMaster_Spawn(int entity)
 {
 	DispatchKeyValue(entity, "cpm_restrict_team_cap_win", "1");
 }
 
-public Action Event_Player_Team(Event event, const char[] name, bool dontBroadcast)
+//-----------------------------------------------------------------------------
+// Event Hook Callbacks
+//-----------------------------------------------------------------------------
+
+Action Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
 {
 	TFTeam team = view_as<TFTeam>(event.GetInt("team"));
 	
@@ -526,7 +536,7 @@ public Action Event_Player_Team(Event event, const char[] name, bool dontBroadca
 	player.RemoveAllItems(true);
 }
 
-public Action Event_Player_Death(Event event, const char[] name, bool dontBroadcast)
+Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
 	TFGOPlayer attacker = TFGOPlayer(GetClientOfUserId(event.GetInt("attacker")));
 	TFGOPlayer victim = TFGOPlayer(GetClientOfUserId(event.GetInt("userid")));
@@ -643,7 +653,7 @@ public Action Event_Player_Death(Event event, const char[] name, bool dontBroadc
 		victim.ActiveBuyMenu.Cancel();
 }
 
-public Action Event_Post_Inventory_Application(Event event, const char[] name, bool dontBroadcast)
+Action Event_PostInventoryApplication(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	if (IsValidClient(client))
@@ -664,211 +674,15 @@ public Action Event_Post_Inventory_Application(Event event, const char[] name, b
 	}
 }
 
-public Action Event_Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
-{
-	ResetRoundState();
-	
-	g_IsBonusRoundActive = false;
-	g_IsMainRoundActive = false;
-	
-	g_CurrentMusicKit.StopMusicForAll(Music_WonRound);
-	g_CurrentMusicKit.StopMusicForAll(Music_LostRound);
-	g_CurrentMusicKit.PlayMusicToAll(Music_StartRound);
-	
-	// Bomb can freely tick and explode through the bonus time and we cancel it here
-	g_IsBombTicking = false;
-	g_BuyTimeTimer = null;
-	g_TenSecondBombTimer = null;
-	g_BombDetonationTimer = null;
-	g_BombExplosionTimer = null;
-}
-
-public Action Timer_OnBuyTimeExpire(Handle timer)
-{
-	if (g_BuyTimeTimer != timer)return;
-	
-	g_IsBuyTimeActive = false;
-	
-	for (int client = 1; client <= MaxClients; client++)
-	{
-		if (IsClientInGame(client))
-		{
-			TFGOPlayer player = TFGOPlayer(client);
-			if (player.ActiveBuyMenu != null)
-			{
-				player.ActiveBuyMenu.Cancel();
-				PrintHintText(client, "%T", "BuyMenu_OutOfTime", LANG_SERVER, tfgo_buytime.IntValue);
-			}
-		}
-	}
-}
-
-public Action Event_Arena_Round_Start(Event event, const char[] name, bool dontBroadcast)
+Action Event_ArenaRoundStart(Event event, const char[] name, bool dontBroadcast)
 {
 	g_IsMainRoundActive = true;
 	g_IsBuyTimeActive = true;
 	g_BuyTimeTimer = CreateTimer(tfgo_buytime.FloatValue, Timer_OnBuyTimeExpire, _, TIMER_FLAG_NO_MAPCHANGE);
-	g_TenSecondRoundTimer = CreateTimer(tf_arena_round_time.FloatValue - 10.0, Timer_PlayTenSecondRoundWarning, _, TIMER_FLAG_NO_MAPCHANGE);
+	g_TenSecondRoundTimer = CreateTimer(tf_arena_round_time.FloatValue - 10.0, Timer_OnRoundTenSecCount, _, TIMER_FLAG_NO_MAPCHANGE);
 }
 
-public Action Timer_PlayTenSecondRoundWarning(Handle timer)
-{
-	if (g_TenSecondRoundTimer != timer)return;
-	
-	g_CurrentMusicKit.StopMusicForAll(Music_StartAction);
-	g_CurrentMusicKit.PlayMusicToAll(Music_RoundTenSecCount);
-}
-
-public Action Event_Teamplay_Point_Captured(Event event, const char[] name, bool dontBroadcast)
-{
-	TFTeam team = view_as<TFTeam>(event.GetInt("team"));
-	char[] cappers = new char[MaxClients];
-	event.GetString("cappers", cappers, MaxClients);
-	
-	ArrayList capperList = new ArrayList();
-	for (int i = 0; i < strlen(cappers); i++)
-	{
-		int capper = cappers[i];
-		capperList.Push(capper);
-	}
-	
-	g_IsBombPlanted = !g_IsBombPlanted;
-	if (g_IsBombPlanted)
-		PlantBomb(team, event.GetInt("cp"), capperList);
-	else
-		DefuseBomb(team, capperList);
-}
-
-void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
-{
-	g_BombPlantingTeam = team;
-	g_BombPlantedTime = GetGameTime();
-	g_BombNextBeepTime = g_BombPlantedTime + 1.0;
-	g_IsBombTicking = true;
-	
-	// Award capture bonus to cappers
-	for (int i = 0; i < cappers.Length; i++)
-	{
-		int capper = cappers.Get(i);
-		TFGOPlayer(capper).AddToAccount(tfgo_cash_player_bomb_planted.IntValue, "%T", "Player_Cash_Award_Bomb_Planted", LANG_SERVER);
-	}
-	
-	// Cancel arena timer
-	int timer = MaxClients + 1;
-	while ((timer = FindEntityByClassname(timer, "team_round_timer")) > -1)
-		RemoveEntity(timer);
-	
-	int cp = MaxClients + 1;
-	while ((cp = FindEntityByClassname(cp, "team_control_point")) > -1)
-	{
-		if (GetEntProp(cp, Prop_Data, "m_iPointIndex") == cpIndex)
-		{
-			// Remember the active bomb site
-			g_BombSiteRef = EntIndexToEntRef(cp);
-		}
-		else
-		{
-			// Lock every other control point in the map
-			SetVariantInt(1);
-			AcceptEntityInput(cp, "SetLocked");
-		}
-	}
-	
-	// Spawn bomb prop on first capper
-	int capper = cappers.Get(0);
-	float origin[3];
-	GetEntPropVector(capper, Prop_Send, "m_vecOrigin", origin);
-	float angles[3];
-	GetEntPropVector(capper, Prop_Send, "m_angRotation", angles);
-	
-	// Create a new bomb
-	int prop = CreateEntityByName("prop_dynamic_override");
-	SetEntityModel(prop, MODEL_BOMB);
-	DispatchSpawn(prop);
-	TeleportEntity(prop, origin, angles, NULL_VECTOR);
-	g_BombRef = EntIndexToEntRef(prop);
-	
-	g_TenSecondBombTimer = CreateTimer(tfgo_bombtimer.FloatValue - 10.0, Timer_PlayTenSecondBombWarning, _, TIMER_FLAG_NO_MAPCHANGE);
-	g_BombDetonationTimer = CreateTimer(tfgo_bombtimer.FloatValue, Timer_DetonateBomb, _, TIMER_FLAG_NO_MAPCHANGE);
-	
-	// Play Sounds
-	g_CurrentMusicKit.StopMusicForAll(Music_StartAction);
-	g_CurrentMusicKit.StopMusicForAll(Music_RoundTenSecCount);
-	g_CurrentMusicKit.PlayMusicToAll(Music_BombPlanted);
-	EmitGameSoundToAll(GAMESOUND_ANNOUNCER_BOMB_PLANTED);
-	EmitBombSeeGameSounds();
-	
-	// Reset timers
-	g_TenSecondRoundTimer = null;
-	
-	// Show text on screen
-	char message[PLATFORM_MAX_PATH];
-	Format(message, sizeof(message), "%T", "Bomb_Planted", LANG_SERVER, tfgo_bombtimer.IntValue);
-	ShowGameMessage(message, "ico_notify_sixty_seconds");
-	
-	Forward_BombPlanted(team, cappers);
-	delete cappers;
-}
-
-public Action Timer_PlayTenSecondBombWarning(Handle timer)
-{
-	if (g_TenSecondBombTimer != timer || !g_IsMainRoundActive) return;
-	
-	g_CurrentMusicKit.StopMusicForAll(Music_BombPlanted);
-	g_CurrentMusicKit.PlayMusicToAll(Music_BombTenSecCount);
-}
-
-public Action Timer_DetonateBomb(Handle timer)
-{
-	if (g_BombDetonationTimer != timer) return;
-	
-	g_IsBombTicking = false;
-	EmitGameSoundToAll(GAMESOUND_BOMB_WARNING, g_BombRef);
-	
-	// Time's up, no more defusing
-	SetVariantInt(1);
-	AcceptEntityInput(g_BombSiteRef, "SetLocked");
-	
-	// For dramatic effect
-	g_BombExplosionTimer = CreateTimer(1.0, Timer_ExplodeBomb, _, TIMER_FLAG_NO_MAPCHANGE);
-}
-
-public Action Timer_ExplodeBomb(Handle timer)
-{
-	if (g_BombExplosionTimer != timer) return;
-	
-	g_IsBombPlanted = false;
-	
-	TF2_ForceRoundWin(g_BombPlantingTeam, WinReason_PointCaptured);
-	
-	float origin[3];
-	GetEntPropVector(g_BombRef, Prop_Send, "m_vecOrigin", origin);
-	TF2_Explode(_, origin, BOMB_EXPLOSION_DAMAGE, BOMB_EXPLOSION_RADIUS, PARTICLE_BOMB_EXPLOSION);
-	EmitGameSoundToAll(GAMESOUND_BOMB_EXPLOSION, g_BombRef);
-	RemoveEntity(g_BombRef);
-	
-	Forward_BombDetonated(g_BombPlantingTeam);
-}
-
-void DefuseBomb(TFTeam team, ArrayList cappers)
-{
-	g_IsBombTicking = false;
-	g_TenSecondBombTimer = null;
-	g_BombDetonationTimer = null;
-	
-	for (int i = 0; i < cappers.Length; i++)
-	{
-		int capper = cappers.Get(i);
-		TFGOPlayer(capper).AddToAccount(tfgo_cash_player_bomb_defused.IntValue, "%T", "Player_Cash_Award_Bomb_Defused", LANG_SERVER);
-	}
-	
-	TF2_ForceRoundWin(team, WinReason_PointCaptured);
-	
-	Forward_BombDefused(team, cappers, tfgo_bombtimer.FloatValue - (GetGameTime() - g_BombPlantedTime));
-	delete cappers;
-}
-
-public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBroadcast)
+Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 {
 	g_IsMainRoundActive = false;
 	g_IsBonusRoundActive = true;
@@ -937,7 +751,265 @@ public Action Event_Arena_Win_Panel(Event event, const char[] name, bool dontBro
 	}
 }
 
-public void ResetRoundState()
+Action Event_TeamplayRoundStart(Event event, const char[] name, bool dontBroadcast)
+{
+	ResetRoundState();
+	
+	g_IsBonusRoundActive = false;
+	g_IsMainRoundActive = false;
+	
+	g_CurrentMusicKit.StopMusicForAll(Music_WonRound);
+	g_CurrentMusicKit.StopMusicForAll(Music_LostRound);
+	g_CurrentMusicKit.PlayMusicToAll(Music_StartRound);
+	
+	// Bomb can freely tick and explode through the bonus time and we cancel it here
+	g_IsBombTicking = false;
+	g_BuyTimeTimer = null;
+	g_TenSecondBombTimer = null;
+	g_BombDetonationTimer = null;
+	g_BombExplosionTimer = null;
+}
+
+Action Event_TeamplayPointCaptured(Event event, const char[] name, bool dontBroadcast)
+{
+	TFTeam team = view_as<TFTeam>(event.GetInt("team"));
+	char[] cappers = new char[MaxClients];
+	event.GetString("cappers", cappers, MaxClients);
+	
+	ArrayList capperList = new ArrayList();
+	for (int i = 0; i < strlen(cappers); i++)
+	{
+		int capper = cappers[i];
+		capperList.Push(capper);
+	}
+	
+	g_IsBombPlanted = !g_IsBombPlanted;
+	if (g_IsBombPlanted)
+		PlantBomb(team, event.GetInt("cp"), capperList);
+	else
+		DefuseBomb(team, capperList);
+}
+
+Action Event_Pre_TeamplayBroadcastAudio(Event event, const char[] name, bool dontBroadcast)
+{
+	char sound[PLATFORM_MAX_PATH];
+	event.GetString("sound", sound, sizeof(sound));
+	TFTeam team = view_as<TFTeam>(event.GetInt("team"));
+	
+	if (strncmp(sound, "Game.", 5) == 0)
+	{
+		g_CurrentMusicKit.StopMusicForAll(Music_StartAction);
+		g_CurrentMusicKit.StopMusicForAll(Music_BombPlanted);
+		g_CurrentMusicKit.StopMusicForAll(Music_RoundTenSecCount);
+		g_CurrentMusicKit.StopMusicForAll(Music_BombTenSecCount);
+		
+		// Playing sound directly instead of rewriting event so we can control when to stop it
+		if (StrEqual(sound, "Game.YourTeamWon"))
+			g_CurrentMusicKit.PlayMusicToTeam(team, Music_WonRound);
+		else if (StrEqual(sound, "Game.YourTeamLost") || StrEqual(sound, "Game.Stalemate"))
+			g_CurrentMusicKit.PlayMusicToTeam(team, Music_LostRound);
+		
+		return Plugin_Handled;
+	}
+	else if (StrEqual(sound, "Announcer.AM_RoundStartRandom"))
+	{
+		g_CurrentMusicKit.StopMusicForAll(Music_StartRound);
+		g_CurrentMusicKit.PlayMusicToAll(Music_StartAction);
+	}
+	
+	return Plugin_Continue;
+}
+
+//-----------------------------------------------------------------------------
+// Timer Callbacks
+//-----------------------------------------------------------------------------
+
+Action Timer_OnBuyTimeExpire(Handle timer)
+{
+	if (g_BuyTimeTimer != timer)return;
+	
+	g_IsBuyTimeActive = false;
+	
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientInGame(client))
+		{
+			TFGOPlayer player = TFGOPlayer(client);
+			if (player.ActiveBuyMenu != null)
+			{
+				player.ActiveBuyMenu.Cancel();
+				PrintHintText(client, "%T", "BuyMenu_OutOfTime", LANG_SERVER, tfgo_buytime.IntValue);
+			}
+		}
+	}
+}
+
+Action Timer_OnRoundTenSecCount(Handle timer)
+{
+	if (g_TenSecondRoundTimer != timer)return;
+	
+	g_CurrentMusicKit.StopMusicForAll(Music_StartAction);
+	g_CurrentMusicKit.PlayMusicToAll(Music_RoundTenSecCount);
+}
+
+Action Timer_OnBombTenSecCount(Handle timer)
+{
+	if (g_TenSecondBombTimer != timer || !g_IsMainRoundActive) return;
+	
+	g_CurrentMusicKit.StopMusicForAll(Music_BombPlanted);
+	g_CurrentMusicKit.PlayMusicToAll(Music_BombTenSecCount);
+}
+
+Action Timer_OnBombTimerExpire(Handle timer)
+{
+	if (g_BombDetonationTimer != timer) return;
+	
+	g_IsBombTicking = false;
+	EmitGameSoundToAll(GAMESOUND_BOMB_WARNING, g_BombRef);
+	
+	// Time's up, no more defusing
+	SetVariantInt(1);
+	AcceptEntityInput(g_BombSiteRef, "SetLocked");
+	
+	// For dramatic effect
+	g_BombExplosionTimer = CreateTimer(1.0, Timer_OnBombExplode, _, TIMER_FLAG_NO_MAPCHANGE);
+}
+
+Action Timer_OnBombExplode(Handle timer)
+{
+	if (g_BombExplosionTimer != timer) return;
+	
+	g_IsBombPlanted = false;
+	
+	TF2_ForceRoundWin(g_BombPlantingTeam, WinReason_PointCaptured);
+	
+	float origin[3];
+	GetEntPropVector(g_BombRef, Prop_Send, "m_vecOrigin", origin);
+	TF2_Explode(_, origin, BOMB_EXPLOSION_DAMAGE, BOMB_EXPLOSION_RADIUS, PARTICLE_BOMB_EXPLOSION);
+	EmitGameSoundToAll(GAMESOUND_BOMB_EXPLOSION, g_BombRef);
+	RemoveEntity(g_BombRef);
+	
+	Forward_BombDetonated(g_BombPlantingTeam);
+}
+
+//-----------------------------------------------------------------------------
+// Command Listener Callbacks
+//-----------------------------------------------------------------------------
+
+Action CommandListener_Build(int client, const char[] command, int args)
+{
+	// Check if player owns Construction PDA
+	if (TFGOPlayer(client).GetWeaponFromLoadout(TFClass_Engineer, WeaponSlot_PDABuild) != -1)
+		return Plugin_Continue;
+	
+	// Block build by default
+	return Plugin_Handled;
+}
+
+Action CommandListener_Destroy(int client, const char[] command, int args)
+{
+	// Check if player owns Destruction PDA
+	if (TFGOPlayer(client).GetWeaponFromLoadout(TFClass_Engineer, WeaponSlot_PDADestroy) != -1)
+		return Plugin_Continue;
+	
+	// Block destroy by default
+	return Plugin_Handled;
+}
+
+//-----------------------------------------------------------------------------
+// Plugin Functions
+//-----------------------------------------------------------------------------
+
+void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
+{
+	g_BombPlantingTeam = team;
+	g_BombPlantedTime = GetGameTime();
+	g_BombNextBeepTime = g_BombPlantedTime + 1.0;
+	g_IsBombTicking = true;
+	
+	// Award capture bonus to cappers
+	for (int i = 0; i < cappers.Length; i++)
+	{
+		int capper = cappers.Get(i);
+		TFGOPlayer(capper).AddToAccount(tfgo_cash_player_bomb_planted.IntValue, "%T", "Player_Cash_Award_Bomb_Planted", LANG_SERVER);
+	}
+	
+	// Cancel arena timer
+	int timer = MaxClients + 1;
+	while ((timer = FindEntityByClassname(timer, "team_round_timer")) > -1)
+		RemoveEntity(timer);
+	
+	int cp = MaxClients + 1;
+	while ((cp = FindEntityByClassname(cp, "team_control_point")) > -1)
+	{
+		if (GetEntProp(cp, Prop_Data, "m_iPointIndex") == cpIndex)
+		{
+			// Remember the active bomb site
+			g_BombSiteRef = EntIndexToEntRef(cp);
+		}
+		else
+		{
+			// Lock every other control point in the map
+			SetVariantInt(1);
+			AcceptEntityInput(cp, "SetLocked");
+		}
+	}
+	
+	// Spawn bomb prop on first capper
+	int capper = cappers.Get(0);
+	float origin[3];
+	GetEntPropVector(capper, Prop_Send, "m_vecOrigin", origin);
+	float angles[3];
+	GetEntPropVector(capper, Prop_Send, "m_angRotation", angles);
+	
+	// Create a new bomb
+	int prop = CreateEntityByName("prop_dynamic_override");
+	SetEntityModel(prop, MODEL_BOMB);
+	DispatchSpawn(prop);
+	TeleportEntity(prop, origin, angles, NULL_VECTOR);
+	g_BombRef = EntIndexToEntRef(prop);
+	
+	g_TenSecondBombTimer = CreateTimer(tfgo_bombtimer.FloatValue - 10.0, Timer_OnBombTenSecCount, _, TIMER_FLAG_NO_MAPCHANGE);
+	g_BombDetonationTimer = CreateTimer(tfgo_bombtimer.FloatValue, Timer_OnBombTimerExpire, _, TIMER_FLAG_NO_MAPCHANGE);
+	
+	// Play Sounds
+	g_CurrentMusicKit.StopMusicForAll(Music_StartAction);
+	g_CurrentMusicKit.StopMusicForAll(Music_RoundTenSecCount);
+	g_CurrentMusicKit.PlayMusicToAll(Music_BombPlanted);
+	EmitGameSoundToAll(GAMESOUND_ANNOUNCER_BOMB_PLANTED);
+	EmitBombSeeGameSounds();
+	
+	// Reset timers
+	g_TenSecondRoundTimer = null;
+	
+	// Show text on screen
+	char message[PLATFORM_MAX_PATH];
+	Format(message, sizeof(message), "%T", "Bomb_Planted", LANG_SERVER, tfgo_bombtimer.IntValue);
+	TF2_ShowGameMessage(message, "ico_notify_sixty_seconds");
+	
+	Forward_BombPlanted(team, cappers);
+	delete cappers;
+}
+
+void DefuseBomb(TFTeam team, ArrayList cappers)
+{
+	g_IsBombTicking = false;
+	g_TenSecondBombTimer = null;
+	g_BombDetonationTimer = null;
+	
+	for (int i = 0; i < cappers.Length; i++)
+	{
+		int capper = cappers.Get(i);
+		TFGOPlayer(capper).AddToAccount(tfgo_cash_player_bomb_defused.IntValue, "%T", "Player_Cash_Award_Bomb_Defused", LANG_SERVER);
+	}
+	
+	TF2_ForceRoundWin(team, WinReason_PointCaptured);
+	
+	Forward_BombDefused(team, cappers, tfgo_bombtimer.FloatValue - (GetGameTime() - g_BombPlantedTime));
+	delete cappers;
+}
+
+void ResetRoundState()
 {
 	g_IsBombPlanted = false;
 	g_BombPlantingTeam = TFTeam_Unassigned;
@@ -953,26 +1025,6 @@ public void ResetRoundState()
 	}
 }
 
-public Action CommandListener_Build(int client, const char[] command, int args)
-{
-	// Check if player owns Construction PDA
-	if (TFGOPlayer(client).GetWeaponFromLoadout(TFClass_Engineer, WeaponSlot_PDABuild) != -1)
-		return Plugin_Continue;
-	
-	// Block build by default
-	return Plugin_Handled;
-}
-
-public Action CommandListener_Destroy(int client, const char[] command, int args)
-{
-	// Check if player owns Destruction PDA
-	if (TFGOPlayer(client).GetWeaponFromLoadout(TFClass_Engineer, WeaponSlot_PDADestroy) != -1)
-		return Plugin_Continue;
-	
-	// Block destroy by default
-	return Plugin_Handled;
-}
-
 void PrecacheModels()
 {
 	PrecacheModel(MODEL_BOMB);
@@ -981,6 +1033,16 @@ void PrecacheModels()
 void PrecacheParticleSystems()
 {
 	PrecacheParticleSystem(PARTICLE_BOMB_EXPLOSION);
+}
+
+void ChooseRandomMusicKit()
+{
+	StringMapSnapshot snapshot = g_AvailableMusicKits.Snapshot();
+	char name[PLATFORM_MAX_PATH];
+	snapshot.GetKey(GetRandomInt(0, snapshot.Length - 1), name, sizeof(name));
+	delete snapshot;
+	
+	g_AvailableMusicKits.GetArray(name, g_CurrentMusicKit, sizeof(g_CurrentMusicKit));
 }
 
 void Toggle_ConVars(bool toggle)

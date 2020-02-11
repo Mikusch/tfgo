@@ -1,7 +1,7 @@
 static float g_DynamicBuyZoneCenters[view_as<int>(TFTeam_Blue) + 1][3];
 static float g_DynamicBuyzoneRadii[view_as<int>(TFTeam_Blue) + 1];
 
-public void CalculateDynamicBuyZones()
+void CalculateDynamicBuyZones()
 {
 	// Calculate average position of each info_player_start for each team
 	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
@@ -48,26 +48,7 @@ public void CalculateDynamicBuyZones()
 	}
 }
 
-public Action Hook_RespawnRoom_StartTouch(int entity, int client)
-{
-	if (g_IsBuyTimeActive && IsValidClient(client) && GetClientTeam(client) == GetEntProp(entity, Prop_Data, "m_iTeamNum"))
-		DisplayMainBuyMenu(client);
-}
-
-public Action Hook_RespawnRoom_EndTouch(int entity, int client)
-{
-	if (g_IsBuyTimeActive && IsValidClient(client) && GetClientTeam(client) == GetEntProp(entity, Prop_Data, "m_iTeamNum"))
-	{
-		TFGOPlayer player = TFGOPlayer(client);
-		if (player.ActiveBuyMenu != null)
-		{
-			player.ActiveBuyMenu.Cancel();
-			PrintHintText(client, "%T", "BuyMenu_NotInBuyZone", LANG_SERVER);
-		}
-	}
-}
-
-public void DisplayMenuInDynamicBuyZone(int client)
+void DisplayMenuInDynamicBuyZone(int client)
 {
 	if (IsClientInGame(client) && IsPlayerAlive(client))
 	{

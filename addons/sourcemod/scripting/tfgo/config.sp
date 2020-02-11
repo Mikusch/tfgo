@@ -9,7 +9,7 @@ enum struct WeaponConfig
 
 StringMap g_WeaponClassKillAwards;
 
-public void ReadWeaponConfig(KeyValues kv)
+void ReadWeaponConfig(KeyValues kv)
 {
 	if (kv.JumpToKey("Weapons", false))
 	{

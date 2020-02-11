@@ -28,7 +28,7 @@ static char g_SoldierBombSeeGameSounds[][] =  {
 	"soldier_mvm_bomb_see03"
 };
 
-public void PrecacheSounds()
+void PrecacheSounds()
 {
 	PrecacheSound(SOUND_BOMB_BEEPING);
 	PrecacheSound("mvm/mvm_bomb_explode.wav");
@@ -45,7 +45,7 @@ public void PrecacheSounds()
 	for (int i = 0; i < sizeof(g_SoldierBombSeeGameSounds); i++) PrecacheScriptSound(g_SoldierBombSeeGameSounds[i]);
 }
 
-public void EmitBombSeeGameSounds()
+void EmitBombSeeGameSounds()
 {
 	for (int client = 1; client <= MaxClients; client++)
 	{
@@ -62,37 +62,7 @@ public void EmitBombSeeGameSounds()
 	}
 }
 
-public Action Event_Pre_Teamplay_Broadcast_Audio(Event event, const char[] name, bool dontBroadcast)
-{
-	char sound[PLATFORM_MAX_PATH];
-	event.GetString("sound", sound, sizeof(sound));
-	TFTeam team = view_as<TFTeam>(event.GetInt("team"));
-	
-	if (strncmp(sound, "Game.", 5) == 0)
-	{
-		g_CurrentMusicKit.StopMusicForAll(Music_StartAction);
-		g_CurrentMusicKit.StopMusicForAll(Music_BombPlanted);
-		g_CurrentMusicKit.StopMusicForAll(Music_RoundTenSecCount);
-		g_CurrentMusicKit.StopMusicForAll(Music_BombTenSecCount);
-		
-		// Playing sound directly instead of rewriting event so we can control when to stop it
-		if (StrEqual(sound, "Game.YourTeamWon"))
-			g_CurrentMusicKit.PlayMusicToTeam(team, Music_WonRound);
-		else if (StrEqual(sound, "Game.YourTeamLost") || StrEqual(sound, "Game.Stalemate"))
-			g_CurrentMusicKit.PlayMusicToTeam(team, Music_LostRound);
-		
-		return Plugin_Handled;
-	}
-	else if (StrEqual(sound, "Announcer.AM_RoundStartRandom"))
-	{
-		g_CurrentMusicKit.StopMusicForAll(Music_StartRound);
-		g_CurrentMusicKit.PlayMusicToAll(Music_StartAction);
-	}
-	
-	return Plugin_Continue;
-}
-
-public Action NormalSoundHook(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &entity, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
+Action NormalSoundHook(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &entity, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
 {
 	if (strncmp(sample, ")weapons/", 9) == 0)
 	{

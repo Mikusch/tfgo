@@ -21,7 +21,6 @@ static Menu g_ActiveBuyMenus[TF_MAXPLAYERS + 1];
 
 static int g_TeamConsecutiveLosses[view_as<int>(TFTeam_Blue) + 1] =  { STARTING_CONSECUTIVE_LOSSES, ... };
 
-
 methodmap TFGOPlayer
 {
 	public TFGOPlayer(int client)
@@ -331,7 +330,6 @@ methodmap TFGOPlayer
 		else
 		{
 			this.HasDefuseKit = true;
-			
 			this.Account -= DEFUSEKIT_PRICE;
 			return BUY_BOUGHT;
 		}
