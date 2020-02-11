@@ -150,7 +150,7 @@ stock void TF2_GetItemName(int defindex, char[] buffer, int maxlength)
 stock void TF2_CreateAndEquipWeapon(int client, int defindex, TFQuality quality = TFQual_Normal, int level = 0)
 {
 	TFClassType class = TF2_GetPlayerClass(client);
-	int slot = TF2_GetSlotInItem(defindex, class);
+	int slot = TF2_GetItemSlot(defindex, class);
 	
 	// Remove sniper scope and slowdown cond if have one, otherwise can cause client crashes
 	if (TF2_IsPlayerInCondition(client, TFCond_Zoomed))
@@ -255,7 +255,7 @@ stock void TF2_EquipWeapon(int client, int weapon, char[] className = NULL_STRIN
 	}
 }
 
-stock int TF2_GetSlotInItem(int defindex, TFClassType class)
+stock int TF2_GetItemSlot(int defindex, TFClassType class)
 {
 	int slot = TF2Econ_GetItemSlot(defindex, class);
 	if (slot >= 0)

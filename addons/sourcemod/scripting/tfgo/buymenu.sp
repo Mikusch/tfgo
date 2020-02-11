@@ -113,7 +113,7 @@ bool DisplayWeaponBuyMenu(int client, ArrayList slots)
 		g_AvailableWeapons.GetArray(i, config, sizeof(config));
 		
 		TFClassType class = TF2_GetPlayerClass(client);
-		int slot = TF2_GetSlotInItem(config.defIndex, class);
+		int slot = TF2_GetItemSlot(config.defIndex, class);
 		
 		if (slots.FindValue(slot) > -1 && config.price > -1)
 		{
@@ -175,7 +175,7 @@ int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, int para
 			
 			TFGOPlayer player = TFGOPlayer(param1);
 			TFClassType class = TF2_GetPlayerClass(param1);
-			int slot = TF2_GetSlotInItem(config.defIndex, class);
+			int slot = TF2_GetItemSlot(config.defIndex, class);
 			
 			return player.GetWeaponFromLoadout(class, slot) == config.defIndex || config.price > player.Account ? ITEMDRAW_DISABLED : style;
 		}
@@ -190,7 +190,7 @@ int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, int para
 			g_AvailableWeapons.GetArray(g_AvailableWeapons.FindValue(StringToInt(info), 0), config, sizeof(config));
 			
 			TFClassType class = TF2_GetPlayerClass(param1);
-			int slot = TF2_GetSlotInItem(config.defIndex, class);
+			int slot = TF2_GetItemSlot(config.defIndex, class);
 			
 			TFGOPlayer player = TFGOPlayer(param1);
 			if (player.GetWeaponFromLoadout(class, slot) == config.defIndex)

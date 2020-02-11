@@ -121,7 +121,7 @@ methodmap TFGOPlayer
 	public BuyResult AttemptToBuyWeapon(int defIndex)
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Client);
-		int slot = TF2_GetSlotInItem(defIndex, class);
+		int slot = TF2_GetItemSlot(defIndex, class);
 		int weapon = GetPlayerWeaponSlot(this.Client, slot);
 		
 		WeaponConfig config;
@@ -179,7 +179,7 @@ methodmap TFGOPlayer
 	public void AddToLoadout(int defIndex)
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Client);
-		int slot = TF2_GetSlotInItem(defIndex, class);
+		int slot = TF2_GetItemSlot(defIndex, class);
 		g_PlayerLoadoutWeaponIndexes[this][class][slot] = defIndex;
 	}
 	

@@ -245,7 +245,7 @@ MRESReturn Hook_GiveNamedItem(int client, Handle returnVal, Handle params)
 		return MRES_Ignored;
 	
 	int defIndex = DHookGetParamObjectPtrVar(params, 3, 4, ObjectValueType_Int) & 0xFFFF;
-	int slot = TF2_GetSlotInItem(defIndex, TF2_GetPlayerClass(client));
+	int slot = TF2_GetItemSlot(defIndex, TF2_GetPlayerClass(client));
 	TFClassType class = TF2_GetPlayerClass(client);
 	
 	if (0 <= slot <= WeaponSlot_BuilderEngie && TFGOPlayer(client).GetWeaponFromLoadout(class, slot) != defIndex)
