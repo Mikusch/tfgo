@@ -172,7 +172,7 @@ void SDK_UnhookClientEntity(int client)
 	}
 }
 
-public MRESReturn Hook_PickupWeaponFromOther(int client, Handle returnVal, Handle params)
+MRESReturn Hook_PickupWeaponFromOther(int client, Handle returnVal, Handle params)
 {
 	int weapon = DHookGetParam(params, 1); // tf_dropped_weapon
 	int defindex = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
@@ -181,7 +181,7 @@ public MRESReturn Hook_PickupWeaponFromOther(int client, Handle returnVal, Handl
 	Forward_WeaponPickup(client, defindex);
 }
 
-public MRESReturn Hook_GetCaptureValueForPlayer(Handle returnVal, Handle params)
+MRESReturn Hook_GetCaptureValueForPlayer(Handle returnVal, Handle params)
 {
 	int client = DHookGetParam(params, 1);
 	if (TFGOPlayer(client).HasDefuseKit && g_IsBombPlanted) // Defuse kit only takes effect when the bomb is planted
@@ -193,7 +193,7 @@ public MRESReturn Hook_GetCaptureValueForPlayer(Handle returnVal, Handle params)
 	return MRES_Ignored;
 }
 
-public MRESReturn Hook_SetWinningTeam(Handle params)
+MRESReturn Hook_SetWinningTeam(Handle params)
 {
 	TFTeam team = DHookGetParam(params, 1);
 	int winReason = DHookGetParam(params, 2);
@@ -205,7 +205,7 @@ public MRESReturn Hook_SetWinningTeam(Handle params)
 	return MRES_Ignored;
 }
 
-public MRESReturn Hook_HandleSwitchTeams()
+MRESReturn Hook_HandleSwitchTeams()
 {
 	for (int client = 1; client <= MaxClients; client++)
 	{
@@ -218,7 +218,7 @@ public MRESReturn Hook_HandleSwitchTeams()
 	}
 }
 
-public MRESReturn Hook_HandleScrambleTeams()
+MRESReturn Hook_HandleScrambleTeams()
 {
 	for (int client = 1; client <= MaxClients; client++)
 	{
@@ -239,13 +239,13 @@ public MRESReturn Hook_HandleScrambleTeams()
 	EmitGameSoundToAll(GAMESOUND_ANNOUNCER_TEAM_SCRAMBLE);
 }
 
-public MRESReturn Hook_GiveNamedItem(int client, Handle returnVal, Handle params)
+MRESReturn Hook_GiveNamedItem(int client, Handle returnVal, Handle params)
 {
 	if (DHookIsNullParam(params, 1) || DHookIsNullParam(params, 3))
 		return MRES_Ignored;
 	
 	int defIndex = DHookGetParamObjectPtrVar(params, 3, 4, ObjectValueType_Int) & 0xFFFF;
-	int slot = TF2_GetSlotInItem(defIndex, TF2_GetPlayerClass(client));
+	int slot = TF2_GetItemSlot(defIndex, TF2_GetPlayerClass(client));
 	TFClassType class = TF2_GetPlayerClass(client);
 	
 	if (0 <= slot <= WeaponSlot_BuilderEngie && TFGOPlayer(client).GetWeaponFromLoadout(class, slot) != defIndex)
@@ -257,7 +257,7 @@ public MRESReturn Hook_GiveNamedItem(int client, Handle returnVal, Handle params
 	return MRES_Ignored;
 }
 
-public void HookRemoval_GiveNamedItem(int hookId)
+void HookRemoval_GiveNamedItem(int hookId)
 {
 	for (int client = 1; client <= MaxClients; client++)
 	{

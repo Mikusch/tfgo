@@ -3,7 +3,7 @@
 #define INFO_ASSAULTSUIT "ASSAULTSUIT"
 #define INFO_DEFUSEKIT "DEFUSEKIT"
 
-public bool DisplayMainBuyMenu(int client)
+bool DisplayMainBuyMenu(int client)
 {
 	Menu menu = new Menu(MenuHandler_MainBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DisplayItem);
 	menu.SetTitle("%T\n%T", "BuyMenu_Title", LANG_SERVER, "BuyMenu_SelectSlot", LANG_SERVER);
@@ -40,7 +40,7 @@ public bool DisplayMainBuyMenu(int client)
 	return menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int MenuHandler_MainBuyMenu(Menu menu, MenuAction action, int param1, int param2)
+int MenuHandler_MainBuyMenu(Menu menu, MenuAction action, int param1, int param2)
 {
 	switch (action)
 	{
@@ -100,7 +100,7 @@ public int MenuHandler_MainBuyMenu(Menu menu, MenuAction action, int param1, int
 	return 0;
 }
 
-public bool DisplayWeaponBuyMenu(int client, ArrayList slots)
+bool DisplayWeaponBuyMenu(int client, ArrayList slots)
 {
 	Menu menu = new Menu(MenuHandler_WeaponBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DrawItem | MenuAction_DisplayItem);
 	menu.SetTitle("%T\n%T", "BuyMenu_Title", LANG_SERVER, "BuyMenu_SelectWeapon", LANG_SERVER);
@@ -113,7 +113,7 @@ public bool DisplayWeaponBuyMenu(int client, ArrayList slots)
 		g_AvailableWeapons.GetArray(i, config, sizeof(config));
 		
 		TFClassType class = TF2_GetPlayerClass(client);
-		int slot = TF2_GetSlotInItem(config.defIndex, class);
+		int slot = TF2_GetItemSlot(config.defIndex, class);
 		
 		if (slots.FindValue(slot) > -1 && config.price > -1)
 		{
@@ -131,7 +131,7 @@ public bool DisplayWeaponBuyMenu(int client, ArrayList slots)
 	return menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, int param2)
+int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, int param2)
 {
 	switch (action)
 	{
@@ -175,7 +175,7 @@ public int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, i
 			
 			TFGOPlayer player = TFGOPlayer(param1);
 			TFClassType class = TF2_GetPlayerClass(param1);
-			int slot = TF2_GetSlotInItem(config.defIndex, class);
+			int slot = TF2_GetItemSlot(config.defIndex, class);
 			
 			return player.GetWeaponFromLoadout(class, slot) == config.defIndex || config.price > player.Account ? ITEMDRAW_DISABLED : style;
 		}
@@ -190,7 +190,7 @@ public int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, i
 			g_AvailableWeapons.GetArray(g_AvailableWeapons.FindValue(StringToInt(info), 0), config, sizeof(config));
 			
 			TFClassType class = TF2_GetPlayerClass(param1);
-			int slot = TF2_GetSlotInItem(config.defIndex, class);
+			int slot = TF2_GetItemSlot(config.defIndex, class);
 			
 			TFGOPlayer player = TFGOPlayer(param1);
 			if (player.GetWeaponFromLoadout(class, slot) == config.defIndex)
@@ -205,7 +205,7 @@ public int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, i
 	return 0;
 }
 
-public int DisplayEquipmentBuyMenu(int client)
+int DisplayEquipmentBuyMenu(int client)
 {
 	Menu menu = new Menu(MenuHandler_EquipmentBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DrawItem | MenuAction_DisplayItem);
 	menu.SetTitle("%T\n%T", "BuyMenu_Title", LANG_SERVER, "BuyMenu_SelectEquipment", LANG_SERVER);
@@ -219,7 +219,7 @@ public int DisplayEquipmentBuyMenu(int client)
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1, int param2)
+int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1, int param2)
 {
 	switch (action)
 	{

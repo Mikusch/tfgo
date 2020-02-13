@@ -28,7 +28,7 @@ static char g_SoldierBombSeeGameSounds[][] =  {
 	"soldier_mvm_bomb_see03"
 };
 
-public void PrecacheSounds()
+void PrecacheSounds()
 {
 	PrecacheSound(SOUND_BOMB_BEEPING);
 	PrecacheSound("mvm/mvm_bomb_explode.wav");
@@ -45,7 +45,7 @@ public void PrecacheSounds()
 	for (int i = 0; i < sizeof(g_SoldierBombSeeGameSounds); i++) PrecacheScriptSound(g_SoldierBombSeeGameSounds[i]);
 }
 
-public void EmitBombSeeGameSounds()
+void EmitBombSeeGameSounds()
 {
 	for (int client = 1; client <= MaxClients; client++)
 	{
@@ -62,7 +62,22 @@ public void EmitBombSeeGameSounds()
 	}
 }
 
-public Action Event_Pre_Teamplay_Broadcast_Audio(Event event, const char[] name, bool dontBroadcast)
+Action NormalSoundHook(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &entity, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
+{
+	if (strncmp(sample, ")weapons/", 9) == 0)
+	{
+		// Spatialized minigun crit sounds from headshots loop forever, block them entirely
+		for (int i = 0; i < sizeof(g_MinigunShootCritSounds); i++)
+		{
+			if (StrEqual(sample, g_MinigunShootCritSounds[i]))
+				return Plugin_Handled;
+		}
+	}
+	
+	return Plugin_Continue;
+}
+
+Action Event_Pre_TeamplayBroadcastAudio(Event event, const char[] name, bool dontBroadcast)
 {
 	char sound[PLATFORM_MAX_PATH];
 	event.GetString("sound", sound, sizeof(sound));
@@ -87,21 +102,6 @@ public Action Event_Pre_Teamplay_Broadcast_Audio(Event event, const char[] name,
 	{
 		g_CurrentMusicKit.StopMusicForAll(Music_StartRound);
 		g_CurrentMusicKit.PlayMusicToAll(Music_StartAction);
-	}
-	
-	return Plugin_Continue;
-}
-
-public Action NormalSoundHook(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &entity, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
-{
-	if (strncmp(sample, ")weapons/", 9) == 0)
-	{
-		// Spatialized minigun crit sounds from headshots loop forever, block them entirely
-		for (int i = 0; i < sizeof(g_MinigunShootCritSounds); i++)
-		{
-			if (StrEqual(sample, g_MinigunShootCritSounds[i]))
-				return Plugin_Handled;
-		}
 	}
 	
 	return Plugin_Continue;

@@ -6,30 +6,19 @@ stock bool IsValidClient(int client)
 	return 0 < client <= MaxClients && IsClientInGame(client);
 }
 
-stock int GetAlivePlayerCountForTeam(TFTeam team)
-{
-	int count = 0;
-	for (int client = 1; client <= MaxClients; client++)
-	{
-		if (IsClientInGame(client) && IsPlayerAlive(client) && TF2_GetClientTeam(client) == team)
-			count++;
-	}
-	return count;
-}
-
-stock any min(any a, any b)
+stock any FloatMin(float a, float b)
 {
 	return (a < b) ? a : b;
 }
 
-stock any max(any a, any b)
+stock any FloatMax(float a, float b)
 {
 	return (a > b) ? a : b;
 }
 
-stock any clamp(any val, any min, any max)
+stock any FloatClamp(float val, float min, float max)
 {
-	return (val < min) ? min : (max < val) ? max : val;
+	return FloatMax(min, FloatMin(max, val));
 }
 
 stock void StrToLower(char[] str)
@@ -38,6 +27,66 @@ stock void StrToLower(char[] str)
 	{
 		str[i] = CharToLower(str[i]);
 	}
+}
+
+stock int PrecacheParticleSystem(const char[] particleSystem)
+{
+	static int particleEffectNames = INVALID_STRING_TABLE;
+	if (particleEffectNames == INVALID_STRING_TABLE)
+	{
+		if ((particleEffectNames = FindStringTable("ParticleEffectNames")) == INVALID_STRING_TABLE)
+		{
+			return INVALID_STRING_INDEX;
+		}
+	}
+	
+	int index = FindStringIndex2(particleEffectNames, particleSystem);
+	if (index == INVALID_STRING_INDEX)
+	{
+		int numStrings = GetStringTableNumStrings(particleEffectNames);
+		if (numStrings >= GetStringTableMaxStrings(particleEffectNames))
+		{
+			return INVALID_STRING_INDEX;
+		}
+		
+		AddToStringTable(particleEffectNames, particleSystem);
+		index = numStrings;
+	}
+	
+	return index;
+}
+
+stock void ModelIndexToString(int index, char[] model, int size)
+{
+	int table = FindStringTable("modelprecache");
+	ReadStringTable(table, index, model, size);
+}
+
+stock int FindStringIndex2(int tableidx, const char[] str)
+{
+	char buf[1024];
+	int numStrings = GetStringTableNumStrings(tableidx);
+	for (int i = 0; i < numStrings; i++)
+	{
+		ReadStringTable(tableidx, i, buf, sizeof(buf));
+		if (StrEqual(buf, str))
+		{
+			return i;
+		}
+	}
+	
+	return INVALID_STRING_INDEX;
+}
+
+stock int TF2_GetAlivePlayerCountForTeam(TFTeam team)
+{
+	int count = 0;
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientInGame(client) && IsPlayerAlive(client) && TF2_GetClientTeam(client) == team)
+			count++;
+	}
+	return count;
 }
 
 stock int TF2_GetMaxHealth(int client)
@@ -101,7 +150,7 @@ stock void TF2_GetItemName(int defindex, char[] buffer, int maxlength)
 stock void TF2_CreateAndEquipWeapon(int client, int defindex, TFQuality quality = TFQual_Normal, int level = 0)
 {
 	TFClassType class = TF2_GetPlayerClass(client);
-	int slot = TF2_GetSlotInItem(defindex, class);
+	int slot = TF2_GetItemSlot(defindex, class);
 	
 	// Remove sniper scope and slowdown cond if have one, otherwise can cause client crashes
 	if (TF2_IsPlayerInCondition(client, TFCond_Zoomed))
@@ -206,7 +255,7 @@ stock void TF2_EquipWeapon(int client, int weapon, char[] className = NULL_STRIN
 	}
 }
 
-stock int TF2_GetSlotInItem(int defindex, TFClassType class)
+stock int TF2_GetItemSlot(int defindex, TFClassType class)
 {
 	int slot = TF2Econ_GetItemSlot(defindex, class);
 	if (slot >= 0)
@@ -218,10 +267,10 @@ stock int TF2_GetSlotInItem(int defindex, TFClassType class)
 			{
 				switch (slot)
 				{
-					case 1:slot = WeaponSlot_Primary; // Revolver
-					case 4:slot = WeaponSlot_Secondary; // Sapper
-					case 5:slot = WeaponSlot_PDADisguise; // Disguise Kit
-					case 6:slot = WeaponSlot_InvisWatch; // Invis Watch
+					case 1: slot = WeaponSlot_Primary; // Revolver
+					case 4: slot = WeaponSlot_Secondary; // Sapper
+					case 5: slot = WeaponSlot_PDADisguise; // Disguise Kit
+					case 6: slot = WeaponSlot_InvisWatch; // Invis Watch
 				}
 			}
 			
@@ -229,9 +278,9 @@ stock int TF2_GetSlotInItem(int defindex, TFClassType class)
 			{
 				switch (slot)
 				{
-					case 4:slot = WeaponSlot_BuilderEngie; // Toolbox
-					case 5:slot = WeaponSlot_PDABuild; // Construction PDA
-					case 6:slot = WeaponSlot_PDADestroy; // Destruction PDA
+					case 4: slot = WeaponSlot_BuilderEngie; // Toolbox
+					case 5: slot = WeaponSlot_PDABuild; // Construction PDA
+					case 6: slot = WeaponSlot_PDADestroy; // Destruction PDA
 				}
 			}
 		}
@@ -240,7 +289,7 @@ stock int TF2_GetSlotInItem(int defindex, TFClassType class)
 	return slot;
 }
 
-stock void ShowGameMessage(const char[] message, const char[] icon, float time = 5.0, int displayToTeam = 0, int teamColor = 0)
+stock void TF2_ShowGameMessage(const char[] message, const char[] icon, float time = 5.0, int displayToTeam = 0, int teamColor = 0)
 {
 	int msg = CreateEntityByName("game_text_tf");
 	if (msg > MaxClients)
@@ -248,15 +297,15 @@ stock void ShowGameMessage(const char[] message, const char[] icon, float time =
 		DispatchKeyValue(msg, "message", message);
 		switch (displayToTeam)
 		{
-			case 2:DispatchKeyValue(msg, "display_to_team", "2");
-			case 3:DispatchKeyValue(msg, "display_to_team", "3");
-			default:DispatchKeyValue(msg, "display_to_team", "0");
+			case 2: DispatchKeyValue(msg, "display_to_team", "2");
+			case 3: DispatchKeyValue(msg, "display_to_team", "3");
+			default: DispatchKeyValue(msg, "display_to_team", "0");
 		}
 		switch (teamColor)
 		{
-			case 2:DispatchKeyValue(msg, "background", "2");
-			case 3:DispatchKeyValue(msg, "background", "3");
-			default:DispatchKeyValue(msg, "background", "0");
+			case 2: DispatchKeyValue(msg, "background", "2");
+			case 3: DispatchKeyValue(msg, "background", "3");
+			default: DispatchKeyValue(msg, "background", "0");
 		}
 		DispatchKeyValue(msg, "icon", icon);
 		DispatchSpawn(msg);
@@ -285,53 +334,4 @@ Action Timer_ShowGameMessage(Handle timer, int ref)
 	}
 	
 	return Plugin_Stop;
-}
-
-stock void ModelIndexToString(int index, char[] model, int size)
-{
-	int table = FindStringTable("modelprecache");
-	ReadStringTable(table, index, model, size);
-}
-
-stock int PrecacheParticleSystem(const char[] particleSystem)
-{
-	static int particleEffectNames = INVALID_STRING_TABLE;
-	if (particleEffectNames == INVALID_STRING_TABLE)
-	{
-		if ((particleEffectNames = FindStringTable("ParticleEffectNames")) == INVALID_STRING_TABLE)
-		{
-			return INVALID_STRING_INDEX;
-		}
-	}
-	
-	int index = FindStringIndex2(particleEffectNames, particleSystem);
-	if (index == INVALID_STRING_INDEX)
-	{
-		int numStrings = GetStringTableNumStrings(particleEffectNames);
-		if (numStrings >= GetStringTableMaxStrings(particleEffectNames))
-		{
-			return INVALID_STRING_INDEX;
-		}
-		
-		AddToStringTable(particleEffectNames, particleSystem);
-		index = numStrings;
-	}
-	
-	return index;
-}
-
-stock int FindStringIndex2(int tableidx, const char[] str)
-{
-	char buf[1024];
-	int numStrings = GetStringTableNumStrings(tableidx);
-	for (int i = 0; i < numStrings; i++)
-	{
-		ReadStringTable(tableidx, i, buf, sizeof(buf));
-		if (StrEqual(buf, str))
-		{
-			return i;
-		}
-	}
-	
-	return INVALID_STRING_INDEX;
 }

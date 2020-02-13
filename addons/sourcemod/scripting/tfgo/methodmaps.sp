@@ -21,7 +21,6 @@ static Menu g_ActiveBuyMenus[TF_MAXPLAYERS + 1];
 
 static int g_TeamConsecutiveLosses[view_as<int>(TFTeam_Blue) + 1] =  { STARTING_CONSECUTIVE_LOSSES, ... };
 
-
 methodmap TFGOPlayer
 {
 	public TFGOPlayer(int client)
@@ -122,7 +121,7 @@ methodmap TFGOPlayer
 	public BuyResult AttemptToBuyWeapon(int defIndex)
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Client);
-		int slot = TF2_GetSlotInItem(defIndex, class);
+		int slot = TF2_GetItemSlot(defIndex, class);
 		int weapon = GetPlayerWeaponSlot(this.Client, slot);
 		
 		WeaponConfig config;
@@ -180,7 +179,7 @@ methodmap TFGOPlayer
 	public void AddToLoadout(int defIndex)
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Client);
-		int slot = TF2_GetSlotInItem(defIndex, class);
+		int slot = TF2_GetItemSlot(defIndex, class);
 		g_PlayerLoadoutWeaponIndexes[this][class][slot] = defIndex;
 	}
 	
@@ -331,7 +330,6 @@ methodmap TFGOPlayer
 		else
 		{
 			this.HasDefuseKit = true;
-			
 			this.Account -= DEFUSEKIT_PRICE;
 			return BUY_BOUGHT;
 		}
