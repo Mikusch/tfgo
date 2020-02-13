@@ -145,7 +145,6 @@ bool g_IsBombPlanted;
 
 TFTeam g_BombPlantingTeam;
 bool g_HasPlayerSuicided[TF_MAXPLAYERS + 1];
-bool g_IsPlayerInDynamicBuyZone[TF_MAXPLAYERS + 1];
 int g_RoundsPlayed;
 
 // ConVars
@@ -154,7 +153,6 @@ ConVar tfgo_free_armor;
 ConVar tfgo_max_armor;
 ConVar tfgo_buytime;
 ConVar tfgo_consecutive_loss_max;
-ConVar tfgo_buyzone_radius_override;
 ConVar tfgo_bombtimer;
 ConVar tfgo_maxrounds;
 ConVar tfgo_halftime;
@@ -247,7 +245,6 @@ public void OnPluginStart()
 	tfgo_max_armor = CreateConVar("tfgo_max_armor", "2", "Determines the highest level of armor allowed to be purchased. (0) None, (1) Kevlar, (2) Helmet", _, true, 0.0, true, 2.0);
 	tfgo_buytime = CreateConVar("tfgo_buytime", "20", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
 	tfgo_consecutive_loss_max = CreateConVar("tfgo_consecutive_loss_max", "4", "The maximum of consecutive losses for each team that will be kept track of", _, true, float(STARTING_CONSECUTIVE_LOSSES));
-	tfgo_buyzone_radius_override = CreateConVar("tfgo_buyzone_radius_override", "-1", "Overrides the default calculated buyzone radius on maps with no respawn room");
 	tfgo_bombtimer = CreateConVar("tfgo_bombtimer", "40", "How long from when the bomb is planted until it blows", _, true, 10.0);
 	tfgo_maxrounds = CreateConVar("tfgo_maxrounds", "15", "Maximum number of rounds to play before a team scramble occurs", _, true, 0.0);
 	tfgo_halftime = CreateConVar("tfgo_halftime", "1", "Determines whether the match switches sides in a halftime event");
@@ -475,25 +472,6 @@ Action SDKHook_Client_TraceAttack(int victim, int &attacker, int &inflictor, flo
 	}
 	
 	return action;
-}
-
-Action SDKHook_FuncRespawnRoom_StartTouch(int entity, int client)
-{
-	if (g_IsBuyTimeActive && IsValidClient(client) && GetClientTeam(client) == GetEntProp(entity, Prop_Data, "m_iTeamNum"))
-		DisplayMainBuyMenu(client);
-}
-
-Action SDKHook_FuncRespawnRoom_EndTouch(int entity, int client)
-{
-	if (g_IsBuyTimeActive && IsValidClient(client) && GetClientTeam(client) == GetEntProp(entity, Prop_Data, "m_iTeamNum"))
-	{
-		TFGOPlayer player = TFGOPlayer(client);
-		if (player.ActiveBuyMenu != null)
-		{
-			player.ActiveBuyMenu.Cancel();
-			PrintHintText(client, "%T", "BuyMenu_NotInBuyZone", LANG_SERVER);
-		}
-	}
 }
 
 Action SDKHook_TFLogicArena_Spawn(int entity)
@@ -1019,10 +997,7 @@ void ResetRoundState()
 		g_HasPlayerSuicided[i] = false;
 	}
 	
-	for (int i = 0; i < sizeof(g_IsPlayerInDynamicBuyZone); i++)
-	{
-		g_IsPlayerInDynamicBuyZone[i] = false;
-	}
+	ResetPlayerBuyZoneStates();
 }
 
 void PrecacheModels()
