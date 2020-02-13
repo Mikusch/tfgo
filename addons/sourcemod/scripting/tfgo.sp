@@ -613,7 +613,7 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 		if (IsValidClient(assister.Client))
 		{
 			int activeWeapon = GetEntPropEnt(assister.Client, Prop_Send, "m_hActiveWeapon");
-			if (activeWeapon > -1)
+			if (IsValidEntity(activeWeapon))
 			{
 				int defIndex = GetEntProp(activeWeapon, Prop_Send, "m_iItemDefinitionIndex");
 				TF2Econ_GetItemClassName(defIndex, classname, sizeof(classname));
