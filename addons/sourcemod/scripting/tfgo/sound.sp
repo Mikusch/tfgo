@@ -76,3 +76,33 @@ Action NormalSoundHook(int clients[MAXPLAYERS], int &numClients, char sample[PLA
 	
 	return Plugin_Continue;
 }
+
+Action Event_Pre_TeamplayBroadcastAudio(Event event, const char[] name, bool dontBroadcast)
+{
+	char sound[PLATFORM_MAX_PATH];
+	event.GetString("sound", sound, sizeof(sound));
+	TFTeam team = view_as<TFTeam>(event.GetInt("team"));
+	
+	if (strncmp(sound, "Game.", 5) == 0)
+	{
+		g_CurrentMusicKit.StopMusicForAll(Music_StartAction);
+		g_CurrentMusicKit.StopMusicForAll(Music_BombPlanted);
+		g_CurrentMusicKit.StopMusicForAll(Music_RoundTenSecCount);
+		g_CurrentMusicKit.StopMusicForAll(Music_BombTenSecCount);
+		
+		// Playing sound directly instead of rewriting event so we can control when to stop it
+		if (StrEqual(sound, "Game.YourTeamWon"))
+			g_CurrentMusicKit.PlayMusicToTeam(team, Music_WonRound);
+		else if (StrEqual(sound, "Game.YourTeamLost") || StrEqual(sound, "Game.Stalemate"))
+			g_CurrentMusicKit.PlayMusicToTeam(team, Music_LostRound);
+		
+		return Plugin_Handled;
+	}
+	else if (StrEqual(sound, "Announcer.AM_RoundStartRandom"))
+	{
+		g_CurrentMusicKit.StopMusicForAll(Music_StartRound);
+		g_CurrentMusicKit.PlayMusicToAll(Music_StartAction);
+	}
+	
+	return Plugin_Continue;
+}
