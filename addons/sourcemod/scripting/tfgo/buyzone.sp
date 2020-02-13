@@ -2,8 +2,26 @@ static float g_DynamicBuyZoneCenters[view_as<int>(TFTeam_Blue) + 1][3];
 static float g_DynamicBuyzoneRadii[view_as<int>(TFTeam_Blue) + 1];
 static bool g_IsPlayerInDynamicBuyZone[TF_MAXPLAYERS + 1];
 
+void ClearDynamicBuyZones()
+{
+	for (int i = 0; i < sizeof(g_DynamicBuyZoneCenters); i++)
+	{
+		for (int j = 0; j < sizeof(g_DynamicBuyZoneCenters[]); j++)
+		{
+			g_DynamicBuyZoneCenters[i][j] = 0.0;
+		}
+	}
+	
+	for (int i = 0; i < sizeof(g_DynamicBuyzoneRadii); i++)
+	{
+		g_DynamicBuyzoneRadii[i] = 0.0;
+	}
+}
+
 void CalculateDynamicBuyZones()
 {
+	ClearDynamicBuyZones();
+	
 	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
 	{
 		ArrayList teamspawns = new ArrayList(view_as<int>(TFTeam_Blue));
@@ -41,9 +59,6 @@ void CalculateDynamicBuyZones()
 		
 		// Determine buy zone center by calculating the average team spawn position
 		ScaleVector(g_DynamicBuyZoneCenters[team], 1.0 / teamspawns.Length);
-
-		// Give players at outermost spawns some room to walk
-		g_DynamicBuyzoneRadii[team] += 50.0;
 		
 		delete teamspawns;
 	}
