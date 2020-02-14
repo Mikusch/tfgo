@@ -418,20 +418,14 @@ Action SDKHook_Client_TraceAttack(int victim, int &attacker, int &inflictor, flo
 	if (!mp_friendlyfire.BoolValue && TF2_GetClientTeam(victim) == TF2_GetClientTeam(attacker) && victim != attacker) return Plugin_Continue;
 	
 	Action action = Plugin_Continue;
-	int weapon = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
 	
 	if (tfgo_use_hitlocation_dmg.BoolValue)
 	{
-		// Allow almost every weapon with damagetype DMG_BULLET to deal crits on headshot
-		if (damagetype & DMG_BULLET && IsValidEntity(weapon))
+		// Allow every weapon with DMG_BULLET to deal crits on headshot
+		if (damagetype & DMG_BULLET && !(damagetype & DMG_BUCKSHOT))
 		{
-			int defindex = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
-			char classname[PLATFORM_MAX_PATH];
-			if (TF2Econ_GetItemClassName(defindex, classname, sizeof(classname)) && !StrEqual(classname, "tf_weapon_handgun_scout_primary"))
-			{
-				damagetype |= DMG_USE_HITLOCATIONS;
-				action = Plugin_Changed;
-			}
+			damagetype |= DMG_USE_HITLOCATIONS;
+			action = Plugin_Changed;
 		}
 		
 		// Other hitgroup damage modifiers
@@ -454,6 +448,7 @@ Action SDKHook_Client_TraceAttack(int victim, int &attacker, int &inflictor, flo
 	TFGOPlayer player = TFGOPlayer(victim);
 	if (!(damagetype & (DMG_FALL | DMG_DROWN)) && player.IsArmored(hitgroup))
 	{
+		int weapon = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
 		if (IsValidEntity(weapon))
 		{
 			int defindex = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
