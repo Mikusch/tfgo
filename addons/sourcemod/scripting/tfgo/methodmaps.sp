@@ -118,16 +118,16 @@ methodmap TFGOPlayer
 		Forward_CashAwarded(this.Client, val);
 	}
 	
-	public BuyResult AttemptToBuyWeapon(int defIndex)
+	public BuyResult AttemptToBuyWeapon(int defindex)
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Client);
-		int slot = TF2_GetItemSlot(defIndex, class);
+		int slot = TF2_GetItemSlot(defindex, class);
 		int weapon = GetPlayerWeaponSlot(this.Client, slot);
 		
-		WeaponConfig config;
-		g_AvailableWeapons.GetArray(g_AvailableWeapons.FindValue(defIndex, 0), config, sizeof(config));
+		TFGOWeapon config;
+		g_AvailableWeapons.GetWeapon(defindex, config);
 		
-		if (weapon > -1 && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") == defIndex)
+		if (weapon > -1 && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") == defindex)
 		{
 			PrintCenterText(this.Client, "%T", "Already_Have_One", LANG_SERVER);
 			return BUY_ALREADY_HAVE;
@@ -148,8 +148,8 @@ methodmap TFGOPlayer
 				SDK_CreateDroppedWeapon(weapon, this.Client, position, angles);
 			}
 			
-			TF2_CreateAndEquipWeapon(this.Client, defIndex, TFQual_Unique, GetRandomInt(1, 100));
-			g_PlayerLoadoutWeaponIndexes[this][class][slot] = defIndex;
+			TF2_CreateAndEquipWeapon(this.Client, defindex, TFQual_Unique, GetRandomInt(1, 100));
+			g_PlayerLoadoutWeaponIndexes[this][class][slot] = defindex;
 			this.Account -= config.price;
 			return BUY_BOUGHT;
 		}

@@ -125,7 +125,6 @@ Handle g_BombExplosionTimer;
 // Other handles
 MemoryPatch g_PickupWeaponPatch;
 StringMap g_AvailableMusicKits;
-ArrayList g_AvailableWeapons;
 
 // Map
 bool g_MapHasRespawnRoom;
@@ -455,7 +454,7 @@ Action SDKHook_Client_TraceAttack(int victim, int &attacker, int &inflictor, flo
 			int index = g_AvailableWeapons.FindValue(defindex, 0);
 			if (index != -1)
 			{
-				WeaponConfig config;
+				TFGOWeapon config;
 				g_AvailableWeapons.GetArray(index, config, sizeof(config));
 				
 				if (config.armorPenetration < 1.0) // Armor penetration >= 100% bypasses armor
