@@ -47,39 +47,17 @@ methodmap WeaponConfig < ArrayList
 		int index = this.FindValue(defindex);
 		return index != -1 ? this.GetArray(index, buffer, sizeof(buffer)) : 0;
 	}
+	
+	public int GetInt(int index, int block = 0, bool asChar = false)
+	{
+		return this.Get(index, block, asChar);
+	}
 }
 
 WeaponConfig g_AvailableWeapons;
 
-methodmap EntityConfig < StringMap
-{
-	public EntityConfig()
-	{
-		return view_as<EntityConfig>(new StringMap());
-	}
-	
-	public void ReadConfig(KeyValues kv)
-	{
-		if (kv.GotoFirstSubKey(false))
-		{
-			do
-			{
-				char classname[PLATFORM_MAX_PATH];
-				kv.GetString("classname", classname, sizeof(classname));
-				this.SetValue(classname, kv.GetNum("kill_award", tfgo_cash_player_killed_enemy_default.IntValue));
-			}
-			while (kv.GotoNextKey(false));
-			kv.GoBack();
-		}
-		kv.GoBack();
-	}
-}
-
-EntityConfig g_EntityConfig;
-
 void Config_Init()
 {
-	g_EntityConfig = new EntityConfig();
 	g_AvailableWeapons = new WeaponConfig();
 	
 	char path[PLATFORM_MAX_PATH];
@@ -88,12 +66,6 @@ void Config_Init()
 	KeyValues kv = new KeyValues("Config");
 	if (kv.ImportFromFile(path))
 	{
-		if (kv.JumpToKey("Entities", false))
-		{
-			g_EntityConfig.ReadConfig(kv);
-			kv.GoBack();
-		}
-		
 		if (kv.JumpToKey("Weapons", false))
 		{
 			g_AvailableWeapons.ReadConfig(kv);
