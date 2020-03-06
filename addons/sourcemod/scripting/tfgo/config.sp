@@ -1,95 +1,94 @@
-#define CONFIG_FILE "configs/tfgo/tfgo.cfg"
+#define CONFIG_FILE			"configs/tfgo/tfgo.cfg"
+#define CONFIG_MAX_LENGTH	64
 
-enum struct WeaponConfig
+enum struct TFGOWeapon
 {
-	int defIndex;
+	int defindex;
 	int price;
+	int killAward;
 	float armorPenetration;
+	bool isDefault;
+	
+	void ReadConfig(KeyValues kv)
+	{
+		this.defindex = kv.GetNum("defindex", -1);
+		this.price = kv.GetNum("price");
+		this.killAward = kv.GetNum("kill_award", tfgo_cash_player_killed_enemy_default.IntValue);
+		this.armorPenetration = kv.GetFloat("armor_penetration", 1.0);
+		this.isDefault = view_as<bool>(kv.GetNum("is_default"));
+	}
 }
 
-StringMap g_WeaponClassKillAwards;
-
-void ReadWeaponConfig(KeyValues kv)
+methodmap WeaponConfig < ArrayList
 {
-	if (kv.JumpToKey("Weapons", false))
+	public WeaponConfig()
+	{
+		return view_as<WeaponConfig>(new ArrayList(sizeof(TFGOWeapon)));
+	}
+	
+	public void ReadConfig(KeyValues kv)
 	{
 		if (kv.GotoFirstSubKey(false))
 		{
-			do // Loop through each weapon definition index
+			do
 			{
-				char defIndex[PLATFORM_MAX_PATH];
-				kv.GetSectionName(defIndex, sizeof(defIndex));
-				
-				// Set basic weapon data
-				WeaponConfig config;
-				config.defIndex = StringToInt(defIndex);
-				config.price = kv.GetNum("price", -1);
-				config.armorPenetration = kv.GetFloat("armor_penetration", 1.0);
-				
-				g_AvailableWeapons.PushArray(config, sizeof(config));
+				TFGOWeapon weapon;
+				weapon.ReadConfig(kv);
+				this.PushArray(weapon, sizeof(weapon));
 			}
 			while (kv.GotoNextKey(false));
 			kv.GoBack();
 		}
 		kv.GoBack();
 	}
-}
-
-void ReadKillAwardConfig(KeyValues kv)
-{
-	if (kv.JumpToKey("KillAwards", false))
+	
+	public int GetByDefIndex(int defindex, TFGOWeapon buffer)
 	{
-		if (kv.GotoFirstSubKey(false))
-		{
-			do // Loop through each weapon class
-			{
-				char class[PLATFORM_MAX_PATH];
-				kv.GetSectionName(class, sizeof(class)); // Weapon class
-				StrToLower(class);
-				g_WeaponClassKillAwards.SetValue(class, kv.GetNum(NULL_STRING, tfgo_cash_player_killed_enemy_default.IntValue));
-			}
-			while (kv.GotoNextKey(false));
-			kv.GoBack();
-			
-		}
-		kv.GoBack();
+		int index = this.FindValue(defindex);
+		return index != -1 ? this.GetArray(index, buffer, sizeof(buffer)) : 0;
+	}
+	
+	public int GetInt(int index, int block = 0, bool asChar = false)
+	{
+		return this.Get(index, block, asChar);
 	}
 }
+
+WeaponConfig g_AvailableWeapons;
 
 void Config_Init()
 {
-	if (g_WeaponClassKillAwards == null)
-		g_WeaponClassKillAwards = new StringMap();
-	if (g_AvailableWeapons == null)
-		g_AvailableWeapons = new ArrayList(sizeof(WeaponConfig));
+	g_AvailableWeapons = new WeaponConfig();
 	
-	// Read config
-	KeyValues kv = new KeyValues("Config");
 	char path[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, path, sizeof(path), CONFIG_FILE);
+	
+	KeyValues kv = new KeyValues("Config");
 	if (kv.ImportFromFile(path))
 	{
-		ReadKillAwardConfig(kv);
-		ReadWeaponConfig(kv);
-		delete kv;
+		if (kv.JumpToKey("Weapons", false))
+		{
+			g_AvailableWeapons.ReadConfig(kv);
+			g_AvailableWeapons.SortCustom(SortFunc_SortAvailableWeaponsByName);
+			kv.GoBack();
+		}
 	}
-	
-	g_AvailableWeapons.SortCustom(SortFunc_SortAvailableWeaponsByName);
+	delete kv;
 }
 
 int SortFunc_SortAvailableWeaponsByName(int index1, int index2, Handle array, Handle hndl)
 {
 	ArrayList list = view_as<ArrayList>(array);
 	
-	WeaponConfig config1;
-	list.GetArray(index1, config1, sizeof(config1));
-	WeaponConfig config2;
-	list.GetArray(index2, config2, sizeof(config2));
+	TFGOWeapon weapon1;
+	list.GetArray(index1, weapon1, sizeof(weapon1));
+	TFGOWeapon weapon2;
+	list.GetArray(index2, weapon2, sizeof(weapon2));
 	
 	char name1[PLATFORM_MAX_PATH];
-	TF2_GetItemName(config1.defIndex, name1, sizeof(name1));
+	TF2_GetItemName(weapon1.defindex, name1, sizeof(name1));
 	char name2[PLATFORM_MAX_PATH];
-	TF2_GetItemName(config2.defIndex, name2, sizeof(name2));
+	TF2_GetItemName(weapon2.defindex, name2, sizeof(name2));
 	
 	return strcmp(name1, name2);
 }

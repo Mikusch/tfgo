@@ -109,19 +109,19 @@ bool DisplayWeaponBuyMenu(int client, ArrayList slots)
 	
 	for (int i = 0; i < g_AvailableWeapons.Length; i++)
 	{
-		WeaponConfig config;
-		g_AvailableWeapons.GetArray(i, config, sizeof(config));
+		TFGOWeapon weapon;
+		g_AvailableWeapons.GetArray(i, weapon, sizeof(weapon));
 		
 		TFClassType class = TF2_GetPlayerClass(client);
-		int slot = TF2_GetItemSlot(config.defIndex, class);
+		int slot = TF2_GetItemSlot(weapon.defindex, class);
 		
-		if (slots.FindValue(slot) > -1 && config.price > -1)
+		if (slots.FindValue(slot) != -1 && !weapon.isDefault && weapon.price != 0)
 		{
 			char info[32];
-			IntToString(config.defIndex, info, sizeof(info));
+			IntToString(weapon.defindex, info, sizeof(info));
 			
 			char itemName[PLATFORM_MAX_PATH];
-			TF2_GetItemName(config.defIndex, itemName, sizeof(itemName));
+			TF2_GetItemName(weapon.defindex, itemName, sizeof(itemName));
 			
 			menu.AddItem(info, itemName);
 		}
@@ -170,14 +170,14 @@ int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, int para
 			char info[32]; // item def index
 			menu.GetItem(param2, info, sizeof(info), style);
 			
-			WeaponConfig config;
-			g_AvailableWeapons.GetArray(g_AvailableWeapons.FindValue(StringToInt(info), 0), config, sizeof(config));
+			TFGOWeapon weapon;
+			g_AvailableWeapons.GetByDefIndex(StringToInt(info), weapon);
 			
 			TFGOPlayer player = TFGOPlayer(param1);
 			TFClassType class = TF2_GetPlayerClass(param1);
-			int slot = TF2_GetItemSlot(config.defIndex, class);
+			int slot = TF2_GetItemSlot(weapon.defindex, class);
 			
-			return player.GetWeaponFromLoadout(class, slot) == config.defIndex || config.price > player.Account ? ITEMDRAW_DISABLED : style;
+			return player.GetWeaponFromLoadout(class, slot) == weapon.defindex || weapon.price > player.Account ? ITEMDRAW_DISABLED : style;
 		}
 		
 		case MenuAction_DisplayItem:
@@ -186,17 +186,17 @@ int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, int para
 			char display[PLATFORM_MAX_PATH]; // item name
 			menu.GetItem(param2, info, sizeof(info), _, display, sizeof(display));
 			
-			WeaponConfig config;
-			g_AvailableWeapons.GetArray(g_AvailableWeapons.FindValue(StringToInt(info), 0), config, sizeof(config));
+			TFGOWeapon weapon;
+			g_AvailableWeapons.GetByDefIndex(StringToInt(info), weapon);
 			
 			TFClassType class = TF2_GetPlayerClass(param1);
-			int slot = TF2_GetItemSlot(config.defIndex, class);
+			int slot = TF2_GetItemSlot(weapon.defindex, class);
 			
 			TFGOPlayer player = TFGOPlayer(param1);
-			if (player.GetWeaponFromLoadout(class, slot) == config.defIndex)
+			if (player.GetWeaponFromLoadout(class, slot) == weapon.defindex)
 				Format(display, sizeof(display), "%s (%T)", display, "BuyMenu_AlreadyCarrying", LANG_SERVER);
 			else
-				Format(display, sizeof(display), "%s ($%d)", display, config.price);
+				Format(display, sizeof(display), "%s ($%d)", display, weapon.price);
 			
 			return RedrawMenuItem(display);
 		}

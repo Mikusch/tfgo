@@ -9,9 +9,9 @@ int Native_GetWeaponCost(Handle plugin, int numParams)
 	int index = g_AvailableWeapons.FindValue(defindex, 0);
 	if (index > -1)
 	{
-		WeaponConfig config;
-		g_AvailableWeapons.GetArray(index, config, sizeof(config));
-		return config.price;
+		TFGOWeapon weapon;
+		g_AvailableWeapons.GetArray(index, weapon, sizeof(weapon));
+		return weapon.price;
 	}
 	
 	return -1;

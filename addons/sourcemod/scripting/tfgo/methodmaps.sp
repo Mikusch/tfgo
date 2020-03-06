@@ -1,17 +1,3 @@
-// -1 indicates the class should start with no weapon in that slot
-static int g_DefaultWeaponIndexes[][] =  {
-	{ -1, -1, -1, -1, -1, -1 },  // Unknown
-	{ -1, 23, 30758, -1, -1, -1 },  // Scout
-	{ -1, 16, 30758, -1, -1, -1 },  // Sniper
-	{ -1, 10, 30758, -1, -1, -1 },  // Soldier
-	{ 608, 131, 30758, -1, -1, -1 },  // Demoman
-	{ 17, -1, 30758, -1, -1, -1 },  // Medic
-	{ -1, 11, 30758, -1, -1, -1 },  // Heavy
-	{ -1, 12, 30758, -1, -1, -1 },  // Pyro
-	{ -1, 735, 4, -1, 30, -1 },  // Spy
-	{ 9, 22, 30758, -1, -1, 28 } // Engineer
-};
-
 static int g_PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][WeaponSlot_BuilderEngie + 1];
 static int g_PlayerAccounts[TF_MAXPLAYERS + 1];
 static int g_PlayerArmorValues[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
@@ -118,16 +104,16 @@ methodmap TFGOPlayer
 		Forward_CashAwarded(this.Client, val);
 	}
 	
-	public BuyResult AttemptToBuyWeapon(int defIndex)
+	public BuyResult AttemptToBuyWeapon(int defindex)
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Client);
-		int slot = TF2_GetItemSlot(defIndex, class);
+		int slot = TF2_GetItemSlot(defindex, class);
 		int weapon = GetPlayerWeaponSlot(this.Client, slot);
 		
-		WeaponConfig config;
-		g_AvailableWeapons.GetArray(g_AvailableWeapons.FindValue(defIndex, 0), config, sizeof(config));
+		TFGOWeapon config;
+		g_AvailableWeapons.GetByDefIndex(defindex, config);
 		
-		if (weapon > -1 && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") == defIndex)
+		if (weapon > -1 && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") == defindex)
 		{
 			PrintCenterText(this.Client, "%T", "Already_Have_One", LANG_SERVER);
 			return BUY_ALREADY_HAVE;
@@ -148,8 +134,8 @@ methodmap TFGOPlayer
 				SDK_CreateDroppedWeapon(weapon, this.Client, position, angles);
 			}
 			
-			TF2_CreateAndEquipWeapon(this.Client, defIndex, TFQual_Unique, GetRandomInt(1, 100));
-			g_PlayerLoadoutWeaponIndexes[this][class][slot] = defIndex;
+			TF2_CreateAndEquipWeapon(this.Client, defindex, TFQual_Unique, GetRandomInt(1, 100));
+			g_PlayerLoadoutWeaponIndexes[this][class][slot] = defindex;
 			this.Account -= config.price;
 			return BUY_BOUGHT;
 		}
@@ -157,11 +143,27 @@ methodmap TFGOPlayer
 	
 	public int GetWeaponFromLoadout(TFClassType class, int slot)
 	{
-		int defIndex = g_PlayerLoadoutWeaponIndexes[this][class][slot];
-		if (defIndex > -1)
-			return defIndex;
-		else
-			return g_DefaultWeaponIndexes[class][slot];
+		int defindex = g_PlayerLoadoutWeaponIndexes[this][class][slot];
+		if (defindex > -1)
+			return defindex;
+		
+		//Find default weapon for this class and slot
+		for (int i = 0; i < g_AvailableWeapons.Length; i++)
+		{
+			TFGOWeapon weapon;
+			g_AvailableWeapons.GetArray(i, weapon, sizeof(weapon));
+			
+			//Is this a default weapon and meant for this slot
+			if (weapon.isDefault && TF2_GetItemSlot(weapon.defindex, class) == slot)
+			{
+				char classname[PLATFORM_MAX_PATH];
+				TF2Econ_GetItemClassName(weapon.defindex, classname, sizeof(classname));
+				if (TF2Econ_TranslateWeaponEntForClass(classname, sizeof(classname), class))
+					return weapon.defindex;
+			}
+		}
+		
+		return -1;
 	}
 	
 	public void ApplyLoadout()

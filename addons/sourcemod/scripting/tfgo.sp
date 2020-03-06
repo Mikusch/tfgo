@@ -125,7 +125,6 @@ Handle g_BombExplosionTimer;
 // Other handles
 MemoryPatch g_PickupWeaponPatch;
 StringMap g_AvailableMusicKits;
-ArrayList g_AvailableWeapons;
 
 // Map
 bool g_MapHasRespawnRoom;
@@ -455,7 +454,7 @@ Action SDKHook_Client_TraceAttack(int victim, int &attacker, int &inflictor, flo
 			int index = g_AvailableWeapons.FindValue(defindex, 0);
 			if (index != -1)
 			{
-				WeaponConfig config;
+				TFGOWeapon config;
 				g_AvailableWeapons.GetArray(index, config, sizeof(config));
 				
 				if (config.armorPenetration < 1.0) // Armor penetration >= 100% bypasses armor
@@ -525,16 +524,15 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 	// Grant kill award to attacker/assister
 	if (IsValidClient(attacker.Client))
 	{
-		int killAward;
 		float factor = tfgo_cash_player_killed_enemy_factor.FloatValue;
+		int killAward = RoundFloat(tfgo_cash_player_killed_enemy_default.IntValue * factor);
 		
-		// Entity kill (e.g. "obj_sentrygun", "tf_projectile_healing_Bolt", etc.)
-		// "player" is a valid entity
 		int inflictorEntindex = event.GetInt("inflictor_entindex");
 		char classname[PLATFORM_MAX_PATH];
-		if (IsValidEntity(inflictorEntindex) && GetEntityClassname(inflictorEntindex, classname, sizeof(classname)) && g_WeaponClassKillAwards.GetValue(classname, killAward))
+		if (IsValidEntity(inflictorEntindex) && GetEntityClassname(inflictorEntindex, classname, sizeof(classname)) && StrEqual(classname, "obj_sentrygun"))
 		{
-			attacker.AddToAccount(RoundFloat(killAward * factor), "%T", "Player_Cash_Award_Killed_Enemy_Generic", LANG_SERVER);
+			// We do this so sentry guns kills don't report as kills with the Engineer's held weapon
+			attacker.AddToAccount(killAward, "%T", "Player_Cash_Award_Killed_Enemy_Generic", LANG_SERVER);
 		}
 		else
 		{
@@ -543,7 +541,6 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 				if (g_IsMainRoundActive)
 				{
 					g_HasPlayerSuicided[victim.Client] = true;
-					killAward = RoundFloat(tfgo_cash_player_killed_enemy_default.IntValue * factor);
 					
 					ArrayList enemies = new ArrayList();
 					for (int client = 1; client <= MaxClients; client++)
@@ -583,23 +580,13 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 			}
 			else // Weapon kill
 			{
-				int defIndex = event.GetInt("weapon_def_index");
-				char weapon[PLATFORM_MAX_PATH];
-				event.GetString("weapon", weapon, sizeof(weapon));
+				int defindex = event.GetInt("weapon_def_index");
 				
 				char weaponName[PLATFORM_MAX_PATH];
-				TF2_GetItemName(defIndex, weaponName, sizeof(weaponName));
+				TF2_GetItemName(defindex, weaponName, sizeof(weaponName));
 				
-				// Specific weapon kill (e.g. "shotgun_pyro", "prinny_machete", "world", etc.)
-				// If not found, determine kill award from the weapon class
-				if (!g_WeaponClassKillAwards.GetValue(weapon, killAward))
-				{
-					TF2Econ_GetItemClassName(defIndex, classname, sizeof(classname));
-					if (!g_WeaponClassKillAwards.GetValue(classname, killAward))
-						killAward = tfgo_cash_player_killed_enemy_default.IntValue;
-				}
-				
-				attacker.AddToAccount(RoundFloat(killAward * factor), "%T", "Player_Cash_Award_Killed_Enemy", LANG_SERVER, weaponName);
+				killAward = RoundFloat(g_AvailableWeapons.GetInt(g_AvailableWeapons.FindValue(defindex), 2) * factor);
+				attacker.AddToAccount(killAward, "%T", "Player_Cash_Award_Killed_Enemy", LANG_SERVER, weaponName);
 			}
 		}
 		
@@ -610,17 +597,11 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 			int activeWeapon = GetEntPropEnt(assister.Client, Prop_Send, "m_hActiveWeapon");
 			if (IsValidEntity(activeWeapon))
 			{
-				int defIndex = GetEntProp(activeWeapon, Prop_Send, "m_iItemDefinitionIndex");
-				TF2Econ_GetItemClassName(defIndex, classname, sizeof(classname));
-				if (!g_WeaponClassKillAwards.GetValue(classname, killAward))
-					killAward = tfgo_cash_player_killed_enemy_default.IntValue;
-			}
-			else // Assister likely has died
-			{
-				killAward = tfgo_cash_player_killed_enemy_default.IntValue;
+				int defindex = GetEntProp(activeWeapon, Prop_Send, "m_iItemDefinitionIndex");
+				killAward = RoundFloat(g_AvailableWeapons.GetInt(g_AvailableWeapons.FindValue(defindex), 2) * factor);
 			}
 			
-			assister.AddToAccount(RoundFloat(killAward * factor) / 2, "%T", "Player_Cash_Award_Assist_Enemy", LANG_SERVER, victimName);
+			assister.AddToAccount(killAward / 2, "%T", "Player_Cash_Award_Assist_Enemy", LANG_SERVER, victimName);
 		}
 	}
 	
