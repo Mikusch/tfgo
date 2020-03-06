@@ -5,18 +5,25 @@ enum struct TFGOWeapon
 {
 	int defindex;
 	int price;
+	int killAward;
 	float armorPenetration;
+	bool isDefault;
 	
-	void ReadFromConfig(KeyValues kv)
+	void ReadConfig(KeyValues kv)
 	{
-		char defindex[CONFIG_MAX_LENGTH];
-		kv.GetSectionName(defindex, sizeof(defindex));
-		
-		// Set basic weapon data
-		this.defindex = StringToInt(defindex);
-		this.price = kv.GetNum("price", -1);
+		this.defindex = kv.GetNum("defindex", -1);
+		this.price = kv.GetNum("price");
+		this.killAward = kv.GetNum("kill_award", tfgo_cash_player_killed_enemy_default.IntValue);
 		this.armorPenetration = kv.GetFloat("armor_penetration", 1.0);
+		this.isDefault = view_as<bool>(kv.GetNum("is_default"));
 	}
+}
+
+enum struct KillAward
+{
+	int defindex;
+	char classname[CONFIG_MAX_LENGTH];
+	int award;
 }
 
 methodmap KillAwardMap < StringMap
@@ -26,7 +33,7 @@ methodmap KillAwardMap < StringMap
 		return view_as<KillAwardMap>(new StringMap());
 	}
 	
-	public void ReadFromConfig(KeyValues kv)
+	public void ReadConfig(KeyValues kv)
 	{
 		if (kv.GotoFirstSubKey(false))
 		{
@@ -47,21 +54,21 @@ methodmap KillAwardMap < StringMap
 
 KillAwardMap g_WeaponClassKillAwards;
 
-methodmap TFGOWeaponList < ArrayList
+methodmap WeaponConfig < ArrayList
 {
-	public TFGOWeaponList()
+	public WeaponConfig()
 	{
-		return view_as<TFGOWeaponList>(new ArrayList(sizeof(TFGOWeapon)));
+		return view_as<WeaponConfig>(new ArrayList(sizeof(TFGOWeapon)));
 	}
 	
-	public void ReadFromConfig(KeyValues kv)
+	public void ReadConfig(KeyValues kv)
 	{
 		if (kv.GotoFirstSubKey(false))
 		{
 			do
 			{
 				TFGOWeapon weapon;
-				weapon.ReadFromConfig(kv);
+				weapon.ReadConfig(kv);
 				this.PushArray(weapon, sizeof(weapon));
 			}
 			while (kv.GotoNextKey(false));
@@ -70,19 +77,19 @@ methodmap TFGOWeaponList < ArrayList
 		kv.GoBack();
 	}
 	
-	public int GetWeapon(int defindex, TFGOWeapon buffer)
+	public int GetByDefIndex(int defindex, TFGOWeapon buffer)
 	{
 		int index = this.FindValue(defindex);
 		return index != -1 ? this.GetArray(index, buffer, sizeof(buffer)) : 0;
 	}
 }
 
-TFGOWeaponList g_AvailableWeapons;
+WeaponConfig g_AvailableWeapons;
 
 void Config_Init()
 {
 	g_WeaponClassKillAwards = new KillAwardMap();
-	g_AvailableWeapons = new TFGOWeaponList();
+	g_AvailableWeapons = new WeaponConfig();
 	
 	char path[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, path, sizeof(path), CONFIG_FILE);
@@ -92,13 +99,13 @@ void Config_Init()
 	{
 		if (kv.JumpToKey("KillAwards", false))
 		{
-			g_WeaponClassKillAwards.ReadFromConfig(kv);
+			g_WeaponClassKillAwards.ReadConfig(kv);
 			kv.GoBack();
 		}
 		
 		if (kv.JumpToKey("Weapons", false))
 		{
-			g_AvailableWeapons.ReadFromConfig(kv);
+			g_AvailableWeapons.ReadConfig(kv);
 			g_AvailableWeapons.SortCustom(SortFunc_SortAvailableWeaponsByName);
 			kv.GoBack();
 		}

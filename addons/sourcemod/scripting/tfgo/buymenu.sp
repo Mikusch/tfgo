@@ -115,7 +115,7 @@ bool DisplayWeaponBuyMenu(int client, ArrayList slots)
 		TFClassType class = TF2_GetPlayerClass(client);
 		int slot = TF2_GetItemSlot(weapon.defindex, class);
 		
-		if (slots.FindValue(slot) > -1 && weapon.price > -1)
+		if (slots.FindValue(slot) != -1 && !weapon.isDefault && weapon.price != 0)
 		{
 			char info[32];
 			IntToString(weapon.defindex, info, sizeof(info));
@@ -171,7 +171,7 @@ int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, int para
 			menu.GetItem(param2, info, sizeof(info), style);
 			
 			TFGOWeapon weapon;
-			g_AvailableWeapons.GetWeapon(StringToInt(info), weapon);
+			g_AvailableWeapons.GetByDefIndex(StringToInt(info), weapon);
 			
 			TFGOPlayer player = TFGOPlayer(param1);
 			TFClassType class = TF2_GetPlayerClass(param1);
@@ -187,7 +187,7 @@ int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, int para
 			menu.GetItem(param2, info, sizeof(info), _, display, sizeof(display));
 			
 			TFGOWeapon weapon;
-			g_AvailableWeapons.GetWeapon(StringToInt(info), weapon);
+			g_AvailableWeapons.GetByDefIndex(StringToInt(info), weapon);
 			
 			TFClassType class = TF2_GetPlayerClass(param1);
 			int slot = TF2_GetItemSlot(weapon.defindex, class);
