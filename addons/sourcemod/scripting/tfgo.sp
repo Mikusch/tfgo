@@ -527,11 +527,10 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 		int killAward;
 		float factor = tfgo_cash_player_killed_enemy_factor.FloatValue;
 		
-		// Entity kill (e.g. "obj_sentrygun", "tf_projectile_healing_Bolt", etc.)
-		// "player" is a valid entity
+		// Entity kill (e.g. "obj_sentrygun", "tf_projectile_healing_bolt", etc.)
 		int inflictorEntindex = event.GetInt("inflictor_entindex");
 		char classname[PLATFORM_MAX_PATH];
-		if (IsValidEntity(inflictorEntindex) && GetEntityClassname(inflictorEntindex, classname, sizeof(classname)) && g_WeaponClassKillAwards.GetValue(classname, killAward))
+		if (IsValidEntity(inflictorEntindex) && GetEntityClassname(inflictorEntindex, classname, sizeof(classname)) && g_EntityConfig.GetValue(classname, killAward))
 		{
 			attacker.AddToAccount(RoundFloat(killAward * factor), "%T", "Player_Cash_Award_Killed_Enemy_Generic", LANG_SERVER);
 		}
@@ -582,22 +581,12 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 			}
 			else // Weapon kill
 			{
-				int defIndex = event.GetInt("weapon_def_index");
-				char weapon[PLATFORM_MAX_PATH];
-				event.GetString("weapon", weapon, sizeof(weapon));
+				int defindex = event.GetInt("weapon_def_index");
 				
 				char weaponName[PLATFORM_MAX_PATH];
-				TF2_GetItemName(defIndex, weaponName, sizeof(weaponName));
+				TF2_GetItemName(defindex, weaponName, sizeof(weaponName));
 				
-				// Specific weapon kill (e.g. "shotgun_pyro", "prinny_machete", "world", etc.)
-				// If not found, determine kill award from the weapon class
-				if (!g_WeaponClassKillAwards.GetValue(weapon, killAward))
-				{
-					TF2Econ_GetItemClassName(defIndex, classname, sizeof(classname));
-					if (!g_WeaponClassKillAwards.GetValue(classname, killAward))
-						killAward = tfgo_cash_player_killed_enemy_default.IntValue;
-				}
-				
+				killAward = g_AvailableWeapons.Get(g_AvailableWeapons.FindValue(defindex), 2);
 				attacker.AddToAccount(RoundFloat(killAward * factor), "%T", "Player_Cash_Award_Killed_Enemy", LANG_SERVER, weaponName);
 			}
 		}
@@ -609,10 +598,8 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 			int activeWeapon = GetEntPropEnt(assister.Client, Prop_Send, "m_hActiveWeapon");
 			if (IsValidEntity(activeWeapon))
 			{
-				int defIndex = GetEntProp(activeWeapon, Prop_Send, "m_iItemDefinitionIndex");
-				TF2Econ_GetItemClassName(defIndex, classname, sizeof(classname));
-				if (!g_WeaponClassKillAwards.GetValue(classname, killAward))
-					killAward = tfgo_cash_player_killed_enemy_default.IntValue;
+				int defindex = GetEntProp(activeWeapon, Prop_Send, "m_iItemDefinitionIndex");
+				killAward = g_AvailableWeapons.Get(g_AvailableWeapons.FindValue(defindex), 2);
 			}
 			else // Assister likely has died
 			{

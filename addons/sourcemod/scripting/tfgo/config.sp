@@ -19,41 +19,6 @@ enum struct TFGOWeapon
 	}
 }
 
-enum struct KillAward
-{
-	int defindex;
-	char classname[CONFIG_MAX_LENGTH];
-	int award;
-}
-
-methodmap KillAwardMap < StringMap
-{
-	public KillAwardMap()
-	{
-		return view_as<KillAwardMap>(new StringMap());
-	}
-	
-	public void ReadConfig(KeyValues kv)
-	{
-		if (kv.GotoFirstSubKey(false))
-		{
-			do
-			{
-				char class[CONFIG_MAX_LENGTH];
-				kv.GetSectionName(class, sizeof(class)); // Weapon class
-				StrToLower(class); // TODO NOT IN KEY!!!!!!!!
-				this.SetValue(class, kv.GetNum(NULL_STRING, tfgo_cash_player_killed_enemy_default.IntValue));
-			}
-			while (kv.GotoNextKey(false));
-			kv.GoBack();
-			
-		}
-		kv.GoBack();
-	}
-}
-
-KillAwardMap g_WeaponClassKillAwards;
-
 methodmap WeaponConfig < ArrayList
 {
 	public WeaponConfig()
@@ -86,9 +51,35 @@ methodmap WeaponConfig < ArrayList
 
 WeaponConfig g_AvailableWeapons;
 
+methodmap EntityConfig < StringMap
+{
+	public EntityConfig()
+	{
+		return view_as<EntityConfig>(new StringMap());
+	}
+	
+	public void ReadConfig(KeyValues kv)
+	{
+		if (kv.GotoFirstSubKey(false))
+		{
+			do
+			{
+				char classname[PLATFORM_MAX_PATH];
+				kv.GetString("classname", classname, sizeof(classname));
+				this.SetValue(classname, kv.GetNum("kill_award", tfgo_cash_player_killed_enemy_default.IntValue));
+			}
+			while (kv.GotoNextKey(false));
+			kv.GoBack();
+		}
+		kv.GoBack();
+	}
+}
+
+EntityConfig g_EntityConfig;
+
 void Config_Init()
 {
-	g_WeaponClassKillAwards = new KillAwardMap();
+	g_EntityConfig = new EntityConfig();
 	g_AvailableWeapons = new WeaponConfig();
 	
 	char path[PLATFORM_MAX_PATH];
@@ -97,9 +88,9 @@ void Config_Init()
 	KeyValues kv = new KeyValues("Config");
 	if (kv.ImportFromFile(path))
 	{
-		if (kv.JumpToKey("KillAwards", false))
+		if (kv.JumpToKey("Entities", false))
 		{
-			g_WeaponClassKillAwards.ReadConfig(kv);
+			g_EntityConfig.ReadConfig(kv);
 			kv.GoBack();
 		}
 		
