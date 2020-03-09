@@ -23,36 +23,6 @@ enum struct TFGOWeapon
 	}
 }
 
-methodmap TFGOWeaponList < ArrayList
-{
-	public TFGOWeaponList()
-	{
-		return view_as<TFGOWeaponList>(new ArrayList(sizeof(TFGOWeapon)));
-	}
-	
-	public void ReadConfig(KeyValues kv)
-	{
-		if (kv.GotoFirstSubKey(false))
-		{
-			do
-			{
-				TFGOWeapon weapon;
-				weapon.ReadConfig(kv);
-				this.PushArray(weapon, sizeof(weapon));
-			}
-			while (kv.GotoNextKey(false));
-			kv.GoBack();
-		}
-		kv.GoBack();
-	}
-	
-	public int GetByDefIndex(int defindex, TFGOWeapon weapon)
-	{
-		int i = this.FindValue(defindex);
-		return i != -1 ? this.GetArray(i, weapon) : 0;
-	}
-}
-
 /**
  * Called when the bomb has been planted.
  *
