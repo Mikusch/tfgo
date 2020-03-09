@@ -144,11 +144,13 @@ int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, int para
 		{
 			char info[32]; // item def index
 			menu.GetItem(param2, info, sizeof(info));
+			int defindex = StringToInt(info);
 			
-			if (TFGOPlayer(param1).AttemptToBuyWeapon(StringToInt(info)) == BUY_BOUGHT)
+			if (TFGOPlayer(param1).AttemptToBuyWeapon(defindex) == BUY_BOUGHT)
 			{
 				EmitGameSoundToAll(GAMESOUND_PLAYER_PURCHASE, param1);
 				DisplayMainBuyMenu(param1);
+				Forward_OnClientPurchaseWeapon(param1, defindex);
 			}
 		}
 		
@@ -171,13 +173,17 @@ int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, int para
 			menu.GetItem(param2, info, sizeof(info), style);
 			
 			TFGOWeapon weapon;
-			g_AvailableWeapons.GetByDefIndex(StringToInt(info), weapon);
+			if (g_AvailableWeapons.GetByDefIndex(StringToInt(info), weapon) > 0)
+			{
+				TFGOPlayer player = TFGOPlayer(param1);
+				TFClassType class = TF2_GetPlayerClass(param1);
+				int slot = TF2_GetItemSlot(weapon.defindex, class);
+				
+				if (player.GetWeaponFromLoadout(class, slot) == weapon.defindex || weapon.price > player.Account)
+					return ITEMDRAW_DISABLED;
+			}
 			
-			TFGOPlayer player = TFGOPlayer(param1);
-			TFClassType class = TF2_GetPlayerClass(param1);
-			int slot = TF2_GetItemSlot(weapon.defindex, class);
-			
-			return player.GetWeaponFromLoadout(class, slot) == weapon.defindex || weapon.price > player.Account ? ITEMDRAW_DISABLED : style;
+			return style;
 		}
 		
 		case MenuAction_DisplayItem:
@@ -187,18 +193,21 @@ int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, int para
 			menu.GetItem(param2, info, sizeof(info), _, display, sizeof(display));
 			
 			TFGOWeapon weapon;
-			g_AvailableWeapons.GetByDefIndex(StringToInt(info), weapon);
+			if (g_AvailableWeapons.GetByDefIndex(StringToInt(info), weapon) > 0)
+			{
+				TFGOPlayer player = TFGOPlayer(param1);
+				TFClassType class = TF2_GetPlayerClass(param1);
+				int slot = TF2_GetItemSlot(weapon.defindex, class);
+				
+				if (player.GetWeaponFromLoadout(class, slot) == weapon.defindex)
+					Format(display, sizeof(display), "%s (%T)", display, "BuyMenu_AlreadyCarrying", LANG_SERVER);
+				else
+					Format(display, sizeof(display), "%s ($%d)", display, weapon.price);
+				
+				return RedrawMenuItem(display);
+			}
 			
-			TFClassType class = TF2_GetPlayerClass(param1);
-			int slot = TF2_GetItemSlot(weapon.defindex, class);
-			
-			TFGOPlayer player = TFGOPlayer(param1);
-			if (player.GetWeaponFromLoadout(class, slot) == weapon.defindex)
-				Format(display, sizeof(display), "%s (%T)", display, "BuyMenu_AlreadyCarrying", LANG_SERVER);
-			else
-				Format(display, sizeof(display), "%s ($%d)", display, weapon.price);
-			
-			return RedrawMenuItem(display);
+			return 0;
 		}
 	}
 	

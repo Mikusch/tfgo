@@ -101,44 +101,47 @@ methodmap TFGOPlayer
 		else
 			CPrintToChat(this.Client, "{negative}$%d{default}: %s", val, message);
 		
-		Forward_CashAwarded(this.Client, val);
+		Forward_OnClientAccountChanged(this.Client, val);
 	}
 	
 	public BuyResult AttemptToBuyWeapon(int defindex)
 	{
-		TFClassType class = TF2_GetPlayerClass(this.Client);
-		int slot = TF2_GetItemSlot(defindex, class);
-		int weapon = GetPlayerWeaponSlot(this.Client, slot);
-		
 		TFGOWeapon config;
-		g_AvailableWeapons.GetByDefIndex(defindex, config);
-		
-		if (weapon > -1 && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") == defindex)
+		if (g_AvailableWeapons.GetByDefIndex(defindex, config) > 0)
 		{
-			PrintCenterText(this.Client, "%T", "Already_Have_One", LANG_SERVER);
-			return BUY_ALREADY_HAVE;
-		}
-		else if (this.Account < config.price)
-		{
-			PrintCenterText(this.Client, "%T", "Not_Enough_Money", LANG_SERVER);
-			return BUY_CANT_AFFORD;
-		}
-		else
-		{
-			if (weapon > -1) // Drop old weapon, if present
-			{
-				float position[3];
-				GetClientEyePosition(this.Client, position);
-				float angles[3];
-				GetClientEyeAngles(this.Client, angles);
-				SDK_CreateDroppedWeapon(weapon, this.Client, position, angles);
-			}
+			TFClassType class = TF2_GetPlayerClass(this.Client);
+			int slot = TF2_GetItemSlot(defindex, class);
+			int weapon = GetPlayerWeaponSlot(this.Client, slot);
 			
-			TF2_CreateAndEquipWeapon(this.Client, defindex, TFQual_Unique, GetRandomInt(1, 100));
-			g_PlayerLoadoutWeaponIndexes[this][class][slot] = defindex;
-			this.Account -= config.price;
-			return BUY_BOUGHT;
+			if (weapon > -1 && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") == defindex)
+			{
+				PrintCenterText(this.Client, "%T", "Already_Have_One", LANG_SERVER);
+				return BUY_ALREADY_HAVE;
+			}
+			else if (this.Account < config.price)
+			{
+				PrintCenterText(this.Client, "%T", "Not_Enough_Money", LANG_SERVER);
+				return BUY_CANT_AFFORD;
+			}
+			else
+			{
+				if (weapon > -1) // Drop old weapon, if present
+				{
+					float position[3];
+					GetClientEyePosition(this.Client, position);
+					float angles[3];
+					GetClientEyeAngles(this.Client, angles);
+					SDK_CreateDroppedWeapon(weapon, this.Client, position, angles);
+				}
+				
+				TF2_CreateAndEquipWeapon(this.Client, defindex, TFQual_Unique, GetRandomInt(1, 100));
+				g_PlayerLoadoutWeaponIndexes[this][class][slot] = defindex;
+				this.Account -= config.price;
+				return BUY_BOUGHT;
+			}
 		}
+		
+		return BUY_INVALID_ITEM;
 	}
 	
 	public int GetWeaponFromLoadout(TFClassType class, int slot)

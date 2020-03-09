@@ -1,53 +1,79 @@
-static GlobalForward g_ForwardBombPlanted;
-static GlobalForward g_ForwardBombDetonated;
-static GlobalForward g_ForwardBombDefused;
-static GlobalForward g_ForwardCashAwarded;
-static GlobalForward g_ForwardWeaponPickup;
+static GlobalForward ForwardBombPlanted;
+static GlobalForward ForwardBombDetonated;
+static GlobalForward ForwardBombDefused;
+static GlobalForward ForwardHalfTime;
+static GlobalForward ForwardMaxRounds;
+static GlobalForward ForwardClientAccountChanged;
+static GlobalForward ForwardClientPurchaseWeapon;
+static GlobalForward ForwardClientPickupWeapon;
 
 void Forward_AskLoad()
 {
-	g_ForwardBombPlanted = new GlobalForward("TFGO_OnBombPlanted", ET_Ignore, Param_Cell, Param_Cell);
-	g_ForwardBombDetonated = new GlobalForward("TFGO_OnBombDetonated", ET_Ignore, Param_Cell);
-	g_ForwardBombDefused = new GlobalForward("TFGO_OnBombDefused", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
-	g_ForwardCashAwarded = new GlobalForward("TFGO_OnCashAwarded", ET_Ignore, Param_Cell, Param_Cell);
-	g_ForwardWeaponPickup = new GlobalForward("TFGO_OnWeaponPickup", ET_Ignore, Param_Cell, Param_Cell);
+	ForwardBombPlanted = new GlobalForward("TFGO_OnBombPlanted", ET_Ignore, Param_Cell, Param_Cell);
+	ForwardBombDetonated = new GlobalForward("TFGO_OnBombDetonated", ET_Ignore, Param_Cell);
+	ForwardBombDefused = new GlobalForward("TFGO_OnBombDefused", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
+	ForwardHalfTime = new GlobalForward("TFGO_OnHalfTime", ET_Ignore);
+	ForwardMaxRounds = new GlobalForward("TFGO_OnMaxRounds", ET_Ignore);
+	ForwardClientAccountChanged = new GlobalForward("TFGO_OnClientAccountChanged", ET_Ignore, Param_Cell, Param_Cell);
+	ForwardClientPurchaseWeapon = new GlobalForward("TFGO_OnClientPurchaseWeapon", ET_Ignore, Param_Cell, Param_Cell);
+	ForwardClientPickupWeapon = new GlobalForward("TFGO_OnClientPickupWeapon", ET_Ignore, Param_Cell, Param_Cell);
 }
 
-void Forward_BombPlanted(TFTeam team, ArrayList cappers)
+void Forward_OnBombPlanted(TFTeam team, ArrayList planters)
 {
-	Call_StartForward(g_ForwardBombPlanted);
+	Call_StartForward(ForwardBombPlanted);
 	Call_PushCell(team);
-	Call_PushCell(cappers);
+	Call_PushCell(planters);
 	Call_Finish();
 }
 
-void Forward_BombDetonated(TFTeam team)
+void Forward_OnBombDetonated(TFTeam team)
 {
-	Call_StartForward(g_ForwardBombDetonated);
+	Call_StartForward(ForwardBombDetonated);
 	Call_PushCell(team);
 	Call_Finish();
 }
 
-void Forward_BombDefused(TFTeam team, ArrayList cappers, float timeLeft)
+void Forward_OnBombDefused(TFTeam team, ArrayList defusers, float timeLeft)
 {
-	Call_StartForward(g_ForwardBombDefused);
+	Call_StartForward(ForwardBombDefused);
 	Call_PushCell(team);
-	Call_PushCell(cappers);
+	Call_PushCell(defusers);
 	Call_PushCell(timeLeft);
 	Call_Finish();
 }
 
-void Forward_CashAwarded(int client, int amount)
+void Forward_OnHalfTime()
 {
-	Call_StartForward(g_ForwardCashAwarded);
+	Call_StartForward(ForwardHalfTime);
+	Call_Finish();
+}
+
+void Forward_OnMaxRounds()
+{
+	Call_StartForward(ForwardMaxRounds);
+	Call_Finish();
+}
+
+void Forward_OnClientAccountChanged(int client, int amount)
+{
+	Call_StartForward(ForwardClientAccountChanged);
 	Call_PushCell(client);
 	Call_PushCell(amount);
 	Call_Finish();
 }
 
+void Forward_OnClientPurchaseWeapon(int client, int defindex)
+{
+	Call_StartForward(ForwardClientPurchaseWeapon);
+	Call_PushCell(client);
+	Call_PushCell(defindex);
+	Call_Finish();
+}
+
 void Forward_WeaponPickup(int client, int defindex)
 {
-	Call_StartForward(g_ForwardWeaponPickup);
+	Call_StartForward(ForwardClientPickupWeapon);
 	Call_PushCell(client);
 	Call_PushCell(defindex);
 	Call_Finish();

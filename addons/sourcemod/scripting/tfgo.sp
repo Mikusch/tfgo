@@ -114,6 +114,36 @@ enum TFQuality
 	TFQual_Decorated
 };
 
+methodmap TFGOWeaponList < ArrayList
+{
+	public TFGOWeaponList()
+	{
+		return view_as<TFGOWeaponList>(new ArrayList(sizeof(TFGOWeapon)));
+	}
+	
+	public void ReadConfig(KeyValues kv)
+	{
+		if (kv.GotoFirstSubKey(false))
+		{
+			do
+			{
+				TFGOWeapon weapon;
+				weapon.ReadConfig(kv);
+				this.PushArray(weapon, sizeof(weapon));
+			}
+			while (kv.GotoNextKey(false));
+			kv.GoBack();
+		}
+		kv.GoBack();
+	}
+	
+	public int GetByDefIndex(int defindex, TFGOWeapon weapon)
+	{
+		int i = this.FindValue(defindex);
+		return i != -1 ? this.GetArray(i, weapon) : 0;
+	}
+}
+
 
 // Timers
 Handle g_BuyTimeTimer;
@@ -124,6 +154,7 @@ Handle g_BombExplosionTimer;
 
 // Other handles
 MemoryPatch g_PickupWeaponPatch;
+TFGOWeaponList g_AvailableWeapons;
 StringMap g_AvailableMusicKits;
 
 // Map
@@ -179,16 +210,17 @@ ConVar mp_bonusroundtime;
 ConVar mp_friendlyfire;
 
 
-#include "tfgo/musickits.sp"
-#include "tfgo/stocks.sp"
-#include "tfgo/config.sp"
 #include "tfgo/methodmaps.sp"
-#include "tfgo/sound.sp"
+
 #include "tfgo/buymenu.sp"
 #include "tfgo/buyzone.sp"
+#include "tfgo/config.sp"
 #include "tfgo/forward.sp"
+#include "tfgo/musickits.sp"
 #include "tfgo/native.sp"
 #include "tfgo/sdk.sp"
+#include "tfgo/sound.sp"
+#include "tfgo/stocks.sp"
 
 
 public Plugin pluginInfo =  {
@@ -451,12 +483,10 @@ Action SDKHook_Client_TraceAttack(int victim, int &attacker, int &inflictor, flo
 		if (IsValidEntity(weapon))
 		{
 			int defindex = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
-			int index = g_AvailableWeapons.FindValue(defindex, 0);
-			if (index != -1)
+			
+			TFGOWeapon config;
+			if (g_AvailableWeapons.GetByDefIndex(defindex, config) > 0)
 			{
-				TFGOWeapon config;
-				g_AvailableWeapons.GetArray(index, config, sizeof(config));
-				
 				if (config.armorPenetration < 1.0) // Armor penetration >= 100% bypasses armor
 				{
 					player.ArmorValue -= RoundFloat(damage);
@@ -585,7 +615,10 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 				char weaponName[PLATFORM_MAX_PATH];
 				TF2_GetItemName(defindex, weaponName, sizeof(weaponName));
 				
-				killAward = RoundFloat(g_AvailableWeapons.GetInt(g_AvailableWeapons.FindValue(defindex), 2) * factor);
+				TFGOWeapon weapon;
+				if (g_AvailableWeapons.GetByDefIndex(defindex, weapon) > 0 && weapon.killAward != 0)
+					killAward = RoundFloat(weapon.killAward * factor);
+				
 				attacker.AddToAccount(killAward, "%T", "Player_Cash_Award_Killed_Enemy", LANG_SERVER, weaponName);
 			}
 		}
@@ -598,7 +631,10 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 			if (IsValidEntity(activeWeapon))
 			{
 				int defindex = GetEntProp(activeWeapon, Prop_Send, "m_iItemDefinitionIndex");
-				killAward = RoundFloat(g_AvailableWeapons.GetInt(g_AvailableWeapons.FindValue(defindex), 2) * factor);
+				
+				TFGOWeapon weapon;
+				if (g_AvailableWeapons.GetByDefIndex(defindex, weapon) > 0 && weapon.killAward != 0)
+					killAward = RoundFloat(weapon.killAward * factor);
 			}
 			
 			assister.AddToAccount(killAward / 2, "%T", "Player_Cash_Award_Assist_Enemy", LANG_SERVER, victimName);
@@ -702,11 +738,13 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 	if (tfgo_halftime.BoolValue && g_RoundsPlayed == tfgo_maxrounds.IntValue / 2)
 	{
 		SDK_SetSwitchTeams(true);
+		Forward_OnHalfTime();
 	}
 	else if (g_RoundsPlayed == tfgo_maxrounds.IntValue)
 	{
 		g_RoundsPlayed = 0;
 		SDK_SetScrambleTeams(true);
+		Forward_OnMaxRounds();
 	}
 }
 
@@ -818,7 +856,7 @@ Action Timer_OnBombExplode(Handle timer)
 	EmitGameSoundToAll(GAMESOUND_BOMB_EXPLOSION, g_BombRef);
 	RemoveEntity(g_BombRef);
 	
-	Forward_BombDetonated(g_BombPlantingTeam);
+	Forward_OnBombDetonated(g_BombPlantingTeam);
 }
 
 //-----------------------------------------------------------------------------
@@ -916,7 +954,7 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	Format(message, sizeof(message), "%T", "Bomb_Planted", LANG_SERVER, tfgo_bombtimer.IntValue);
 	TF2_ShowGameMessage(message, "ico_notify_sixty_seconds");
 	
-	Forward_BombPlanted(team, cappers);
+	Forward_OnBombPlanted(team, cappers);
 	delete cappers;
 }
 
@@ -934,7 +972,7 @@ void DefuseBomb(TFTeam team, ArrayList cappers)
 	
 	TF2_ForceRoundWin(team, WinReason_PointCaptured);
 	
-	Forward_BombDefused(team, cappers, tfgo_bombtimer.FloatValue - (GetGameTime() - g_BombPlantedTime));
+	Forward_OnBombDefused(team, cappers, tfgo_bombtimer.FloatValue - (GetGameTime() - g_BombPlantedTime));
 	delete cappers;
 }
 

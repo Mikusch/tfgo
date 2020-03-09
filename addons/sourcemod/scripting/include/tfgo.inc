@@ -5,58 +5,96 @@
 
 #include <tf2>
 
-/**
- * Forward called when the bomb has been planted.
- *
- * @param team		The team that planted the bomb
- * @param cappers	ArrayList of clients that planted the bomb
- * @noreturn
- */
-forward void TFGO_OnBombPlanted(TFTeam team, ArrayList cappers);
+enum struct TFGOWeapon
+{
+	int defindex;
+	int price;
+	int killAward;
+	float armorPenetration;
+	bool isDefault;
+	
+	void ReadConfig(KeyValues kv)
+	{
+		this.defindex = kv.GetNum("defindex", -1);
+		this.price = kv.GetNum("price");
+		this.killAward = kv.GetNum("kill_award");
+		this.armorPenetration = kv.GetFloat("armor_penetration", 1.0);
+		this.isDefault = view_as<bool>(kv.GetNum("is_default"));
+	}
+}
 
 /**
- * Forward called when the bomb was detonated.
+ * Called when the bomb has been planted.
  *
- * @param team	The team that detonated the bomb
- * @noreturn
+ * @param team		TFTeam that planted the bomb.
+ * @param planters	ArrayList containing client indices that planted the bomb.
+ */
+forward void TFGO_OnBombPlanted(TFTeam team, ArrayList planters);
+
+/**
+ * Called when the bomb was detonated.
+ *
+ * @param team	TFTeam that detonated the bomb.
  */
 forward void TFGO_OnBombDetonated(TFTeam team);
 
 /**
- * Forward called when the bomb has been defused.
+ * Called when the bomb has been defused.
  *
- * @param team		The team that defused the bomb
- * @param cappers	ArrayList of clients that defused the bomb
- * @param timeLeft	Time left on the bomb detonation timer when it was defused
- * @noreturn
+ * @param team		TFTeam that defused the bomb.
+ * @param defusers	ArrayList containing client indices that defused the bomb.
+ * @param timeLeft	Time left on the bomb timer.
  */
-forward void TFGO_OnBombDefused(TFTeam team, ArrayList cappers, float timeLeft);
+forward void TFGO_OnBombDefused(TFTeam team, ArrayList defusers, float timeLeft);
 
 /**
- * Forward called when a player earns cash.
+ * Called when the game has entered half-time.
  *
- * @param client	The client that earned the cash
- * @param amount	The amount of money that was earned
- * @noreturn
+ * @note This will not call if tfgo_halftime has been set to 0.
  */
-forward void TFGO_OnCashAwarded(int client, int amount);
+forward void TFGO_OnHalfTime();
 
 /**
- * Forward called when a player picks up a weapon.
- *
- * @param client	The client that picked up the weapon
- * @param defindex	The item definition index of the weapon
- * @noreturn
+ * Called when all rounds have been played.
  */
-forward void TFGO_OnWeaponPickup(int client, int defindex);
+forward void TFGO_OnMaxRounds();
 
 /**
-* Retrieves the cost of a weapon.
+ * Called when a client's account changes due to them earning or losing money.
+ *
+ * @note This forward does not get called for weapon purchases, see TFGO_OnClientPurchaseWeapon instead.
+ * 
+ * @param client	Client index.
+ * @param amount	Amount of money added, may be negative.
+ */
+forward void TFGO_OnClientAccountChanged(int client, int amount);
+
+/**
+ * Called when a client purchases a weapon.
+ * 
+ * @param client	Client index.
+ * @param defindex	Item definition index of the weapon.
+ */
+forward void TFGO_OnClientPurchaseWeapon(int client, int defindex);
+
+/**
+ * Called when a client picks up a weapon.
+ *
+ * @param client	Client index.
+ * @param defindex	Item definition index of the weapon.
+ */
+forward void TFGO_OnClientPickupWeapon(int client, int defindex);
+
+/**
+* Retrieves weapon information for a given item definition index.
 *
-* @param defindex	The item definition index of the weapon
-* @return the cost of the weapon
+* @note This forward assumes the passed in array is a TFGOWeapon enum struct.
+*
+* @param defindex	Item definition index of the weapon.
+* @param buffer		Buffer to store weapon information in.
+* @return			Number of cells copied.
 */
-native int TFGO_GetWeaponCost(int defindex);
+native int TFGO_GetWeapon(int defindex, any[] buffer);
 
 public SharedPlugin __pl_tfgo =
 {
@@ -72,6 +110,6 @@ public SharedPlugin __pl_tfgo =
 #if !defined REQUIRE_PLUGIN
 public __pl_tfgo_SetNTVOptional()
 {
-	MarkNativeAsOptional("TFGO_GetWeaponCost");
+	MarkNativeAsOptional("TFGO_GetWeapon");
 }
 #endif
