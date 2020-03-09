@@ -708,11 +708,13 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 	if (tfgo_halftime.BoolValue && g_RoundsPlayed == tfgo_maxrounds.IntValue / 2)
 	{
 		SDK_SetSwitchTeams(true);
+		Forward_OnHalfTime();
 	}
 	else if (g_RoundsPlayed == tfgo_maxrounds.IntValue)
 	{
 		g_RoundsPlayed = 0;
 		SDK_SetScrambleTeams(true);
+		Forward_OnMaxRounds();
 	}
 }
 
@@ -824,7 +826,7 @@ Action Timer_OnBombExplode(Handle timer)
 	EmitGameSoundToAll(GAMESOUND_BOMB_EXPLOSION, g_BombRef);
 	RemoveEntity(g_BombRef);
 	
-	Forward_BombDetonated(g_BombPlantingTeam);
+	Forward_OnBombDetonated(g_BombPlantingTeam);
 }
 
 //-----------------------------------------------------------------------------
@@ -922,7 +924,7 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	Format(message, sizeof(message), "%T", "Bomb_Planted", LANG_SERVER, tfgo_bombtimer.IntValue);
 	TF2_ShowGameMessage(message, "ico_notify_sixty_seconds");
 	
-	Forward_BombPlanted(team, cappers);
+	Forward_OnBombPlanted(team, cappers);
 	delete cappers;
 }
 
@@ -940,7 +942,7 @@ void DefuseBomb(TFTeam team, ArrayList cappers)
 	
 	TF2_ForceRoundWin(team, WinReason_PointCaptured);
 	
-	Forward_BombDefused(team, cappers, tfgo_bombtimer.FloatValue - (GetGameTime() - g_BombPlantedTime));
+	Forward_OnBombDefused(team, cappers, tfgo_bombtimer.FloatValue - (GetGameTime() - g_BombPlantedTime));
 	delete cappers;
 }
 

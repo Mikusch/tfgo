@@ -101,7 +101,7 @@ methodmap TFGOPlayer
 		else
 			CPrintToChat(this.Client, "{negative}$%d{default}: %s", val, message);
 		
-		Forward_CashAwarded(this.Client, val);
+		Forward_OnClientAccountChanged(this.Client, val);
 	}
 	
 	public BuyResult AttemptToBuyWeapon(int defindex)

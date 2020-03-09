@@ -144,11 +144,13 @@ int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, int para
 		{
 			char info[32]; // item def index
 			menu.GetItem(param2, info, sizeof(info));
+			int defindex = StringToInt(info);
 			
-			if (TFGOPlayer(param1).AttemptToBuyWeapon(StringToInt(info)) == BUY_BOUGHT)
+			if (TFGOPlayer(param1).AttemptToBuyWeapon(defindex) == BUY_BOUGHT)
 			{
 				EmitGameSoundToAll(GAMESOUND_PLAYER_PURCHASE, param1);
 				DisplayMainBuyMenu(param1);
+				Forward_OnClientPurchaseWeapon(param1, defindex);
 			}
 		}
 		
