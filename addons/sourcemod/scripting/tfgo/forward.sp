@@ -85,7 +85,7 @@ void Forward_OnClientPurchaseWeapon(int client, int defindex)
 	Call_Finish();
 }
 
-void Forward_WeaponPickup(int client, int defindex)
+void Forward_OnClientPickupWeapon(int client, int defindex)
 {
 	Call_StartForward(ForwardClientPickupWeapon);
 	Call_PushCell(client);
