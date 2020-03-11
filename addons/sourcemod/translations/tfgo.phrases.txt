@@ -221,23 +221,23 @@
 	// Player Cash Awards
 	"Player_Cash_Award_Killed_Enemy_Generic"
 	{
-		"en"	"Award for neutralizing an enemy."
+		"en"	"{positive}+$%d{default}: Award for neutralizing an enemy."
 	}
 	"Player_Cash_Award_Killed_Enemy"
 	{
-		"en"	"Award for neutralizing an enemy with %s."
+		"en"	"{positive}+$%d{default}: Award for neutralizing an enemy with %s."
 	}
 	"Player_Cash_Award_Assist_Enemy"
 	{
-		"en"	"Award for assisting in neutralizing %s."
+		"en"	"{positive}+$%d{default}: Award for assisting in neutralizing %s."
 	}
 	"Player_Cash_Award_Bomb_Planted"
 	{
-		"en"	"Award for planting the bomb."
+		"en"	"{positive}+$%d{default}: Award for planting the bomb."
 	}
 	"Player_Cash_Award_Bomb_Defused"
 	{
-		"en"	"Award for defusing the bomb."
+		"en"	"{positive}+$%d{default}: Award for defusing the bomb."
 	}
 	"Player_Cash_Award_ExplainSuicide_YouGotCash"
 	{
@@ -259,31 +259,31 @@
 	// Team Cash Awards
 	"Team_Cash_Award_T_Win_Bomb"
 	{
-		"en"	"Team award for detonating bomb."
+		"en"	"{positive}+$%d{default}: Team award for detonating bomb."
 	}
 	"Team_Cash_Award_Elim_Bomb"
 	{
-		"en"	"Team award for eliminating the enemy team."
+		"en"	"{positive}+$%d{default}: Team award for eliminating the enemy team."
 	}
 	"Team_Cash_Award_Win_Defuse_Bomb"
 	{
-		"en"	"Team award for winning by defusing the bomb."
+		"en"	"{positive}+$%d{default}: Team award for winning by defusing the bomb."
 	}
 	"Team_Cash_Award_Loser_Bonus"
 	{
-		"en"	"Income for losing."
+		"en"	"{positive}+$%d{default}: Income for losing."
 	}
 	"Team_Cash_Award_Planted_Bomb_But_Defused"
 	{
-		"en"	"Team award for planting the bomb."
+		"en"	"{positive}+$%d{default}: Team award for planting the bomb."
 	}
 	"Team_Cash_Award_no_income"
 	{
-		"en"	"No income for running out of time and surviving."
+		"en"	"{negative}0{default}: No income for running out of time and surviving."
 	}
 	"Team_Cash_Award_no_income_suicide"
 	{
-		"en"	"No income for suiciding."
+		"en"	"{negative}0{default}: No income for suiciding."
 	}
 	
 	// HUD Text

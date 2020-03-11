@@ -562,7 +562,7 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 		if (IsValidEntity(inflictorEntindex) && GetEntityClassname(inflictorEntindex, classname, sizeof(classname)) && StrEqual(classname, "obj_sentrygun"))
 		{
 			// We do this so sentry guns kills don't report as kills with the Engineer's held weapon
-			attacker.AddToAccount(killAward, "%T", "Player_Cash_Award_Killed_Enemy_Generic", LANG_SERVER);
+			attacker.AddToAccount(killAward, "%T", "Player_Cash_Award_Killed_Enemy_Generic", LANG_SERVER, killAward);
 		}
 		else
 		{
@@ -601,7 +601,7 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 								CPrintToChat(client, "%T", "Player_Cash_Award_ExplainSuicide_TeammateGotCash", LANG_SERVER, attackerName, killAward, victimName);
 						}
 						
-						attacker.AddToAccount(killAward, "%T", "Player_Cash_Award_Killed_Enemy_Generic", LANG_SERVER, victimName);
+						attacker.AddToAccount(killAward, "%T", "Player_Cash_Award_Killed_Enemy_Generic", LANG_SERVER, killAward);
 						PrintToChat(attacker.Client, "%T", "Player_Cash_Award_ExplainSuicide_YouGotCash", LANG_SERVER, killAward, victimName);
 					}
 					
@@ -619,7 +619,7 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 				if (g_AvailableWeapons.GetByDefIndex(defindex, weapon) > 0 && weapon.killAward != 0)
 					killAward = RoundFloat(weapon.killAward * factor);
 				
-				attacker.AddToAccount(killAward, "%T", "Player_Cash_Award_Killed_Enemy", LANG_SERVER, weaponName);
+				attacker.AddToAccount(killAward, "%T", "Player_Cash_Award_Killed_Enemy", LANG_SERVER, killAward, weaponName);
 			}
 		}
 		
@@ -637,7 +637,7 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 					killAward = RoundFloat(weapon.killAward * factor);
 			}
 			
-			assister.AddToAccount(killAward / 2, "%T", "Player_Cash_Award_Assist_Enemy", LANG_SERVER, victimName);
+			assister.AddToAccount(killAward / 2, "%T", "Player_Cash_Award_Assist_Enemy", LANG_SERVER, killAward / 2, victimName);
 		}
 	}
 	
@@ -689,8 +689,8 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 	{
 		TFGOTeam red = TFGOTeam(TFTeam_Red);
 		TFGOTeam blue = TFGOTeam(TFTeam_Blue);
-		red.AddToClientAccounts(0, "%T", "Team_Cash_Award_no_income", LANG_SERVER);
-		blue.AddToClientAccounts(0, "%T", "Team_Cash_Award_no_income", LANG_SERVER);
+		red.PrintToChat("%T", "Team_Cash_Award_no_income", LANG_SERVER);
+		blue.PrintToChat("%T", "Team_Cash_Award_no_income", LANG_SERVER);
 		red.ConsecutiveLosses++;
 		blue.ConsecutiveLosses++;
 	}
@@ -704,17 +704,17 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 		{
 			if (g_BombPlantingTeam == winningTeam.Team)
 			{
-				winningTeam.AddToClientAccounts(tfgo_cash_team_terrorist_win_bomb.IntValue, "%T", "Team_Cash_Award_T_Win_Bomb", LANG_SERVER);
+				winningTeam.AddToClientAccounts(tfgo_cash_team_terrorist_win_bomb.IntValue, "%T", "Team_Cash_Award_T_Win_Bomb", LANG_SERVER, tfgo_cash_team_terrorist_win_bomb.IntValue);
 			}
 			else
 			{
-				winningTeam.AddToClientAccounts(tfgo_cash_team_win_by_defusing_bomb.IntValue, "%T", "Team_Cash_Award_Win_Defuse_Bomb", LANG_SERVER);
-				losingTeam.AddToClientAccounts(tfgo_cash_team_planted_bomb_but_defused.IntValue, "%T", "Team_Cash_Award_Planted_Bomb_But_Defused", LANG_SERVER);
+				winningTeam.AddToClientAccounts(tfgo_cash_team_win_by_defusing_bomb.IntValue, "%T", "Team_Cash_Award_Win_Defuse_Bomb", LANG_SERVER, tfgo_cash_team_win_by_defusing_bomb.IntValue);
+				losingTeam.AddToClientAccounts(tfgo_cash_team_planted_bomb_but_defused.IntValue, "%T", "Team_Cash_Award_Planted_Bomb_But_Defused", LANG_SERVER, tfgo_cash_team_planted_bomb_but_defused.IntValue);
 			}
 		}
 		else if (winreason == WinReason_Elimination)
 		{
-			winningTeam.AddToClientAccounts(tfgo_cash_team_elimination.IntValue, "%T", "Team_Cash_Award_Elim_Bomb", LANG_SERVER);
+			winningTeam.AddToClientAccounts(tfgo_cash_team_elimination.IntValue, "%T", "Team_Cash_Award_Elim_Bomb", LANG_SERVER, tfgo_cash_team_elimination.IntValue);
 		}
 		
 		for (int client = 1; client <= MaxClients; client++)
@@ -723,9 +723,9 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 			{
 				// Do not give losing bonus to players that deliberately suicided
 				if (g_HasPlayerSuicided[client])
-					TFGOPlayer(client).AddToAccount(0, "%T", "Team_Cash_Award_no_income_suicide", LANG_SERVER);
+					CPrintToChat(client, "%T", "Team_Cash_Award_no_income_suicide", LANG_SERVER);
 				else
-					TFGOPlayer(client).AddToAccount(losingTeam.LoseIncome, "%T", "Team_Cash_Award_Loser_Bonus", LANG_SERVER);
+					TFGOPlayer(client).AddToAccount(losingTeam.LoseIncome, "%T", "Team_Cash_Award_Loser_Bonus", LANG_SERVER, losingTeam.LoseIncome);
 			}
 		}
 		
@@ -898,7 +898,7 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	for (int i = 0; i < cappers.Length; i++)
 	{
 		int capper = cappers.Get(i);
-		TFGOPlayer(capper).AddToAccount(tfgo_cash_player_bomb_planted.IntValue, "%T", "Player_Cash_Award_Bomb_Planted", LANG_SERVER);
+		TFGOPlayer(capper).AddToAccount(tfgo_cash_player_bomb_planted.IntValue, "%T", "Player_Cash_Award_Bomb_Planted", LANG_SERVER, tfgo_cash_player_bomb_planted.IntValue);
 	}
 	
 	// Cancel arena timer
@@ -967,7 +967,7 @@ void DefuseBomb(TFTeam team, ArrayList cappers)
 	for (int i = 0; i < cappers.Length; i++)
 	{
 		int capper = cappers.Get(i);
-		TFGOPlayer(capper).AddToAccount(tfgo_cash_player_bomb_defused.IntValue, "%T", "Player_Cash_Award_Bomb_Defused", LANG_SERVER);
+		TFGOPlayer(capper).AddToAccount(tfgo_cash_player_bomb_defused.IntValue, "%T", "Player_Cash_Award_Bomb_Defused", LANG_SERVER, tfgo_cash_player_bomb_defused.IntValue);
 	}
 	
 	TF2_ForceRoundWin(team, WinReason_PointCaptured);
