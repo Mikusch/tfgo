@@ -3,6 +3,7 @@ static GlobalForward ForwardBombDetonated;
 static GlobalForward ForwardBombDefused;
 static GlobalForward ForwardHalfTime;
 static GlobalForward ForwardMaxRounds;
+static GlobalForward ForwardClientAccountChange;
 static GlobalForward ForwardClientAccountChanged;
 static GlobalForward ForwardClientPurchaseWeapon;
 static GlobalForward ForwardClientPickupWeapon;
@@ -14,6 +15,7 @@ void Forward_AskLoad()
 	ForwardBombDefused = new GlobalForward("TFGO_OnBombDefused", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
 	ForwardHalfTime = new GlobalForward("TFGO_OnHalfTime", ET_Ignore);
 	ForwardMaxRounds = new GlobalForward("TFGO_OnMaxRounds", ET_Ignore);
+	ForwardClientAccountChange = new GlobalForward("TFGO_OnClientAccountChange", ET_Event, Param_Cell, Param_Cell);
 	ForwardClientAccountChanged = new GlobalForward("TFGO_OnClientAccountChanged", ET_Ignore, Param_Cell, Param_Cell);
 	ForwardClientPurchaseWeapon = new GlobalForward("TFGO_OnClientPurchaseWeapon", ET_Ignore, Param_Cell, Param_Cell);
 	ForwardClientPickupWeapon = new GlobalForward("TFGO_OnClientPickupWeapon", ET_Ignore, Param_Cell, Param_Cell);
@@ -53,6 +55,18 @@ void Forward_OnMaxRounds()
 {
 	Call_StartForward(ForwardMaxRounds);
 	Call_Finish();
+}
+
+Action Forward_OnClientAccountChange(int client, int &amount)
+{
+	Action action;
+	
+	Call_StartForward(ForwardClientAccountChange);
+	Call_PushCell(client);
+	Call_PushCell(amount);
+	Call_Finish(action);
+	
+	return action;
 }
 
 void Forward_OnClientAccountChanged(int client, int amount)

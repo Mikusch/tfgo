@@ -89,19 +89,27 @@ methodmap TFGOPlayer
 	
 	public void AddToAccount(int val, const char[] reason, any...)
 	{
-		this.Account += val;
+		int temp = val;
+		Action action = Forward_OnClientAccountChange(this.Client, temp);
 		
-		char message[PLATFORM_MAX_PATH];
-		VFormat(message, sizeof(message), reason, 4);
+		if (action >= Plugin_Changed)
+			val = temp;
 		
-		if (val > 0)
-			CPrintToChat(this.Client, "{positive}+$%d{default}: %s", val, message);
-		else if (val < 0)
-			CPrintToChat(this.Client, "{negative}-$%d{default}: %s", val * -1, message);
-		else
-			CPrintToChat(this.Client, "{negative}$%d{default}: %s", val, message);
-		
-		Forward_OnClientAccountChanged(this.Client, val);
+		if (action < Plugin_Handled)
+		{
+			char message[PLATFORM_MAX_PATH];
+			VFormat(message, sizeof(message), reason, 4);
+			
+			if (val > 0)
+				CPrintToChat(this.Client, "{positive}+$%d{default}: %s", val, message);
+			else if (val < 0)
+				CPrintToChat(this.Client, "{negative}-$%d{default}: %s", val * -1, message);
+			else
+				CPrintToChat(this.Client, "{negative}$%d{default}: %s", val, message);
+			
+			this.Account += val;
+			Forward_OnClientAccountChanged(this.Client, val);
+		}
 	}
 	
 	public BuyResult AttemptToBuyWeapon(int defindex)
