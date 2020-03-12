@@ -66,6 +66,19 @@ forward void TFGO_OnMaxRounds();
  * 
  * @param client	Client index.
  * @param amount	Amount of money added, may be negative.
+ * @return			Plugin_Continue to continue with the original action.
+ * @return			Plugin_Changed to override the amount.
+ * @return			Plugin_Handled to prevent the account change.
+ */
+forward void TFGO_OnClientAccountChange(int client, int amount);
+
+/**
+ * Called when a client's account has changed due to them earning or losing money.
+ *
+ * @note This forward does not get called for weapon purchases, see TFGO_OnClientPurchaseWeapon instead.
+ * 
+ * @param client	Client index.
+ * @param amount	Amount of money added, may be negative.
  */
 forward void TFGO_OnClientAccountChanged(int client, int amount);
 
