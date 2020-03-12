@@ -1,11 +1,11 @@
-static int g_PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][WeaponSlot_BuilderEngie + 1];
-static int g_PlayerAccounts[TF_MAXPLAYERS + 1];
-static int g_PlayerArmorValues[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
-static bool g_PlayerHelmets[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
-static bool g_PlayerDefuseKits[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
-static Menu g_ActiveBuyMenus[TF_MAXPLAYERS + 1];
+static int PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][WeaponSlot_BuilderEngie + 1];
+static int PlayerAccounts[TF_MAXPLAYERS + 1];
+static int PlayerArmorValues[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
+static bool PlayerHelmets[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
+static bool PlayerDefuseKits[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
+static Menu ActiveBuyMenus[TF_MAXPLAYERS + 1];
 
-static int g_TeamConsecutiveLosses[view_as<int>(TFTeam_Blue) + 1] =  { STARTING_CONSECUTIVE_LOSSES, ... };
+static int TeamConsecutiveLosses[view_as<int>(TFTeam_Blue) + 1] =  { STARTING_CONSECUTIVE_LOSSES, ... };
 
 methodmap TFGOPlayer
 {
@@ -26,16 +26,16 @@ methodmap TFGOPlayer
 	{
 		public get()
 		{
-			return g_PlayerAccounts[this];
+			return PlayerAccounts[this];
 		}
 		public set(int val)
 		{
 			if (val > tfgo_maxmoney.IntValue)
-				g_PlayerAccounts[this] = tfgo_maxmoney.IntValue;
+				PlayerAccounts[this] = tfgo_maxmoney.IntValue;
 			else if (val < 0)
-				g_PlayerAccounts[this] = 0;
+				PlayerAccounts[this] = 0;
 			else
-				g_PlayerAccounts[this] = val;
+				PlayerAccounts[this] = val;
 		}
 	}
 	
@@ -43,11 +43,11 @@ methodmap TFGOPlayer
 	{
 		public get()
 		{
-			return g_PlayerArmorValues[this][TF2_GetPlayerClass(this.Client)];
+			return PlayerArmorValues[this][TF2_GetPlayerClass(this.Client)];
 		}
 		public set(int val)
 		{
-			g_PlayerArmorValues[this][TF2_GetPlayerClass(this.Client)] = val;
+			PlayerArmorValues[this][TF2_GetPlayerClass(this.Client)] = val;
 		}
 	}
 	
@@ -55,11 +55,11 @@ methodmap TFGOPlayer
 	{
 		public get()
 		{
-			return g_PlayerHelmets[this][TF2_GetPlayerClass(this.Client)];
+			return PlayerHelmets[this][TF2_GetPlayerClass(this.Client)];
 		}
 		public set(bool val)
 		{
-			g_PlayerHelmets[this][TF2_GetPlayerClass(this.Client)] = val;
+			PlayerHelmets[this][TF2_GetPlayerClass(this.Client)] = val;
 		}
 	}
 	
@@ -67,11 +67,11 @@ methodmap TFGOPlayer
 	{
 		public get()
 		{
-			return g_PlayerDefuseKits[this][TF2_GetPlayerClass(this.Client)];
+			return PlayerDefuseKits[this][TF2_GetPlayerClass(this.Client)];
 		}
 		public set(bool val)
 		{
-			g_PlayerDefuseKits[this][TF2_GetPlayerClass(this.Client)] = val;
+			PlayerDefuseKits[this][TF2_GetPlayerClass(this.Client)] = val;
 		}
 	}
 	
@@ -79,11 +79,11 @@ methodmap TFGOPlayer
 	{
 		public get()
 		{
-			return g_ActiveBuyMenus[this];
+			return ActiveBuyMenus[this];
 		}
 		public set(Menu val)
 		{
-			g_ActiveBuyMenus[this] = val;
+			ActiveBuyMenus[this] = val;
 		}
 	}
 	
@@ -137,7 +137,7 @@ methodmap TFGOPlayer
 				}
 				
 				TF2_CreateAndEquipWeapon(this.Client, defindex, TFQual_Unique, GetRandomInt(1, 100));
-				g_PlayerLoadoutWeaponIndexes[this][class][slot] = defindex;
+				PlayerLoadoutWeaponIndexes[this][class][slot] = defindex;
 				this.Account -= config.price;
 				return BUY_BOUGHT;
 			}
@@ -148,7 +148,7 @@ methodmap TFGOPlayer
 	
 	public int GetWeaponFromLoadout(TFClassType class, int slot)
 	{
-		int defindex = g_PlayerLoadoutWeaponIndexes[this][class][slot];
+		int defindex = PlayerLoadoutWeaponIndexes[this][class][slot];
 		if (defindex > -1)
 			return defindex;
 		
@@ -175,7 +175,7 @@ methodmap TFGOPlayer
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Client);
 		
-		for (int slot = sizeof(g_PlayerLoadoutWeaponIndexes[][]) - 1; slot >= 0; slot--)
+		for (int slot = sizeof(PlayerLoadoutWeaponIndexes[][]) - 1; slot >= 0; slot--)
 		{
 			int defIndex = this.GetWeaponFromLoadout(class, slot);
 			if (defIndex > -1)
@@ -187,35 +187,35 @@ methodmap TFGOPlayer
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Client);
 		int slot = TF2_GetItemSlot(defIndex, class);
-		g_PlayerLoadoutWeaponIndexes[this][class][slot] = defIndex;
+		PlayerLoadoutWeaponIndexes[this][class][slot] = defIndex;
 	}
 	
 	public void RemoveAllItems(bool removeArmor)
 	{
-		for (int i = 0; i < sizeof(g_PlayerLoadoutWeaponIndexes[]); i++)
+		for (int i = 0; i < sizeof(PlayerLoadoutWeaponIndexes[]); i++)
 		{
-			for (int j = 0; j < sizeof(g_PlayerLoadoutWeaponIndexes[][]); j++)
+			for (int j = 0; j < sizeof(PlayerLoadoutWeaponIndexes[][]); j++)
 			{
-				g_PlayerLoadoutWeaponIndexes[this][i][j] = -1;
+				PlayerLoadoutWeaponIndexes[this][i][j] = -1;
 			}
 		}
 		
 		if (removeArmor)
 		{
-			for (int i = 0; i < sizeof(g_PlayerHelmets[]); i++)
+			for (int i = 0; i < sizeof(PlayerHelmets[]); i++)
 			{
-				g_PlayerHelmets[this][i] = false;
+				PlayerHelmets[this][i] = false;
 			}
 			
-			for (int i = 0; i < sizeof(g_PlayerArmorValues[]); i++)
+			for (int i = 0; i < sizeof(PlayerArmorValues[]); i++)
 			{
-				g_PlayerArmorValues[this][i] = 0;
+				PlayerArmorValues[this][i] = 0;
 			}
 		}
 		
-		for (int i = 0; i < sizeof(g_PlayerDefuseKits[]); i++)
+		for (int i = 0; i < sizeof(PlayerDefuseKits[]); i++)
 		{
-			g_PlayerDefuseKits[this][i] = false;
+			PlayerDefuseKits[this][i] = false;
 		}
 	}
 	
@@ -362,17 +362,17 @@ methodmap TFGOTeam
 	{
 		public get()
 		{
-			return g_TeamConsecutiveLosses[this];
+			return TeamConsecutiveLosses[this];
 		}
 		
 		public set(int val)
 		{
 			if (val > tfgo_consecutive_loss_max.IntValue)
-				g_TeamConsecutiveLosses[this] = tfgo_consecutive_loss_max.IntValue;
+				TeamConsecutiveLosses[this] = tfgo_consecutive_loss_max.IntValue;
 			else if (val < MIN_CONSECUTIVE_LOSSES)
-				g_TeamConsecutiveLosses[this] = MIN_CONSECUTIVE_LOSSES;
+				TeamConsecutiveLosses[this] = MIN_CONSECUTIVE_LOSSES;
 			else
-				g_TeamConsecutiveLosses[this] = val;
+				TeamConsecutiveLosses[this] = val;
 		}
 	}
 	

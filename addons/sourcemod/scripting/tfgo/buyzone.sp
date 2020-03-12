@@ -1,20 +1,20 @@
-static float g_DynamicBuyZoneCenters[view_as<int>(TFTeam_Blue) + 1][3];
-static float g_DynamicBuyzoneRadii[view_as<int>(TFTeam_Blue) + 1];
-static bool g_IsPlayerInDynamicBuyZone[TF_MAXPLAYERS + 1];
+static float DynamicBuyZoneCenters[view_as<int>(TFTeam_Blue) + 1][3];
+static float DynamicBuyzoneRadii[view_as<int>(TFTeam_Blue) + 1];
+static bool IsPlayerInDynamicBuyZone[TF_MAXPLAYERS + 1];
 
 void ClearDynamicBuyZones()
 {
-	for (int i = 0; i < sizeof(g_DynamicBuyZoneCenters); i++)
+	for (int i = 0; i < sizeof(DynamicBuyZoneCenters); i++)
 	{
-		for (int j = 0; j < sizeof(g_DynamicBuyZoneCenters[]); j++)
+		for (int j = 0; j < sizeof(DynamicBuyZoneCenters[]); j++)
 		{
-			g_DynamicBuyZoneCenters[i][j] = 0.0;
+			DynamicBuyZoneCenters[i][j] = 0.0;
 		}
 	}
 	
-	for (int i = 0; i < sizeof(g_DynamicBuyzoneRadii); i++)
+	for (int i = 0; i < sizeof(DynamicBuyzoneRadii); i++)
 	{
-		g_DynamicBuyzoneRadii[i] = 0.0;
+		DynamicBuyzoneRadii[i] = 0.0;
 	}
 }
 
@@ -45,7 +45,7 @@ void CalculateDynamicBuyZones()
 			teamspawns.GetArray(i, origin1, sizeof(origin1));
 			
 			// Add all team spawn origins together
-			AddVectors(origin1, g_DynamicBuyZoneCenters[team], g_DynamicBuyZoneCenters[team]);
+			AddVectors(origin1, DynamicBuyZoneCenters[team], DynamicBuyZoneCenters[team]);
 			
 			// Determine buy zone radius by finding the maximum distance between all team spawns
 			for (int j = 0; j < teamspawns.Length; j++)
@@ -53,12 +53,12 @@ void CalculateDynamicBuyZones()
 				float origin2[3];
 				teamspawns.GetArray(j, origin2, sizeof(origin2));
 				float distance = GetVectorDistance(origin1, origin2);
-				g_DynamicBuyzoneRadii[team] = FloatMax(distance, g_DynamicBuyzoneRadii[team]);
+				DynamicBuyzoneRadii[team] = FloatMax(distance, DynamicBuyzoneRadii[team]);
 			}
 		}
 		
 		// Determine buy zone center by calculating the average team spawn position
-		ScaleVector(g_DynamicBuyZoneCenters[team], 1.0 / teamspawns.Length);
+		ScaleVector(DynamicBuyZoneCenters[team], 1.0 / teamspawns.Length);
 		
 		delete teamspawns;
 	}
@@ -74,16 +74,16 @@ void DisplayMenuInDynamicBuyZone(int client)
 		float origin[3];
 		GetClientAbsOrigin(client, origin);
 		
-		float distance = GetVectorDistance(g_DynamicBuyZoneCenters[team], origin);
-		if (!g_IsPlayerInDynamicBuyZone[client] && distance <= g_DynamicBuyzoneRadii[team]) // Player has entered buy zone
+		float distance = GetVectorDistance(DynamicBuyZoneCenters[team], origin);
+		if (!IsPlayerInDynamicBuyZone[client] && distance <= DynamicBuyzoneRadii[team]) // Player has entered buy zone
 		{
-			g_IsPlayerInDynamicBuyZone[client] = true;
+			IsPlayerInDynamicBuyZone[client] = true;
 			if (player.ActiveBuyMenu == null)
 				DisplayMainBuyMenu(client);
 		}
-		else if (g_IsPlayerInDynamicBuyZone[client] && distance > g_DynamicBuyzoneRadii[team]) // Player has left buy zone
+		else if (IsPlayerInDynamicBuyZone[client] && distance > DynamicBuyzoneRadii[team]) // Player has left buy zone
 		{
-			g_IsPlayerInDynamicBuyZone[client] = false;
+			IsPlayerInDynamicBuyZone[client] = false;
 			if (player.ActiveBuyMenu != null)
 			{
 				player.ActiveBuyMenu.Cancel();
@@ -95,9 +95,9 @@ void DisplayMenuInDynamicBuyZone(int client)
 
 void ResetPlayerBuyZoneStates()
 {
-	for (int i = 0; i < sizeof(g_IsPlayerInDynamicBuyZone); i++)
+	for (int i = 0; i < sizeof(IsPlayerInDynamicBuyZone); i++)
 	{
-		g_IsPlayerInDynamicBuyZone[i] = false;
+		IsPlayerInDynamicBuyZone[i] = false;
 	}
 }
 
