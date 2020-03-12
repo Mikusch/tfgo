@@ -2,56 +2,6 @@
 {
 	"tf"
 	{
-		"Signatures"
-		{
-			"CTFPlayer::GetEquippedWearableForLoadoutSlot"
-			{
-				"library"	"server"
-				"linux"		"@_ZN9CTFPlayer33GetEquippedWearableForLoadoutSlotEi"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x2A\x8B\xC1\x53\x56\x33\xF6\x89\x45\xF8\x8B\x88\x2A\x2A\x2A\x2A\x57\x89\x4D\xFC"
-			}
-			"CTFPlayer::GetMaxAmmo"
-			{
-				"library"	"server"
-				"linux"		"@_ZN9CTFPlayer10GetMaxAmmoEii"
-				"windows"	"\x55\x8B\xEC\x8B\x45\x0C\x56\x57\x8B\xF9\x83\xF8\xFF\x75\x2A\xFF\xB7\x2A\x2A\x2A\x2A\xEB\x01\x50\xE8"
-			}
-			"CTFDroppedWeapon::Create"
-			{
-				"library"	"server"
-				"linux"		"@_ZN16CTFDroppedWeapon6CreateEP9CTFPlayerRK6VectorRK6QAnglePKcPK13CEconItemView"
-				"windows"	"\x55\x8B\xEC\x51\xA1\x2A\x2A\x2A\x2A\x80\xB8\x2A\x2A\x2A\x2A\x00\x74\x2A\x33\xC0\x8B\xE5\x5D\xC3"
-			}
-			"CTFDroppedWeapon::InitDroppedWeapon"
-			{
-				"library"	"server"
-				"linux"		"@_ZN16CTFDroppedWeapon17InitDroppedWeaponEP9CTFPlayerP13CTFWeaponBasebb"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x24\x56\x57\x8B\xF9\x8B\x4D\x08"
-			}
-			"CTFPlayer::PickupWeaponFromOther"
-			{
-				"library"	"server"
-				"linux"		"@_ZN9CTFPlayer21PickupWeaponFromOtherEP16CTFDroppedWeapon"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x2A\x56\x8B\x75\x08\x57\x8B\xF9\x81\xC6\x2A\x2A\x2A\x2A\x75\x2A\x5F\x32\xC0\x5E"
-			}
-		}
-		"Functions"
-		{
-			"CTFPlayer::PickupWeaponFromOther"
-			{
-				"signature"	"CTFPlayer::PickupWeaponFromOther"
-				"callconv"	"thiscall"
-				"return"	"bool"
-				"this"		"entity"
-				"arguments"
-				{
-					"target"
-					{
-						"type"	"cbaseentity"
-					}
-				}
-			}
-		}
 		"Offsets"
 		{
 			"CTFGameRules::GetCaptureValueForPlayer"
@@ -89,15 +39,148 @@
 				"linux"		"431"
 				"windows"	"430"
 			}
-			"CBasePlayer::RemoveWearable"
-			{
-				"linux"		"432"
-				"windows"	"431"
-			}
 			"CTFPlayer::GiveNamedItem"
 			{
 				"windows"	"475"
 				"linux"		"482"
+			}
+		}
+		"Signatures"
+		{
+			"CTFPlayer::GetEquippedWearableForLoadoutSlot"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer33GetEquippedWearableForLoadoutSlotEi"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x2A\x8B\xC1\x53\x56\x33\xF6\x89\x45\xF8\x8B\x88\x2A\x2A\x2A\x2A\x57\x89\x4D\xFC"
+			}
+			"CTFPlayer::GetMaxAmmo"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer10GetMaxAmmoEii"
+				"windows"	"\x55\x8B\xEC\x8B\x45\x0C\x56\x57\x8B\xF9\x83\xF8\xFF\x75\x2A\xFF\xB7\x2A\x2A\x2A\x2A\xEB\x01\x50\xE8"
+			}
+			"CTFPlayer::PickupWeaponFromOther"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer21PickupWeaponFromOtherEP16CTFDroppedWeapon"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x2A\x56\x8B\x75\x08\x57\x8B\xF9\x81\xC6\x2A\x2A\x2A\x2A\x75\x2A\x5F\x32\xC0\x5E"
+			}
+			"CTFDroppedWeapon::Create"
+			{
+				"library"	"server"
+				"linux"		"@_ZN16CTFDroppedWeapon6CreateEP9CTFPlayerRK6VectorRK6QAnglePKcPK13CEconItemView"
+				"windows"	"\x55\x8B\xEC\x51\xA1\x2A\x2A\x2A\x2A\x80\xB8\x2A\x2A\x2A\x2A\x00\x74\x2A\x33\xC0\x8B\xE5\x5D\xC3"
+			}
+			"CTFDroppedWeapon::InitDroppedWeapon"
+			{
+				"library"	"server"
+				"linux"		"@_ZN16CTFDroppedWeapon17InitDroppedWeaponEP9CTFPlayerP13CTFWeaponBasebb"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x24\x56\x57\x8B\xF9\x8B\x4D\x08"
+			}
+		}
+		"Functions"
+		{
+			"CTFGameRules::GetCaptureValueForPlayer"
+			{
+				"offset"	"CTFGameRules::GetCaptureValueForPlayer"
+				"hooktype"	"gamerules"
+				"return"	"int"
+				"this"		"ignore"
+				"arguments"
+				{
+					"pPlayer"
+					{
+						"type"	"cbaseentity"
+					}
+				}
+			}
+			"CTFGameRules::SetWinningTeam"
+			{
+				"offset"	"CTFGameRules::SetWinningTeam"
+				"hooktype"	"gamerules"
+				"return"	"void"
+				"this"		"ignore"
+				"arguments"
+				{
+					"team"
+					{
+						"type"	"int"
+					}
+					"iWinReason"
+					{
+						"type"	"int"
+					}
+					"bForceMapReset"
+					{
+						"type"	"bool"
+					}
+					"bSwitchTeams"
+					{
+						"type"	"bool"
+					}
+					"bDontAddScore"
+					{
+						"type"	"bool"
+					}
+					"bFinal"
+					{
+						"type"	"bool"
+					}
+				}
+			}
+			"CTFGameRules::HandleSwitchTeams"
+			{
+				"offset"	"CTFGameRules::HandleSwitchTeams"
+				"hooktype"	"gamerules"
+				"return"	"void"
+				"this"		"ignore"
+			}
+			"CTFGameRules::HandleScrambleTeams"
+			{
+				"offset"	"CTFGameRules::HandleScrambleTeams"
+				"hooktype"	"gamerules"
+				"return"	"void"
+				"this"		"ignore"
+			}
+			"CTFPlayer::GiveNamedItem"
+			{
+				"offset"	"CTFPlayer::GiveNamedItem"
+				"hooktype"	"entity"
+				"return"	"cbaseentity"
+				"this"		"entity"
+				"arguments"
+				{
+					"pszName"
+					{
+						"type"	"charptr"
+					}
+					"iSubType"
+					{
+						"type"	"int"
+					}
+					"pItem"
+					{
+						"type"	"objectptr"
+					}
+					"bUnknown"
+					{
+						"type"	"bool"
+					}
+				}
+			}
+			"CTFPlayer::PickupWeaponFromOther"
+			{
+				"signature"	"CTFPlayer::PickupWeaponFromOther"
+				"callconv"	"thiscall"
+				"return"	"bool"
+				"this"		"entity"
+				"arguments"
+				{
+					"pWeapon"
+					{
+						"type"	"cbaseentity"
+					}
+				}
 			}
 		}
 		"Addresses"

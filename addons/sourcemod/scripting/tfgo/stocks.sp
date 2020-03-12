@@ -6,17 +6,17 @@ stock bool IsValidClient(int client)
 	return 0 < client <= MaxClients && IsClientInGame(client);
 }
 
-stock any FloatMin(float a, float b)
+stock float FloatMin(float a, float b)
 {
 	return (a < b) ? a : b;
 }
 
-stock any FloatMax(float a, float b)
+stock float FloatMax(float a, float b)
 {
 	return (a > b) ? a : b;
 }
 
-stock any FloatClamp(float val, float min, float max)
+stock float FloatClamp(float val, float min, float max)
 {
 	return FloatMax(min, FloatMin(max, val));
 }
@@ -168,7 +168,7 @@ stock void TF2_CreateAndEquipWeapon(int client, int defindex, TFQuality quality 
 	int wearable = SDK_GetEquippedWearableForLoadoutSlot(client, slot);
 	if (wearable > MaxClients)
 	{
-		SDK_RemoveWearable(client, wearable);
+		TF2_RemoveWearable(client, wearable);
 		AcceptEntityInput(wearable, "Kill");
 	}
 	
