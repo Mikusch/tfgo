@@ -1,8 +1,3 @@
-static Handle DHookGetCaptureValueForPlayer;
-static Handle DHookSetWinningTeam;
-static Handle DHookHandleSwitchTeams;
-static Handle DHookHandleScrambleTeams;
-static Handle DHookGiveNamedItem;
 static Handle SDKCallGetEquippedWearableForLoadoutSlot;
 static Handle SDKCallGetMaxAmmo;
 static Handle SDKCallCreateDroppedWeapon;
@@ -11,7 +6,13 @@ static Handle SDKCallSetSwitchTeams;
 static Handle SDKCallSetScrambleTeams;
 static Handle SDKCallEquipWearable;
 
-static int g_HookIdsGiveNamedItem[TF_MAXPLAYERS + 1] =  { -1, ... };
+static Handle DHookGetCaptureValueForPlayer;
+static Handle DHookSetWinningTeam;
+static Handle DHookHandleSwitchTeams;
+static Handle DHookHandleScrambleTeams;
+static Handle DHookGiveNamedItem;
+
+static int HookIdsGiveNamedItem[TF_MAXPLAYERS + 1] =  { -1, ... };
 
 void SDK_Init()
 {
@@ -53,15 +54,15 @@ void SDK_HookGamerules()
 
 void SDK_HookClientEntity(int client)
 {
-	g_HookIdsGiveNamedItem[client] = DHookEntity(DHookGiveNamedItem, false, client, DHookRemoval_GiveNamedItem, DHook_GiveNamedItem);
+	HookIdsGiveNamedItem[client] = DHookEntity(DHookGiveNamedItem, false, client, DHookRemoval_GiveNamedItem, DHook_GiveNamedItem);
 }
 
 void SDK_UnhookClientEntity(int client)
 {
-	if (g_HookIdsGiveNamedItem[client] != -1)
+	if (HookIdsGiveNamedItem[client] != -1)
 	{
-		DHookRemoveHookID(g_HookIdsGiveNamedItem[client]);
-		g_HookIdsGiveNamedItem[client] = -1;
+		DHookRemoveHookID(HookIdsGiveNamedItem[client]);
+		HookIdsGiveNamedItem[client] = -1;
 	}
 }
 
@@ -285,9 +286,9 @@ public void DHookRemoval_GiveNamedItem(int hookId)
 {
 	for (int client = 1; client <= MaxClients; client++)
 	{
-		if (g_HookIdsGiveNamedItem[client] == hookId)
+		if (HookIdsGiveNamedItem[client] == hookId)
 		{
-			g_HookIdsGiveNamedItem[client] = -1;
+			HookIdsGiveNamedItem[client] = -1;
 			return;
 		}
 	}
