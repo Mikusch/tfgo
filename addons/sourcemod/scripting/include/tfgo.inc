@@ -70,7 +70,7 @@ forward void TFGO_OnMaxRounds();
  * @return			Plugin_Changed to override the amount.
  * @return			Plugin_Handled to prevent the account change.
  */
-forward void TFGO_OnClientAccountChange(int client, int amount);
+forward Action TFGO_OnClientAccountChange(int client, int amount);
 
 /**
  * Called when a client's account has changed due to them earning or losing money.
