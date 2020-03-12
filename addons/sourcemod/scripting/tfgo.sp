@@ -175,7 +175,6 @@ bool g_IsBombPlanted;
 
 TFTeam g_BombPlantingTeam;
 bool g_HasPlayerSuicided[TF_MAXPLAYERS + 1];
-int g_RoundsPlayed;
 
 // ConVars
 ConVar tfgo_use_hitlocation_dmg;
@@ -734,15 +733,16 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 		winningTeam.ConsecutiveLosses--;
 	}
 
-	g_RoundsPlayed++;
-	if (tfgo_halftime.BoolValue && g_RoundsPlayed == tfgo_maxrounds.IntValue / 2)
+	static int roundsPlayed;
+	roundsPlayed++;
+	if (tfgo_halftime.BoolValue && roundsPlayed == tfgo_maxrounds.IntValue / 2)
 	{
 		SDK_SetSwitchTeams(true);
 		Forward_OnHalfTime();
 	}
-	else if (g_RoundsPlayed == tfgo_maxrounds.IntValue)
+	else if (roundsPlayed == tfgo_maxrounds.IntValue)
 	{
-		g_RoundsPlayed = 0;
+		roundsPlayed = 0;
 		SDK_SetScrambleTeams(true);
 		Forward_OnMaxRounds();
 	}
