@@ -78,6 +78,27 @@ stock int FindStringIndex2(int tableidx, const char[] str)
 	return INVALID_STRING_INDEX;
 }
 
+stock int GetAlivePlayerCount()
+{
+	int count = 0;
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientInGame(client) && IsPlayerAlive(client))
+			count++;
+	}
+	return count;
+}
+
+stock TFTeam TF2_GetEnemyTeam(TFTeam team)
+{
+	switch (team)
+	{
+		case TFTeam_Red: return TFTeam_Blue;
+		case TFTeam_Blue: return TFTeam_Red;
+		default: return team;
+	}
+}
+
 stock int TF2_GetAlivePlayerCountForTeam(TFTeam team)
 {
 	int count = 0;

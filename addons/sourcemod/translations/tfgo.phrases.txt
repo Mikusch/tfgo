@@ -265,6 +265,10 @@
 	{
 		"en"	"{positive}+$%d{default}: Team award for eliminating the enemy team."
 	}
+	"Team_Cash_Award_Win_Time"
+	{
+		"en"	"{positive}+$%d{default}: Team award for winning by running down the clock."
+	}
 	"Team_Cash_Award_Win_Defuse_Bomb"
 	{
 		"en"	"{positive}+$%d{default}: Team award for winning by defusing the bomb."
@@ -277,7 +281,11 @@
 	{
 		"en"	"{positive}+$%d{default}: Team award for planting the bomb."
 	}
-	"Team_Cash_Award_no_income"
+	"Team_Cash_Award_no_income_stalemate"
+	{
+		"en"	"{negative}0{default}: No income for triggering a stalemate."
+	}
+	"Team_Cash_Award_no_income_out_of_time"
 	{
 		"en"	"{negative}0{default}: No income for running out of time and surviving."
 	}

@@ -225,7 +225,22 @@ public MRESReturn DHook_SetWinningTeam(Handle params)
 	
 	// Allow planting team to die
 	if (g_IsBombPlanted && team != g_BombPlantingTeam && winReason == WinReason_Elimination)
+	{
 		return MRES_Supercede;
+	}
+	else if (winReason == WinReason_Stalemate)
+	{
+		for (int i = view_as<int>(TFTeam_Red); i <= view_as<int>(TFTeam_Blue); i++)
+		{
+			// Only a non-attacking team can get the time win, and only if this stalemate is a result of the timer running out
+			if (!g_IsTeamAttacking[i] && GetAlivePlayerCount() > 0)
+			{
+				DHookSetParam(params, 1, i);
+				DHookSetParam(params, 2, WinReason_Time);
+				return MRES_ChangedOverride;
+			}
+		}
+	}
 	
 	return MRES_Ignored;
 }
