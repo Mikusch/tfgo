@@ -71,7 +71,8 @@ enum
 	WinReason_PointCaptured = 1, 
 	WinReason_Elimination, 
 	WinReason_AllPointsCaptured = 4, 
-	WinReason_Stalemate
+	WinReason_Stalemate,
+	WinReason_Time // Custom win reason to differentiate arena timer stalemates from actual stalemates
 };
 
 // TF2 weapon loadout slots
@@ -193,6 +194,7 @@ ConVar tfgo_cash_player_killed_enemy_default;
 ConVar tfgo_cash_player_killed_enemy_factor;
 ConVar tfgo_cash_team_elimination;
 ConVar tfgo_cash_team_loser_bonus;
+ConVar tfgo_cash_team_win_by_time_running_out_bomb;
 ConVar tfgo_cash_team_loser_bonus_consecutive_rounds;
 ConVar tfgo_cash_team_terrorist_win_bomb;
 ConVar tfgo_cash_team_win_by_defusing_bomb;
@@ -286,6 +288,7 @@ public void OnPluginStart()
 	tfgo_cash_player_killed_enemy_factor = CreateConVar("tfgo_cash_player_killed_enemy_factor", "1", "The factor each kill award is multiplied with");
 	tfgo_cash_team_elimination = CreateConVar("tfgo_cash_team_elimination", "3250", "Team cash award for winning by eliminating the enemy team");
 	tfgo_cash_team_loser_bonus = CreateConVar("tfgo_cash_team_loser_bonus", "1400", "Team cash bonus for losing");
+	tfgo_cash_team_win_by_time_running_out_bomb = CreateConVar("tfgo_cash_team_win_by_time_running_out_bomb", "3250", "Team cash bonus for running down the clock");
 	tfgo_cash_team_loser_bonus_consecutive_rounds = CreateConVar("tfgo_cash_team_loser_bonus_consecutive_rounds", "500", "Team cash bonus for losing consecutive rounds");
 	tfgo_cash_team_terrorist_win_bomb = CreateConVar("tfgo_cash_team_terrorist_win_bomb", "3500", "Team cash award for winning by detonating the bomb");
 	tfgo_cash_team_win_by_defusing_bomb = CreateConVar("tfgo_cash_team_win_by_defusing_bomb", "3500", "Team cash award for winning by defusing the bomb");
@@ -354,6 +357,30 @@ public void OnMapStart()
 	{
 		g_MapHasRespawnRoom = false;
 		CalculateDynamicBuyZones();
+	}
+	
+	// Clear attackers from previous map
+	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
+	{
+		TFGOTeam(view_as<TFTeam>(team)).IsAttacking = false;
+	}
+	
+	// Determine attacking team(s)
+	int cp = MaxClients + 1;
+	while ((cp = FindEntityByClassname(cp, "team_control_point")) > -1)
+	{
+		TFTeam defaultOwner = view_as<TFTeam>(GetEntProp(cp, Prop_Data, "m_iDefaultOwner"));
+		if (defaultOwner == TFTeam_Unassigned)	// Neutral CP, both teams are attacking
+		{
+			for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
+			{
+				TFGOTeam(view_as<TFTeam>(team)).IsAttacking = true;
+			}
+		}
+		else	// CP owned by either RED or BLU, enemy team is attacking
+		{
+			TFGOTeam(TF2_GetEnemyTeam(defaultOwner)).IsAttacking = true;
+		}
 	}
 }
 
@@ -689,8 +716,8 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 	{
 		TFGOTeam red = TFGOTeam(TFTeam_Red);
 		TFGOTeam blue = TFGOTeam(TFTeam_Blue);
-		red.PrintToChat("%T", "Team_Cash_Award_no_income", LANG_SERVER);
-		blue.PrintToChat("%T", "Team_Cash_Award_no_income", LANG_SERVER);
+		red.PrintToChat("%T", "Team_Cash_Award_no_income_stalemate", LANG_SERVER);
+		blue.PrintToChat("%T", "Team_Cash_Award_no_income_stalemate", LANG_SERVER);
 		red.ConsecutiveLosses++;
 		blue.ConsecutiveLosses++;
 	}
@@ -700,32 +727,40 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 		TFGOTeam winningTeam = TFGOTeam(view_as<TFTeam>(event.GetInt("winning_team")));
 		TFGOTeam losingTeam = winningTeam.Team == TFTeam_Red ? TFGOTeam(TFTeam_Blue) : TFGOTeam(TFTeam_Red);
 		
-		if (winreason == WinReason_PointCaptured || winreason == WinReason_AllPointsCaptured)
+		if (winreason == WinReason_Time) // Attackers ran out of time
 		{
-			if (g_BombPlantingTeam == winningTeam.Team)
-			{
-				winningTeam.AddToClientAccounts(tfgo_cash_team_terrorist_win_bomb.IntValue, "%T", "Team_Cash_Award_T_Win_Bomb", LANG_SERVER, tfgo_cash_team_terrorist_win_bomb.IntValue);
-			}
-			else
-			{
-				winningTeam.AddToClientAccounts(tfgo_cash_team_win_by_defusing_bomb.IntValue, "%T", "Team_Cash_Award_Win_Defuse_Bomb", LANG_SERVER, tfgo_cash_team_win_by_defusing_bomb.IntValue);
-				losingTeam.AddToClientAccounts(tfgo_cash_team_planted_bomb_but_defused.IntValue, "%T", "Team_Cash_Award_Planted_Bomb_But_Defused", LANG_SERVER, tfgo_cash_team_planted_bomb_but_defused.IntValue);
-			}
+			winningTeam.AddToClientAccounts(tfgo_cash_team_win_by_time_running_out_bomb.IntValue, "%T", "Team_Cash_Award_Win_Time", LANG_SERVER, tfgo_cash_team_win_by_time_running_out_bomb.IntValue);
+			losingTeam.PrintToChat("%T", "Team_Cash_Award_no_income_out_of_time", LANG_SERVER);
 		}
-		else if (winreason == WinReason_Elimination)
+		else
 		{
-			winningTeam.AddToClientAccounts(tfgo_cash_team_elimination.IntValue, "%T", "Team_Cash_Award_Elim_Bomb", LANG_SERVER, tfgo_cash_team_elimination.IntValue);
-		}
-		
-		for (int client = 1; client <= MaxClients; client++)
-		{
-			if (IsClientInGame(client) && TF2_GetClientTeam(client) == losingTeam.Team)
+			if (winreason == WinReason_PointCaptured || winreason == WinReason_AllPointsCaptured) // Bomb detonated or defused
 			{
-				// Do not give losing bonus to players that deliberately suicided
-				if (g_HasPlayerSuicided[client])
-					CPrintToChat(client, "%T", "Team_Cash_Award_no_income_suicide", LANG_SERVER);
+				if (g_BombPlantingTeam == winningTeam.Team)
+				{
+					winningTeam.AddToClientAccounts(tfgo_cash_team_terrorist_win_bomb.IntValue, "%T", "Team_Cash_Award_T_Win_Bomb", LANG_SERVER, tfgo_cash_team_terrorist_win_bomb.IntValue);
+				}
 				else
-					TFGOPlayer(client).AddToAccount(losingTeam.LoseIncome, "%T", "Team_Cash_Award_Loser_Bonus", LANG_SERVER, losingTeam.LoseIncome);
+				{
+					winningTeam.AddToClientAccounts(tfgo_cash_team_win_by_defusing_bomb.IntValue, "%T", "Team_Cash_Award_Win_Defuse_Bomb", LANG_SERVER, tfgo_cash_team_win_by_defusing_bomb.IntValue);
+					losingTeam.AddToClientAccounts(tfgo_cash_team_planted_bomb_but_defused.IntValue, "%T", "Team_Cash_Award_Planted_Bomb_But_Defused", LANG_SERVER, tfgo_cash_team_planted_bomb_but_defused.IntValue);
+				}
+			}
+			else if (winreason == WinReason_Elimination) // All enemies eliminated
+			{
+				winningTeam.AddToClientAccounts(tfgo_cash_team_elimination.IntValue, "%T", "Team_Cash_Award_Elim_Bomb", LANG_SERVER, tfgo_cash_team_elimination.IntValue);
+			}
+			
+			for (int client = 1; client <= MaxClients; client++)
+			{
+				if (IsClientInGame(client) && TF2_GetClientTeam(client) == losingTeam.Team)
+				{
+					// Do not give losing bonus to players that deliberately suicided
+					if (g_HasPlayerSuicided[client])
+						CPrintToChat(client, "%T", "Team_Cash_Award_no_income_suicide", LANG_SERVER);
+					else
+						TFGOPlayer(client).AddToAccount(losingTeam.LoseIncome, "%T", "Team_Cash_Award_Loser_Bonus", LANG_SERVER, losingTeam.LoseIncome);
+				}
 			}
 		}
 		
@@ -733,7 +768,7 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 		losingTeam.ConsecutiveLosses++;
 		winningTeam.ConsecutiveLosses--;
 	}
-
+	
 	static int roundsPlayed;
 	roundsPlayed++;
 	if (tfgo_halftime.BoolValue && roundsPlayed == tfgo_maxrounds.IntValue / 2)
