@@ -359,9 +359,28 @@ public void OnMapStart()
 		CalculateDynamicBuyZones();
 	}
 	
-	for (int i = view_as<int>(TFTeam_Red); i <= view_as<int>(TFTeam_Blue); i++)
+	// Clear attackers from previous map
+	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
 	{
-		TFGOTeam(view_as<TFTeam>(i)).IsAttacking = false;
+		TFGOTeam(view_as<TFTeam>(team)).IsAttacking = false;
+	}
+	
+	// Determine attacking team(s)
+	int cp = MaxClients + 1;
+	while ((cp = FindEntityByClassname(cp, "team_control_point")) > -1)
+	{
+		TFTeam defaultOwner = view_as<TFTeam>(GetEntProp(cp, Prop_Data, "m_iDefaultOwner"));
+		if (defaultOwner == TFTeam_Unassigned)	// Neutral CP, both teams are attacking
+		{
+			for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
+			{
+				TFGOTeam(view_as<TFTeam>(team)).IsAttacking = true;
+			}
+		}
+		else	// CP owned by either RED or BLU, enemy team is attacking
+		{
+			TFGOTeam(TF2_GetEnemyTeam(defaultOwner)).IsAttacking = true;
+		}
 	}
 }
 
@@ -423,10 +442,6 @@ public void OnEntityCreated(int entity, const char[] classname)
 	else if (StrEqual(classname, "trigger_capture_area"))
 	{
 		SDKHook(entity, SDKHook_Spawn, SDKHook_TriggerCaptureArea_Spawn);
-	}
-	else if (StrEqual(classname, "team_control_point"))
-	{
-		SDKHook(entity, SDKHook_Spawn, SDKHook_TeamControlPoint_Spawn);
 	}
 	else if (StrEqual(classname, "team_control_point_master"))
 	{
@@ -525,24 +540,6 @@ Action SDKHook_TriggerCaptureArea_Spawn(int entity)
 	DispatchKeyValueFloat(entity, "area_time_to_cap", GetEntPropFloat(entity, Prop_Data, "m_flCapTime") / 2);
 }
 
-Action SDKHook_TeamControlPoint_Spawn(int entity)
-{
-	// Point default owner is the defending team, there may be multiple defending teams
-	TFTeam defaultOwner = view_as<TFTeam>(GetEntProp(entity, Prop_Data, "m_iDefaultOwner"));
-	
-	if (defaultOwner == TFTeam_Unassigned)
-	{
-		// Neutral CP, both teams are attacking
-		TFGOTeam(TFTeam_Red).IsAttacking = true;
-		TFGOTeam(TFTeam_Blue).IsAttacking = true;
-	}
-	else
-	{
-		// RED or BLU owns this CP, mark the enemy as attacker
-		TFGOTeam(TF2_GetEnemyTeam(defaultOwner)).IsAttacking = true;
-	}
-}
-	
 Action SDKHook_TeamControlPointMaster_Spawn(int entity)
 {
 	DispatchKeyValue(entity, "cpm_restrict_team_cap_win", "1");
