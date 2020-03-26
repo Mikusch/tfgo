@@ -509,8 +509,9 @@ Action SDKHook_TFLogicArena_Spawn(int entity)
 
 Action SDKHook_TriggerCaptureArea_Spawn(int entity)
 {
-	// Arena maps typically have very long capture times, allow maps a bit of control and cut them in half
 	DispatchKeyValueFloat(entity, "area_time_to_cap", GetEntPropFloat(entity, Prop_Data, "m_flCapTime") / 2);
+	DispatchKeyValue(entity, "team_cancap_2", "1");
+	DispatchKeyValue(entity, "team_cancap_3", "1");
 }
 
 Action SDKHook_TeamControlPointMaster_Spawn(int entity)
