@@ -233,7 +233,7 @@ public MRESReturn DHook_SetWinningTeam(Handle params)
 		for (int i = view_as<int>(TFTeam_Red); i <= view_as<int>(TFTeam_Blue); i++)
 		{
 			// Only a non-attacking team can get the time win, and only if this stalemate is a result of the timer running out
-			if (!g_IsTeamAttacking[i] && GetAlivePlayerCount() > 0)
+			if (!TFGOTeam(view_as<TFTeam>(i)).IsAttacking && GetAlivePlayerCount() > 0)
 			{
 				DHookSetParam(params, 1, i);
 				DHookSetParam(params, 2, WinReason_Time);

@@ -176,7 +176,6 @@ bool g_IsBombPlanted;
 
 TFTeam g_BombPlantingTeam;
 bool g_HasPlayerSuicided[TF_MAXPLAYERS + 1];
-bool g_IsTeamAttacking[view_as<int>(TFTeam_Blue) + 1];
 
 // ConVars
 ConVar tfgo_use_hitlocation_dmg;
@@ -360,9 +359,9 @@ public void OnMapStart()
 		CalculateDynamicBuyZones();
 	}
 	
-	for (int i = 0; i < sizeof(g_IsTeamAttacking); i++)
+	for (int i = view_as<int>(TFTeam_Red); i <= view_as<int>(TFTeam_Blue); i++)
 	{
-		g_IsTeamAttacking[i] = false;
+		TFGOTeam(view_as<TFTeam>(i)).IsAttacking = false;
 	}
 }
 
@@ -529,18 +528,18 @@ Action SDKHook_TriggerCaptureArea_Spawn(int entity)
 Action SDKHook_TeamControlPoint_Spawn(int entity)
 {
 	// Point default owner is the defending team, there may be multiple defending teams
-	int defaultOwner = GetEntProp(entity, Prop_Data, "m_iDefaultOwner");
+	TFTeam defaultOwner = view_as<TFTeam>(GetEntProp(entity, Prop_Data, "m_iDefaultOwner"));
 	
-	if (view_as<TFTeam>(defaultOwner) == TFTeam_Unassigned)
+	if (defaultOwner == TFTeam_Unassigned)
 	{
 		// Neutral CP, both teams are attacking
-		g_IsTeamAttacking[view_as<int>(TFTeam_Red)] = true;
-		g_IsTeamAttacking[view_as<int>(TFTeam_Blue)] = true;
+		TFGOTeam(TFTeam_Red).IsAttacking = true;
+		TFGOTeam(TFTeam_Blue).IsAttacking = true;
 	}
 	else
 	{
 		// RED or BLU owns this CP, mark the enemy as attacker
-		g_IsTeamAttacking[TF2_GetEnemyTeam(view_as<TFTeam>(defaultOwner))] = true;
+		TFGOTeam(TF2_GetEnemyTeam(defaultOwner)).IsAttacking = true;
 	}
 }
 	

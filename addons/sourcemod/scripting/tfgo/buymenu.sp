@@ -292,10 +292,9 @@ int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1, int p
 			}
 			else if (StrEqual(info, INFO_DEFUSEKIT))
 			{
-				if (!g_IsTeamAttacking[GetClientTeam(param1)])
+				if (!TFGOTeam(TF2_GetClientTeam(param1)).IsAttacking)
 					return ITEMDRAW_IGNORE;
-				
-				if (player.HasDefuseKit || player.Account < DEFUSEKIT_PRICE)
+				else if (player.HasDefuseKit || player.Account < DEFUSEKIT_PRICE)
 					return ITEMDRAW_DISABLED;
 			}
 			

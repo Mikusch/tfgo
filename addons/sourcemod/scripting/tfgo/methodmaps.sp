@@ -6,6 +6,7 @@ static bool PlayerDefuseKits[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) +
 static Menu ActiveBuyMenus[TF_MAXPLAYERS + 1];
 
 static int TeamConsecutiveLosses[view_as<int>(TFTeam_Blue) + 1] =  { STARTING_CONSECUTIVE_LOSSES, ... };
+static bool IsTeamAttacking[view_as<int>(TFTeam_Blue) + 1];
 
 methodmap TFGOPlayer
 {
@@ -381,6 +382,18 @@ methodmap TFGOTeam
 		public get()
 		{
 			return tfgo_cash_team_loser_bonus.IntValue + tfgo_cash_team_loser_bonus_consecutive_rounds.IntValue * this.ConsecutiveLosses;
+		}
+	}
+	
+	property bool IsAttacking
+	{
+		public get()
+		{
+			return IsTeamAttacking[this];
+		}
+		public set(bool val)
+		{
+			IsTeamAttacking[this] = val;
 		}
 	}
 	
