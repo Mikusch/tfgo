@@ -359,27 +359,32 @@ public void OnMapStart()
 		CalculateDynamicBuyZones();
 	}
 	
-	// Clear attackers from previous map
+	// Clear attackers and defenders from previous map
 	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
 	{
-		TFGOTeam(view_as<TFTeam>(team)).IsAttacking = false;
+		TFGOTeam tfgoTeam = TFGOTeam(view_as<TFTeam>(team));
+		tfgoTeam.IsAttacking = false;
+		tfgoTeam.IsDefending = false;
 	}
 	
-	// Determine attacking team(s)
+	// Determine attacking and defending team(s)
 	int cp = MaxClients + 1;
 	while ((cp = FindEntityByClassname(cp, "team_control_point")) > -1)
 	{
 		TFTeam defaultOwner = view_as<TFTeam>(GetEntProp(cp, Prop_Data, "m_iDefaultOwner"));
-		if (defaultOwner == TFTeam_Unassigned)	// Neutral CP, both teams are attacking
+		if (defaultOwner == TFTeam_Unassigned)	// Neutral CP, both teams are attacking AND defending this point
 		{
 			for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
 			{
-				TFGOTeam(view_as<TFTeam>(team)).IsAttacking = true;
+				TFGOTeam tfgoTeam = TFGOTeam(view_as<TFTeam>(team));
+				tfgoTeam.IsAttacking = true;
+				tfgoTeam.IsDefending = true;
 			}
 		}
-		else	// CP owned by either RED or BLU, enemy team is attacking
+		else	// CP owned by RED or BLU, enemy is attacking
 		{
 			TFGOTeam(TF2_GetEnemyTeam(defaultOwner)).IsAttacking = true;
+			TFGOTeam(defaultOwner).IsDefending = true;
 		}
 	}
 }

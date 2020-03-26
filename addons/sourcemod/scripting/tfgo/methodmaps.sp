@@ -7,6 +7,7 @@ static Menu ActiveBuyMenus[TF_MAXPLAYERS + 1];
 
 static int TeamConsecutiveLosses[view_as<int>(TFTeam_Blue) + 1] =  { STARTING_CONSECUTIVE_LOSSES, ... };
 static bool IsTeamAttacking[view_as<int>(TFTeam_Blue) + 1];
+static bool IsTeamDefending[view_as<int>(TFTeam_Blue) + 1];
 
 methodmap TFGOPlayer
 {
@@ -394,6 +395,18 @@ methodmap TFGOTeam
 		public set(bool val)
 		{
 			IsTeamAttacking[this] = val;
+		}
+	}
+	
+	property bool IsDefending
+	{
+		public get()
+		{
+			return IsTeamDefending[this];
+		}
+		public set(bool val)
+		{
+			IsTeamDefending[this] = val;
 		}
 	}
 	
