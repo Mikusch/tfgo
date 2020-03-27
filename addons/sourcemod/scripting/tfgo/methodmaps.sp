@@ -326,14 +326,19 @@ methodmap TFGOPlayer
 	
 	public BuyResult AttemptToBuyDefuseKit()
 	{
-		if (this.HasDefuseKit)
+		if (!IsTeamDefending[GetClientTeam(this.Client)])
 		{
-			PrintCenterText(this.Client, "#Already_Have_One", LANG_SERVER);
+			PrintCenterText(this.Client, "%T", "Cannot_Buy_This", LANG_SERVER);
+			return BUY_NOT_ALLOWED;
+		}
+		else if (this.HasDefuseKit)
+		{
+			PrintCenterText(this.Client, "%T", "Already_Have_One", LANG_SERVER);
 			return BUY_ALREADY_HAVE;
 		}
 		else if (this.Account < DEFUSEKIT_PRICE)
 		{
-			PrintCenterText(this.Client, "#Not_Enough_Money", LANG_SERVER);
+			PrintCenterText(this.Client, "%T", "Not_Enough_Money", LANG_SERVER);
 			return BUY_CANT_AFFORD;
 		}
 		else
