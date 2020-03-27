@@ -221,7 +221,7 @@ public MRESReturn DHook_GetCaptureValueForPlayer(Handle returnVal, Handle params
 public MRESReturn DHook_SetWinningTeam(Handle params)
 {
 	TFTeam team = DHookGetParam(params, 1);
-	int winReason = DHookGetParam(params, 2);
+	WinReason winReason = DHookGetParam(params, 2);
 	
 	// Allow planting team to die
 	if (g_IsBombPlanted && team != g_BombPlantingTeam && winReason == WinReason_Elimination)

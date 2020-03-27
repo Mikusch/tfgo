@@ -115,19 +115,24 @@ stock int TF2_GetMaxHealth(int client)
 	return GetEntProp(GetPlayerResourceEntity(), Prop_Send, "m_iMaxHealth", _, client);
 }
 
-stock void TF2_ForceRoundWin(TFTeam team, int winReason, bool forceMapReset = true, bool switchTeams = false)
+stock void TF2_ForceRoundWin(TFTeam team, WinReason winReason, bool forceMapReset = true, bool switchTeams = false)
 {
 	int entity = CreateEntityByName("game_round_win");
-	char winReasonString[8];
-	IntToString(winReason, winReasonString, sizeof(winReasonString));
-	DispatchKeyValue(entity, "win_reason", winReasonString);
-	DispatchKeyValue(entity, "force_map_reset", forceMapReset ? "1" : "0");
-	DispatchKeyValue(entity, "switch_teams", switchTeams ? "1" : "0");
-	DispatchSpawn(entity);
-	SetVariantInt(view_as<int>(team));
-	AcceptEntityInput(entity, "SetTeam");
-	AcceptEntityInput(entity, "RoundWin");
-	RemoveEntity(entity);
+	if (IsValidEntity(entity))
+	{
+		char winReasonString[4];
+		IntToString(view_as<int>(winReason), winReasonString, sizeof(winReasonString));
+		DispatchKeyValue(entity, "win_reason", winReasonString);
+		DispatchKeyValue(entity, "force_map_reset", forceMapReset ? "1" : "0");
+		DispatchKeyValue(entity, "switch_teams", switchTeams ? "1" : "0");
+		if (DispatchSpawn(entity))
+		{
+			SetVariantInt(view_as<int>(team));
+			AcceptEntityInput(entity, "SetTeam");
+			AcceptEntityInput(entity, "RoundWin");
+		}
+		RemoveEntity(entity);
+	}
 }
 
 stock void TF2_Explode(int attacker = -1, float origin[3], float damage, float radius, const char[] particle = NULL_STRING, const char[] sound = NULL_STRING)

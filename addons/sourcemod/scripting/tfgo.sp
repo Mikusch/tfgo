@@ -66,7 +66,7 @@ enum BuyResult
 };
 
 // TF2 arena win reasons
-enum
+enum WinReason
 {
 	WinReason_PointCaptured = 1, 
 	WinReason_Elimination, 
@@ -715,7 +715,7 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 	g_IsBonusRoundActive = true;
 	g_TenSecondRoundTimer = null;
 	
-	int winreason = event.GetInt("winreason");
+	WinReason winreason = view_as<WinReason>(event.GetInt("winreason"));
 	
 	if (winreason == WinReason_Stalemate)
 	{
@@ -889,7 +889,8 @@ Action Timer_OnBombExplode(Handle timer)
 	
 	g_IsBombPlanted = false;
 	
-	TF2_ForceRoundWin(g_BombPlantingTeam, WinReason_PointCaptured);
+	if (g_IsMainRoundActive)
+		TF2_ForceRoundWin(g_BombPlantingTeam, WinReason_PointCaptured);
 	
 	float origin[3];
 	GetEntPropVector(g_BombRef, Prop_Send, "m_vecOrigin", origin);
