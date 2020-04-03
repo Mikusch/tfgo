@@ -476,18 +476,22 @@ Action SDKHook_Client_PreThink(int client)
 }
 
 Action SDKHook_Client_TraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
-{
-	if (!mp_friendlyfire.BoolValue && TF2_GetClientTeam(victim) == TF2_GetClientTeam(attacker) && victim != attacker) return Plugin_Continue;
-	
+{	
 	Action action = Plugin_Continue;
+	
+	int activeWeapon = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
 	
 	if (tfgo_use_hitlocation_dmg.BoolValue)
 	{
-		// Allow every weapon with DMG_BULLET to deal crits on headshot
-		if (damagetype & DMG_BULLET && !(damagetype & DMG_BUCKSHOT))
+		// Headshots
+		TFGOWeapon config;
+		if (IsValidEntity(activeWeapon) && g_AvailableWeapons.GetByDefIndex(GetEntProp(activeWeapon, Prop_Send, "m_iItemDefinitionIndex"), config) > 0)
 		{
-			damagetype |= DMG_USE_HITLOCATIONS;
-			action = Plugin_Changed;
+			if (config.canHeadshot)
+			{
+				damagetype |= DMG_USE_HITLOCATIONS;
+				action = Plugin_Changed;
+			}
 		}
 		
 		// Other hitgroup damage modifiers
@@ -507,16 +511,13 @@ Action SDKHook_Client_TraceAttack(int victim, int &attacker, int &inflictor, flo
 	}
 	
 	// Armor damage reduction
-	TFGOPlayer player = TFGOPlayer(victim);
-	if (!(damagetype & (DMG_FALL | DMG_DROWN)) && player.IsArmored(hitgroup))
+	if (mp_friendlyfire.BoolValue || TF2_GetClientTeam(victim) != TF2_GetClientTeam(attacker) || victim == attacker)
 	{
-		int weapon = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
-		if (IsValidEntity(weapon))
+		TFGOPlayer player = TFGOPlayer(victim);
+		if (!(damagetype & (DMG_FALL | DMG_DROWN)) && player.IsArmored(hitgroup))
 		{
-			int defindex = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
-			
 			TFGOWeapon config;
-			if (g_AvailableWeapons.GetByDefIndex(defindex, config) > 0)
+			if (IsValidEntity(activeWeapon) && g_AvailableWeapons.GetByDefIndex(GetEntProp(activeWeapon, Prop_Send, "m_iItemDefinitionIndex"), config) > 0)
 			{
 				if (config.armorPenetration < 1.0) // Armor penetration >= 100% bypasses armor
 				{
@@ -525,10 +526,10 @@ Action SDKHook_Client_TraceAttack(int victim, int &attacker, int &inflictor, flo
 					action = Plugin_Changed;
 				}
 			}
+			
+			if (player.ArmorValue <= 0)
+				player.HasHelmet = false;
 		}
-		
-		if (player.ArmorValue <= 0)
-			player.HasHelmet = false;
 	}
 	
 	return action;
