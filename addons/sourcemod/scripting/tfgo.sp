@@ -178,7 +178,6 @@ TFTeam g_BombPlantingTeam;
 bool g_HasPlayerSuicided[TF_MAXPLAYERS + 1];
 
 // ConVars
-ConVar tfgo_use_hitlocation_dmg;
 ConVar tfgo_free_armor;
 ConVar tfgo_max_armor;
 ConVar tfgo_buytime;
@@ -272,7 +271,6 @@ public void OnPluginStart()
 	mp_friendlyfire = FindConVar("mp_friendlyfire");
 	
 	// Create TFGO ConVars
-	tfgo_use_hitlocation_dmg = CreateConVar("tfgo_use_hitlocation_dmg", "1", "Determines whether weapons deal hit location damage");
 	tfgo_free_armor = CreateConVar("tfgo_free_armor", "0", "Determines whether kevlar (1+) and/or helmet (2+) are given automatically", _, true, 0.0, true, 2.0);
 	tfgo_max_armor = CreateConVar("tfgo_max_armor", "2", "Determines the highest level of armor allowed to be purchased. (0) None, (1) Kevlar, (2) Helmet", _, true, 0.0, true, 2.0);
 	tfgo_buytime = CreateConVar("tfgo_buytime", "20", "How many seconds after spawning players can buy items for", _, true, tf_arena_preround_time.FloatValue);
@@ -476,59 +474,56 @@ Action SDKHook_Client_PreThink(int client)
 }
 
 Action SDKHook_Client_TraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
-{
-	if (!mp_friendlyfire.BoolValue && TF2_GetClientTeam(victim) == TF2_GetClientTeam(attacker) && victim != attacker) return Plugin_Continue;
-	
+{	
 	Action action = Plugin_Continue;
 	
-	if (tfgo_use_hitlocation_dmg.BoolValue)
+	int activeWeapon = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
+	
+	// Headshots
+	if (IsValidEntity(activeWeapon))
 	{
-		// Allow every weapon with DMG_BULLET to deal crits on headshot
-		if (damagetype & DMG_BULLET && !(damagetype & DMG_BUCKSHOT))
+		int defindex = GetEntProp(activeWeapon, Prop_Send, "m_iItemDefinitionIndex");
+		TFGOWeapon config;
+		if (g_AvailableWeapons.GetByDefIndex(defindex, config) > 0 && config.canHeadshot)
 		{
 			damagetype |= DMG_USE_HITLOCATIONS;
 			action = Plugin_Changed;
 		}
-		
-		// Other hitgroup damage modifiers
-		switch (hitgroup)
+	}
+	
+	// Other hitgroup damage modifiers
+	switch (hitgroup)
+	{
+		case HITGROUP_STOMACH:
 		{
-			case HITGROUP_STOMACH:
-			{
-				damage *= 1.25;
-				action = Plugin_Changed;
-			}
-			case HITGROUP_LEFTLEG, HITGROUP_RIGHTLEG:
-			{
-				damage *= 0.75;
-				action = Plugin_Changed;
-			}
+			damage *= 1.25;
+			action = Plugin_Changed;
+		}
+		case HITGROUP_LEFTLEG, HITGROUP_RIGHTLEG:
+		{
+			damage *= 0.75;
+			action = Plugin_Changed;
 		}
 	}
 	
 	// Armor damage reduction
-	TFGOPlayer player = TFGOPlayer(victim);
-	if (!(damagetype & (DMG_FALL | DMG_DROWN)) && player.IsArmored(hitgroup))
+	if (mp_friendlyfire.BoolValue || TF2_GetClientTeam(victim) != TF2_GetClientTeam(attacker) || victim == attacker)
 	{
-		int weapon = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
-		if (IsValidEntity(weapon))
+		TFGOPlayer player = TFGOPlayer(victim);
+		if (!(damagetype & (DMG_FALL | DMG_DROWN)) && player.IsArmored(hitgroup) && IsValidEntity(activeWeapon))
 		{
-			int defindex = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
-			
+			int defindex = GetEntProp(activeWeapon, Prop_Send, "m_iItemDefinitionIndex");
 			TFGOWeapon config;
-			if (g_AvailableWeapons.GetByDefIndex(defindex, config) > 0)
+			if (g_AvailableWeapons.GetByDefIndex(defindex, config) > 0 && config.armorPenetration < 1.0) // Armor penetration >= 100% bypasses armor
 			{
-				if (config.armorPenetration < 1.0) // Armor penetration >= 100% bypasses armor
-				{
-					player.ArmorValue -= RoundFloat(damage);
-					damage *= config.armorPenetration;
-					action = Plugin_Changed;
-				}
+				player.ArmorValue -= RoundFloat(damage);
+				damage *= config.armorPenetration;
+				action = Plugin_Changed;
+				
+				if (player.ArmorValue <= 0)
+					player.HasHelmet = false;
 			}
 		}
-		
-		if (player.ArmorValue <= 0)
-			player.HasHelmet = false;
 	}
 	
 	return action;
