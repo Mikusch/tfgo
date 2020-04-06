@@ -164,8 +164,8 @@ bool g_MapHasRespawnRoom;
 // Bomb & Bomb Site
 int g_BombRef;
 int g_BombSiteRef;
-float g_BombPlantedTime;
-float g_BombNextBeepTime;
+float g_BombBlow;
+float g_BombNextBeep;
 bool g_IsBombTicking;
 
 // Game state
@@ -420,16 +420,15 @@ public void OnGameFrame()
 {
 	if (!g_IsBombTicking || g_BombRef == INVALID_ENT_REFERENCE) return;
 	
-	if (GetGameTime() > g_BombNextBeepTime)
+	if (GetGameTime() > g_BombNextBeep)
 	{
-		float timerLength = tfgo_bombtimer.FloatValue;
-		float complete = ((g_BombPlantedTime + timerLength - GetGameTime()) / timerLength);
+		float complete = ((g_BombBlow - GetGameTime()) / tfgo_bombtimer.FloatValue);
 		complete = FloatClamp(complete, 0.0, 1.0);
 		
 		float attenuation = FloatMin(0.3 + 0.6 * complete, 1.0);
 		EmitSoundToAll(SOUND_BOMB_BEEPING, g_BombRef, SNDCHAN_AUTO, ATTN_TO_SNDLEVEL(attenuation));
 		float freq = FloatMax(0.1 + 0.9 * complete, 0.15);
-		g_BombNextBeepTime = GetGameTime() + freq;
+		g_BombNextBeep = GetGameTime() + freq;
 	}
 }
 
@@ -932,9 +931,11 @@ Action CommandListener_Destroy(int client, const char[] command, int args)
 void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 {
 	g_BombPlantingTeam = team;
-	g_BombPlantedTime = GetGameTime();
-	g_BombNextBeepTime = g_BombPlantedTime + 1.0;
+	g_BombBlow = GetGameTime() + tfgo_bombtimer.FloatValue;
 	g_IsBombTicking = true;
+	
+	// Don't beep right away, leave time for the planting sound
+	g_BombNextBeep = GetGameTime() + 1.0;
 	
 	// Award capture bonus to cappers
 	for (int i = 0; i < cappers.Length; i++)
@@ -1014,7 +1015,7 @@ void DefuseBomb(TFTeam team, ArrayList cappers)
 	
 	TF2_ForceRoundWin(team, WinReason_PointCaptured);
 	
-	Forward_OnBombDefused(team, cappers, tfgo_bombtimer.FloatValue - (GetGameTime() - g_BombPlantedTime));
+	Forward_OnBombDefused(team, cappers, g_BombBlow - GetGameTime());
 	delete cappers;
 }
 
