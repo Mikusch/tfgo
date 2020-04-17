@@ -768,6 +768,12 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 		winningTeam.ConsecutiveLosses--;
 	}
 	
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientInGame(client))
+			TF2_RemoveCondition(client, TFCond_CritOnWin);
+	}
+	
 	static int roundsPlayed;
 	roundsPlayed++;
 	if (tfgo_halftime.BoolValue && roundsPlayed == tfgo_maxrounds.IntValue / 2)
