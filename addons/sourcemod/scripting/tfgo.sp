@@ -770,7 +770,7 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 	
 	for (int client = 1; client <= MaxClients; client++)
 	{
-		if (IsClientInGame(client))
+		if (IsClientInGame(client) && TF2_IsPlayerInCondition(client, TFCond_CritOnWin))
 			TF2_RemoveCondition(client, TFCond_CritOnWin);
 	}
 	
