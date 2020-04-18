@@ -224,7 +224,7 @@ public MRESReturn DHook_SetWinningTeam(Handle params)
 	WinReason winReason = DHookGetParam(params, 2);
 	
 	// Allow planting team to die
-	if (g_IsBombPlanted && team != g_BombPlantingTeam && winReason == WinReason_Elimination)
+	if (g_IsBombPlanted && team != g_BombPlantingTeam && winReason == WinReason_Opponents_Dead)
 	{
 		return MRES_Supercede;
 	}
@@ -236,7 +236,7 @@ public MRESReturn DHook_SetWinningTeam(Handle params)
 			if (!TFGOTeam(view_as<TFTeam>(i)).IsAttacking && GetAlivePlayerCount() > 0)
 			{
 				DHookSetParam(params, 1, i);
-				DHookSetParam(params, 2, WinReason_Time);
+				DHookSetParam(params, 2, WinReason_Custom_Out_Of_Time);
 				return MRES_ChangedOverride;
 			}
 		}

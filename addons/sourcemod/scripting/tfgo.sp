@@ -65,14 +65,16 @@ enum BuyResult
 	BUY_INVALID_ITEM, 
 };
 
-// TF2 arena win reasons
+// TF2 win reasons
 enum WinReason
 {
-	WinReason_PointCaptured = 1, 
-	WinReason_Elimination, 
-	WinReason_AllPointsCaptured = 4, 
+	WinReason_None,
+	WinReason_All_Points_Captured,
+	WinReason_Opponents_Dead, 
+	WinReason_Flag_Capture_Limit,
+	WinReason_Defend_Until_Time_Limit, 
 	WinReason_Stalemate,
-	WinReason_Time // Custom win reason to differentiate arena timer stalemates from actual stalemates
+	WinReason_Custom_Out_Of_Time
 };
 
 // TF2 weapon loadout slots
@@ -726,14 +728,14 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 		TFGOTeam winningTeam = TFGOTeam(view_as<TFTeam>(event.GetInt("winning_team")));
 		TFGOTeam losingTeam = winningTeam.Team == TFTeam_Red ? TFGOTeam(TFTeam_Blue) : TFGOTeam(TFTeam_Red);
 		
-		if (winreason == WinReason_Time) // Attackers ran out of time
+		if (winreason == WinReason_Custom_Out_Of_Time) // Attackers ran out of time
 		{
 			winningTeam.AddToClientAccounts(tfgo_cash_team_win_by_time_running_out_bomb.IntValue, "%T", "Team_Cash_Award_Win_Time", LANG_SERVER, tfgo_cash_team_win_by_time_running_out_bomb.IntValue);
 			losingTeam.PrintToChat("%T", "Team_Cash_Award_no_income_out_of_time", LANG_SERVER);
 		}
 		else
 		{
-			if (winreason == WinReason_PointCaptured || winreason == WinReason_AllPointsCaptured) // Bomb detonated or defused
+			if (winreason == WinReason_All_Points_Captured || winreason == WinReason_Defend_Until_Time_Limit) // Bomb detonated or defused
 			{
 				if (g_BombPlantingTeam == winningTeam.Team)
 				{
@@ -745,7 +747,7 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 					losingTeam.AddToClientAccounts(tfgo_cash_team_planted_bomb_but_defused.IntValue, "%T", "Team_Cash_Award_Planted_Bomb_But_Defused", LANG_SERVER, tfgo_cash_team_planted_bomb_but_defused.IntValue);
 				}
 			}
-			else if (winreason == WinReason_Elimination) // All enemies eliminated
+			else if (winreason == WinReason_Opponents_Dead) // All enemies eliminated
 			{
 				winningTeam.AddToClientAccounts(tfgo_cash_team_elimination.IntValue, "%T", "Team_Cash_Award_Elim_Bomb", LANG_SERVER, tfgo_cash_team_elimination.IntValue);
 			}
@@ -890,7 +892,7 @@ Action Timer_OnBombExplode(Handle timer)
 	g_IsBombPlanted = false;
 	
 	if (g_IsMainRoundActive)
-		TF2_ForceRoundWin(g_BombPlantingTeam, WinReason_PointCaptured);
+		TF2_ForceRoundWin(g_BombPlantingTeam, WinReason_All_Points_Captured);
 	
 	float origin[3];
 	GetEntPropVector(g_BombRef, Prop_Send, "m_vecOrigin", origin);
@@ -1014,7 +1016,7 @@ void DefuseBomb(TFTeam team, ArrayList cappers)
 		TFGOPlayer(capper).AddToAccount(tfgo_cash_player_bomb_defused.IntValue, "%T", "Player_Cash_Award_Bomb_Defused", LANG_SERVER, tfgo_cash_player_bomb_defused.IntValue);
 	}
 	
-	TF2_ForceRoundWin(team, WinReason_PointCaptured);
+	TF2_ForceRoundWin(team, WinReason_All_Points_Captured);
 	
 	Forward_OnBombDefused(team, cappers, g_BombBlow - GetGameTime());
 	delete cappers;
