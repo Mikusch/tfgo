@@ -68,12 +68,12 @@ enum BuyResult
 // TF2 win reasons
 enum WinReason
 {
-	WinReason_None,
-	WinReason_All_Points_Captured,
+	WinReason_None, 
+	WinReason_All_Points_Captured, 
 	WinReason_Opponents_Dead, 
-	WinReason_Flag_Capture_Limit,
+	WinReason_Flag_Capture_Limit, 
 	WinReason_Defend_Until_Time_Limit, 
-	WinReason_Stalemate,
+	WinReason_Stalemate, 
 	WinReason_Custom_Out_Of_Time
 };
 
@@ -726,7 +726,7 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 	{
 		// Determine winning/losing team
 		TFGOTeam winningTeam = TFGOTeam(view_as<TFTeam>(event.GetInt("winning_team")));
-		TFGOTeam losingTeam = winningTeam.Team == TFTeam_Red ? TFGOTeam(TFTeam_Blue) : TFGOTeam(TFTeam_Red);
+		TFGOTeam losingTeam = TFGOTeam(TF2_GetEnemyTeam(winningTeam.Team));
 		
 		if (winreason == WinReason_Custom_Out_Of_Time) // Attackers ran out of time
 		{
