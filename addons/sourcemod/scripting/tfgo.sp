@@ -418,15 +418,15 @@ public void OnClientDisconnect(int client)
 
 public void OnGameFrame()
 {
-	if (!g_IsBombTicking || g_BombRef == INVALID_ENT_REFERENCE) return;
+	if (!g_IsBombTicking) return;
 	
 	if (GetGameTime() > g_BombNextBeep)
 	{
-		float complete = ((g_BombBlow - GetGameTime()) / tfgo_bombtimer.FloatValue);
-		complete = FloatClamp(complete, 0.0, 1.0);
+		float complete = FloatClamp(((g_BombBlow - GetGameTime()) / tfgo_bombtimer.FloatValue), 0.0, 1.0);
 		
 		float attenuation = FloatMin(0.3 + 0.6 * complete, 1.0);
 		EmitSoundToAll(SOUND_BOMB_BEEPING, g_BombRef, SNDCHAN_AUTO, ATTN_TO_SNDLEVEL(attenuation));
+		
 		float freq = FloatMax(0.1 + 0.9 * complete, 0.15);
 		g_BombNextBeep = GetGameTime() + freq;
 	}
@@ -968,19 +968,23 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 		}
 	}
 	
-	// Spawn bomb prop on first capper
-	int capper = cappers.Get(0);
-	float origin[3];
-	GetEntPropVector(capper, Prop_Send, "m_vecOrigin", origin);
-	float angles[3];
-	GetEntPropVector(capper, Prop_Send, "m_angRotation", angles);
-	
 	// Create a new bomb
 	int prop = CreateEntityByName("prop_dynamic_override");
-	SetEntityModel(prop, MODEL_BOMB);
-	DispatchSpawn(prop);
-	TeleportEntity(prop, origin, angles, NULL_VECTOR);
-	g_BombRef = EntIndexToEntRef(prop);
+	if (IsValidEntity(prop))
+	{
+		g_BombRef = EntIndexToEntRef(prop);
+		SetEntityModel(prop, MODEL_BOMB);
+		
+		if (DispatchSpawn(prop))
+		{
+			int capper = cappers.Get(0);
+			float origin[3], angles[3];
+			GetEntPropVector(capper, Prop_Send, "m_vecOrigin", origin);
+			GetEntPropVector(capper, Prop_Send, "m_angRotation", angles);
+			
+			TeleportEntity(prop, origin, angles, NULL_VECTOR);
+		}
+	}
 	
 	g_TenSecondBombTimer = CreateTimer(tfgo_bombtimer.FloatValue - 10.0, Timer_OnBombTenSecCount, _, TIMER_FLAG_NO_MAPCHANGE);
 	g_BombDetonationTimer = CreateTimer(tfgo_bombtimer.FloatValue, Timer_OnBombTimerExpire, _, TIMER_FLAG_NO_MAPCHANGE);
