@@ -175,7 +175,7 @@ bool g_IsBuyTimeActive;
 bool g_IsMainRoundActive;
 bool g_IsBonusRoundActive;
 bool g_IsBombPlanted;
-bool g_SkipGiveNamedItemDetour;
+bool g_SkipGiveNamedItemHook;
 
 TFTeam g_BombPlantingTeam;
 bool g_HasPlayerSuicided[TF_MAXPLAYERS + 1];
@@ -398,9 +398,9 @@ public void TF2_OnConditionAdded(int client, TFCond condition)
 
 public Action TF2_OnGiveNamedItem(int client, char[] classname, int defindex)
 {
-	if (g_SkipGiveNamedItemDetour)
+	if (g_SkipGiveNamedItemHook)
 	{
-		g_SkipGiveNamedItemDetour = false;
+		g_SkipGiveNamedItemHook = false;
 		return Plugin_Continue;
 	}
 	

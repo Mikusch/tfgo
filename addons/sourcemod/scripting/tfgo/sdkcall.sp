@@ -196,9 +196,9 @@ stock int SDKCall_GetMaxAmmo(int client, int slot)
 	return SDKCall(SDKCallGetMaxAmmo, client, slot, -1);
 }
 
-stock Address SDKCall_GiveNamedItem(int client, const char[] classname, int subType, Address item, bool force = false, bool skipDetour = true)
+stock Address SDKCall_GiveNamedItem(int client, const char[] classname, int subType, Address item, bool force = false, bool skipHook = true)
 {
-	g_SkipGiveNamedItemDetour = skipDetour;
+	g_SkipGiveNamedItemHook = skipHook;
 	return SDKCall(SDKCallGiveNamedItem, client, classname, subType, item, force);
 }
 
