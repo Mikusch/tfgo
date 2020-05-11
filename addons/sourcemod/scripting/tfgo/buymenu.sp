@@ -3,7 +3,7 @@
 #define INFO_ASSAULTSUIT "ASSAULTSUIT"
 #define INFO_DEFUSEKIT "DEFUSEKIT"
 
-bool DisplayMainBuyMenu(int client)
+bool BuyMenu_DisplayMainBuyMenu(int client)
 {
 	Menu menu = new Menu(MenuHandler_MainBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DisplayItem);
 	menu.SetTitle("%T\n%T", "BuyMenu_Title", LANG_SERVER, "BuyMenu_SelectSlot", LANG_SERVER);
@@ -40,67 +40,7 @@ bool DisplayMainBuyMenu(int client)
 	return menu.Display(client, MENU_TIME_FOREVER);
 }
 
-int MenuHandler_MainBuyMenu(Menu menu, MenuAction action, int param1, int param2)
-{
-	switch (action)
-	{
-		case MenuAction_Display:
-		{
-			TFGOPlayer(param1).ActiveBuyMenu = menu;
-		}
-		
-		case MenuAction_Select:
-		{
-			char info[32];
-			menu.GetItem(param2, info, sizeof(info));
-			
-			if (StrEqual(info, INFO_EQUIPMENT))
-			{
-				DisplayEquipmentBuyMenu(param1);
-			}
-			else
-			{
-				// Convert slot CSV to ArrayList
-				char slots[TFWeaponSlot_Building + 1][32];
-				if (ExplodeString(info, ";", slots, sizeof(slots), sizeof(slots[])) > 0)
-				{
-					ArrayList slotList = new ArrayList();
-					for (int i = 0; i < sizeof(slots); i++)
-					{
-						TrimString(slots[i]);
-						if (strlen(slots[i]) > 0)
-							slotList.Push(StringToInt(slots[i]));
-					}
-					
-					DisplayWeaponBuyMenu(param1, slotList);
-				}
-			}
-		}
-		
-		case MenuAction_Cancel:
-		{
-			TFGOPlayer(param1).ActiveBuyMenu = null;
-		}
-		
-		case MenuAction_End:
-		{
-			delete menu;
-		}
-		
-		case MenuAction_DisplayItem:
-		{
-			char info[32];
-			char display[PLATFORM_MAX_PATH];
-			menu.GetItem(param2, info, sizeof(info), _, display, sizeof(display));
-			Format(display, sizeof(display), "%T", display, LANG_SERVER);
-			return RedrawMenuItem(display);
-		}
-	}
-	
-	return 0;
-}
-
-bool DisplayWeaponBuyMenu(int client, ArrayList slots)
+bool BuyMenu_DisplayWeaponBuyMenu(int client, ArrayList slots)
 {
 	Menu menu = new Menu(MenuHandler_WeaponBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DrawItem | MenuAction_DisplayItem);
 	menu.SetTitle("%T\n%T", "BuyMenu_Title", LANG_SERVER, "BuyMenu_SelectWeapon", LANG_SERVER);
@@ -131,6 +71,80 @@ bool DisplayWeaponBuyMenu(int client, ArrayList slots)
 	return menu.Display(client, MENU_TIME_FOREVER);
 }
 
+bool BuyMenu_DisplayEquipmentBuyMenu(int client)
+{
+	Menu menu = new Menu(MenuHandler_EquipmentBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DrawItem | MenuAction_DisplayItem);
+	menu.SetTitle("%T\n%T", "BuyMenu_Title", LANG_SERVER, "BuyMenu_SelectEquipment", LANG_SERVER);
+	menu.ExitButton = true;
+	menu.ExitBackButton = true;
+	
+	menu.AddItem(INFO_KEVLAR, "Kevlar");
+	menu.AddItem(INFO_ASSAULTSUIT, "AssaultSuit");
+	menu.AddItem(INFO_DEFUSEKIT, "DefuseKit");
+	
+	return menu.Display(client, MENU_TIME_FOREVER);
+}
+
+int MenuHandler_MainBuyMenu(Menu menu, MenuAction action, int param1, int param2)
+{
+	switch (action)
+	{
+		case MenuAction_Display:
+		{
+			TFGOPlayer(param1).ActiveBuyMenu = menu;
+		}
+		
+		case MenuAction_Select:
+		{
+			char info[32];
+			menu.GetItem(param2, info, sizeof(info));
+			
+			if (StrEqual(info, INFO_EQUIPMENT))
+			{
+				BuyMenu_DisplayEquipmentBuyMenu(param1);
+			}
+			else
+			{
+				// Convert slot CSV to ArrayList
+				char slots[TFWeaponSlot_Building + 1][32];
+				if (ExplodeString(info, ";", slots, sizeof(slots), sizeof(slots[])) > 0)
+				{
+					ArrayList slotList = new ArrayList();
+					for (int i = 0; i < sizeof(slots); i++)
+					{
+						TrimString(slots[i]);
+						if (strlen(slots[i]) > 0)
+							slotList.Push(StringToInt(slots[i]));
+					}
+					
+					BuyMenu_DisplayWeaponBuyMenu(param1, slotList);
+				}
+			}
+		}
+		
+		case MenuAction_Cancel:
+		{
+			TFGOPlayer(param1).ActiveBuyMenu = null;
+		}
+		
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+		
+		case MenuAction_DisplayItem:
+		{
+			char info[32];
+			char display[PLATFORM_MAX_PATH];
+			menu.GetItem(param2, info, sizeof(info), _, display, sizeof(display));
+			Format(display, sizeof(display), "%T", display, LANG_SERVER);
+			return RedrawMenuItem(display);
+		}
+	}
+	
+	return 0;
+}
+
 int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, int param2)
 {
 	switch (action)
@@ -149,7 +163,7 @@ int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, int para
 			if (TFGOPlayer(param1).AttemptToBuyWeapon(defindex) == BUY_BOUGHT)
 			{
 				EmitGameSoundToAll(GAMESOUND_PLAYER_PURCHASE, param1);
-				DisplayMainBuyMenu(param1);
+				BuyMenu_DisplayMainBuyMenu(param1);
 				Forward_OnClientPurchaseWeapon(param1, defindex);
 			}
 		}
@@ -158,7 +172,7 @@ int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, int para
 		{
 			TFGOPlayer(param1).ActiveBuyMenu = null;
 			if (param2 == MenuCancel_ExitBack)
-				DisplayMainBuyMenu(param1);
+				BuyMenu_DisplayMainBuyMenu(param1);
 		}
 		
 		case MenuAction_End:
@@ -214,20 +228,6 @@ int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, int para
 	return 0;
 }
 
-int DisplayEquipmentBuyMenu(int client)
-{
-	Menu menu = new Menu(MenuHandler_EquipmentBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DrawItem | MenuAction_DisplayItem);
-	menu.SetTitle("%T\n%T", "BuyMenu_Title", LANG_SERVER, "BuyMenu_SelectEquipment", LANG_SERVER);
-	menu.ExitButton = true;
-	menu.ExitBackButton = true;
-	
-	menu.AddItem(INFO_KEVLAR, "Kevlar");
-	menu.AddItem(INFO_ASSAULTSUIT, "AssaultSuit");
-	menu.AddItem(INFO_DEFUSEKIT, "DefuseKit");
-	
-	menu.Display(client, MENU_TIME_FOREVER);
-}
-
 int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1, int param2)
 {
 	switch (action)
@@ -255,7 +255,7 @@ int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1, int p
 			if (result == BUY_BOUGHT)
 			{
 				EmitGameSoundToAll(GAMESOUND_PLAYER_PURCHASE, param1);
-				DisplayMainBuyMenu(param1);
+				BuyMenu_DisplayMainBuyMenu(param1);
 			}
 		}
 		
@@ -263,7 +263,7 @@ int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1, int p
 		{
 			TFGOPlayer(param1).ActiveBuyMenu = null;
 			if (param2 == MenuCancel_ExitBack)
-				DisplayMainBuyMenu(param1);
+				BuyMenu_DisplayMainBuyMenu(param1);
 		}
 		
 		case MenuAction_End:

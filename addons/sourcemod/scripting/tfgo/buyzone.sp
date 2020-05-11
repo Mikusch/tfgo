@@ -79,7 +79,7 @@ void DisplayMenuInDynamicBuyZone(int client)
 		{
 			IsPlayerInDynamicBuyZone[client] = true;
 			if (player.ActiveBuyMenu == null)
-				DisplayMainBuyMenu(client);
+				BuyMenu_DisplayMainBuyMenu(client);
 		}
 		else if (IsPlayerInDynamicBuyZone[client] && distance > DynamicBuyzoneRadii[team]) // Player has left buy zone
 		{
@@ -98,24 +98,5 @@ void ResetPlayerBuyZoneStates()
 	for (int i = 0; i < sizeof(IsPlayerInDynamicBuyZone); i++)
 	{
 		IsPlayerInDynamicBuyZone[i] = false;
-	}
-}
-
-Action SDKHook_FuncRespawnRoom_StartTouch(int entity, int client)
-{
-	if (g_IsBuyTimeActive && IsValidClient(client) && GetClientTeam(client) == GetEntProp(entity, Prop_Data, "m_iTeamNum"))
-		DisplayMainBuyMenu(client);
-}
-
-Action SDKHook_FuncRespawnRoom_EndTouch(int entity, int client)
-{
-	if (g_IsBuyTimeActive && IsValidClient(client) && GetClientTeam(client) == GetEntProp(entity, Prop_Data, "m_iTeamNum"))
-	{
-		TFGOPlayer player = TFGOPlayer(client);
-		if (player.ActiveBuyMenu != null)
-		{
-			player.ActiveBuyMenu.Cancel();
-			PrintHintText(client, "%T", "BuyMenu_NotInBuyZone", LANG_SERVER);
-		}
 	}
 }

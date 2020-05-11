@@ -152,7 +152,7 @@ Action Event_PostInventoryApplication(Event event, const char[] name, bool dontB
 			player.ActiveBuyMenu.Cancel();
 		
 		// Open buy menu on respawn
-		DisplayMainBuyMenu(client);
+		BuyMenu_DisplayMainBuyMenu(client);
 	}
 }
 

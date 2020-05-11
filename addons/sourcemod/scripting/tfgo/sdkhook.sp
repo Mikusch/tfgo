@@ -98,6 +98,25 @@ Action SDKHook_Client_TraceAttack(int victim, int &attacker, int &inflictor, flo
 	return action;
 }
 
+Action SDKHook_FuncRespawnRoom_StartTouch(int entity, int client)
+{
+	if (g_IsBuyTimeActive && IsValidClient(client) && GetClientTeam(client) == GetEntProp(entity, Prop_Data, "m_iTeamNum"))
+		BuyMenu_DisplayMainBuyMenu(client);
+}
+
+Action SDKHook_FuncRespawnRoom_EndTouch(int entity, int client)
+{
+	if (g_IsBuyTimeActive && IsValidClient(client) && GetClientTeam(client) == GetEntProp(entity, Prop_Data, "m_iTeamNum"))
+	{
+		TFGOPlayer player = TFGOPlayer(client);
+		if (player.ActiveBuyMenu != null)
+		{
+			player.ActiveBuyMenu.Cancel();
+			PrintHintText(client, "%T", "BuyMenu_NotInBuyZone", LANG_SERVER);
+		}
+	}
+}
+
 Action SDKHook_TFLogicArena_Spawn(int entity)
 {
 	DispatchKeyValueFloat(entity, "CapEnableDelay", 0.0);
