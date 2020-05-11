@@ -389,6 +389,12 @@ public void OnGameFrame()
 	}
 }
 
+public void TF2_OnConditionAdded(int client, TFCond condition)
+{
+	if (condition == TFCond_CritOnWin)
+		TF2_RemoveCondition(client, condition);
+}
+
 public void OnEntityCreated(int entity, const char[] classname)
 {
 	if (StrEqual(classname, "func_respawnroom"))
