@@ -159,8 +159,6 @@ enum struct MusicKit
 	}
 }
 
-MusicKit g_CurrentMusicKit;
-
 void AddMusicFileToDownloadsTable(char file[PLATFORM_MAX_PATH])
 {
 	char filename[PLATFORM_MAX_PATH];
@@ -170,7 +168,7 @@ void AddMusicFileToDownloadsTable(char file[PLATFORM_MAX_PATH])
 	AddFileToDownloadsTable(filename);
 }
 
-void PrecacheMusicKits()
+void MusicKit_Precache()
 {
 	// Precache all music kit sounds
 	StringMapSnapshot snapshot = g_AvailableMusicKits.Snapshot();

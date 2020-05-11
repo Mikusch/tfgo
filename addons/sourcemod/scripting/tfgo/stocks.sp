@@ -191,7 +191,7 @@ stock void TF2_CreateAndEquipWeapon(int client, int defindex, TFQuality quality 
 		TF2_RemoveWeaponSlot(client, slot);
 	
 	// Remove wearable if have one
-	int wearable = SDK_GetEquippedWearableForLoadoutSlot(client, slot);
+	int wearable = SDKCall_GetEquippedWearableForLoadoutSlot(client, slot);
 	if (wearable > MaxClients)
 	{
 		TF2_RemoveWearable(client, wearable);
@@ -219,7 +219,7 @@ stock void TF2_CreateAndEquipWeapon(int client, int defindex, TFQuality quality 
 			SetEntProp(weapon, Prop_Send, "m_bValidatedAttachedEntity", true);
 			
 			if (StrContains(itemClass, "tf_wearable") == 0)
-				SDK_EquipWearable(client, weapon);
+				SDKCall_EquipWearable(client, weapon);
 			else
 				EquipPlayerWeapon(client, weapon);
 			
@@ -236,7 +236,7 @@ stock void TF2_CreateAndEquipWeapon(int client, int defindex, TFQuality quality 
 					if (defindex == WEAPON_GAS_PASSER)
 						SetEntPropFloat(client, Prop_Send, "m_flItemChargeMeter", 0.0, 1);
 					else
-						maxAmmo = SDK_GetMaxAmmo(client, ammoType);
+						maxAmmo = SDKCall_GetMaxAmmo(client, ammoType);
 					
 					SetEntProp(client, Prop_Send, "m_iAmmo", maxAmmo, _, ammoType);
 				}

@@ -28,7 +28,7 @@ static char SoldierBombSeeGameSounds[][] =  {
 	"soldier_mvm_bomb_see03"
 };
 
-void PrecacheSounds()
+void Sound_Precache()
 {
 	PrecacheSound(SOUND_BOMB_BEEPING);
 	PrecacheSound("mvm/mvm_bomb_explode.wav");
