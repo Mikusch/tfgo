@@ -4,6 +4,11 @@
 	{
 		"Offsets"
 		{
+			"CBaseEntity::GetBaseEntity"
+			{
+				"linux" 	"6"
+				"windows" 	"5"
+			}
 			"CTFGameRules::GetCaptureValueForPlayer"
 			{
 				"linux"		"154"
@@ -41,8 +46,8 @@
 			}
 			"CTFPlayer::GiveNamedItem"
 			{
-				"windows"	"475"
 				"linux"		"482"
+				"windows"	"475"
 			}
 		}
 		"Signatures"
@@ -58,6 +63,12 @@
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer10GetMaxAmmoEii"
 				"windows"	"\x55\x8B\xEC\x8B\x45\x0C\x56\x57\x8B\xF9\x83\xF8\xFF\x75\x2A\xFF\xB7\x2A\x2A\x2A\x2A\xEB\x01\x50\xE8"
+			}
+			"CTFPlayer::GetLoadoutItem"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer14GetLoadoutItemEiib"
+				"windows"	"\x55\x8B\xEC\x51\x53\x56\x8B\xF1\x8B\x0D\x2A\x2A\x2A\x2A\x57\x89\x75\xFC"
 			}
 			"CTFPlayer::PickupWeaponFromOther"
 			{
@@ -158,11 +169,11 @@
 					{
 						"type"	"int"
 					}
-					"pItem"
+					"pScriptItem"
 					{
 						"type"	"objectptr"
 					}
-					"bUnknown"
+					"bForce"
 					{
 						"type"	"bool"
 					}

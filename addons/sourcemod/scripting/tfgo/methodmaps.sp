@@ -138,7 +138,7 @@ methodmap TFGOPlayer
 					SDK_CreateDroppedWeapon(weapon, this.Client, position, angles);
 				}
 				
-				TF2_CreateAndEquipWeapon(this.Client, defindex, TFQual_Unique, GetRandomInt(1, 100));
+				TF2_CreateAndEquipWeapon(this.Client, defindex);
 				PlayerLoadoutWeaponIndexes[this][class][slot] = defindex;
 				this.Account -= config.price;
 				return BUY_BOUGHT;
@@ -179,17 +179,17 @@ methodmap TFGOPlayer
 		
 		for (int slot = sizeof(PlayerLoadoutWeaponIndexes[][]) - 1; slot >= 0; slot--)
 		{
-			int defIndex = this.GetWeaponFromLoadout(class, slot);
-			if (defIndex > -1)
-				TF2_CreateAndEquipWeapon(this.Client, defIndex, TFQual_Unique, GetRandomInt(1, 100));
+			int defindex = this.GetWeaponFromLoadout(class, slot);
+			if (defindex > -1)
+				TF2_CreateAndEquipWeapon(this.Client, defindex);
 		}
 	}
 	
-	public void AddToLoadout(int defIndex)
+	public void AddToLoadout(int defindex)
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Client);
-		int slot = TF2_GetItemSlot(defIndex, class);
-		PlayerLoadoutWeaponIndexes[this][class][slot] = defIndex;
+		int slot = TF2_GetItemSlot(defindex, class);
+		PlayerLoadoutWeaponIndexes[this][class][slot] = defindex;
 	}
 	
 	public void RemoveAllItems(bool removeArmor)

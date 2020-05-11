@@ -152,14 +152,20 @@ public MRESReturn DHook_HandleScrambleTeams()
 
 public MRESReturn DHook_GiveNamedItem(int client, Handle returnVal, Handle params)
 {
+	// Block if one of the pointers is null
 	if (DHookIsNullParam(params, 1) || DHookIsNullParam(params, 3))
+	{
+		DHookSetReturn(returnVal, 0);
 		return MRES_Ignored;
+	}
 	
+	char classname[256];
+	DHookGetParamString(params, 1, classname, sizeof(classname));
 	int defindex = DHookGetParamObjectPtrVar(params, 3, 4, ObjectValueType_Int) & 0xFFFF;
-	int slot = TF2_GetItemSlot(defindex, TF2_GetPlayerClass(client));
-	TFClassType class = TF2_GetPlayerClass(client);
 	
-	if (0 <= slot <= WeaponSlot_BuilderEngie && TFGOPlayer(client).GetWeaponFromLoadout(class, slot) != defindex)
+	Action action = TF2_OnGiveNamedItem(client, classname, defindex);
+	
+	if (action == Plugin_Handled)
 	{
 		DHookSetReturn(returnVal, 0);
 		return MRES_Supercede;

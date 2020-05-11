@@ -175,6 +175,7 @@ bool g_IsBuyTimeActive;
 bool g_IsMainRoundActive;
 bool g_IsBonusRoundActive;
 bool g_IsBombPlanted;
+bool g_SkipGiveNamedItemDetour;
 
 TFTeam g_BombPlantingTeam;
 bool g_HasPlayerSuicided[TF_MAXPLAYERS + 1];
@@ -393,6 +394,23 @@ public void TF2_OnConditionAdded(int client, TFCond condition)
 {
 	if (condition == TFCond_CritOnWin)
 		TF2_RemoveCondition(client, condition);
+}
+
+public Action TF2_OnGiveNamedItem(int client, char[] classname, int defindex)
+{
+	if (g_SkipGiveNamedItemDetour)
+	{
+		g_SkipGiveNamedItemDetour = false;
+		return Plugin_Continue;
+	}
+	
+	int slot = TF2_GetItemSlot(defindex, TF2_GetPlayerClass(client));
+	TFClassType class = TF2_GetPlayerClass(client);
+	
+	if (0 <= slot <= WeaponSlot_BuilderEngie && TFGOPlayer(client).GetWeaponFromLoadout(class, slot) != defindex)
+		return Plugin_Handled;
+		
+	return Plugin_Continue;
 }
 
 public void OnEntityCreated(int entity, const char[] classname)
