@@ -167,14 +167,9 @@ methodmap TFGOPlayer
 						// Make Gas Passer spawn empty
 						int maxAmmo;
 						if (defindex == WEAPON_GAS_PASSER)
-						{
-							maxAmmo = 0;
 							SetEntPropFloat(this.Client, Prop_Send, "m_flItemChargeMeter", 0.0, 1);
-						}
 						else
-						{
 							maxAmmo = SDKCall_GetMaxAmmo(this.Client, ammoType);
-						}
 						
 						SetEntProp(this.Client, Prop_Send, "m_iAmmo", maxAmmo, _, ammoType);
 					}
@@ -182,7 +177,7 @@ methodmap TFGOPlayer
 				
 				// Add health to player if needed
 				ArrayList attribs = TF2Econ_GetItemStaticAttributes(defindex);
-				int index = attribs.FindValue(ATTRIB_MAX_HEALTH_ADDITIVE_BONUS, 0);
+				int index = attribs.FindValue(ATTRIB_MAX_HEALTH_ADDITIVE_BONUS);
 				if (index > -1)
 					SetEntityHealth(this.Client, GetClientHealth(this.Client) + RoundFloat(attribs.Get(index, 1)));
 				delete attribs;
