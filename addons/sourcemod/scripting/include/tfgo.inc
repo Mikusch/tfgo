@@ -17,13 +17,15 @@ enum struct TFGOWeapon
 	void ReadConfig(KeyValues kv)
 	{
 		char defindex[8];
-		kv.GetSectionName(defindex, sizeof(defindex));
-		this.defindex = StringToInt(defindex);
-		this.price = kv.GetNum("price");
-		this.killAward = kv.GetNum("kill_award");
-		this.armorPenetration = kv.GetFloat("armor_penetration", 1.0);
-		this.isDefault = view_as<bool>(kv.GetNum("is_default"));
-		this.canHeadshot = view_as<bool>(kv.GetNum("can_headshot"));
+		if (kv.GetSectionName(defindex, sizeof(defindex)))
+		{
+			this.defindex = StringToInt(defindex);
+			this.price = kv.GetNum("price");
+			this.killAward = kv.GetNum("kill_award");
+			this.armorPenetration = kv.GetFloat("armor_penetration", 1.0);
+			this.isDefault = view_as<bool>(kv.GetNum("is_default"));
+			this.canHeadshot = view_as<bool>(kv.GetNum("can_headshot"));
+		}
 	}
 }
 

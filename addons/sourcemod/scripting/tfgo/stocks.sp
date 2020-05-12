@@ -197,7 +197,7 @@ stock int TF2_CreateAndEquipWeapon(int client, int defindex, const char[] classn
 	Address pItem = SDKCall_GetLoadoutItem(client, class, iSlot);
 	
 	int weapon;
-	if (pItem && LoadFromAddress(pItem + view_as<Address>(4), NumberType_Int16) == defindex)
+	if (pItem && Config_GetOriginalItemDefIndex(LoadFromAddress(pItem + view_as<Address>(4), NumberType_Int16)) == defindex)
 	{
 		weapon = SDKCall_GetBaseEntity(SDKCall_GiveNamedItem(client, classnameCopy, 0, pItem));
 	}
