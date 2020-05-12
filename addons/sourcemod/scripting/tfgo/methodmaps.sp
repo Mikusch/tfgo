@@ -138,6 +138,7 @@ methodmap TFGOPlayer
 					SDK_CreateDroppedWeapon(weapon, this.Client, position, angles);
 				}
 				
+				TF2_RemoveItemInSlot(this.Client, slot);
 				TF2_CreateAndEquipWeapon(this.Client, defindex);
 				PlayerLoadoutWeaponIndexes[this][class][slot] = defindex;
 				this.Account -= config.price;
@@ -180,7 +181,7 @@ methodmap TFGOPlayer
 		for (int slot = sizeof(PlayerLoadoutWeaponIndexes[][]) - 1; slot >= 0; slot--)
 		{
 			int defindex = this.GetWeaponFromLoadout(class, slot);
-			if (defindex > -1)
+			if (defindex > -1 && GetPlayerWeaponSlot(this.Client, slot) == -1)
 				TF2_CreateAndEquipWeapon(this.Client, defindex);
 		}
 	}

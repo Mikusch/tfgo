@@ -273,6 +273,17 @@ stock int TF2_GetItemSlot(int defindex, TFClassType class)
 	return slot;
 }
 
+stock void TF2_RemoveItemInSlot(int client, int slot)
+{
+	int weapon = GetPlayerWeaponSlot(client, slot);
+	if (weapon > MaxClients)
+		TF2_RemoveWeaponSlot(client, slot);
+	
+	int wearable = SDKCall_GetEquippedWearableForLoadoutSlot(client, slot);
+	if (wearable > MaxClients)
+		TF2_RemoveWearable(client, wearable);
+}
+
 stock void TF2_ShowGameMessage(const char[] message, const char[] icon, float time = 5.0, int displayToTeam = 0, int teamColor = 0)
 {
 	int msg = CreateEntityByName("game_text_tf");

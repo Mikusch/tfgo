@@ -156,7 +156,7 @@ public MRESReturn DHook_GiveNamedItem(int client, Handle returnVal, Handle param
 	if (DHookIsNullParam(params, 1) || DHookIsNullParam(params, 3))
 	{
 		DHookSetReturn(returnVal, 0);
-		return MRES_Ignored;
+		return MRES_Supercede;
 	}
 	
 	char classname[256];
