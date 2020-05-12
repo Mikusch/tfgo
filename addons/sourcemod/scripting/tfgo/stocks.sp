@@ -1,6 +1,3 @@
-#define WEAPON_GAS_PASSER 1180
-#define ATTRIB_MAX_HEALTH_ADDITIVE_BONUS 26
-
 stock bool IsValidClient(int client)
 {
 	return 0 < client <= MaxClients && IsClientInGame(client);

@@ -115,9 +115,9 @@ methodmap TFGOPlayer
 		{
 			TFClassType class = TF2_GetPlayerClass(this.Client);
 			int slot = TF2_GetItemSlot(defindex, class);
-			int weapon = GetPlayerWeaponSlot(this.Client, slot);
+			int currentWeapon = GetPlayerWeaponSlot(this.Client, slot);
 			
-			if (weapon > -1 && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") == defindex)
+			if (currentWeapon > -1 && GetEntProp(currentWeapon, Prop_Send, "m_iItemDefinitionIndex") == defindex)
 			{
 				PrintCenterText(this.Client, "%T", "Already_Have_One", LANG_SERVER);
 				return BUY_ALREADY_HAVE;
@@ -129,17 +129,64 @@ methodmap TFGOPlayer
 			}
 			else
 			{
-				if (weapon > -1) // Drop old weapon, if present
+				// Drop current weapon if one exists
+				if (currentWeapon > -1)
 				{
 					float position[3];
 					GetClientEyePosition(this.Client, position);
 					float angles[3];
 					GetClientEyeAngles(this.Client, angles);
-					SDK_CreateDroppedWeapon(weapon, this.Client, position, angles);
+					SDK_CreateDroppedWeapon(currentWeapon, this.Client, position, angles);
 				}
 				
 				TF2_RemoveItemInSlot(this.Client, slot);
-				TF2_CreateAndEquipWeapon(this.Client, defindex);
+				int weapon = TF2_CreateAndEquipWeapon(this.Client, defindex);
+				
+				char classname[256];
+				TF2Econ_GetItemClassName(defindex, classname, sizeof(classname));
+				if (StrContains(classname, "tf_wearable") == 0 || StrContains(classname, "tf_weapon_parachute") == 0)
+				{
+					if (GetEntPropEnt(this.Client, Prop_Send, "m_hActiveWeapon") <= MaxClients)
+					{
+						// Looks like player's new active weapon is a wearable, fix that by switching to melee
+						int melee = GetPlayerWeaponSlot(this.Client, TFWeaponSlot_Melee);
+						SetEntPropEnt(this.Client, Prop_Send, "m_hActiveWeapon", melee);
+					}
+				}
+				else
+				{
+					FakeClientCommand(this.Client, "use %s", classname);
+				}
+				
+				// Set ammo to the weapon's maximum ammo
+				if (HasEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType")) // Wearables don't have the m_iAmmo netprop
+				{
+					int ammoType = GetEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType");
+					if (ammoType > -1)
+					{
+						// Make Gas Passer spawn empty
+						int maxAmmo;
+						if (defindex == WEAPON_GAS_PASSER)
+						{
+							maxAmmo = 0;
+							SetEntPropFloat(this.Client, Prop_Send, "m_flItemChargeMeter", 0.0, 1);
+						}
+						else
+						{
+							maxAmmo = SDKCall_GetMaxAmmo(this.Client, ammoType);
+						}
+						
+						SetEntProp(this.Client, Prop_Send, "m_iAmmo", maxAmmo, _, ammoType);
+					}
+				}
+				
+				// Add health to player if needed
+				ArrayList attribs = TF2Econ_GetItemStaticAttributes(defindex);
+				int index = attribs.FindValue(ATTRIB_MAX_HEALTH_ADDITIVE_BONUS, 0);
+				if (index > -1)
+					SetEntityHealth(this.Client, GetClientHealth(this.Client) + RoundFloat(attribs.Get(index, 1)));
+				delete attribs;
+				
 				PlayerLoadoutWeaponIndexes[this][class][slot] = defindex;
 				this.Account -= config.price;
 				return BUY_BOUGHT;

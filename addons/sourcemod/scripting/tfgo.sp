@@ -17,6 +17,9 @@
 
 #define TF_MAXPLAYERS 32
 
+#define WEAPON_GAS_PASSER 1180
+#define ATTRIB_MAX_HEALTH_ADDITIVE_BONUS 26
+
 #define MODEL_BOMB "models/props_td/atom_bomb.mdl"
 
 #define PARTICLE_BOMB_EXPLOSION "mvm_hatch_destroy"
