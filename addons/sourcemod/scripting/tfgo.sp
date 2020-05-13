@@ -254,6 +254,12 @@ public void OnPluginStart()
 	GameData gamedata = new GameData("tfgo");
 	DHook_Init(gamedata);
 	SDKCall_Init(gamedata);
+	MemoryPatch.SetGameData(gamedata);
+	g_PickupWeaponPatch = new MemoryPatch("Patch_PickupWeaponFromOther");
+	if (g_PickupWeaponPatch != null)
+		g_PickupWeaponPatch.Enable();
+	else
+		LogMessage("Failed to create patch: Patch_PickupWeaponFromOther");
 	delete gamedata;
 	
 	ConVar_Enable();
