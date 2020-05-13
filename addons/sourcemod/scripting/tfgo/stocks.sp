@@ -112,13 +112,13 @@ stock int TF2_GetMaxHealth(int client)
 	return GetEntProp(GetPlayerResourceEntity(), Prop_Send, "m_iMaxHealth", _, client);
 }
 
-stock void TF2_ForceRoundWin(TFTeam team, WinReason winReason, bool forceMapReset = true, bool switchTeams = false)
+stock void TF2_ForceRoundWin(TFTeam team, int winReason, bool forceMapReset = true, bool switchTeams = false)
 {
 	int entity = CreateEntityByName("game_round_win");
 	if (IsValidEntity(entity))
 	{
 		char winReasonString[4];
-		IntToString(view_as<int>(winReason), winReasonString, sizeof(winReasonString));
+		IntToString(winReason, winReasonString, sizeof(winReasonString));
 		DispatchKeyValue(entity, "win_reason", winReasonString);
 		DispatchKeyValue(entity, "force_map_reset", forceMapReset ? "1" : "0");
 		DispatchKeyValue(entity, "switch_teams", switchTeams ? "1" : "0");

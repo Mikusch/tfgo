@@ -1,9 +1,9 @@
-static int PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][WeaponSlot_BuilderEngie + 1];
-static int PlayerAccounts[TF_MAXPLAYERS + 1];
-static int PlayerArmorValues[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
-static bool PlayerHelmets[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
-static bool PlayerDefuseKits[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
-static Menu ActiveBuyMenus[TF_MAXPLAYERS + 1];
+static int PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS][view_as<int>(TFClass_Engineer) + 1][WeaponSlot_BuilderEngie + 1];
+static int PlayerAccounts[TF_MAXPLAYERS];
+static int PlayerArmorValues[TF_MAXPLAYERS][view_as<int>(TFClass_Engineer) + 1];
+static bool PlayerHelmets[TF_MAXPLAYERS][view_as<int>(TFClass_Engineer) + 1];
+static bool PlayerDefuseKits[TF_MAXPLAYERS][view_as<int>(TFClass_Engineer) + 1];
+static Menu ActiveBuyMenus[TF_MAXPLAYERS];
 
 static int TeamConsecutiveLosses[view_as<int>(TFTeam_Blue) + 1] =  { STARTING_CONSECUTIVE_LOSSES, ... };
 static bool IsTeamAttacking[view_as<int>(TFTeam_Blue) + 1];

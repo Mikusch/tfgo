@@ -170,9 +170,9 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 	g_IsBonusRoundActive = true;
 	g_TenSecondRoundTimer = null;
 	
-	WinReason winreason = view_as<WinReason>(event.GetInt("winreason"));
+	int winreason = event.GetInt("winreason");
 	
-	if (winreason == WinReason_Stalemate)
+	if (winreason == WINREASON_STALEMATE)
 	{
 		TFGOTeam red = TFGOTeam(TFTeam_Red);
 		TFGOTeam blue = TFGOTeam(TFTeam_Blue);
@@ -187,14 +187,14 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 		TFGOTeam winningTeam = TFGOTeam(view_as<TFTeam>(event.GetInt("winning_team")));
 		TFGOTeam losingTeam = TFGOTeam(TF2_GetEnemyTeam(winningTeam.Team));
 		
-		if (winreason == WinReason_Custom_Out_Of_Time) // Attackers ran out of time
+		if (winreason == WINREASON_CUSTOM_OUT_OF_TIME) // Attackers ran out of time
 		{
 			winningTeam.AddToClientAccounts(tfgo_cash_team_win_by_time_running_out_bomb.IntValue, "%T", "Team_Cash_Award_Win_Time", LANG_SERVER, tfgo_cash_team_win_by_time_running_out_bomb.IntValue);
 			losingTeam.PrintToChat("%T", "Team_Cash_Award_no_income_out_of_time", LANG_SERVER);
 		}
 		else
 		{
-			if (winreason == WinReason_All_Points_Captured || winreason == WinReason_Defend_Until_Time_Limit) // Bomb detonated or defused
+			if (winreason == WINREASON_ALL_POINTS_CAPTURED || winreason == WINREASON_DEFEND_UNTIL_TIME_LIMIT) // Bomb detonated or defused
 			{
 				if (g_BombPlantingTeam == winningTeam.Team)
 				{
@@ -206,7 +206,7 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 					losingTeam.AddToClientAccounts(tfgo_cash_team_planted_bomb_but_defused.IntValue, "%T", "Team_Cash_Award_Planted_Bomb_But_Defused", LANG_SERVER, tfgo_cash_team_planted_bomb_but_defused.IntValue);
 				}
 			}
-			else if (winreason == WinReason_Opponents_Dead) // All enemies eliminated
+			else if (winreason == WINREASON_OPPONENTS_DEAD) // All enemies eliminated
 			{
 				winningTeam.AddToClientAccounts(tfgo_cash_team_elimination.IntValue, "%T", "Team_Cash_Award_Elim_Bomb", LANG_SERVER, tfgo_cash_team_elimination.IntValue);
 			}
