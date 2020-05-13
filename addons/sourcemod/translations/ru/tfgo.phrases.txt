@@ -1,0 +1,307 @@
+"Phrases"
+{
+	// TF2 Econ Data fails to provide names for stock weapons
+	"#TF_Weapon_Pistol"
+	{
+		"ru"	"Пистолет"
+	}
+	"#TF_Weapon_Shotgun"
+	{
+		"ru"	"Дробовик"
+	}
+	"#TF_Weapon_Scattergun"
+	{
+		"ru"	"Обрез"
+	}
+	"#TF_Weapon_Bat"
+	{
+		"ru"	"Бита"
+	}
+	"#TF_Weapon_RocketLauncher"
+	{
+		"ru"	"Ракетомёт"
+	}
+	"#TF_Weapon_Shovel"
+	{
+		"ru"	"Лопата"
+	}
+	"#TF_Weapon_FlameThrower"
+	{
+		"ru"	"Огнемёт"
+	}
+	"#TF_Weapon_FireAxe"
+	{
+		"ru"	"Пожарный топор"
+	}
+	"#TF_Weapon_GrenadeLauncher"
+	{
+		"ru"	"Гранатомёт"
+	}
+	"#TF_Weapon_PipebombLauncher"
+	{
+		"ru"	"Липучкомёт"
+	}
+	"#TF_Weapon_Bottle"
+	{
+		"ru"	"Бутылка"
+	}
+	"#TF_Weapon_Minigun"
+	{
+		"ru"	"Пулемёт"
+	}
+	"#TF_Weapon_Fists"
+	{
+		"ru"	"Кулаки"
+	}
+	"#TF_Weapon_Wrench"
+	{
+		"ru"	"Гаечный ключ"
+	}
+	"#TF_Weapon_PDA_Engineer_Builder"
+	{
+		"ru"	"КПК постройки"
+	}
+	"#TF_Weapon_PDA_Engineer_Destroyer"
+	{
+		"ru"	"КПК разрушения"
+	}
+	"#TF_Weapon_PDA_Engineer"
+	{
+		"ru"	"Коробка с инструментами"
+	}
+	"#TF_Weapon_SyringeGun"
+	{
+		"ru"	"Шприцемёт"
+	}
+	"#TF_Weapon_Medigun"
+	{
+		"ru"	"Лечебная пушка"
+	}
+	"#TF_Weapon_Bonesaw"
+	{
+		"ru"	"Медицинская пила"
+	}
+	"#TF_Weapon_SniperRifle"
+	{
+		"ru"	"Снайперская винтовка"
+	}
+	"#TF_Weapon_SMG"
+	{
+		"ru"	"Пистолет-пулемёт"
+	}
+	"#TF_Weapon_Club"
+	{
+		"ru"	"Кукри"
+	}
+	"#TF_Weapon_Revolver"
+	{
+		"ru"	"Револьвер"
+	}
+	"#TF_Weapon_Knife"
+	{
+		"ru"	"Нож"
+	}
+	"#TF_Weapon_Spy_Sapper"
+	{
+		"ru"	"Жучок"
+	}
+	"#TF_Weapon_Disguise_Kit"
+	{
+		"ru"	"Маскировочный набор"
+	}
+	"#TF_Weapon_Watch"
+	{
+		"ru"	"Часы невидимости"
+	}
+	
+	// Buy Menu
+	"BuyMenu_Title"
+	{
+		"ru"	"МЕНЮ ПОКУПОК"
+	}
+	"BuyMenu_SelectSlot"
+	{
+		"ru"	"Выберите слот"
+	}
+	"BuyMenu_SelectWeapon"
+	{
+		"ru"	"Выберите оружие"
+	}
+	"BuyMenu_SelectEquipment"
+	{
+		"ru"	"Выберите снаряжение"
+	}
+	"BuyMenu_Primaries"
+	{
+		"ru"	"Основное оружие"
+	}
+	"BuyMenu_Secondaries"
+	{
+		"ru"	"Дополнительное оружие"
+	}
+	"BuyMenu_Melees"
+	{
+		"ru"	"Оружие ближнего боя"
+	}
+	"BuyMenu_PDAs"
+	{
+		"ru"	"КПК"
+	}
+	"BuyMenu_Buildings"
+	{
+		"ru"	"Постройки"
+	}
+	"BuyMenu_Equipment"
+	{
+		"ru"	"Снаряжение"
+	}
+	"BuyMenu_AlreadyCarrying"
+	{
+		"ru"	"Уже есть в инвентаре"
+	}
+	"BuyMenu_NotInBuyZone"
+	{
+		"ru"	"Вы покинули зону покупки"
+	}
+	"BuyMenu_OutOfTime"
+	{
+		"ru"	"Период покупки в %d сек. истек"
+	}
+	
+	// Item Names
+	"Kevlar"
+	{
+		"ru"	"Бронежилет"
+	}
+	"AssaultSuit"
+	{
+		"ru"	"Бронежилет + шлем"
+	}
+	"DefuseKit"
+	{
+		"ru"	"Набор сапёра"
+	}
+	
+	// Alerts
+	"Bomb_Planted"
+	{
+		"ru"	"Бомба заложена.\nДо взрыва %d сек."
+	}
+	
+	// Misc. Info Text
+	"Already_Have_Kevlar"
+	{
+		"ru"	"У вас уже есть бронежилет!"
+	}
+	"Already_Have_Kevlar_Helmet"
+	{
+		"ru"	"У вас уже есть бронежилет и шлем!"
+	}
+	"Already_Have_Kevlar_Bought_Helmet"
+	{
+		"ru"	"У вас уже есть бронежилет. Приобретен шлем."
+	}
+	"Already_Have_Helmet_Bought_Kevlar"
+	{
+		"ru"	"У вас уже есть шлем. Бронежилет восстановлен."
+	}
+	"Already_Have_One"
+	{
+		"ru"	"Это у вас уже есть!"
+	}
+	"Cannot_Buy_This"
+	{
+		"ru"	"Вы не можете купить данный предмет."
+	}
+	"Not_Enough_Money"
+	{
+		"ru"	"У вас недостаточно средств."
+	}
+	
+	// Player Cash Awards
+	"Player_Cash_Award_Killed_Enemy_Generic"
+	{
+		"ru"	"{positive}+$%d{default}: Награда за нейтрализацию врага."
+	}
+	"Player_Cash_Award_Killed_Enemy"
+	{
+		"ru"	"{positive}+$%d{default}: Награда за нейтрализацию врага (%s)."
+	}
+	"Player_Cash_Award_Assist_Enemy"
+	{
+		"ru"	"{positive}+$%d{default}: Награда за помощь в нейтрализации врага (%s)."
+	}
+	"Player_Cash_Award_Bomb_Planted"
+	{
+		"ru"	"{positive}+$%d{default}: Награда за установку бомбы."
+	}
+	"Player_Cash_Award_Bomb_Defused"
+	{
+		"ru"	"{positive}+$%d{default}: Награда за обезвреживание бомбы."
+	}
+	"Player_Cash_Award_ExplainSuicide_YouGotCash"
+	{
+		"ru"	"(вы получаете компенсацию за самоубийство %s: +$%d)"
+	}
+	"Player_Cash_Award_ExplainSuicide_TeammateGotCash"
+	{
+		"ru"	"Ваш союзник %s получает компенсацию за самоубийство %s: {positive}+$%d{default}"
+	}
+	"Player_Cash_Award_ExplainSuicide_EnemyGotCash"
+	{
+		"ru"	"Вражеский игрок получает компенсацию за самоубийство %s."
+	}
+	"Player_Cash_Award_ExplainSuicide_Spectators"
+	{
+		"ru"	"%s получает компенсацию за самоубийство %s: +$%d"
+	}
+	
+	// Team Cash Awards
+	"Team_Cash_Award_T_Win_Bomb"
+	{
+		"ru"	"{positive}+$%d{default}: Командная награда за подрыв бомбы."
+	}
+	"Team_Cash_Award_Elim_Bomb"
+	{
+		"ru"	"{positive}+$%d{default}: Командная награда за уничтожение вражеской команды."
+	}
+	"Team_Cash_Award_Win_Time"
+	{
+		"ru"	"{positive}+$%d{default}: Командная награда по истечении времени раунда."
+	}
+	"Team_Cash_Award_Win_Defuse_Bomb"
+	{
+		"ru"	"{positive}+$%d{default}: Командная награда за победу с обезвреживанием бомбы."
+	}
+	"Team_Cash_Award_Loser_Bonus"
+	{
+		"ru"	"{positive}+$%d{default}: Денег за проигрыш."
+	}
+	"Team_Cash_Award_Planted_Bomb_But_Defused"
+	{
+		"ru"	"{positive}+$%d{default}: Командная награда за установку бомбы."
+	}
+	"Team_Cash_Award_no_income_stalemate"
+	{
+		"ru"	"{negative}0{default}: За ничью не дают денег."
+	}
+	"Team_Cash_Award_no_income_out_of_time"
+	{
+		"ru"	"{negative}0{default}: Нет командной награды за выживание по истечении времени."
+	}
+	"Team_Cash_Award_no_income_suicide"
+	{
+		"ru"	"{negative}0{default}: За самоубийство не дают денег."
+	}
+	
+	// HUD Text
+	"HUD_Armor"
+	{
+		"ru"	"Броня: %d"
+	}
+	
+	"TF_TeamsScrambled"
+	{
+		"ru"	"Команды были перераспределены."
+	}
+}
