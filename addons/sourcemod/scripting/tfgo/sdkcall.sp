@@ -1,5 +1,8 @@
 static Handle SDKCallGetEquippedWearableForLoadoutSlot;
 static Handle SDKCallGetMaxAmmo;
+static Handle SDKCallGetLoadoutItem;
+static Handle SDKCallGetBaseEntity;
+static Handle SDKCallGiveNamedItem;
 static Handle SDKCallCreateDroppedWeapon;
 static Handle SDKCallInitDroppedWeapon;
 static Handle SDKCallSetSwitchTeams;
@@ -10,6 +13,9 @@ void SDKCall_Init(GameData gamedata)
 {
 	SDKCallGetEquippedWearableForLoadoutSlot = PrepSDKCall_GetEquippedWearableForLoadoutSlot(gamedata);
 	SDKCallGetMaxAmmo = PrepSDKCall_GetMaxAmmo(gamedata);
+	SDKCallGetLoadoutItem = PrepSDKCall_GetLoadoutItem(gamedata);
+	SDKCallGetBaseEntity = PrepSDKCall_GetBaseEntity(gamedata);
+	SDKCallGiveNamedItem = PrepSDKCall_GiveNamedItem(gamedata);
 	SDKCallCreateDroppedWeapon = PrepSDKCall_CreateDroppedWeapon(gamedata);
 	SDKCallInitDroppedWeapon = PrepSDKCall_InitDroppedWeapon(gamedata);
 	SDKCallSetSwitchTeams = PrepSDKCall_SetSwitchTeams(gamedata);
@@ -119,6 +125,52 @@ static Handle PrepSDKCall_EquipWearable(GameData gamedata)
 	return call;
 }
 
+static Handle PrepSDKCall_GetLoadoutItem(GameData gamedata)
+{
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::GetLoadoutItem");
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
+	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_ByValue);
+	
+	Handle call = EndPrepSDKCall();
+	if (!call)
+		LogError("Failed to create SDKCall: CTFPlayer::GetLoadoutItem");
+		
+	return call;
+}
+
+static Handle PrepSDKCall_GetBaseEntity(GameData gamedata)
+{
+	StartPrepSDKCall(SDKCall_Raw);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "CBaseEntity::GetBaseEntity");
+	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
+	
+	Handle call = EndPrepSDKCall();
+	if (!call)
+		LogError("Failed to create SDKCall: CBaseEntity::GetBaseEntity");
+		
+	return call;
+}
+
+static Handle PrepSDKCall_GiveNamedItem(GameData gamedata)
+{
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "CTFPlayer::GiveNamedItem");
+	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
+	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_ByValue);
+	
+	Handle call = EndPrepSDKCall();
+	if (!call)
+		LogError("Failed to create SDKCall: CTFPlayer::GiveNamedItem");
+		
+	return call;
+}
+
 stock void SDKCall_SetSwitchTeams(bool shouldSwitch)
 {
 	SDKCall(SDKCallSetSwitchTeams, shouldSwitch);
@@ -144,7 +196,23 @@ stock int SDKCall_GetMaxAmmo(int client, int slot)
 	return SDKCall(SDKCallGetMaxAmmo, client, slot, -1);
 }
 
-stock int SDK_CreateDroppedWeapon(int fromWeapon, int client, const float origin[3], const float angles[3])
+stock Address SDKCall_GiveNamedItem(int client, const char[] classname, int subType, Address item, bool force = false, bool skipHook = true)
+{
+	g_SkipGiveNamedItemHook = skipHook;
+	return SDKCall(SDKCallGiveNamedItem, client, classname, subType, item, force);
+}
+
+stock Address SDKCall_GetLoadoutItem(int client, TFClassType class, int slot)
+{
+	return SDKCall(SDKCallGetLoadoutItem, client, class, slot, false);
+}
+
+stock int SDKCall_GetBaseEntity(Address address)
+{
+	return SDKCall(SDKCallGetBaseEntity, address);
+}
+
+stock int SDKCall_CreateDroppedWeapon(int fromWeapon, int client, const float origin[3], const float angles[3])
 {
 	char classname[32];
 	if (GetEntityNetClass(fromWeapon, classname, sizeof(classname)))

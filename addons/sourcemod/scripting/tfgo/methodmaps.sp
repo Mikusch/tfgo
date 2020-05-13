@@ -1,9 +1,9 @@
-static int PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][WeaponSlot_BuilderEngie + 1];
-static int PlayerAccounts[TF_MAXPLAYERS + 1];
-static int PlayerArmorValues[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
-static bool PlayerHelmets[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
-static bool PlayerDefuseKits[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
-static Menu ActiveBuyMenus[TF_MAXPLAYERS + 1];
+static int PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS][view_as<int>(TFClass_Engineer) + 1][WeaponSlot_BuilderEngie + 1];
+static int PlayerAccounts[TF_MAXPLAYERS];
+static int PlayerArmorValues[TF_MAXPLAYERS][view_as<int>(TFClass_Engineer) + 1];
+static bool PlayerHelmets[TF_MAXPLAYERS][view_as<int>(TFClass_Engineer) + 1];
+static bool PlayerDefuseKits[TF_MAXPLAYERS][view_as<int>(TFClass_Engineer) + 1];
+static Menu ActiveBuyMenus[TF_MAXPLAYERS];
 
 static int TeamConsecutiveLosses[view_as<int>(TFTeam_Blue) + 1] =  { STARTING_CONSECUTIVE_LOSSES, ... };
 static bool IsTeamAttacking[view_as<int>(TFTeam_Blue) + 1];
@@ -108,6 +108,13 @@ methodmap TFGOPlayer
 		}
 	}
 	
+	public void AddToLoadout(int defindex)
+	{
+		TFClassType class = TF2_GetPlayerClass(this.Client);
+		int slot = TF2_GetItemSlot(defindex, class);
+		PlayerLoadoutWeaponIndexes[this][class][slot] = defindex;
+	}
+	
 	public BuyResult AttemptToBuyWeapon(int defindex)
 	{
 		TFGOWeapon config;
@@ -115,9 +122,9 @@ methodmap TFGOPlayer
 		{
 			TFClassType class = TF2_GetPlayerClass(this.Client);
 			int slot = TF2_GetItemSlot(defindex, class);
-			int weapon = GetPlayerWeaponSlot(this.Client, slot);
+			int currentWeapon = GetPlayerWeaponSlot(this.Client, slot);
 			
-			if (weapon > -1 && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") == defindex)
+			if (currentWeapon > -1 && GetEntProp(currentWeapon, Prop_Send, "m_iItemDefinitionIndex") == defindex)
 			{
 				PrintCenterText(this.Client, "%T", "Already_Have_One", LANG_SERVER);
 				return BUY_ALREADY_HAVE;
@@ -129,17 +136,59 @@ methodmap TFGOPlayer
 			}
 			else
 			{
-				if (weapon > -1) // Drop old weapon, if present
+				// Drop current weapon if one exists
+				if (currentWeapon > -1)
 				{
-					float position[3];
+					float position[3], angles[3];
 					GetClientEyePosition(this.Client, position);
-					float angles[3];
 					GetClientEyeAngles(this.Client, angles);
-					SDK_CreateDroppedWeapon(weapon, this.Client, position, angles);
+					SDKCall_CreateDroppedWeapon(currentWeapon, this.Client, position, angles);
 				}
 				
-				TF2_CreateAndEquipWeapon(this.Client, defindex, TFQual_Unique, GetRandomInt(1, 100));
-				PlayerLoadoutWeaponIndexes[this][class][slot] = defindex;
+				TF2_RemoveItemInSlot(this.Client, slot);
+				int weapon = TF2_CreateAndEquipWeapon(this.Client, defindex);
+				
+				char classname[256];
+				TF2Econ_GetItemClassName(defindex, classname, sizeof(classname));
+				if (StrContains(classname, "tf_wearable") == 0 || StrContains(classname, "tf_weapon_parachute") == 0)
+				{
+					if (GetEntPropEnt(this.Client, Prop_Send, "m_hActiveWeapon") <= MaxClients)
+					{
+						// Looks like player's new active weapon is a wearable, fix that by switching to melee
+						int melee = GetPlayerWeaponSlot(this.Client, TFWeaponSlot_Melee);
+						SetEntPropEnt(this.Client, Prop_Send, "m_hActiveWeapon", melee);
+					}
+				}
+				else
+				{
+					FakeClientCommand(this.Client, "use %s", classname);
+				}
+				
+				// Set ammo to the weapon's maximum ammo
+				if (HasEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType")) // Wearables don't have the m_iAmmo netprop
+				{
+					int ammoType = GetEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType");
+					if (ammoType > -1)
+					{
+						// Make Gas Passer spawn empty
+						int maxAmmo;
+						if (defindex == WEAPON_GAS_PASSER)
+							SetEntPropFloat(this.Client, Prop_Send, "m_flItemChargeMeter", 0.0, 1);
+						else
+							maxAmmo = SDKCall_GetMaxAmmo(this.Client, ammoType);
+						
+						SetEntProp(this.Client, Prop_Send, "m_iAmmo", maxAmmo, _, ammoType);
+					}
+				}
+				
+				// Add health to player if needed
+				ArrayList attribs = TF2Econ_GetItemStaticAttributes(defindex);
+				int index = attribs.FindValue(ATTRIB_MAX_HEALTH_ADDITIVE_BONUS);
+				if (index > -1)
+					SetEntityHealth(this.Client, GetClientHealth(this.Client) + RoundFloat(attribs.Get(index, 1)));
+				delete attribs;
+				
+				this.AddToLoadout(defindex);
 				this.Account -= config.price;
 				return BUY_BOUGHT;
 			}
@@ -164,8 +213,7 @@ methodmap TFGOPlayer
 			if (weapon.isDefault && TF2_GetItemSlot(weapon.defindex, class) == slot)
 			{
 				char classname[PLATFORM_MAX_PATH];
-				TF2Econ_GetItemClassName(weapon.defindex, classname, sizeof(classname));
-				if (TF2Econ_TranslateWeaponEntForClass(classname, sizeof(classname), class))
+				if (TF2Econ_GetItemClassName(weapon.defindex, classname, sizeof(classname)) && TF2Econ_TranslateWeaponEntForClass(classname, sizeof(classname), class))
 					return weapon.defindex;
 			}
 		}
@@ -179,17 +227,10 @@ methodmap TFGOPlayer
 		
 		for (int slot = sizeof(PlayerLoadoutWeaponIndexes[][]) - 1; slot >= 0; slot--)
 		{
-			int defIndex = this.GetWeaponFromLoadout(class, slot);
-			if (defIndex > -1)
-				TF2_CreateAndEquipWeapon(this.Client, defIndex, TFQual_Unique, GetRandomInt(1, 100));
+			int defindex = this.GetWeaponFromLoadout(class, slot);
+			if (defindex > -1 && GetPlayerWeaponSlot(this.Client, slot) == -1)
+				TF2_CreateAndEquipWeapon(this.Client, defindex);
 		}
-	}
-	
-	public void AddToLoadout(int defIndex)
-	{
-		TFClassType class = TF2_GetPlayerClass(this.Client);
-		int slot = TF2_GetItemSlot(defIndex, class);
-		PlayerLoadoutWeaponIndexes[this][class][slot] = defIndex;
 	}
 	
 	public void RemoveAllItems(bool removeArmor)

@@ -1,6 +1,3 @@
-#define WEAPON_GAS_PASSER 1180
-#define ATTRIB_MAX_HEALTH_ADDITIVE_BONUS 26
-
 stock bool IsValidClient(int client)
 {
 	return 0 < client <= MaxClients && IsClientInGame(client);
@@ -115,13 +112,13 @@ stock int TF2_GetMaxHealth(int client)
 	return GetEntProp(GetPlayerResourceEntity(), Prop_Send, "m_iMaxHealth", _, client);
 }
 
-stock void TF2_ForceRoundWin(TFTeam team, WinReason winReason, bool forceMapReset = true, bool switchTeams = false)
+stock void TF2_ForceRoundWin(TFTeam team, int winReason, bool forceMapReset = true, bool switchTeams = false)
 {
 	int entity = CreateEntityByName("game_round_win");
 	if (IsValidEntity(entity))
 	{
 		char winReasonString[4];
-		IntToString(view_as<int>(winReason), winReasonString, sizeof(winReasonString));
+		IntToString(winReason, winReasonString, sizeof(winReasonString));
 		DispatchKeyValue(entity, "win_reason", winReasonString);
 		DispatchKeyValue(entity, "force_map_reset", forceMapReset ? "1" : "0");
 		DispatchKeyValue(entity, "switch_teams", switchTeams ? "1" : "0");
@@ -173,112 +170,70 @@ stock void TF2_GetItemName(int defindex, char[] buffer, int maxlength)
 	}
 }
 
-stock void TF2_CreateAndEquipWeapon(int client, int defindex, TFQuality quality = TFQual_Normal, int level = 0)
+stock int TF2_CreateAndEquipWeapon(int client, int defindex, const char[] classname = NULL_STRING)
 {
+	char classnameCopy[256];
+	if (IsNullString(classname))
+	{
+		TF2Econ_GetItemClassName(defindex, classnameCopy, sizeof(classnameCopy));
+		TF2Econ_TranslateWeaponEntForClass(classnameCopy, sizeof(classnameCopy), TF2_GetPlayerClass(client));
+	}
+	else
+	{
+		strcopy(classnameCopy, sizeof(classnameCopy), classname);
+	}
+	
+	bool isSapper;
+	if ((StrEqual(classnameCopy, "tf_weapon_builder") || StrEqual(classnameCopy, "tf_weapon_sapper")) && TF2_GetPlayerClass(client) == TFClass_Spy)
+	{
+		isSapper = true;
+		
+		//Apparently tf_weapon_sapper causes client crashes
+		classnameCopy = "tf_weapon_builder";
+	}
+	
 	TFClassType class = TF2_GetPlayerClass(client);
-	int slot = TF2_GetItemSlot(defindex, class);
+	int iSlot = TF2_GetItemSlot(defindex, class);
+	Address pItem = SDKCall_GetLoadoutItem(client, class, iSlot);
 	
-	// Remove sniper scope and slowdown cond if have one, otherwise can cause client crashes
-	if (TF2_IsPlayerInCondition(client, TFCond_Zoomed))
+	int weapon;
+	if (pItem && Config_GetOriginalItemDefIndex(LoadFromAddress(pItem + view_as<Address>(4), NumberType_Int16)) == defindex)
 	{
-		TF2_RemoveCondition(client, TFCond_Zoomed);
-		TF2_RemoveCondition(client, TFCond_Slowed);
+		weapon = SDKCall_GetBaseEntity(SDKCall_GiveNamedItem(client, classnameCopy, 0, pItem));
+	}
+	else
+	{
+		weapon = CreateEntityByName(classnameCopy);
+		
+		if (IsValidEntity(weapon))
+		{
+			SetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex", defindex);
+			SetEntProp(weapon, Prop_Send, "m_bInitialized", 1);
+			SetEntProp(weapon, Prop_Send, "m_iEntityQuality", 0);
+			SetEntProp(weapon, Prop_Send, "m_iEntityLevel", 1);
+		}
 	}
 	
-	// If player already have item in his inv, remove it before we generate new weapon for him, otherwise some weapons can glitch out...
-	int entity = GetPlayerWeaponSlot(client, slot);
-	if (entity > MaxClients && IsValidEdict(entity))
-		TF2_RemoveWeaponSlot(client, slot);
-	
-	// Remove wearable if have one
-	int wearable = SDKCall_GetEquippedWearableForLoadoutSlot(client, slot);
-	if (wearable > MaxClients)
-	{
-		TF2_RemoveWearable(client, wearable);
-		AcceptEntityInput(wearable, "Kill");
-	}
-	
-	// Generate and equip weapon
-	char itemClass[PLATFORM_MAX_PATH];
-	TF2Econ_GetItemClassName(defindex, itemClass, sizeof(itemClass));
-	TF2Econ_TranslateWeaponEntForClass(itemClass, sizeof(itemClass), TF2_GetPlayerClass(client));
-	
-	int weapon = CreateEntityByName(itemClass);
 	if (IsValidEntity(weapon))
 	{
-		SetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex", defindex);
-		SetEntProp(weapon, Prop_Send, "m_bInitialized", 1);
-		
-		char netClass[64];
-		GetEntityNetClass(weapon, netClass, sizeof(netClass));
-		SetEntData(weapon, FindSendPropInfo(netClass, "m_iEntityQuality"), quality);
-		SetEntData(weapon, FindSendPropInfo(netClass, "m_iEntityLevel"), level);
+		if (isSapper)
+		{
+			SetEntProp(weapon, Prop_Send, "m_iObjectType", TFObject_Sapper);
+			SetEntProp(weapon, Prop_Data, "m_iSubType", TFObject_Sapper);
+		}
 		
 		if (DispatchSpawn(weapon))
 		{
 			SetEntProp(weapon, Prop_Send, "m_bValidatedAttachedEntity", true);
 			
-			if (StrContains(itemClass, "tf_wearable") == 0)
+			if (StrContains(classnameCopy, "tf_wearable") == 0)
 				SDKCall_EquipWearable(client, weapon);
 			else
 				EquipPlayerWeapon(client, weapon);
-			
-			TF2_EquipWeapon(client, weapon, itemClass, sizeof(itemClass));
-			
-			// Set ammo as weapon's max ammo
-			if (HasEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType")) //Wearables dont have ammo netprop
-			{
-				int ammoType = GetEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType");
-				if (ammoType > -1)
-				{
-					// We want to set gas passer ammo empty, because thats how normal gas passer works
-					int maxAmmo;
-					if (defindex == WEAPON_GAS_PASSER)
-						SetEntPropFloat(client, Prop_Send, "m_flItemChargeMeter", 0.0, 1);
-					else
-						maxAmmo = SDKCall_GetMaxAmmo(client, ammoType);
-					
-					SetEntProp(client, Prop_Send, "m_iAmmo", maxAmmo, _, ammoType);
-				}
-			}
-			
-			// Add health to player if needed
-			ArrayList attribs = TF2Econ_GetItemStaticAttributes(defindex);
-			int index = attribs.FindValue(ATTRIB_MAX_HEALTH_ADDITIVE_BONUS, 0);
-			if (index > -1)
-				SetEntityHealth(client, GetClientHealth(client) + RoundFloat(attribs.Get(index, 1)));
-			delete attribs;
 		}
 	}
-}
-
-stock void TF2_EquipWeapon(int client, int weapon, char[] className = NULL_STRING, int classNameLength = 0)
-{
-	if (IsValidEntity(weapon))
-	{
-		int defindex = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
-		
-		if (IsNullString(className))
-		{
-			TF2Econ_GetItemClassName(defindex, className, classNameLength);
-			TF2Econ_TranslateWeaponEntForClass(className, classNameLength, TF2_GetPlayerClass(client));
-		}
-		
-		if (strncmp(className, "tf_wearable", 11) == 0 || strncmp(className, "tf_weapon_parachute", 19) == 0)
-		{
-			if (GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon") <= MaxClients)
-			{
-				// Looks like player's active weapon got replaced into wearable, fix that by using melee
-				int melee = GetPlayerWeaponSlot(client, TFWeaponSlot_Melee);
-				SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", melee);
-			}
-		}
-		else
-		{
-			// Switch current active weapon
-			FakeClientCommand(client, "use %s", className);
-		}
-	}
+	
+	return weapon;
 }
 
 stock int TF2_GetItemSlot(int defindex, TFClassType class)
@@ -313,6 +268,17 @@ stock int TF2_GetItemSlot(int defindex, TFClassType class)
 	}
 	
 	return slot;
+}
+
+stock void TF2_RemoveItemInSlot(int client, int slot)
+{
+	int weapon = GetPlayerWeaponSlot(client, slot);
+	if (weapon > MaxClients)
+		TF2_RemoveWeaponSlot(client, slot);
+	
+	int wearable = SDKCall_GetEquippedWearableForLoadoutSlot(client, slot);
+	if (wearable > MaxClients)
+		TF2_RemoveWearable(client, wearable);
 }
 
 stock void TF2_ShowGameMessage(const char[] message, const char[] icon, float time = 5.0, int displayToTeam = 0, int teamColor = 0)

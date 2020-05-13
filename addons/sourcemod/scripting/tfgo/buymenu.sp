@@ -23,8 +23,7 @@ bool BuyMenu_DisplayMainBuyMenu(int client)
 		{
 			menu.AddItem("0", "BuyMenu_Secondaries"); // Revolver
 			menu.AddItem("2", "BuyMenu_Melees"); // Knife
-			menu.AddItem("3;4", "BuyMenu_PDAs"); // Disguise Kit/Invis Watch
-			menu.AddItem("1", "BuyMenu_Buildings", ITEMDRAW_IGNORE); // Sapper (currently ignored due to client crashes)
+			menu.AddItem("1;3;4", "BuyMenu_PDAs"); // Sapper/Disguise Kit/Invis Watch
 		}
 		
 		default:
