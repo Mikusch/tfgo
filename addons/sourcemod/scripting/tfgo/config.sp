@@ -52,13 +52,13 @@ int SortFunc_SortAvailableWeaponsByName(int index1, int index2, Handle array, Ha
 
 stock int Config_GetOriginalItemDefIndex(int defindex)
 {
-	int originalDefindex;
+	int origDefindex;
 	
 	char defindexString[8];
 	IntToString(defindex, defindexString, sizeof(defindexString));
 	
-	if (WeaponReskins.GetValue(defindexString, originalDefindex))
-		return originalDefindex;
+	if (WeaponReskins.GetValue(defindexString, origDefindex))
+		return origDefindex;
 	else
 		return defindex;
 }

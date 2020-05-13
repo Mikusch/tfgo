@@ -97,7 +97,8 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 			}
 			else // Weapon kill
 			{
-				int defindex = event.GetInt("weapon_def_index");
+				// TODO: Localized text for all weapons, not just the original (UserMessage SayText2?)
+				int defindex = Config_GetOriginalItemDefIndex(event.GetInt("weapon_def_index"));
 				
 				char weaponName[PLATFORM_MAX_PATH];
 				TF2_GetItemName(defindex, weaponName, sizeof(weaponName));
