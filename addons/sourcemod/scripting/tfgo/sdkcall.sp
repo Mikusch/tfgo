@@ -212,7 +212,7 @@ stock int SDKCall_GetBaseEntity(Address address)
 	return SDKCall(SDKCallGetBaseEntity, address);
 }
 
-stock int SDK_CreateDroppedWeapon(int fromWeapon, int client, const float origin[3], const float angles[3])
+stock int SDKCall_CreateDroppedWeapon(int fromWeapon, int client, const float origin[3], const float angles[3])
 {
 	char classname[32];
 	if (GetEntityNetClass(fromWeapon, classname, sizeof(classname)))

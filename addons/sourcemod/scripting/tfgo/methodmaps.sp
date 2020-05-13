@@ -139,11 +139,10 @@ methodmap TFGOPlayer
 				// Drop current weapon if one exists
 				if (currentWeapon > -1)
 				{
-					float position[3];
+					float position[3], angles[3];
 					GetClientEyePosition(this.Client, position);
-					float angles[3];
 					GetClientEyeAngles(this.Client, angles);
-					SDK_CreateDroppedWeapon(currentWeapon, this.Client, position, angles);
+					SDKCall_CreateDroppedWeapon(currentWeapon, this.Client, position, angles);
 				}
 				
 				TF2_RemoveItemInSlot(this.Client, slot);
