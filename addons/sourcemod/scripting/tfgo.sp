@@ -19,7 +19,6 @@
 
 #define WEAPON_GAS_PASSER					1180
 #define ATTRIB_MAX_HEALTH_ADDITIVE_BONUS	26
-#define TF_STUN_LOSER_STATE					(1<<6)
 
 #define MODEL_BOMB	"models/props_td/atom_bomb.mdl"
 
@@ -402,12 +401,6 @@ public void OnEntityCreated(int entity, const char[] classname)
 		SDKHook_HookTriggerCaptureArea(entity);
 	else if (StrEqual(classname, "team_control_point_master"))
 		SDKHook_HookTeamControlPointMaster(entity);
-}
-
-public void TF2_OnConditionAdded(int client, TFCond condition)
-{
-	if (condition == TFCond_CritOnWin || condition == TFCond_Dazed && GetEntProp(client, Prop_Data, "m_iStunFlags") == TF_STUN_LOSER_STATE)
-		TF2_RemoveCondition(client, condition);
 }
 
 public Action TF2_OnGiveNamedItem(int client, char[] classname, int defindex)
