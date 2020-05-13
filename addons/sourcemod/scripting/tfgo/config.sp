@@ -1,4 +1,4 @@
-#define CONFIG_FILE	"configs/tfgo/%s.cfg"
+#define CONFIG_FILE	"configs/tfgo/weapons.cfg"
 
 static StringMap WeaponReskins;
 
@@ -9,43 +9,30 @@ void Config_Init()
 	
 	char path[PLATFORM_MAX_PATH];
 	
-	BuildPath(Path_SM, path, sizeof(path), CONFIG_FILE, "tfgo");
-	KeyValues kv = new KeyValues("Config");
+	// Read weapons from config
+	BuildPath(Path_SM, path, sizeof(path), CONFIG_FILE);
+	KeyValues kv = new KeyValues("Weapons");
 	if (kv.ImportFromFile(path))
 	{
-		if (kv.JumpToKey("Weapons", false))
-		{
-			g_AvailableWeapons.ReadConfig(kv);
-			g_AvailableWeapons.SortCustom(SortFunc_SortAvailableWeaponsByName);
-			kv.GoBack();
-		}
+		g_AvailableWeapons.ReadConfig(kv);
+		g_AvailableWeapons.SortCustom(SortFunc_SortAvailableWeaponsByName);
+		kv.GoBack();
 	}
 	delete kv;
 	
-	BuildPath(Path_SM, path, sizeof(path), CONFIG_FILE, "reskins");
-	kv = new KeyValues("Reskins");
-	if (kv.ImportFromFile(path))
+	// For easy and fast access later on, we write the reskin defindexes into a separate StringMap
+	for (int i = 0; i < g_AvailableWeapons.Length; i++)
 	{
-		char key[PLATFORM_MAX_PATH];
-		if (kv.GetSectionName(key, sizeof(key)))
+		TFGOWeapon weapon;
+		g_AvailableWeapons.GetArray(i, weapon, sizeof(weapon));
+		
+		for (int j = 0; j < weapon.reskins.Length; j++)
 		{
-			int originalDefindex = StringToInt(key);
-			
-			char value[PLATFORM_MAX_PATH];
-			kv.GetString(NULL_STRING, value, sizeof(value));
-			
-			char defindexes[64][32];
-			int count = ExplodeString(value, ";", defindexes, sizeof(defindexes), sizeof(defindexes[]));
-			
-			for (int i = 0; i < count; i++)
-			{
-				WeaponReskins.SetValue(defindexes[i], originalDefindex);
-			}
-			
-			kv.GoBack();
+			char reskin[8];
+			if (IntToString(weapon.reskins.Get(j), reskin, sizeof(reskin)))
+				WeaponReskins.SetValue(reskin, weapon.defindex);
 		}
 	}
-	delete kv;
 }
 
 int SortFunc_SortAvailableWeaponsByName(int index1, int index2, Handle array, Handle hndl)

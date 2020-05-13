@@ -13,6 +13,7 @@ enum struct TFGOWeapon
 	float armorPenetration;
 	bool isDefault;
 	bool canHeadshot;
+	ArrayList reskins;
 	
 	void ReadConfig(KeyValues kv)
 	{
@@ -25,6 +26,23 @@ enum struct TFGOWeapon
 			this.armorPenetration = kv.GetFloat("armor_penetration", 1.0);
 			this.isDefault = view_as<bool>(kv.GetNum("is_default"));
 			this.canHeadshot = view_as<bool>(kv.GetNum("can_headshot"));
+			
+			delete this.reskins;
+			this.reskins = new ArrayList();
+			
+			char reskins[PLATFORM_MAX_PATH];
+			kv.GetString("reskins", reskins, sizeof(reskins));
+			
+			if (reskins[0] != '\0')
+			{
+				char defindexes[64][32];
+				int count = ExplodeString(reskins, ";", defindexes, sizeof(defindexes), sizeof(defindexes[]));
+				for (int i = 0; i < count; i++)
+				{
+					TrimString(defindexes[i]);
+					this.reskins.Push(StringToInt(defindexes[i]));
+				}
+			}
 		}
 	}
 }
