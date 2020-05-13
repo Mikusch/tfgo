@@ -108,6 +108,13 @@ methodmap TFGOPlayer
 		}
 	}
 	
+	public void AddToLoadout(int defindex)
+	{
+		TFClassType class = TF2_GetPlayerClass(this.Client);
+		int slot = TF2_GetItemSlot(defindex, class);
+		PlayerLoadoutWeaponIndexes[this][class][slot] = defindex;
+	}
+	
 	public BuyResult AttemptToBuyWeapon(int defindex)
 	{
 		TFGOWeapon config;
@@ -182,7 +189,7 @@ methodmap TFGOPlayer
 					SetEntityHealth(this.Client, GetClientHealth(this.Client) + RoundFloat(attribs.Get(index, 1)));
 				delete attribs;
 				
-				PlayerLoadoutWeaponIndexes[this][class][slot] = defindex;
+				this.AddToLoadout(defindex);
 				this.Account -= config.price;
 				return BUY_BOUGHT;
 			}
@@ -207,8 +214,7 @@ methodmap TFGOPlayer
 			if (weapon.isDefault && TF2_GetItemSlot(weapon.defindex, class) == slot)
 			{
 				char classname[PLATFORM_MAX_PATH];
-				TF2Econ_GetItemClassName(weapon.defindex, classname, sizeof(classname));
-				if (TF2Econ_TranslateWeaponEntForClass(classname, sizeof(classname), class))
+				if (TF2Econ_GetItemClassName(weapon.defindex, classname, sizeof(classname)) && TF2Econ_TranslateWeaponEntForClass(classname, sizeof(classname), class))
 					return weapon.defindex;
 			}
 		}
@@ -226,13 +232,6 @@ methodmap TFGOPlayer
 			if (defindex > -1 && GetPlayerWeaponSlot(this.Client, slot) == -1)
 				TF2_CreateAndEquipWeapon(this.Client, defindex);
 		}
-	}
-	
-	public void AddToLoadout(int defindex)
-	{
-		TFClassType class = TF2_GetPlayerClass(this.Client);
-		int slot = TF2_GetItemSlot(defindex, class);
-		PlayerLoadoutWeaponIndexes[this][class][slot] = defindex;
 	}
 	
 	public void RemoveAllItems(bool removeArmor)
