@@ -411,10 +411,10 @@ public Action TF2_OnGiveNamedItem(int client, char[] classname, int defindex)
 		return Plugin_Continue;
 	}
 	
-	int slot = TF2_GetItemSlot(defindex, TF2_GetPlayerClass(client));
 	TFClassType class = TF2_GetPlayerClass(client);
+	int slot = TF2_GetItemSlot(defindex, class);
 	
-	if (0 <= slot <= WeaponSlot_BuilderEngie && TFGOPlayer(client).GetWeaponFromLoadout(class, slot) != defindex)
+	if (0 <= slot <= WeaponSlot_BuilderEngie && TFGOPlayer(client).GetWeaponFromLoadout(class, slot) != Config_GetOriginalItemDefIndex(defindex))
 		return Plugin_Handled;
 		
 	return Plugin_Continue;

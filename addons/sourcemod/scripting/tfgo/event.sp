@@ -139,22 +139,23 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 Action Event_PostInventoryApplication(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
-	if (IsValidClient(client))
-	{
-		TFGOPlayer player = TFGOPlayer(client);
-		player.ApplyLoadout();
-		
-		if (tfgo_free_armor.IntValue >= 1)
-			player.ArmorValue = TF2_GetMaxHealth(client);
-		if (tfgo_free_armor.IntValue >= 2)
-			player.HasHelmet = true;
-		
-		if (player.ActiveBuyMenu != null)
-			player.ActiveBuyMenu.Cancel();
-		
-		// Open buy menu on respawn
-		BuyMenu_DisplayMainBuyMenu(client);
-	}
+	
+	// Remove any weapons they shouldn't have
+	TF2_CheckClientWeapons(client);
+	
+	TFGOPlayer player = TFGOPlayer(client);
+	player.ApplyLoadout();
+	
+	if (tfgo_free_armor.IntValue >= 1)
+		player.ArmorValue = TF2_GetMaxHealth(client);
+	if (tfgo_free_armor.IntValue >= 2)
+		player.HasHelmet = true;
+	
+	if (player.ActiveBuyMenu != null)
+		player.ActiveBuyMenu.Cancel();
+	
+	// Open buy menu on respawn
+	BuyMenu_DisplayMainBuyMenu(client);
 }
 
 Action Event_ArenaRoundStart(Event event, const char[] name, bool dontBroadcast)

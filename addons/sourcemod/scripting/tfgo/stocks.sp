@@ -96,6 +96,35 @@ stock TFTeam TF2_GetEnemyTeam(TFTeam team)
 	}
 }
 
+stock void TF2_CheckClientWeapons(int client)
+{
+	// Weapons
+	for (int slot = WeaponSlot_Primary; slot <= WeaponSlot_BuilderEngie; slot++)
+	{
+		int weapon = GetPlayerWeaponSlot(client, slot);
+		if (weapon > MaxClients)
+		{
+			char classname[256];
+			GetEntityClassname(weapon, classname, sizeof(classname));
+			if (TF2_OnGiveNamedItem(client, classname, GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")) >= Plugin_Handled)
+				TF2_RemoveItemInSlot(client, slot);
+		}
+	}
+	
+	// Cosmetics
+	int wearable = MaxClients + 1;
+	while ((wearable = FindEntityByClassname(wearable, "tf_wearable*")) > MaxClients)
+	{
+		if (GetEntPropEnt(wearable, Prop_Send, "m_hOwnerEntity") == client || GetEntPropEnt(wearable, Prop_Send, "moveparent") == client)
+		{
+			char classname[256];
+			GetEntityClassname(wearable, classname, sizeof(classname));
+			if (TF2_OnGiveNamedItem(client, classname, GetEntProp(wearable, Prop_Send, "m_iItemDefinitionIndex")) >= Plugin_Handled)
+				TF2_RemoveWearable(client, wearable);
+		}
+	}
+}
+
 stock int TF2_GetAlivePlayerCountForTeam(TFTeam team)
 {
 	int count = 0;
@@ -193,8 +222,8 @@ stock int TF2_CreateAndEquipWeapon(int client, int defindex, const char[] classn
 	}
 	
 	TFClassType class = TF2_GetPlayerClass(client);
-	int iSlot = TF2_GetItemSlot(defindex, class);
-	Address pItem = SDKCall_GetLoadoutItem(client, class, iSlot);
+	int slot = TF2_GetItemSlot(defindex, class);
+	Address pItem = SDKCall_GetLoadoutItem(client, class, slot);
 	
 	int weapon;
 	if (pItem && Config_GetOriginalItemDefIndex(LoadFromAddress(pItem + view_as<Address>(4), NumberType_Int16)) == defindex)
