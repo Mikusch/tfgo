@@ -12,7 +12,7 @@
 #pragma newdecls required
 
 
-#define PLUGIN_VERSION "1.0"
+#define PLUGIN_VERSION "1.1"
 #define PLUGIN_VERSION_REVISION "manual"
 
 #define TF_MAXPLAYERS	33
@@ -24,7 +24,7 @@
 
 #define PARTICLE_BOMB_EXPLOSION	"mvm_hatch_destroy"
 
-#define SOUND_BOMB_BEEPING					")player/cyoa_pda_beep3.wav"
+#define SOUND_BOMB_BEEPING					")misc/rd_finale_beep01.wav"
 #define GAMESOUND_BOMB_EXPLOSION			"MVM.BombExplodes"
 #define GAMESOUND_BOMB_WARNING				"MVM.BombWarning"
 #define GAMESOUND_PLAYER_PURCHASE			"MVM.PlayerUpgraded"
