@@ -12,12 +12,11 @@
 #pragma newdecls required
 
 
-#define PLUGIN_VERSION "1.1"
-#define PLUGIN_VERSION_REVISION "manual"
+#define PLUGIN_VERSION			"1.1"
+#define PLUGIN_VERSION_REVISION	"manual"
 
 #define TF_MAXPLAYERS	33
 
-#define WEAPON_GAS_PASSER					1180
 #define ATTRIB_MAX_HEALTH_ADDITIVE_BONUS	26
 
 #define MODEL_BOMB	"models/props_td/atom_bomb.mdl"

@@ -178,6 +178,13 @@ stock void TF2_Explode(int attacker = -1, float origin[3], float damage, float r
 		SDKHooks_TakeDamage(bomb, 0, attacker, 9999.0);
 }
 
+stock void TF2_SetActiveWeapon(int client, int weapon)
+{
+	char classname[256];
+	GetEntityClassname(weapon, classname, sizeof(classname));
+	FakeClientCommand(client, "use %s", classname);
+}
+
 stock int TF2_GetItemInSlot(int client, int slot)
 {
 	int weapon = GetPlayerWeaponSlot(client, slot);

@@ -156,30 +156,25 @@ methodmap TFGOPlayer
 					{
 						// Looks like player's new active weapon is a wearable, fix that by switching to melee
 						int melee = GetPlayerWeaponSlot(this.Client, TFWeaponSlot_Melee);
-						SetEntPropEnt(this.Client, Prop_Send, "m_hActiveWeapon", melee);
+						if (melee > MaxClients)
+							TF2_SetActiveWeapon(this.Client, melee);
 					}
 				}
 				else
 				{
-					FakeClientCommand(this.Client, "use %s", classname);
-				}
-				
-				// Set ammo to the weapon's maximum ammo
-				if (HasEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType")) // Wearables don't have the m_iAmmo netprop
-				{
 					int ammoType = GetEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType");
 					if (ammoType > -1)
 					{
-						// Make Gas Passer spawn empty
-						int maxAmmo;
-						if (defindex == WEAPON_GAS_PASSER)
-							SetEntPropFloat(this.Client, Prop_Send, "m_flItemChargeMeter", 0.0, 1);
-						else
-							maxAmmo = SDKCall_GetMaxAmmo(this.Client, ammoType);
-						
-						SetEntProp(this.Client, Prop_Send, "m_iAmmo", maxAmmo, _, ammoType);
+						// Reset ammo before GivePlayerAmmo gives the correct amount
+						SetEntProp(this.Client, Prop_Send, "m_iAmmo", 0, _, ammoType);
+						GivePlayerAmmo(this.Client, 9999, ammoType, true);
 					}
+					
+					TF2_SetActiveWeapon(this.Client, weapon);
 				}
+				
+				// Reset item charge meter to default value
+				SetEntPropFloat(this.Client, Prop_Send, "m_flItemChargeMeter", SDKCall_GetDefaultItemChargeMeterValue(weapon), slot);
 				
 				// Add health to player if needed
 				ArrayList attribs = TF2Econ_GetItemStaticAttributes(defindex);

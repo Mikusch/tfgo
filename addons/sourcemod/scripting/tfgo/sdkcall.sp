@@ -1,5 +1,4 @@
 static Handle SDKCallGetEquippedWearableForLoadoutSlot;
-static Handle SDKCallGetMaxAmmo;
 static Handle SDKCallGetLoadoutItem;
 static Handle SDKCallGetBaseEntity;
 static Handle SDKCallGiveNamedItem;
@@ -7,12 +6,12 @@ static Handle SDKCallCreateDroppedWeapon;
 static Handle SDKCallInitDroppedWeapon;
 static Handle SDKCallSetSwitchTeams;
 static Handle SDKCallSetScrambleTeams;
+static Handle SDKCallGetDefaultItemChargeMeterValue;
 static Handle SDKCallEquipWearable;
 
 void SDKCall_Init(GameData gamedata)
 {
 	SDKCallGetEquippedWearableForLoadoutSlot = PrepSDKCall_GetEquippedWearableForLoadoutSlot(gamedata);
-	SDKCallGetMaxAmmo = PrepSDKCall_GetMaxAmmo(gamedata);
 	SDKCallGetLoadoutItem = PrepSDKCall_GetLoadoutItem(gamedata);
 	SDKCallGetBaseEntity = PrepSDKCall_GetBaseEntity(gamedata);
 	SDKCallGiveNamedItem = PrepSDKCall_GiveNamedItem(gamedata);
@@ -20,6 +19,7 @@ void SDKCall_Init(GameData gamedata)
 	SDKCallInitDroppedWeapon = PrepSDKCall_InitDroppedWeapon(gamedata);
 	SDKCallSetSwitchTeams = PrepSDKCall_SetSwitchTeams(gamedata);
 	SDKCallSetScrambleTeams = PrepSDKCall_SetScrambleTeams(gamedata);
+	SDKCallGetDefaultItemChargeMeterValue = PrepSDKCall_GetDefaultItemChargeMeterValue(gamedata);
 	SDKCallEquipWearable = PrepSDKCall_EquipWearable(gamedata);
 }
 
@@ -33,21 +33,6 @@ static Handle PrepSDKCall_GetEquippedWearableForLoadoutSlot(GameData gamedata)
 	Handle call = EndPrepSDKCall();
 	if (!call)
 		LogMessage("Failed to create call: CTFPlayer::GetEquippedWearableForLoadoutSlot");
-	
-	return call;
-}
-
-static Handle PrepSDKCall_GetMaxAmmo(GameData gamedata)
-{
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::GetMaxAmmo");
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
-	
-	Handle call = EndPrepSDKCall();
-	if (!call)
-		LogMessage("Failed to create call: CTFPlayer::GetMaxAmmo");
 	
 	return call;
 }
@@ -109,6 +94,19 @@ static Handle PrepSDKCall_SetScrambleTeams(GameData gamedata)
 	if (!call)
 		LogMessage("Failed to create call: CTFGameRules::SetScrambleTeams");
 	
+	return call;
+}
+
+static Handle PrepSDKCall_GetDefaultItemChargeMeterValue(GameData gamedata)
+{
+	StartPrepSDKCall(SDKCall_Entity);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "CBaseEntity::GetDefaultItemChargeMeterValue");
+	PrepSDKCall_SetReturnInfo(SDKType_Float, SDKPass_Plain);
+	
+	Handle call = EndPrepSDKCall();
+	if (!call)
+		LogError("Failed to create SDKCall: CBaseEntity::GetDefaultItemChargeMeterValue");
+		
 	return call;
 }
 
@@ -181,6 +179,11 @@ stock void SDKCall_SetScrambleTeams(bool shouldScramble)
 	SDKCall(SDKCallSetScrambleTeams, shouldScramble);
 }
 
+stock float SDKCall_GetDefaultItemChargeMeterValue(int weapon)
+{
+	return SDKCall(SDKCallGetDefaultItemChargeMeterValue, weapon);
+}
+
 stock void SDKCall_EquipWearable(int client, int wearable)
 {
 	SDKCall(SDKCallEquipWearable, client, wearable);
@@ -189,11 +192,6 @@ stock void SDKCall_EquipWearable(int client, int wearable)
 stock int SDKCall_GetEquippedWearableForLoadoutSlot(int client, int slot)
 {
 	return SDKCall(SDKCallGetEquippedWearableForLoadoutSlot, client, slot);
-}
-
-stock int SDKCall_GetMaxAmmo(int client, int slot)
-{
-	return SDKCall(SDKCallGetMaxAmmo, client, slot, -1);
 }
 
 stock Address SDKCall_GiveNamedItem(int client, const char[] classname, int subType, Address item, bool force = false, bool skipHook = true)
