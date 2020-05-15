@@ -137,7 +137,7 @@ methodmap TFGOWeaponList < ArrayList
 	
 	public int GetByDefIndex(int defindex, TFGOWeapon weapon)
 	{
-		int i = this.FindValue(Config_GetOriginalItemDefIndex(defindex));
+		int i = this.FindValue(Config_GetOriginalItemDefIndex(defindex), TFGOWeapon::defindex);
 		return i != -1 ? this.GetArray(i, weapon) : 0;
 	}
 }
