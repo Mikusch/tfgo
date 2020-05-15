@@ -163,14 +163,12 @@ Action Event_ArenaRoundStart(Event event, const char[] name, bool dontBroadcast)
 	g_IsMainRoundActive = true;
 	g_IsBuyTimeActive = true;
 	g_BuyTimeTimer = CreateTimer(tfgo_buytime.FloatValue, Timer_OnBuyTimeExpire, _, TIMER_FLAG_NO_MAPCHANGE);
-	g_TenSecondRoundTimer = CreateTimer(FindConVar("tf_arena_round_time").FloatValue - 10.0, Timer_OnRoundTenSecCount, _, TIMER_FLAG_NO_MAPCHANGE);
 }
 
 Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 {
 	g_IsMainRoundActive = false;
 	g_IsBonusRoundActive = true;
-	g_TenSecondRoundTimer = null;
 	
 	int winreason = event.GetInt("winreason");
 	

@@ -145,7 +145,6 @@ methodmap TFGOWeaponList < ArrayList
 
 // Timers
 Handle g_BuyTimeTimer;
-Handle g_TenSecondRoundTimer;
 Handle g_TenSecondBombTimer;
 Handle g_BombDetonationTimer;
 Handle g_BombExplosionTimer;
@@ -209,6 +208,7 @@ MusicKit g_CurrentMusicKit; // TODO: Rework music kits and remove me!
 #include "tfgo/console.sp"
 #include "tfgo/convar.sp"
 #include "tfgo/dhook.sp"
+#include "tfgo/entoutput.sp"
 #include "tfgo/event.sp"
 #include "tfgo/forward.sp"
 #include "tfgo/native.sp"
@@ -245,8 +245,9 @@ public void OnPluginStart()
 	LoadTranslations("tfgo.phrases.txt");
 	
 	Config_Init();
-	ConVar_Init();
 	Console_Init();
+	ConVar_Init();
+	EntOutput_Init();
 	Event_Init();
 	MusicKit_Init();
 	
@@ -444,14 +445,6 @@ Action Timer_OnBuyTimeExpire(Handle timer)
 	}
 }
 
-Action Timer_OnRoundTenSecCount(Handle timer)
-{
-	if (g_TenSecondRoundTimer != timer) return;
-	
-	g_CurrentMusicKit.StopMusicForAll(Music_StartAction);
-	g_CurrentMusicKit.PlayMusicToAll(Music_RoundTenSecCount);
-}
-
 Action Timer_OnBombTenSecCount(Handle timer)
 {
 	if (g_TenSecondBombTimer != timer || !g_IsMainRoundActive) return;
@@ -561,9 +554,6 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	g_CurrentMusicKit.PlayMusicToAll(Music_BombPlanted);
 	EmitGameSoundToAll(GAMESOUND_ANNOUNCER_BOMB_PLANTED);
 	EmitBombSeeGameSounds();
-	
-	// Reset timers
-	g_TenSecondRoundTimer = null;
 	
 	// Show text on screen
 	char message[PLATFORM_MAX_PATH];
