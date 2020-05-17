@@ -223,7 +223,7 @@ methodmap TFGOPlayer
 		for (int slot = sizeof(PlayerLoadoutWeaponIndexes[][]) - 1; slot >= 0; slot--)
 		{
 			int defindex = this.GetWeaponFromLoadout(class, slot);
-			if (defindex > -1 && GetPlayerWeaponSlot(this.Client, slot) == -1)
+			if (defindex > -1 && (GetPlayerWeaponSlot(this.Client, slot) == -1 && SDKCall_GetEquippedWearableForLoadoutSlot(this.Client, slot) == -1))
 				TF2_CreateAndEquipWeapon(this.Client, defindex);
 		}
 	}
