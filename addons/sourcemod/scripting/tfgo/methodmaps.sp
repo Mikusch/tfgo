@@ -178,7 +178,7 @@ methodmap TFGOPlayer
 				
 				// This fixes HUD meters
 				Event event = CreateEvent("localplayer_pickup_weapon", true);
-				event.FireToClient(iClient);
+				event.FireToClient(this.Client);
 				event.Cancel();
 				
 				// Add health to player if needed
