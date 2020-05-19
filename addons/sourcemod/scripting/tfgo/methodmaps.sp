@@ -176,6 +176,11 @@ methodmap TFGOPlayer
 				// Reset item charge meter to default value
 				SetEntPropFloat(this.Client, Prop_Send, "m_flItemChargeMeter", SDKCall_GetDefaultItemChargeMeterValue(weapon), slot);
 				
+				// This fixes HUD meters
+				Event event = CreateEvent("localplayer_pickup_weapon", true);
+				event.FireToClient(iClient);
+				event.Cancel();
+				
 				// Add health to player if needed
 				ArrayList attribs = TF2Econ_GetItemStaticAttributes(defindex);
 				int index = attribs.FindValue(ATTRIB_MAX_HEALTH_ADDITIVE_BONUS);
