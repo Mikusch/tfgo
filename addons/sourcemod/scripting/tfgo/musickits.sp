@@ -130,17 +130,6 @@ void MusicKit_PlayKitsToTeam(TFTeam team, MusicType type)
 	}
 }
 
-stock void StopGameSound(int client, const char[] name)
-{
-	SoundEntry entry = GetSoundByName(name);
-	for (int i = 0; i < entry.GetWaveCount(); i++)
-	{
-		char path[PLATFORM_MAX_PATH];
-		entry.GetWavePath(i, path, sizeof(path));
-		StopSound(client, entry.GetChannel(), path);
-	}
-}
-
 stock void PrecacheSoundScriptEntries(SoundScript soundScript)
 {
 	for (int i = 0; i < soundScript.Count; i++)
