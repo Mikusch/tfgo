@@ -251,9 +251,7 @@ Action Event_TeamplayRoundStart(Event event, const char[] name, bool dontBroadca
 	g_IsBonusRoundActive = false;
 	g_IsMainRoundActive = false;
 	
-	g_CurrentMusicKit.StopMusicForAll(Music_WonRound);
-	g_CurrentMusicKit.StopMusicForAll(Music_LostRound);
-	g_CurrentMusicKit.PlayMusicToAll(Music_StartRound);
+	MusicKit_PlayKitsToClients(Music_StartRound);
 	
 	// Bomb can freely tick and explode through the bonus time and we cancel it here
 	g_IsBombTicking = false;

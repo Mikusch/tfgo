@@ -6,6 +6,7 @@
 #include <memorypatch>
 #include <morecolors>
 #include <tf_econ_data>
+#include <loadsoundscript>
 #include <tfgo>
 
 #pragma semicolon 1
@@ -141,6 +142,19 @@ methodmap TFGOWeaponList < ArrayList
 	}
 }
 
+enum MusicType
+{
+	Music_StartRound, 
+	Music_StartAction, 
+	Music_BombPlanted, 
+	Music_BombTenSecCount, 
+	Music_TenSecCount, 
+	Music_WonRound, 
+	Music_LostRound, 
+	Music_DeathCam, 
+	Music_MVPAnthem
+}
+
 
 // Timers
 Handle g_BuyTimeTimer;
@@ -151,7 +165,6 @@ Handle g_BombExplosionTimer;
 // Other handles
 MemoryPatch g_PickupWeaponPatch;
 TFGOWeaponList g_AvailableWeapons;
-StringMap g_AvailableMusicKits;
 
 // Map
 bool g_MapHasRespawnRoom;
@@ -198,8 +211,6 @@ ConVar tfgo_cash_team_planted_bomb_but_defused;
 
 #include "tfgo/methodmaps.sp"
 
-#include "tfgo/musickits.sp"
-MusicKit g_CurrentMusicKit; // TODO: Rework music kits and remove me!
 
 #include "tfgo/buymenu.sp"
 #include "tfgo/buyzone.sp"
@@ -210,6 +221,7 @@ MusicKit g_CurrentMusicKit; // TODO: Rework music kits and remove me!
 #include "tfgo/entoutput.sp"
 #include "tfgo/event.sp"
 #include "tfgo/forward.sp"
+#include "tfgo/musickits.sp"
 #include "tfgo/native.sp"
 #include "tfgo/sdkcall.sp"
 #include "tfgo/sdkhook.sp"
@@ -301,15 +313,17 @@ public void OnMapStart()
 	ResetRoundState();
 	
 	Sound_Precache();
-	
 	MusicKit_Precache();
 	
 	PrecacheModel(MODEL_BOMB);
 	
 	PrecacheParticleSystem(PARTICLE_BOMB_EXPLOSION);
 	
-	// Pick random music kit for the game
-	ChooseRandomMusicKit();
+	// Pick a random music kit for everyone (sub-plugins can override this!)
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		MusicKit_SetRandomDefaultMusicKit(client);
+	}
 	
 	if (FindEntityByClassname(MaxClients + 1, "func_respawnroom") > -1)
 	{
@@ -448,8 +462,7 @@ Action Timer_OnBombTenSecCount(Handle timer)
 {
 	if (g_TenSecondBombTimer != timer || !g_IsMainRoundActive) return;
 	
-	g_CurrentMusicKit.StopMusicForAll(Music_BombPlanted);
-	g_CurrentMusicKit.PlayMusicToAll(Music_BombTenSecCount);
+	MusicKit_PlayKitsToClients(Music_BombTenSecCount);
 }
 
 Action Timer_OnBombTimerExpire(Handle timer)
@@ -548,9 +561,7 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	g_BombDetonationTimer = CreateTimer(tfgo_bombtimer.FloatValue, Timer_OnBombTimerExpire, _, TIMER_FLAG_NO_MAPCHANGE);
 	
 	// Play Sounds
-	g_CurrentMusicKit.StopMusicForAll(Music_StartAction);
-	g_CurrentMusicKit.StopMusicForAll(Music_RoundTenSecCount);
-	g_CurrentMusicKit.PlayMusicToAll(Music_BombPlanted);
+	MusicKit_PlayKitsToClients(Music_BombPlanted);
 	EmitGameSoundToAll(GAMESOUND_ANNOUNCER_BOMB_PLANTED);
 	EmitBombSeeGameSounds();
 	
@@ -592,14 +603,4 @@ void ResetRoundState()
 	}
 	
 	ResetPlayerBuyZoneStates();
-}
-
-void ChooseRandomMusicKit()
-{
-	StringMapSnapshot snapshot = g_AvailableMusicKits.Snapshot();
-	char name[PLATFORM_MAX_PATH];
-	snapshot.GetKey(GetRandomInt(0, snapshot.Length - 1), name, sizeof(name));
-	delete snapshot;
-	
-	g_AvailableMusicKits.GetArray(name, g_CurrentMusicKit, sizeof(g_CurrentMusicKit));
 }

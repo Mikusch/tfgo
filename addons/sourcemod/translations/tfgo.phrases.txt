@@ -294,6 +294,16 @@
 		"en"	"{negative}0{default}: No income for suiciding."
 	}
 	
+	// Music Kits
+	"Playing_MVP_MusicKit"
+	{
+		"en"	"Playing %s's MVP Anthem"
+	}
+	"Playing_MVP_MusicKit_Yours"
+	{
+		"en"	"Playing your MVP Anthem for everyone"
+	}
+	
 	// HUD Text
 	"HUD_Armor"
 	{
