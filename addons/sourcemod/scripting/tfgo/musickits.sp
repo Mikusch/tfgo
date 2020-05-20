@@ -78,15 +78,18 @@ void MusicKit_PlayKitsToClients(MusicType type)
 {
 	for (int client = 1; client <= MaxClients; client++)
 	{
-		char sound[PLATFORM_MAX_PATH];
-		if (BuildGameSound(client, type, sound, sizeof(sound)) > 0)
+		if (IsClientInGame(client))
 		{
-			TFGOPlayer player = TFGOPlayer(client);
-			char previousSound[PLATFORM_MAX_PATH];
-			player.GetPreviousPlayedSound(previousSound, sizeof(previousSound));
-			StopGameSound(client, previousSound);
-			player.SetPreviousPlayedSound(sound);
-			EmitGameSoundToClient(client, sound);
+			char sound[PLATFORM_MAX_PATH];
+			if (BuildGameSound(client, type, sound, sizeof(sound)) > 0)
+			{
+				TFGOPlayer player = TFGOPlayer(client);
+				char previousSound[PLATFORM_MAX_PATH];
+				player.GetPreviousPlayedSound(previousSound, sizeof(previousSound));
+				StopGameSound(client, previousSound);
+				player.SetPreviousPlayedSound(sound);
+				EmitGameSoundToClient(client, sound);
+			}
 		}
 	}
 }
@@ -108,14 +111,17 @@ void MusicKit_PlayMVPAnthem(int mvp)
 		
 		for (int client = 1; client <= MaxClients; client++)
 		{
-			if (mvp == client)
-				PrintToChat(client, "%T", "Playing_MVP_MusicKit_Yours", LANG_SERVER);
-			else
-				PrintToChat(client, "%T", "Playing_MVP_MusicKit", LANG_SERVER, name);
-			
-			StopGameSound(client, PreviousPlayedSounds[client]);
-			strcopy(PreviousPlayedSounds[client], sizeof(PreviousPlayedSounds[]), sound);
-			EmitGameSoundToClient(client, sound);
+			if (IsClientInGame(client))
+			{
+				if (mvp == client)
+					PrintToChat(client, "%T", "Playing_MVP_MusicKit_Yours", LANG_SERVER);
+				else
+					PrintToChat(client, "%T", "Playing_MVP_MusicKit", LANG_SERVER, name);
+				
+				StopGameSound(client, PreviousPlayedSounds[client]);
+				strcopy(PreviousPlayedSounds[client], sizeof(PreviousPlayedSounds[]), sound);
+				EmitGameSoundToClient(client, sound);
+			}
 		}
 	}
 }
