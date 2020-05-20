@@ -133,6 +133,25 @@ forward void TFGO_OnClientPickupWeapon(int client, int defindex);
 */
 native int TFGO_GetWeapon(int defindex, any[] buffer);
 
+/**
+ * Registers a new music kit with the specified name and soundscript.
+ *
+ * @param name		Name of the music kit.
+ * @param path		Path to the soundscript text file.
+ * @param isDefault	Whether this music kit can be randomly assigned to players as a default kit.
+ * @param precache	Whether to precache the sounds in this music kit. All music kit sounds are automatically precached on map start.
+ */
+native void TFGO_RegisterMusicKit(const char[] name, const char[] path, bool isDefault = false, bool precache = false);
+
+/**
+ * Sets the active music kit for a client.
+ * The music kit passed must be registered prior using TFGO_RegisterMusicKit.
+ *
+ * @param client	Client index.
+ * @param name		Name of the music kit.
+ */
+native void TFGO_SetClientMusicKit(int client, const char[] name);
+
 public SharedPlugin __pl_tfgo =
 {
 	name = "tfgo",
@@ -148,5 +167,7 @@ public SharedPlugin __pl_tfgo =
 public __pl_tfgo_SetNTVOptional()
 {
 	MarkNativeAsOptional("TFGO_GetWeapon");
+	MarkNativeAsOptional("TFGO_RegisterMusicKit");
+	MarkNativeAsOptional("TFGO_SetClientMusicKit");
 }
 #endif

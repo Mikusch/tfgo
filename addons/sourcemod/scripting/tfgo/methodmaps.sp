@@ -4,6 +4,8 @@ static int PlayerArmorValues[TF_MAXPLAYERS][view_as<int>(TFClass_Engineer) + 1];
 static bool PlayerHelmets[TF_MAXPLAYERS][view_as<int>(TFClass_Engineer) + 1];
 static bool PlayerDefuseKits[TF_MAXPLAYERS][view_as<int>(TFClass_Engineer) + 1];
 static Menu ActiveBuyMenus[TF_MAXPLAYERS];
+static char PlayerMusicKits[TF_MAXPLAYERS][PLATFORM_MAX_PATH];
+static char PlayerPreviousMusicKitSounds[TF_MAXPLAYERS][PLATFORM_MAX_PATH];
 
 static int TeamConsecutiveLosses[view_as<int>(TFTeam_Blue) + 1] =  { STARTING_CONSECUTIVE_LOSSES, ... };
 static bool IsTeamAttacking[view_as<int>(TFTeam_Blue) + 1];
@@ -87,6 +89,26 @@ methodmap TFGOPlayer
 		{
 			ActiveBuyMenus[this] = val;
 		}
+	}
+	
+	public int GetMusicKit(char[] buffer, int maxlen)
+	{
+		return strcopy(buffer, maxlen, PlayerMusicKits[this]);
+	}
+	
+	public int SetMusicKit(const char[] name)
+	{
+		return strcopy(PlayerMusicKits[this], sizeof(PlayerMusicKits[]), name);
+	}
+	
+	public int GetPreviousPlayedSound(char[] buffer, int maxlen)
+	{
+		return strcopy(buffer, maxlen, PlayerPreviousMusicKitSounds[this]);
+	}
+	
+	public int SetPreviousPlayedSound(const char[] sound)
+	{
+		return strcopy(PlayerPreviousMusicKitSounds[this], sizeof(PlayerPreviousMusicKitSounds[]), sound);
 	}
 	
 	public void AddToAccount(int val, const char[] format, any...)
