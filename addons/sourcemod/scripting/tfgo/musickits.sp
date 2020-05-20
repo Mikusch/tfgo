@@ -109,9 +109,9 @@ void MusicKit_PlayMVPAnthem(int mvp)
 		for (int client = 1; client <= MaxClients; client++)
 		{
 			if (mvp == client)
-				PrintToChatAll("%T", "Playing_MVP_MusicKit_Yours", LANG_SERVER);
+				PrintToChat(client, "%T", "Playing_MVP_MusicKit_Yours", LANG_SERVER);
 			else
-				PrintToChatAll("%T", "Playing_MVP_MusicKit", LANG_SERVER, name);
+				PrintToChat(client, "%T", "Playing_MVP_MusicKit", LANG_SERVER, name);
 			
 			StopGameSound(client, PreviousPlayedSounds[client]);
 			strcopy(PreviousPlayedSounds[client], sizeof(PreviousPlayedSounds[]), sound);
