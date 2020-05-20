@@ -116,7 +116,7 @@ bool MusicKit_HasCustomMusicKit(int client)
 {
 	char kit[PLATFORM_MAX_PATH];
 	SoundScript soundScript;
-	return TFGOPlayer(client).GetMusicKit(kit, sizeof(kit)) > 0 && CustomMusicKits.GetValue(ClientMusicKits[client], soundScript);
+	return TFGOPlayer(client).GetMusicKit(kit, sizeof(kit)) > 0 && CustomMusicKits.GetValue(kit, soundScript);
 }
 
 void MusicKit_PlayMVPAnthem(int mvp)
@@ -136,8 +136,12 @@ void MusicKit_PlayMVPAnthem(int mvp)
 				else
 					PrintToChat(client, "%T", "Playing_MVP_MusicKit", LANG_SERVER, name);
 				
-				StopGameSound(client, PreviousPlayedSounds[client]);
-				strcopy(PreviousPlayedSounds[client], sizeof(PreviousPlayedSounds[]), sound);
+				TFGOPlayer player = TFGOPlayer(client);
+				char previousSound[PLATFORM_MAX_PATH];
+				player.GetPreviousPlayedSound(previousSound, sizeof(previousSound));
+				StopGameSound(client, previousSound);
+				player.SetPreviousPlayedSound(sound);
+				
 				EmitGameSoundToClient(client, sound);
 			}
 		}

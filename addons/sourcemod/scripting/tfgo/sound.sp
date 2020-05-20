@@ -85,13 +85,20 @@ Action Event_Pre_TeamplayBroadcastAudio(Event event, const char[] name, bool don
 	
 	if (strncmp(sound, "Game.", 5) == 0)
 	{
-		// Playing sound directly instead of rewriting event so we can control when to stop it
-		if (StrEqual(sound, "Game.YourTeamWon"))
-			MusicKit_PlayKitsToTeam(team, Music_WonRound);
-		else if (StrEqual(sound, "Game.YourTeamLost") || StrEqual(sound, "Game.Stalemate"))
-			MusicKit_PlayKitsToTeam(team, Music_LostRound);
-		
-		return Plugin_Handled;
+		if (g_PlayedMVPAnthem)
+		{
+			// Someone's MVP anthem was played, reset the variable and don't do anything else
+			g_PlayedMVPAnthem = false;
+		}
+		else
+		{
+			if (StrEqual(sound, "Game.YourTeamWon"))
+				MusicKit_PlayKitsToTeam(team, Music_WonRound);
+			else if (StrEqual(sound, "Game.YourTeamLost") || StrEqual(sound, "Game.Stalemate"))
+				MusicKit_PlayKitsToTeam(team, Music_LostRound);
+			
+			return Plugin_Handled;
+		}
 	}
 	else if (StrEqual(sound, "Announcer.AM_RoundStartRandom"))
 	{

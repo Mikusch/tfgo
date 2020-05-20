@@ -229,6 +229,14 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 		// Adjust consecutive loss count for each team
 		losingTeam.ConsecutiveLosses++;
 		winningTeam.ConsecutiveLosses--;
+		
+		// Play the win sound of the MVP
+		int mvp = event.GetInt("player_1");
+		if (IsValidClient(mvp) && MusicKit_HasCustomMusicKit(mvp))
+		{
+			MusicKit_PlayMVPAnthem(mvp);
+			g_PlayedMVPAnthem = true;
+		}
 	}
 	
 	static int roundsPlayed;
