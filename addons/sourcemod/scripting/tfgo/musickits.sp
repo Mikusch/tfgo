@@ -74,22 +74,40 @@ void MusicKit_SetRandomDefaultMusicKit(int client)
 	}
 }
 
-void MusicKit_PlayKitsToClients(MusicType type)
+void MusicKit_PlayKitsToClients(MusicType type, bool stopPrevious = true)
 {
 	for (int client = 1; client <= MaxClients; client++)
 	{
 		if (IsClientInGame(client))
+			MusicKit_PlayKitToClient(client, type, stopPrevious);
+	}
+}
+
+void MusicKit_PlayKitToClient(int client, MusicType type, bool stopPrevious = true)
+{
+	char sound[PLATFORM_MAX_PATH];
+	if (BuildGameSound(client, type, sound, sizeof(sound)) > 0)
+	{
+		if (stopPrevious)
 		{
-			char sound[PLATFORM_MAX_PATH];
-			if (BuildGameSound(client, type, sound, sizeof(sound)) > 0)
-			{
-				TFGOPlayer player = TFGOPlayer(client);
-				char previousSound[PLATFORM_MAX_PATH];
-				player.GetPreviousPlayedSound(previousSound, sizeof(previousSound));
-				StopGameSound(client, previousSound);
-				player.SetPreviousPlayedSound(sound);
-				EmitGameSoundToClient(client, sound);
-			}
+			TFGOPlayer player = TFGOPlayer(client);
+			char previousSound[PLATFORM_MAX_PATH];
+			player.GetPreviousPlayedSound(previousSound, sizeof(previousSound));
+			StopGameSound(client, previousSound);
+			player.SetPreviousPlayedSound(sound);
+		}
+		
+		EmitGameSoundToClient(client, sound);
+	}
+}
+
+void MusicKit_PlayKitsToTeam(TFTeam team, MusicType type, bool stopPrevious = true)
+{
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientInGame(client) && TF2_GetClientTeam(client) == team)
+		{
+			MusicKit_PlayKitToClient(client, type, stopPrevious);
 		}
 	}
 }
@@ -120,26 +138,6 @@ void MusicKit_PlayMVPAnthem(int mvp)
 				
 				StopGameSound(client, PreviousPlayedSounds[client]);
 				strcopy(PreviousPlayedSounds[client], sizeof(PreviousPlayedSounds[]), sound);
-				EmitGameSoundToClient(client, sound);
-			}
-		}
-	}
-}
-
-void MusicKit_PlayKitsToTeam(TFTeam team, MusicType type)
-{
-	for (int client = 1; client <= MaxClients; client++)
-	{
-		if (IsClientInGame(client) && TF2_GetClientTeam(client) == team)
-		{
-			char sound[PLATFORM_MAX_PATH];
-			if (BuildGameSound(client, type, sound, sizeof(sound)) > 0)
-			{
-				TFGOPlayer player = TFGOPlayer(client);
-				char previousSound[PLATFORM_MAX_PATH];
-				player.GetPreviousPlayedSound(previousSound, sizeof(previousSound));
-				StopGameSound(client, previousSound);
-				player.SetPreviousPlayedSound(sound);
 				EmitGameSoundToClient(client, sound);
 			}
 		}

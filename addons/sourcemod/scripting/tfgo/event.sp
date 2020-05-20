@@ -108,6 +108,8 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 					killAward = RoundFloat(weapon.killAward * factor);
 				
 				attacker.AddToAccount(killAward, "%T", "Player_Cash_Award_Killed_Enemy", LANG_SERVER, killAward, weaponName);
+				
+				MusicKit_PlayKitToClient(victim.Client, Music_DeathCam, false);
 			}
 		}
 		
