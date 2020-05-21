@@ -7,9 +7,9 @@
 	
 	"rndwave"
 	{
-		"wave"		"*tfgo/music/valve_csgo_01/startround_01.mp3"
-		"wave"		"*tfgo/music/valve_csgo_01/startround_02.mp3"
-		"wave"		"*tfgo/music/valve_csgo_01/startround_03.mp3"
+		"wave"		"#tfgo/music/valve_csgo_01/startround_01.mp3"
+		"wave"		"#tfgo/music/valve_csgo_01/startround_02.mp3"
+		"wave"		"#tfgo/music/valve_csgo_01/startround_03.mp3"
 	}
 }
 
@@ -20,7 +20,7 @@
 	"soundlevel" "SNDLVL_NONE"
 	"pitch"		 "PITCH_NORM"
 	
-	"wave"  "*tfgo/music/valve_csgo_01/startaction_01.mp3"
+	"wave"  "#tfgo/music/valve_csgo_01/startaction_01.mp3"
 }
 
 "Music.BombPlanted.valve_csgo_01"
@@ -30,7 +30,7 @@
 	"soundlevel" "SNDLVL_NONE"
 	"pitch"		 "PITCH_NORM"
 	
-	"wave"  "*tfgo/music/valve_csgo_01/bombplanted.mp3"
+	"wave"  "#tfgo/music/valve_csgo_01/bombplanted.mp3"
 }
 
 "Music.BombTenSecCount.valve_csgo_01"
@@ -40,7 +40,7 @@
 	"soundlevel"  	"SNDLVL_NONE"
 	"pitch"		"PITCH_NORM"
 	
-	"wave"  "*tfgo/music/valve_csgo_01/bombtenseccount.mp3"
+	"wave"  "#tfgo/music/valve_csgo_01/bombtenseccount.mp3"
 }
 
 "Music.TenSecCount.valve_csgo_01"
@@ -50,7 +50,7 @@
 	"soundlevel"  	"SNDLVL_NONE"
 	"pitch"		"PITCH_NORM"
 	
-	"wave"  "*tfgo/music/valve_csgo_01/roundtenseccount.mp3"
+	"wave"  "#tfgo/music/valve_csgo_01/roundtenseccount.mp3"
 }
 
 "Music.WonRound.valve_csgo_01"
@@ -60,7 +60,7 @@
 	"soundlevel"  	"SNDLVL_NONE"
 	"pitch"		"PITCH_NORM"
 	
-	"wave"	"*tfgo/music/valve_csgo_01/wonround.mp3"
+	"wave"	"#tfgo/music/valve_csgo_01/wonround.mp3"
 }
 
 "Music.LostRound.valve_csgo_01"
@@ -70,7 +70,7 @@
 	"soundlevel"  	"SNDLVL_NONE"
 	"pitch"		"PITCH_NORM"
 	
-	"wave"	"*tfgo/music/valve_csgo_01/lostround.mp3"
+	"wave"	"#tfgo/music/valve_csgo_01/lostround.mp3"
 }
 
 "Music.DeathCam.valve_csgo_01"
@@ -80,7 +80,7 @@
 	"soundlevel"  	"SNDLVL_NONE"
 	"pitch"		"PITCH_NORM"
 	
-	"wave"	"*tfgo/music/valve_csgo_01/deathcam.mp3"
+	"wave"	"#tfgo/music/valve_csgo_01/deathcam.mp3"
 }
 
 "Music.MVPAnthem.valve_csgo_01"
@@ -90,5 +90,5 @@
 	"soundlevel" "SNDLVL_NONE"
 	"pitch"		 "PITCH_NORM"
 	
-	"wave"  "*tfgo/music/valve_csgo_01/roundmvpanthem_01.mp3"
+	"wave"  "#tfgo/music/valve_csgo_01/roundmvpanthem_01.mp3"
 }
