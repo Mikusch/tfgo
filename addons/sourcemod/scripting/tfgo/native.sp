@@ -21,7 +21,7 @@ int NativeCall_RegisterMusicKit(Handle plugin, int numParams)
 	GetNativeString(2, path, sizeof(path));
 	bool isDefault = GetNativeCell(3);
 	bool precache = GetNativeCell(4);
-	MusicKit_RegisterMusicKit(name, path, isDefault, precache);
+	MusicKit_Register(name, path, isDefault, precache);
 }
 
 int NativeCall_SetClientMusicKit(Handle plugin, int numParams)

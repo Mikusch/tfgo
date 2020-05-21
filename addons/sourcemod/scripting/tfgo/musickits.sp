@@ -1,50 +1,81 @@
-static StringMap DefaultMusicKits;
-static StringMap CustomMusicKits;
+enum struct MusicKit
+{
+	char name[256];
+	SoundScript soundScript;
+	bool isDefault;
+	
+	void Precache()
+	{
+		for (int i = 0; i < this.soundScript.Count; i++)
+		{
+			SoundEntry entry = this.soundScript.GetSound(i);
+			char sound[PLATFORM_MAX_PATH];
+			entry.GetName(sound, sizeof(sound));
+			PrecacheScriptSound(sound);
+			AddScriptSoundToDownloadsTable(sound);
+		}
+	}
+}
+
+ArrayList AllMusicKits;
 
 void MusicKit_Init()
 {
-	DefaultMusicKits = new StringMap();
-	CustomMusicKits = new StringMap();
+	AllMusicKits = new ArrayList(sizeof(MusicKit));
 	
-	// Default music kits
-	MusicKit_RegisterMusicKit("valve_csgo_01", "sound/tfgo/music/valve_csgo_01/game_sounds_music.txt", true);
-	MusicKit_RegisterMusicKit("valve_csgo_02", "sound/tfgo/music/valve_csgo_02/game_sounds_music.txt", true);
+	// Register default music kits
+	MusicKit_Register("valve_csgo_01", "sound/tfgo/music/valve_csgo_01/game_sounds_music.txt", true);
+	MusicKit_Register("valve_csgo_02", "sound/tfgo/music/valve_csgo_02/game_sounds_music.txt", true);
 }
 
 void MusicKit_Precache()
 {
-	SoundScriptStringMapPrecache(DefaultMusicKits);
-	SoundScriptStringMapPrecache(CustomMusicKits);
-}
-
-static void SoundScriptStringMapPrecache(StringMap map)
-{
-	StringMapSnapshot snapshot = map.Snapshot();
-	for (int i = 0; i < snapshot.Length; i++)
+	for (int i = 0; i < AllMusicKits.Length; i++)
 	{
-		int keyBufferSize = snapshot.KeyBufferSize(i);
-		char[] key = new char[keyBufferSize];
-		snapshot.GetKey(i, key, keyBufferSize);
-		
-		SoundScript soundScript;
-		if (map.GetValue(key, soundScript))
-			PrecacheSoundScriptEntries(soundScript);
+		MusicKit kit;
+		if (AllMusicKits.GetArray(i, kit, sizeof(kit)) > 0)
+			kit.Precache();
 	}
-	delete snapshot;
 }
 
-bool MusicKit_RegisterMusicKit(const char[] name, const char[] path, bool isDefault = false, bool precache = false)
+stock ArrayList MusicKit_GetAll(bool onlyDefault = false)
 {
-	SoundScript soundScript = LoadSoundScript(path);
+	ArrayList defaultKits = new ArrayList(sizeof(MusicKit));
+	for (int i = 0; i < AllMusicKits.Length; i++)
+	{
+		if (onlyDefault && AllMusicKits.Get(i, MusicKit::isDefault))
+		{
+			MusicKit defaultKit;
+			AllMusicKits.GetArray(i, defaultKit, sizeof(defaultKit));
+			defaultKits.PushArray(defaultKit);
+		}
+	}
+	return defaultKits;
+}
+
+stock int MusicKit_GetByName(const char[] name, MusicKit buffer)
+{
+	int index = AllMusicKits.FindString(name);
+	return index != -1 ? AllMusicKits.GetArray(index, buffer, sizeof(buffer)) : 0;
+}
+
+int MusicKit_Register(const char[] name, const char[] path, bool isDefault = false, bool precache = false)
+{
+	MusicKit kit;
+	strcopy(kit.name, sizeof(kit.name), name);
+	kit.soundScript = LoadSoundScript(path);
+	kit.isDefault = isDefault;
+	
 	if (precache)
-		PrecacheSoundScriptEntries(soundScript);
-	return isDefault ? DefaultMusicKits.SetValue(name, soundScript) : CustomMusicKits.SetValue(name, soundScript);
+		kit.Precache();
+	
+	return AllMusicKits.PushArray(kit);
 }
 
 void MusicKit_SetMusicKit(int client, const char[] name)
 {
-	SoundScript soundScript;
-	if (CustomMusicKits.GetValue(name, soundScript) || DefaultMusicKits.GetValue(name, soundScript))
+	MusicKit kit;
+	if (MusicKit_GetByName(name, kit) > 0)
 	{
 		TFGOPlayer(client).SetMusicKit(name);
 	}
@@ -57,19 +88,16 @@ void MusicKit_SetMusicKit(int client, const char[] name)
 
 void MusicKit_SetRandomDefaultMusicKit(int client)
 {
-	StringMapSnapshot snapshot = DefaultMusicKits.Snapshot();
-	if (snapshot.Length > 0)
+	ArrayList defaultKits = MusicKit_GetAll(true);
+	MusicKit defaultKit;
+	if (defaultKits.GetArray(GetRandomInt(0, defaultKits.Length - 1), defaultKit, sizeof(defaultKit)) > 0)
 	{
-		int i = GetRandomInt(0, snapshot.Length - 1);
-		int keyBufferSize = snapshot.KeyBufferSize(i);
-		char[] key = new char[keyBufferSize];
-		snapshot.GetKey(i, key, keyBufferSize);
-		TFGOPlayer(client).SetMusicKit(key);
-		delete snapshot;
+		TFGOPlayer(client).SetMusicKit(defaultKit.name);
+		delete defaultKits;
 	}
 	else
 	{
-		delete snapshot;
+		delete defaultKits;
 		ThrowError("No default music kits found");
 	}
 }
@@ -114,9 +142,9 @@ void MusicKit_PlayKitsToTeam(TFTeam team, MusicType type, bool stopPrevious = tr
 
 bool MusicKit_HasCustomMusicKit(int client)
 {
-	char kit[PLATFORM_MAX_PATH];
-	SoundScript soundScript;
-	return TFGOPlayer(client).GetMusicKit(kit, sizeof(kit)) > 0 && CustomMusicKits.GetValue(kit, soundScript);
+	char name[PLATFORM_MAX_PATH];
+	MusicKit kit;
+	return TFGOPlayer(client).GetMusicKit(name, sizeof(name)) > 0 && MusicKit_GetByName(name, kit);
 }
 
 void MusicKit_PlayMVPAnthem(int mvp)
@@ -145,18 +173,6 @@ void MusicKit_PlayMVPAnthem(int mvp)
 				EmitGameSoundToClient(client, sound);
 			}
 		}
-	}
-}
-
-stock void PrecacheSoundScriptEntries(SoundScript soundScript)
-{
-	for (int i = 0; i < soundScript.Count; i++)
-	{
-		SoundEntry entry = soundScript.GetSound(i);
-		char sound[PLATFORM_MAX_PATH];
-		entry.GetName(sound, sizeof(sound));
-		PrecacheScriptSound(sound);
-		AddScriptSoundToDownloadsTable(sound);
 	}
 }
 
