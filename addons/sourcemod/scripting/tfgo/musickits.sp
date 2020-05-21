@@ -15,6 +15,64 @@ enum struct MusicKit
 			AddScriptSoundToDownloadsTable(sound);
 		}
 	}
+	
+	int BuildGameSound(MusicType type, char[] buffer, int maxlen)
+	{
+		char entry[PLATFORM_MAX_PATH];
+		if (GetEntryNameForMusicType(type, entry, sizeof(entry)) > 0)
+			return Format(buffer, maxlen, "%s.%s", entry, this.name);
+		else
+			return 0;
+	}
+	
+	void PlayGameSoundToClient(int client, char[] gameSound, bool stopPrevious = true)
+	{
+		if (stopPrevious)
+		{
+			TFGOPlayer player = TFGOPlayer(client);
+			char previousSound[PLATFORM_MAX_PATH];
+			player.GetPreviousPlayedSound(previousSound, sizeof(previousSound));
+			StopGameSound(client, previousSound);
+			player.SetPreviousPlayedSound(gameSound);
+		}
+		
+		EmitGameSoundToClient(client, gameSound);
+	}
+	
+	void PlayToClient(int client, MusicType type, bool stopPrevious = true)
+	{
+		char gameSound[PLATFORM_MAX_PATH];
+		if (this.BuildGameSound(type, gameSound, sizeof(gameSound)) > 0)
+		{
+			this.PlayGameSoundToClient(client, gameSound, stopPrevious);
+		}
+	}
+	
+	void PlayToTeam(TFTeam team, MusicType type, bool stopPrevious = true)
+	{
+		char gameSound[PLATFORM_MAX_PATH];
+		if (this.BuildGameSound(type, gameSound, sizeof(gameSound)) > 0)
+		{
+			for (int client = 1; client <= MaxClients; client++)
+			{
+				if (IsClientInGame(client) && TF2_GetClientTeam(client) == team)
+					this.PlayGameSoundToClient(client, gameSound, stopPrevious);
+			}
+		}
+	}
+	
+	void PlayToAll(MusicType type, bool stopPrevious = true)
+	{
+		char gameSound[PLATFORM_MAX_PATH];
+		if (this.BuildGameSound(type, gameSound, sizeof(gameSound)) > 0)
+		{
+			for (int client = 1; client <= MaxClients; client++)
+			{
+				if (IsClientInGame(client))
+					this.PlayGameSoundToClient(client, gameSound, stopPrevious);
+			}
+		}
+	}
 }
 
 ArrayList AllMusicKits;
@@ -38,12 +96,12 @@ void MusicKit_Precache()
 	}
 }
 
-stock ArrayList MusicKit_GetAll(bool onlyDefault = false)
+stock ArrayList MusicKit_GetDefaultKits(bool onlyDefault = false)
 {
 	ArrayList defaultKits = new ArrayList(sizeof(MusicKit));
 	for (int i = 0; i < AllMusicKits.Length; i++)
 	{
-		if (onlyDefault && AllMusicKits.Get(i, MusicKit::isDefault))
+		if (AllMusicKits.Get(i, MusicKit::isDefault))
 		{
 			MusicKit defaultKit;
 			AllMusicKits.GetArray(i, defaultKit, sizeof(defaultKit));
@@ -88,7 +146,7 @@ void MusicKit_SetMusicKit(int client, const char[] name)
 
 void MusicKit_SetRandomDefaultMusicKit(int client)
 {
-	ArrayList defaultKits = MusicKit_GetAll(true);
+	ArrayList defaultKits = MusicKit_GetDefaultKits(true);
 	MusicKit defaultKit;
 	if (defaultKits.GetArray(GetRandomInt(0, defaultKits.Length - 1), defaultKit, sizeof(defaultKit)) > 0)
 	{
@@ -102,41 +160,31 @@ void MusicKit_SetRandomDefaultMusicKit(int client)
 	}
 }
 
-void MusicKit_PlayKitsToClients(MusicType type, bool stopPrevious = true)
+void MusicKit_PlayAllClientMusicKits(MusicType type, bool stopPrevious = true)
 {
 	for (int client = 1; client <= MaxClients; client++)
 	{
 		if (IsClientInGame(client))
-			MusicKit_PlayKitToClient(client, type, stopPrevious);
+			MusicKit_PlayClientMusicKit(client, type, stopPrevious);
 	}
 }
 
-void MusicKit_PlayKitToClient(int client, MusicType type, bool stopPrevious = true)
+void MusicKit_PlayClientMusicKit(int client, MusicType type, bool stopPrevious = true)
 {
-	char sound[PLATFORM_MAX_PATH];
-	if (BuildGameSound(client, type, sound, sizeof(sound)) > 0)
-	{
-		if (stopPrevious)
-		{
-			TFGOPlayer player = TFGOPlayer(client);
-			char previousSound[PLATFORM_MAX_PATH];
-			player.GetPreviousPlayedSound(previousSound, sizeof(previousSound));
-			StopGameSound(client, previousSound);
-			player.SetPreviousPlayedSound(sound);
-		}
-		
-		EmitGameSoundToClient(client, sound);
-	}
+	char name[PLATFORM_MAX_PATH];
+	TFGOPlayer(client).GetMusicKit(name, sizeof(name));
+	
+	MusicKit kit;
+	if (MusicKit_GetByName(name, kit) > 0)
+		kit.PlayToClient(client, type, stopPrevious);
 }
 
-void MusicKit_PlayKitsToTeam(TFTeam team, MusicType type, bool stopPrevious = true)
+void MusicKit_PlayTeamMusicKits(TFTeam team, MusicType type, bool stopPrevious = true)
 {
 	for (int client = 1; client <= MaxClients; client++)
 	{
 		if (IsClientInGame(client) && TF2_GetClientTeam(client) == team)
-		{
-			MusicKit_PlayKitToClient(client, type, stopPrevious);
-		}
+			MusicKit_PlayClientMusicKit(client, type, stopPrevious);
 	}
 }
 
@@ -149,44 +197,12 @@ bool MusicKit_HasCustomMusicKit(int client)
 
 void MusicKit_PlayMVPAnthem(int mvp)
 {
-	char sound[PLATFORM_MAX_PATH];
-	if (BuildGameSound(mvp, Music_MVPAnthem, sound, sizeof(sound)) > 0)
-	{
-		char name[MAX_NAME_LENGTH];
-		GetClientName(mvp, name, sizeof(name));
-		
-		for (int client = 1; client <= MaxClients; client++)
-		{
-			if (IsClientInGame(client))
-			{
-				if (mvp == client)
-					PrintToChat(client, "%T", "Playing_MVP_MusicKit_Yours", LANG_SERVER);
-				else
-					PrintToChat(client, "%T", "Playing_MVP_MusicKit", LANG_SERVER, name);
-				
-				TFGOPlayer player = TFGOPlayer(client);
-				char previousSound[PLATFORM_MAX_PATH];
-				player.GetPreviousPlayedSound(previousSound, sizeof(previousSound));
-				StopGameSound(client, previousSound);
-				player.SetPreviousPlayedSound(sound);
-				
-				EmitGameSoundToClient(client, sound);
-			}
-		}
-	}
-}
-
-stock int BuildGameSound(int client, MusicType type, char[] buffer, int maxlen)
-{
-	char entry[PLATFORM_MAX_PATH];
-	if (GetEntryNameForMusicType(type, entry, sizeof(entry)) > 0)
-	{
-		char kit[PLATFORM_MAX_PATH];
-		if (TFGOPlayer(client).GetMusicKit(kit, sizeof(kit)) > 0)
-			return Format(buffer, maxlen, "%s.%s", entry, kit);
-	}
+	char name[PLATFORM_MAX_PATH];
+	TFGOPlayer(mvp).GetMusicKit(name, sizeof(name));
 	
-	return 0;
+	MusicKit kit;
+	if (MusicKit_GetByName(name, kit) > 0)
+		kit.PlayToAll(Music_MVPAnthem, true);
 }
 
 stock int GetEntryNameForMusicType(MusicType type, char[] buffer, int maxlen)

@@ -463,7 +463,7 @@ Action Timer_OnBombTenSecCount(Handle timer)
 {
 	if (g_TenSecondBombTimer != timer || !g_IsMainRoundActive) return;
 	
-	MusicKit_PlayKitsToClients(Music_BombTenSecCount);
+	MusicKit_PlayAllClientMusicKits(Music_BombTenSecCount);
 }
 
 Action Timer_OnBombTimerExpire(Handle timer)
@@ -562,7 +562,7 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	g_BombDetonationTimer = CreateTimer(tfgo_bombtimer.FloatValue, Timer_OnBombTimerExpire, _, TIMER_FLAG_NO_MAPCHANGE);
 	
 	// Play Sounds
-	MusicKit_PlayKitsToClients(Music_BombPlanted);
+	MusicKit_PlayAllClientMusicKits(Music_BombPlanted);
 	EmitGameSoundToAll(GAMESOUND_ANNOUNCER_BOMB_PLANTED);
 	EmitBombSeeGameSounds();
 	

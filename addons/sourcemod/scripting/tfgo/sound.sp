@@ -93,16 +93,16 @@ Action Event_Pre_TeamplayBroadcastAudio(Event event, const char[] name, bool don
 		else
 		{
 			if (StrEqual(sound, "Game.YourTeamWon"))
-				MusicKit_PlayKitsToTeam(team, Music_WonRound);
+				MusicKit_PlayTeamMusicKits(team, Music_WonRound);
 			else if (StrEqual(sound, "Game.YourTeamLost") || StrEqual(sound, "Game.Stalemate"))
-				MusicKit_PlayKitsToTeam(team, Music_LostRound);
+				MusicKit_PlayTeamMusicKits(team, Music_LostRound);
 			
 			return Plugin_Handled;
 		}
 	}
 	else if (StrEqual(sound, "Announcer.AM_RoundStartRandom"))
 	{
-		MusicKit_PlayKitsToClients(Music_StartAction);
+		MusicKit_PlayAllClientMusicKits(Music_StartAction);
 	}
 	
 	return Plugin_Continue;

@@ -109,7 +109,7 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 				
 				attacker.AddToAccount(killAward, "%T", "Player_Cash_Award_Killed_Enemy", LANG_SERVER, killAward, weaponName);
 				
-				MusicKit_PlayKitToClient(victim.Client, Music_DeathCam, false);
+				MusicKit_PlayClientMusicKit(victim.Client, Music_DeathCam, false);
 			}
 		}
 		
@@ -261,7 +261,7 @@ Action Event_TeamplayRoundStart(Event event, const char[] name, bool dontBroadca
 	g_IsBonusRoundActive = false;
 	g_IsMainRoundActive = false;
 	
-	MusicKit_PlayKitsToClients(Music_StartRound);
+	MusicKit_PlayAllClientMusicKits(Music_StartRound);
 	
 	// Bomb can freely tick and explode through the bonus time and we cancel it here
 	g_IsBombTicking = false;
