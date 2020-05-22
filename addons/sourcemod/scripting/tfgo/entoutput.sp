@@ -6,8 +6,5 @@ void EntOutput_Init()
 void EntOutput_On10SecRemain(const char[] output, int caller, int activator, float delay)
 {
 	if (g_IsMainRoundActive)
-	{
-		g_CurrentMusicKit.StopMusicForAll(Music_StartAction);
-		g_CurrentMusicKit.PlayMusicToAll(Music_RoundTenSecCount);
-	}
+		MusicKit_PlayAllClientMusicKits(Music_TenSecCount);
 }
