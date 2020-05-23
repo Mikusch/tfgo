@@ -85,10 +85,10 @@ Action Event_Pre_TeamplayBroadcastAudio(Event event, const char[] name, bool don
 	
 	if (strncmp(sound, "Game.", 5) == 0)
 	{
-		if (g_PlayedMVPAnthem)
+		if (IsValidClient(g_MVP) && MusicKit_HasCustomMusicKit(g_MVP))
 		{
-			// Someone's MVP anthem was played, reset the variable and don't do anything else
-			g_PlayedMVPAnthem = false;
+			// MVP Anthem is already playing, just prevent any other sounds
+			return Plugin_Handled;
 		}
 		else
 		{

@@ -182,7 +182,7 @@ bool g_IsMainRoundActive;
 bool g_IsBonusRoundActive;
 bool g_IsBombPlanted;
 bool g_SkipGiveNamedItemHook;
-bool g_PlayedMVPAnthem;
+int g_MVP;
 
 TFTeam g_BombPlantingTeam;
 bool g_HasPlayerSuicided[TF_MAXPLAYERS];
