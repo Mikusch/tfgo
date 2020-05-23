@@ -192,7 +192,7 @@ bool MusicKit_HasCustomMusicKit(int client)
 {
 	char name[PLATFORM_MAX_PATH];
 	MusicKit kit;
-	return TFGOPlayer(client).GetMusicKit(name, sizeof(name)) > 0 && MusicKit_GetByName(name, kit) && !kit.isDefault;
+	return TFGOPlayer(client).GetMusicKit(name, sizeof(name)) > 0 && MusicKit_GetByName(name, kit) > 0 && !kit.isDefault;
 }
 
 void MusicKit_PlayMVPAnthem(int mvp)
