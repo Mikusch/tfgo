@@ -232,17 +232,17 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 		
 		// Play MVP anthem
 		g_MVP = event.GetInt("player_1");
-		for (int client = 1; client <= MaxClients; client++)
+		if (IsValidClient(g_MVP) && MusicKit_HasCustomMusicKit(g_MVP))
 		{
-			if (IsClientInGame(client) && TF2_GetClientTeam(client))
+			MusicKit_PlayMVPAnthem(g_MVP);
+			
+			for (int client = 1; client <= MaxClients; client++)
 			{
 				if (client == g_MVP)
 					PrintToChat(client, "%T", "Playing_MVP_MusicKit_Yours", LANG_SERVER);
 				else
 					PrintToChat(client, "%T", "Playing_MVP_MusicKit", LANG_SERVER);
 			}
-			
-			MusicKit_PlayMVPAnthem(g_MVP);
 		}
 	}
 	

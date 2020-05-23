@@ -75,7 +75,7 @@ enum struct MusicKit
 	}
 }
 
-ArrayList AllMusicKits;
+static ArrayList AllMusicKits;
 
 void MusicKit_Init()
 {
