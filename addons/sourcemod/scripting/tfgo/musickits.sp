@@ -192,7 +192,7 @@ bool MusicKit_HasCustomMusicKit(int client)
 {
 	char name[PLATFORM_MAX_PATH];
 	MusicKit kit;
-	return TFGOPlayer(client).GetMusicKit(name, sizeof(name)) > 0 && MusicKit_GetByName(name, kit);
+	return TFGOPlayer(client).GetMusicKit(name, sizeof(name)) > 0 && MusicKit_GetByName(name, kit) && !kit.isDefault;
 }
 
 void MusicKit_PlayMVPAnthem(int mvp)
@@ -202,7 +202,7 @@ void MusicKit_PlayMVPAnthem(int mvp)
 	
 	MusicKit kit;
 	if (MusicKit_GetByName(name, kit) > 0)
-		kit.PlayToAll(Music_MVPAnthem, true);
+		kit.PlayToAll(Music_MVPAnthem);
 }
 
 stock int GetEntryNameForMusicType(MusicType type, char[] buffer, int maxlen)
