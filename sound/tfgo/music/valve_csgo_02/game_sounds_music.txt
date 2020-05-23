@@ -4,48 +4,44 @@
 	"volume"	 "0.90"
 	"soundlevel" "SNDLVL_NONE"
 	"pitch"		 "PITCH_NORM"
-	
-	"wave"		"#tfgo/music/valve_csgo_02/startround_01.mp3"
-}
 
+	"wave"  "#tfgo/music/valve_csgo_02/startround_01.mp3"
+}
 "Music.StartAction.valve_csgo_02"
 {
 	"channel"	 "CHAN_STATIC"
-	"volume"	 "0.90"
+	"volume"	 "0.9"
 	"soundlevel" "SNDLVL_NONE"
 	"pitch"		 "PITCH_NORM"
-	
+
 	"wave"  "#tfgo/music/valve_csgo_02/startaction_01.mp3"
 }
-
 "Music.BombPlanted.valve_csgo_02"
 {
 	"channel"	 "CHAN_STATIC"
-	"volume"	 "0.80"
+	"volume"	 "0.8"
 	"soundlevel" "SNDLVL_NONE"
 	"pitch"		 "PITCH_NORM"
-	
-	"wave"  "#tfgo/music/valve_csgo_02/bombplanted.mp3"
-}
 
+	"wave"  "#tfgo/music/valve_csgo_02/bombplanted.mp3"	
+}
 "Music.BombTenSecCount.valve_csgo_02"
 {
 	"channel"	"CHAN_STATIC"
-	"volume"	"0.90"
+	"volume"	"0.9"
 	"soundlevel"  	"SNDLVL_NONE"
 	"pitch"		"PITCH_NORM"
-	
-	"wave"  "#tfgo/music/valve_csgo_02/bombtenseccount.mp3"
-}
 
+	"wave"  "#tfgo/music/valve_csgo_02/bombtenseccount.mp3"	
+}
 "Music.TenSecCount.valve_csgo_02"
 {
 	"channel"	"CHAN_STATIC"
-	"volume"	"0.90"
+	"volume"	"0.9"
 	"soundlevel"  	"SNDLVL_NONE"
 	"pitch"		"PITCH_NORM"
-	
-	"wave"  "#tfgo/music/valve_csgo_02/roundtenseccount.mp3"
+
+	"wave"  "#tfgo/music/valve_csgo_02/roundtenseccount.mp3"	
 }
 
 "Music.WonRound.valve_csgo_02"
@@ -54,17 +50,16 @@
 	"volume"	"1.0"
 	"soundlevel"  	"SNDLVL_NONE"
 	"pitch"		"PITCH_NORM"
-	
+
 	"wave"	"#tfgo/music/valve_csgo_02/wonround.mp3"
 }
-
 "Music.LostRound.valve_csgo_02"
 {
 	"channel"	"CHAN_STATIC"
 	"volume"	"1.0"
 	"soundlevel"  	"SNDLVL_NONE"
 	"pitch"		"PITCH_NORM"
-	
+
 	"wave"	"#tfgo/music/valve_csgo_02/lostround.mp3"
 }
 
@@ -74,16 +69,17 @@
 	"volume"	"1.0"
 	"soundlevel"  	"SNDLVL_NONE"
 	"pitch"		"PITCH_NORM"
-	
+
 	"wave"	"#tfgo/music/valve_csgo_02/deathcam.mp3"
 }
 
 "Music.MVPAnthem.valve_csgo_02"
 {
-	"channel"	 "CHAN_STATIC"
-	"volume"	 "1.0"
-	"soundlevel" "SNDLVL_NONE"
-	"pitch"		 "PITCH_NORM"
-	
-	"wave"  "#tfgo/music/valve_csgo_02/roundmvpanthem_01.mp3"
+	"channel"	"CHAN_STATIC"
+	"volume"	"1.0"
+	"soundlevel"  	"SNDLVL_NONE"
+	"pitch"		"PITCH_NORM"
+
+	"wave"	"#tfgo/music/valve_csgo_02/roundmvpanthem_01.mp3"
 }
+
