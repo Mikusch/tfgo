@@ -236,6 +236,9 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 		{
 			MusicKit_PlayMVPAnthem(g_MVP);
 			
+			char mvpName[MAX_NAME_LENGTH];
+			GetClientName(g_MVP, mvpName, sizeof(mvpName));
+			
 			for (int client = 1; client <= MaxClients; client++)
 			{
 				if (IsClientInGame(client))
@@ -243,7 +246,7 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 					if (client == g_MVP)
 						PrintToChat(client, "%T", "Playing_MVP_MusicKit_Yours", LANG_SERVER);
 					else
-						PrintToChat(client, "%T", "Playing_MVP_MusicKit", LANG_SERVER);
+						PrintToChat(client, "%T", "Playing_MVP_MusicKit", LANG_SERVER, mvpName);
 				}
 			}
 		}
