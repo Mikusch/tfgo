@@ -238,10 +238,13 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 			
 			for (int client = 1; client <= MaxClients; client++)
 			{
-				if (client == g_MVP)
-					PrintToChat(client, "%T", "Playing_MVP_MusicKit_Yours", LANG_SERVER);
-				else
-					PrintToChat(client, "%T", "Playing_MVP_MusicKit", LANG_SERVER);
+				if (IsClientInGame(client))
+				{
+					if (client == g_MVP)
+						PrintToChat(client, "%T", "Playing_MVP_MusicKit_Yours", LANG_SERVER);
+					else
+						PrintToChat(client, "%T", "Playing_MVP_MusicKit", LANG_SERVER);
+				}
 			}
 		}
 	}
