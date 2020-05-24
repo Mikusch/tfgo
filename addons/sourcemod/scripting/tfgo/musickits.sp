@@ -139,7 +139,9 @@ void MusicKit_SetMusicKit(int client, const char[] name)
 	}
 	else
 	{
-		LogError("Invalid music kit %s, falling back to random default kit", name);
+		if (!IsNullString(name))
+			LogError("Invalid music kit %s, falling back to random default kit", name);
+		
 		MusicKit_SetRandomDefaultMusicKit(client);
 	}
 }
