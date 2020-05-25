@@ -3,6 +3,7 @@
 #endif
 #define _tfgo_included
 
+#include <adt_array>
 #include <tf2>
 
 enum struct TFGOWeapon
