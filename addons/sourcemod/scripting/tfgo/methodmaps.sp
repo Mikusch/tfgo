@@ -111,7 +111,7 @@ methodmap TFGOPlayer
 		return strcopy(PlayerPreviousMusicKitSounds[this], sizeof(PlayerPreviousMusicKitSounds[]), sound);
 	}
 	
-	public void AddToAccount(int val, const char[] format, any...)
+	public void AddToAccount(int val, const char[] format = NULL_STRING, any...)
 	{
 		int temp = val;
 		Action action = Forward_OnClientAccountChange(this.Client, temp);
@@ -121,9 +121,12 @@ methodmap TFGOPlayer
 		
 		if (action < Plugin_Handled)
 		{
-			char message[PLATFORM_MAX_PATH];
-			VFormat(message, sizeof(message), format, 4);
-			CPrintToChat(this.Client, message);
+			if (!IsNullString(format))
+			{
+				char message[PLATFORM_MAX_PATH];
+				VFormat(message, sizeof(message), format, 4);
+				CPrintToChat(this.Client, message);
+			}
 			
 			this.Account += val;
 			Forward_OnClientAccountChanged(this.Client, val);
