@@ -19,7 +19,7 @@ enum struct MusicKit
 	int BuildGameSound(MusicType type, char[] buffer, int maxlen)
 	{
 		char entry[PLATFORM_MAX_PATH];
-		if (GetEntryNameForMusicType(type, entry, sizeof(entry)) > 0)
+		if (MusicKit_GetEntryNameForMusicType(type, entry, sizeof(entry)) > 0)
 			return Format(buffer, maxlen, "%s.%s", entry, this.name);
 		else
 			return 0;
@@ -96,7 +96,7 @@ void MusicKit_Precache()
 	}
 }
 
-stock ArrayList MusicKit_GetDefaultKits(bool onlyDefault = false)
+ArrayList MusicKit_GetDefaultKits()
 {
 	ArrayList defaultKits = new ArrayList(sizeof(MusicKit));
 	for (int i = 0; i < AllMusicKits.Length; i++)
@@ -111,7 +111,7 @@ stock ArrayList MusicKit_GetDefaultKits(bool onlyDefault = false)
 	return defaultKits;
 }
 
-stock int MusicKit_GetByName(const char[] name, MusicKit buffer)
+int MusicKit_GetByName(const char[] name, MusicKit buffer)
 {
 	int index = AllMusicKits.FindString(name);
 	return index != -1 ? AllMusicKits.GetArray(index, buffer, sizeof(buffer)) : 0;
@@ -148,7 +148,7 @@ void MusicKit_SetMusicKit(int client, const char[] name)
 
 void MusicKit_SetRandomDefaultMusicKit(int client)
 {
-	ArrayList defaultKits = MusicKit_GetDefaultKits(true);
+	ArrayList defaultKits = MusicKit_GetDefaultKits();
 	MusicKit defaultKit;
 	if (defaultKits.GetArray(GetRandomInt(0, defaultKits.Length - 1), defaultKit, sizeof(defaultKit)) > 0)
 	{
@@ -207,7 +207,7 @@ void MusicKit_PlayMVPAnthem(int mvp)
 		kit.PlayToAll(Music_MVPAnthem);
 }
 
-stock int GetEntryNameForMusicType(MusicType type, char[] buffer, int maxlen)
+int MusicKit_GetEntryNameForMusicType(MusicType type, char[] buffer, int maxlen)
 {
 	switch (type)
 	{
