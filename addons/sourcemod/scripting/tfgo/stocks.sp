@@ -219,23 +219,23 @@ stock int TF2_CreateAndEquipWeapon(int client, int defindex, const char[] classn
 		strcopy(classnameCopy, sizeof(classnameCopy), classname);
 	}
 	
-	bool isSapper;
+	int subType;
 	if ((StrEqual(classnameCopy, "tf_weapon_builder") || StrEqual(classnameCopy, "tf_weapon_sapper")) && TF2_GetPlayerClass(client) == TFClass_Spy)
 	{
-		isSapper = true;
+		subType = view_as<int>(TFObject_Sapper);
 		
 		//Apparently tf_weapon_sapper causes client crashes
 		classnameCopy = "tf_weapon_builder";
 	}
 	
 	TFClassType class = TF2_GetPlayerClass(client);
-	int slot = TF2_GetItemSlot(defindex, class);
+	int slot = TF2Econ_GetItemSlot(defindex, class);
 	Address pItem = SDKCall_GetLoadoutItem(client, class, slot);
 	
 	int weapon;
 	if (pItem && Config_GetOriginalItemDefIndex(LoadFromAddress(pItem + view_as<Address>(4), NumberType_Int16)) == defindex)
 	{
-		weapon = SDKCall_GetBaseEntity(SDKCall_GiveNamedItem(client, classnameCopy, 0, pItem));
+		weapon = SDKCall_GetBaseEntity(SDKCall_GiveNamedItem(client, classnameCopy, subType, pItem));
 	}
 	else
 	{
@@ -247,26 +247,23 @@ stock int TF2_CreateAndEquipWeapon(int client, int defindex, const char[] classn
 			SetEntProp(weapon, Prop_Send, "m_bInitialized", 1);
 			SetEntProp(weapon, Prop_Send, "m_iEntityQuality", 0);
 			SetEntProp(weapon, Prop_Send, "m_iEntityLevel", 1);
+			
+			if (subType)
+			{
+				SetEntProp(weapon, Prop_Send, "m_iObjectType", subType);
+				SetEntProp(weapon, Prop_Data, "m_iSubType", subType);
+			}
 		}
 	}
 	
-	if (IsValidEntity(weapon))
+	if (IsValidEntity(weapon) && DispatchSpawn(weapon))
 	{
-		if (isSapper)
-		{
-			SetEntProp(weapon, Prop_Send, "m_iObjectType", TFObject_Sapper);
-			SetEntProp(weapon, Prop_Data, "m_iSubType", TFObject_Sapper);
-		}
+		SetEntProp(weapon, Prop_Send, "m_bValidatedAttachedEntity", true);
 		
-		if (DispatchSpawn(weapon))
-		{
-			SetEntProp(weapon, Prop_Send, "m_bValidatedAttachedEntity", true);
-			
-			if (StrContains(classnameCopy, "tf_wearable") == 0)
-				SDKCall_EquipWearable(client, weapon);
-			else
-				EquipPlayerWeapon(client, weapon);
-		}
+		if (StrContains(classnameCopy, "tf_wearable") == 0)
+			SDKCall_EquipWearable(client, weapon);
+		else
+			EquipPlayerWeapon(client, weapon);
 	}
 	
 	return weapon;
