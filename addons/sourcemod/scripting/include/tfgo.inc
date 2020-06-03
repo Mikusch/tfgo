@@ -124,6 +124,26 @@ forward void TFGO_OnClientPurchaseWeapon(int client, int defindex);
 forward void TFGO_OnClientPickupWeapon(int client, int defindex);
 
 /**
+ * Called when the plugin needs to display the name of a client.
+ * Subplugins can style the name using morecolors.inc syntax.
+ *
+ * @param client	Client index.
+ * @param name		Buffer to store the name in.
+ * @param length	Maximum length of the buffer.
+ */
+forward void TFGO_GetClientName(int client, char[] name, int maxlen);
+
+/**
+ * Called when the plugin needs to display the name of a music kit.
+ * Subplugins can style the name using morecolors.inc syntax.
+ *
+ * @param client	Client index.
+ * @param name		Buffer to store the name in.
+ * @param length	Maximum length of the buffer.
+ */
+forward void TFGO_GetMusicKitName(int client, char[] name, int maxlen);
+
+/**
 * Retrieves weapon information for a given item definition index.
 *
 * @note This forward assumes the passed in array is a TFGOWeapon enum struct.

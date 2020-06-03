@@ -7,6 +7,8 @@ static GlobalForward ForwardClientAccountChange;
 static GlobalForward ForwardClientAccountChanged;
 static GlobalForward ForwardClientPurchaseWeapon;
 static GlobalForward ForwardClientPickupWeapon;
+static GlobalForward ForwardClientName;
+static GlobalForward ForwardMusicKitName;
 
 void Forward_AskLoad()
 {
@@ -19,6 +21,8 @@ void Forward_AskLoad()
 	ForwardClientAccountChanged = new GlobalForward("TFGO_OnClientAccountChanged", ET_Ignore, Param_Cell, Param_Cell);
 	ForwardClientPurchaseWeapon = new GlobalForward("TFGO_OnClientPurchaseWeapon", ET_Ignore, Param_Cell, Param_Cell);
 	ForwardClientPickupWeapon = new GlobalForward("TFGO_OnClientPickupWeapon", ET_Ignore, Param_Cell, Param_Cell);
+	ForwardClientName = new GlobalForward("TFGO_GetClientName", ET_Ignore, Param_Cell, Param_String, Param_Cell);
+	ForwardMusicKitName = new GlobalForward("TFGO_GetMusicKitName", ET_Ignore, Param_Cell, Param_String, Param_Cell);
 }
 
 void Forward_OnBombPlanted(TFTeam team, ArrayList planters)
@@ -90,5 +94,23 @@ void Forward_OnClientPickupWeapon(int client, int defindex)
 	Call_StartForward(ForwardClientPickupWeapon);
 	Call_PushCell(client);
 	Call_PushCell(defindex);
+	Call_Finish();
+}
+
+void Forward_GetClientName(int client, char[] name, int maxlen)
+{
+	Call_StartForward(ForwardClientName);
+	Call_PushCell(client);
+	Call_PushStringEx(name, maxlen, SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	Call_PushCell(maxlen);
+	Call_Finish();
+}
+
+void Forward_GetMusicKitName(int client, char[] name, int maxlen)
+{
+	Call_StartForward(ForwardMusicKitName);
+	Call_PushCell(client);
+	Call_PushStringEx(name, maxlen, SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	Call_PushCell(maxlen);
 	Call_Finish();
 }

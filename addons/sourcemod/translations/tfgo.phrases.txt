@@ -297,11 +297,11 @@
 	// Music Kits
 	"Playing_MVP_MusicKit"
 	{
-		"en"	"Playing %s's MVP Anthem"
+		"en"	"Playing %s's MVP Anthem from their %s."
 	}
 	"Playing_MVP_MusicKit_Yours"
 	{
-		"en"	"Playing your MVP Anthem for everyone"
+		"en"	"Playing your MVP Anthem for everyone."
 	}
 	
 	// HUD Text

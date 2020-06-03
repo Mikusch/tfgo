@@ -150,7 +150,7 @@ void MusicKit_SetRandomDefaultMusicKit(int client)
 {
 	ArrayList defaultKits = MusicKit_GetDefaultKits();
 	MusicKit defaultKit;
-	if (defaultKits.GetArray(GetRandomInt(0, defaultKits.Length - 1), defaultKit, sizeof(defaultKit)) > 0)
+	if (defaultKits.Length > 0 && defaultKits.GetArray(GetRandomInt(0, defaultKits.Length - 1), defaultKit, sizeof(defaultKit)) > 0)
 	{
 		TFGOPlayer(client).SetMusicKit(defaultKit.name);
 		delete defaultKits;

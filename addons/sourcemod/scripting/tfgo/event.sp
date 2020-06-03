@@ -36,7 +36,7 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 	TFGOPlayer victim = TFGOPlayer(GetClientOfUserId(event.GetInt("userid")));
 	
 	char victimName[PLATFORM_MAX_PATH];
-	GetClientName(victim.Client, victimName, sizeof(victimName));
+	GetClientName2(victim.Client, victimName, sizeof(victimName));
 	
 	// Grant kill award to attacker/assister
 	if (IsValidClient(attacker.Client))
@@ -72,7 +72,7 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 						attacker = TFGOPlayer(enemies.Get(GetRandomInt(0, enemies.Length - 1)));
 						
 						char attackerName[PLATFORM_MAX_PATH];
-						GetClientName(attacker.Client, attackerName, sizeof(attackerName));
+						GetClientName2(attacker.Client, attackerName, sizeof(attackerName));
 						
 						// CS:GO does special chat messages for suicides
 						for (int client = 1; client <= MaxClients; client++)
@@ -81,15 +81,15 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 								continue;
 							
 							if (TF2_GetClientTeam(client) <= TFTeam_Spectator)
-								PrintToChat(client, "%T", "Player_Cash_Award_ExplainSuicide_Spectators", LANG_SERVER, attackerName, killAward, victimName);
+								CPrintToChat(client, "%T", "Player_Cash_Award_ExplainSuicide_Spectators", LANG_SERVER, attackerName, killAward, victimName);
 							else if (GetClientTeam(client) == GetClientTeam(victim.Client))
-								PrintToChat(client, "%T", "Player_Cash_Award_ExplainSuicide_EnemyGotCash", LANG_SERVER, victimName);
+								CPrintToChat(client, "%T", "Player_Cash_Award_ExplainSuicide_EnemyGotCash", LANG_SERVER, victimName);
 							else if (attacker.Client != client)
 								CPrintToChat(client, "%T", "Player_Cash_Award_ExplainSuicide_TeammateGotCash", LANG_SERVER, attackerName, killAward, victimName);
 						}
 						
 						attacker.AddToAccount(killAward, "%T", "Player_Cash_Award_Killed_Enemy_Generic", LANG_SERVER, killAward);
-						PrintToChat(attacker.Client, "%T", "Player_Cash_Award_ExplainSuicide_YouGotCash", LANG_SERVER, killAward, victimName);
+						CPrintToChat(attacker.Client, "%T", "Player_Cash_Award_ExplainSuicide_YouGotCash", LANG_SERVER, killAward, victimName);
 					}
 					
 					delete enemies;
@@ -237,7 +237,14 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 			MusicKit_PlayMVPAnthem(g_MVP);
 			
 			char mvpName[MAX_NAME_LENGTH];
-			GetClientName(g_MVP, mvpName, sizeof(mvpName));
+			GetClientName2(g_MVP, mvpName, sizeof(mvpName));
+			
+			char kit[PLATFORM_MAX_PATH];
+			Forward_GetMusicKitName(g_MVP, kit, sizeof(kit));
+			
+			// Use internal name as fallback
+			if (kit[0] == '\0')
+				TFGOPlayer(g_MVP).GetMusicKit(kit, sizeof(kit));
 			
 			for (int client = 1; client <= MaxClients; client++)
 			{
@@ -246,7 +253,7 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 					if (client == g_MVP)
 						PrintToChat(client, "%T", "Playing_MVP_MusicKit_Yours", LANG_SERVER);
 					else
-						PrintToChat(client, "%T", "Playing_MVP_MusicKit", LANG_SERVER, mvpName);
+						CPrintToChat(client, "%T", "Playing_MVP_MusicKit", LANG_SERVER, mvpName, kit);
 				}
 			}
 		}

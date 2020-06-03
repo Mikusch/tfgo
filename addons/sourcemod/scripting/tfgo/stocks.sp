@@ -3,6 +3,15 @@ stock bool IsValidClient(int client)
 	return 0 < client <= MaxClients && IsClientInGame(client);
 }
 
+stock void GetClientName2(int client, char[] name, int maxlen)
+{
+	Forward_GetClientName(client, name, maxlen);
+	
+	// Use GetClientName as fallback
+	if (name[0] == '\0')
+		GetClientName(client, name, maxlen);
+}
+
 stock float FloatMin(float a, float b)
 {
 	return (a < b) ? a : b;
