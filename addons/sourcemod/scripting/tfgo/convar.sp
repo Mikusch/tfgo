@@ -18,7 +18,6 @@ void ConVar_Init()
 	tfgo_buytime = CreateConVar("tfgo_buytime", "20", "How many seconds after spawning players can buy items for", _, true, 15.0);
 	tfgo_consecutive_loss_max = CreateConVar("tfgo_consecutive_loss_max", "4", "The maximum of consecutive losses for each team that will be kept track of", _, true, float(STARTING_CONSECUTIVE_LOSSES));
 	tfgo_bombtimer = CreateConVar("tfgo_bombtimer", "40", "How long from when the bomb is planted until it blows", _, true, 10.0);
-	tfgo_maxrounds = CreateConVar("tfgo_maxrounds", "15", "Maximum number of rounds to play before a team scramble occurs", _, true, 0.0);
 	tfgo_halftime = CreateConVar("tfgo_halftime", "1", "Determines whether the match switches sides in a halftime event");
 	tfgo_startmoney = CreateConVar("tfgo_startmoney", "800", "Amount of money each player gets when they reset", _, true, 0.0);
 	tfgo_maxmoney = CreateConVar("tfgo_maxmoney", "16000", "Maximum amount of money allowed in a player's account", _, true, 0.0);
@@ -37,6 +36,7 @@ void ConVar_Init()
 	ConVars = new ArrayList(sizeof(ConVarInfo));
 	
 	ConVar_Add("mp_bonusroundtime", 7.0);
+	ConVar_Add("mp_maxrounds", 15.0);
 	ConVar_Add("tf_arena_first_blood", 0.0);
 	ConVar_Add("tf_arena_override_cap_enable_time", -1.0);
 	ConVar_Add("tf_arena_preround_time", 15.0);

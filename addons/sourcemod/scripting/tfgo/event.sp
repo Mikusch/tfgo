@@ -261,15 +261,19 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 	
 	static int roundsPlayed;
 	roundsPlayed++;
-	if (tfgo_halftime.BoolValue && roundsPlayed == tfgo_maxrounds.IntValue / 2)
+	
+	ConVar mp_maxrounds = FindConVar("mp_maxrounds");
+	if (tfgo_halftime.BoolValue && roundsPlayed == mp_maxrounds.IntValue / 2)
 	{
-		SDKCall_SetSwitchTeams(true);
+		if (g_ShouldScramble)
+			SDKCall_SetScrambleTeams(true);
+		else
+			SDKCall_SetSwitchTeams(true);
+		
 		Forward_OnHalfTime();
 	}
-	else if (roundsPlayed == tfgo_maxrounds.IntValue)
+	else if (roundsPlayed == mp_maxrounds.IntValue)
 	{
-		roundsPlayed = 0;
-		SDKCall_SetScrambleTeams(true);
 		Forward_OnMaxRounds();
 	}
 }

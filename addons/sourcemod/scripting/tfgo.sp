@@ -167,6 +167,7 @@ MemoryPatch g_PickupWeaponPatch;
 TFGOWeaponList g_AvailableWeapons;
 
 // Map
+bool g_ShouldScramble;
 bool g_MapHasRespawnRoom;
 
 // Bomb & Bomb Site
@@ -193,7 +194,6 @@ ConVar tfgo_max_armor;
 ConVar tfgo_buytime;
 ConVar tfgo_consecutive_loss_max;
 ConVar tfgo_bombtimer;
-ConVar tfgo_maxrounds;
 ConVar tfgo_halftime;
 ConVar tfgo_startmoney;
 ConVar tfgo_maxmoney;
@@ -336,6 +336,8 @@ public void OnMapStart()
 		CalculateDynamicBuyZones();
 	}
 	
+	g_ShouldScramble = false;
+	
 	// Clear attackers and defenders from previous map
 	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
 	{
@@ -351,6 +353,8 @@ public void OnMapStart()
 		TFTeam defaultOwner = view_as<TFTeam>(GetEntProp(cp, Prop_Data, "m_iDefaultOwner"));
 		if (defaultOwner == TFTeam_Unassigned)	// Neutral CP, both teams are attacking AND defending this point
 		{
+			g_ShouldScramble = true;
+			
 			for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
 			{
 				TFGOTeam tfgoTeam = TFGOTeam(view_as<TFTeam>(team));
