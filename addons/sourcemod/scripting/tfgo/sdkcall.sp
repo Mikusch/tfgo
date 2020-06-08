@@ -1,7 +1,5 @@
 static Handle SDKCallGetEquippedWearableForLoadoutSlot;
 static Handle SDKCallGetLoadoutItem;
-static Handle SDKCallIsCapturingPoint;
-static Handle SDKCallGetControlPointStandingOn;
 static Handle SDKCallGetBaseEntity;
 static Handle SDKCallGiveNamedItem;
 static Handle SDKCallCreateDroppedWeapon;
@@ -15,8 +13,6 @@ void SDKCall_Init(GameData gamedata)
 {
 	SDKCallGetEquippedWearableForLoadoutSlot = PrepSDKCall_GetEquippedWearableForLoadoutSlot(gamedata);
 	SDKCallGetLoadoutItem = PrepSDKCall_GetLoadoutItem(gamedata);
-	SDKCallIsCapturingPoint = PrepSDKCall_IsCapturingPoint(gamedata);
-	SDKCallGetControlPointStandingOn = PrepSDKCall_GetControlPointStandingOn(gamedata);
 	SDKCallGetBaseEntity = PrepSDKCall_GetBaseEntity(gamedata);
 	SDKCallGiveNamedItem = PrepSDKCall_GiveNamedItem(gamedata);
 	SDKCallCreateDroppedWeapon = PrepSDKCall_CreateDroppedWeapon(gamedata);
@@ -139,32 +135,6 @@ static Handle PrepSDKCall_GetLoadoutItem(GameData gamedata)
 	Handle call = EndPrepSDKCall();
 	if (!call)
 		LogError("Failed to create SDKCall: CTFPlayer::GetLoadoutItem");
-		
-	return call;
-}
-
-static Handle PrepSDKCall_IsCapturingPoint(GameData gamedata)
-{
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::IsCapturingPoint");
-	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_ByValue);
-	
-	Handle call = EndPrepSDKCall();
-	if (!call)
-		LogError("Failed to create SDKCall: CTFPlayer::IsCapturingPoint");
-		
-	return call;
-}
-
-static Handle PrepSDKCall_GetControlPointStandingOn(GameData gamedata)
-{
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::GetControlPointStandingOn");
-	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
-	
-	Handle call = EndPrepSDKCall();
-	if (!call)
-		LogError("Failed to create SDKCall: CTFPlayer::GetControlPointStandingOn");
 		
 	return call;
 }

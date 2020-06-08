@@ -1,7 +1,5 @@
 void Event_Init()
 {
-	HookEvent("controlpoint_starttouch", Event_ControlPointStartTouch);
-	HookEvent("controlpoint_endtouch", Event_ControlPointEndTouch);
 	HookEvent("player_team", Event_PlayerTeam);
 	HookEvent("player_death", Event_PlayerDeath);
 	HookEvent("post_inventory_application", Event_PostInventoryApplication);
@@ -10,37 +8,6 @@ void Event_Init()
 	HookEvent("teamplay_round_start", Event_TeamplayRoundStart);
 	HookEvent("teamplay_point_captured", Event_TeamplayPointCaptured);
 	HookEvent("teamplay_broadcast_audio", Event_Pre_TeamplayBroadcastAudio, EventHookMode_Pre);
-}
-
-Action Event_ControlPointStartTouch(Event event, const char[] name, bool dontBroadcast)
-{
-	int player = event.GetInt("player");
-	
-	if (IsDefusing(player) && TFGOPlayer(player).HasDefuseKit)
-	{
-		// Player with a defuse kit has entered the point, reduce cap time
-		int area = SDKCall_GetControlPointStandingOn(player);
-		SetEntPropFloat(area, Prop_Data, "m_flCapTime", BOMB_DEFUSE_TIME / 2);
-	}
-}
-
-Action Event_ControlPointEndTouch(Event event, const char[] name, bool dontBroadcast)
-{
-	int player = event.GetInt("player");
-	
-	if (IsDefusing(player) && TFGOPlayer(player).HasDefuseKit)
-	{
-		// Player with a defuse kit has left the point, we need to check if anyone else still on the point has one
-		for (int client = 1; client <= MaxClients; client++)
-		{
-			if (IsClientInGame(client) && IsDefusing(client) && TFGOPlayer(client).HasDefuseKit)
-				return;
-		}
-		
-		// No one else on the point has a defuse kit, reset the cap time
-		int area = SDKCall_GetControlPointStandingOn(player);
-		SetEntPropFloat(area, Prop_Data, "m_flCapTime", BOMB_DEFUSE_TIME);
-	}
 }
 
 Action Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
