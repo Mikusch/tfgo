@@ -1,5 +1,7 @@
 static Handle SDKCallGetEquippedWearableForLoadoutSlot;
 static Handle SDKCallGetLoadoutItem;
+static Handle SDKCallIsCapturingPoint;
+static Handle SDKCallGetControlPointStandingOn;
 static Handle SDKCallGetBaseEntity;
 static Handle SDKCallGiveNamedItem;
 static Handle SDKCallCreateDroppedWeapon;
@@ -13,6 +15,8 @@ void SDKCall_Init(GameData gamedata)
 {
 	SDKCallGetEquippedWearableForLoadoutSlot = PrepSDKCall_GetEquippedWearableForLoadoutSlot(gamedata);
 	SDKCallGetLoadoutItem = PrepSDKCall_GetLoadoutItem(gamedata);
+	SDKCallIsCapturingPoint = PrepSDKCall_IsCapturingPoint(gamedata);
+	SDKCallGetControlPointStandingOn = PrepSDKCall_GetControlPointStandingOn(gamedata);
 	SDKCallGetBaseEntity = PrepSDKCall_GetBaseEntity(gamedata);
 	SDKCallGiveNamedItem = PrepSDKCall_GiveNamedItem(gamedata);
 	SDKCallCreateDroppedWeapon = PrepSDKCall_CreateDroppedWeapon(gamedata);
@@ -139,6 +143,32 @@ static Handle PrepSDKCall_GetLoadoutItem(GameData gamedata)
 	return call;
 }
 
+static Handle PrepSDKCall_IsCapturingPoint(GameData gamedata)
+{
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::IsCapturingPoint");
+	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_ByValue);
+	
+	Handle call = EndPrepSDKCall();
+	if (!call)
+		LogError("Failed to create SDKCall: CTFPlayer::IsCapturingPoint");
+		
+	return call;
+}
+
+static Handle PrepSDKCall_GetControlPointStandingOn(GameData gamedata)
+{
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::GetControlPointStandingOn");
+	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
+	
+	Handle call = EndPrepSDKCall();
+	if (!call)
+		LogError("Failed to create SDKCall: CTFPlayer::GetControlPointStandingOn");
+		
+	return call;
+}
+
 static Handle PrepSDKCall_GetBaseEntity(GameData gamedata)
 {
 	StartPrepSDKCall(SDKCall_Raw);
@@ -203,6 +233,16 @@ stock Address SDKCall_GiveNamedItem(int client, const char[] classname, int subT
 stock Address SDKCall_GetLoadoutItem(int client, TFClassType class, int slot)
 {
 	return SDKCall(SDKCallGetLoadoutItem, client, class, slot, false);
+}
+
+stock bool SDKCall_IsCapturingPoint(int client)
+{
+	return SDKCall(SDKCallIsCapturingPoint, client);
+}
+
+stock int SDKCall_GetControlPointStandingOn(int client)
+{
+	return SDKCall(SDKCallGetControlPointStandingOn, client);
 }
 
 stock int SDKCall_GetBaseEntity(Address address)

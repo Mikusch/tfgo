@@ -3,6 +3,11 @@ stock bool IsValidClient(int client)
 	return 0 < client <= MaxClients && IsClientInGame(client);
 }
 
+stock bool IsDefusing(int client)
+{
+	return g_IsBombPlanted && TF2_GetClientTeam(client) != g_BombPlantingTeam && SDKCall_IsCapturingPoint(client);
+}
+
 stock void GetClientName2(int client, char[] name, int maxlen)
 {
 	Forward_GetClientName(client, name, maxlen);

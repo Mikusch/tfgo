@@ -1,4 +1,3 @@
-static Handle DHookGetCaptureValueForPlayer;
 static Handle DHookSetWinningTeam;
 static Handle DHookHandleSwitchTeams;
 static Handle DHookHandleScrambleTeams;
@@ -8,7 +7,6 @@ static int HookIdsGiveNamedItem[TF_MAXPLAYERS] =  { -1, ... };
 
 void DHook_Init(GameData gamedata)
 {
-	DHookGetCaptureValueForPlayer = DHook_CreateVirtual(gamedata, "CTFGameRules::GetCaptureValueForPlayer");
 	DHookSetWinningTeam = DHook_CreateVirtual(gamedata, "CTFGameRules::SetWinningTeam");
 	DHookGiveNamedItem = DHook_CreateVirtual(gamedata, "CTFPlayer::GiveNamedItem");
 	DHookHandleSwitchTeams = DHook_CreateVirtual(gamedata, "CTFGameRules::HandleSwitchTeams");
@@ -49,7 +47,6 @@ static void DHook_CreateDetour(GameData gamedata, const char[] name, DHookCallba
 
 void DHook_HookGamerules()
 {
-	DHookGamerules(DHookGetCaptureValueForPlayer, true, _, DHook_GetCaptureValueForPlayer);
 	DHookGamerules(DHookSetWinningTeam, false, _, DHook_SetWinningTeam);
 	DHookGamerules(DHookHandleSwitchTeams, false, _, DHook_HandleSwitchTeams);
 	DHookGamerules(DHookHandleScrambleTeams, false, _, DHook_HandleScrambleTeams);
@@ -75,18 +72,6 @@ public MRESReturn Detour_PickupWeaponFromOther(int client, Handle returnVal, Han
 	int defindex = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
 	TFGOPlayer(client).AddToLoadout(defindex);
 	Forward_OnClientPickupWeapon(client, defindex);
-}
-
-public MRESReturn DHook_GetCaptureValueForPlayer(Handle returnVal, Handle params)
-{
-	int client = DHookGetParam(params, 1);
-	if (TFGOPlayer(client).HasDefuseKit && g_IsBombPlanted) // Defuse kit only takes effect when the bomb is planted
-	{
-		DHookSetReturn(returnVal, DHookGetReturn(returnVal) + 1);
-		return MRES_Supercede;
-	}
-	
-	return MRES_Ignored;
 }
 
 public MRESReturn DHook_SetWinningTeam(Handle params)

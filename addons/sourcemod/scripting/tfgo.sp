@@ -31,6 +31,8 @@
 #define GAMESOUND_ANNOUNCER_BOMB_PLANTED	"Announcer.SecurityAlert"
 #define GAMESOUND_ANNOUNCER_TEAM_SCRAMBLE	"Announcer.AM_TeamScrambleRandom"
 
+#define BOMB_DEFUSE_TIME	10.0
+
 #define BOMB_EXPLOSION_DAMAGE	500.0
 #define BOMB_EXPLOSION_RADIUS	800.0
 
