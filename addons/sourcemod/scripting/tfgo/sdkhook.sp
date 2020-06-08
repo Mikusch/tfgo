@@ -136,7 +136,7 @@ Action SDKHook_TriggerCaptureArea_StartTouch(int entity, int other)
 	if (IsValidClient(other) && CanDefuse(other) && TFGOPlayer(other).HasDefuseKit)
 	{
 		// Player with a defuse kit has entered the point, reduce cap time
-		DispatchKeyValueFloat(entity, "area_time_to_cap", BOMB_DEFUSE_TIME / 2);
+		TF2_SetAreaTimeToCap(entity, BOMB_DEFUSE_TIME / 2);
 	}
 }
 
@@ -148,11 +148,11 @@ Action SDKHook_TriggerCaptureArea_EndTouch(int entity, int other)
 		for (int client = 1; client <= MaxClients; client++)
 		{
 			if (IsClientInGame(client) && client != other && CanDefuse(client) && TFGOPlayer(client).HasDefuseKit)
-				return Plugin_Continue;
+				return;
 		}
 		
 		// No one else on the point has a defuse kit, reset the cap time
-		DispatchKeyValueFloat(entity, "area_time_to_cap", BOMB_DEFUSE_TIME);
+		TF2_SetAreaTimeToCap(entity, BOMB_DEFUSE_TIME);
 	}
 }
 

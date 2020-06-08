@@ -374,3 +374,48 @@ Action Timer_ShowGameMessage(Handle timer, int ref)
 	
 	return Plugin_Stop;
 }
+
+void TF2_SetAreaTimeToCap(int area, float time)
+{
+	DispatchKeyValueFloat(area, "area_time_to_cap", time);
+	
+	int objResource = FindEntityByClassname(MaxClients + 1, "tf_objective_resource");
+	if (objResource == -1)
+		LogError("Could not find tf_objective_resource, capture point HUD will fail to update");
+	
+	char capPointName[256];
+	if (GetEntPropString(area, Prop_Data, "m_iszCapPointName", capPointName, sizeof(capPointName)) > 0)
+	{
+		// Find associated team_control_point entity
+		int controlPoint = MaxClients + 1;
+		while ((controlPoint = FindEntityByClassname(controlPoint, "team_control_point")) > -1)
+		{
+			char name[256];
+			if (GetEntPropString(controlPoint, Prop_Data, "m_iName", name, sizeof(name)) > 0 && StrEqual(name, capPointName))
+			{
+				for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
+				{
+					int pointIndex = GetEntProp(controlPoint, Prop_Data, "m_iPointIndex");
+					
+					// This is needed in order for clients to predict the capture progress
+					if (FindConVar("mp_capstyle").BoolValue)
+					{
+						// Cap time scales with players
+						int reqCappers = GetEntProp(objResource, Prop_Send, "m_iTeamReqCappers", _, pointIndex + 8 * team);
+						SetEntPropFloat(objResource, Prop_Send, "m_flTeamCapTime", time * float(reqCappers * 2), pointIndex + 8 * team);
+					}
+					else
+					{
+						// Fixed cap time
+						SetEntPropFloat(objResource, Prop_Send, "m_flTeamCapTime", time, pointIndex + 8 * team);
+					}
+				}
+				
+				break;
+			}
+		}
+	}
+	
+	// Tells the client to update the HUD
+	SetEntProp(objResource, Prop_Send, "m_iUpdateCapHudParity", (GetEntProp(objResource, Prop_Send, "m_iUpdateCapHudParity") + 1) & CAPHUD_PARITY_MASK);
+}

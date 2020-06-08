@@ -18,6 +18,9 @@
 
 #define TF_MAXPLAYERS	33
 
+#define CAPHUD_PARITY_BITS	6
+#define CAPHUD_PARITY_MASK	((1 << CAPHUD_PARITY_BITS) - 1)
+
 #define ATTRIB_MAX_HEALTH_ADDITIVE_BONUS	26
 
 #define MODEL_BOMB	"models/props_td/atom_bomb.mdl"
@@ -557,7 +560,7 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 		char capPointName[256];
 		if (GetEntPropString(area, Prop_Data, "m_iszCapPointName", capPointName, sizeof(capPointName)) > 0 && StrEqual(capPointName, targetname))
 		{
-			DispatchKeyValueFloat(area, "area_time_to_cap", BOMB_DEFUSE_TIME);
+			TF2_SetAreaTimeToCap(area, BOMB_DEFUSE_TIME);
 			break;
 		}
 	}

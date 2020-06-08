@@ -205,16 +205,6 @@ stock Address SDKCall_GetLoadoutItem(int client, TFClassType class, int slot)
 	return SDKCall(SDKCallGetLoadoutItem, client, class, slot, false);
 }
 
-stock bool SDKCall_IsCapturingPoint(int client)
-{
-	return SDKCall(SDKCallIsCapturingPoint, client);
-}
-
-stock int SDKCall_GetControlPointStandingOn(int client)
-{
-	return SDKCall(SDKCallGetControlPointStandingOn, client);
-}
-
 stock int SDKCall_GetBaseEntity(Address address)
 {
 	return SDKCall(SDKCallGetBaseEntity, address);
