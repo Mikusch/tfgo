@@ -401,8 +401,8 @@ void TF2_SetAreaTimeToCap(int area, float time)
 					if (FindConVar("mp_capstyle").BoolValue)
 					{
 						// Cap time scales with players
-						int reqCappers = GetEntProp(objResource, Prop_Send, "m_iTeamReqCappers", _, pointIndex + 8 * team);
-						SetEntPropFloat(objResource, Prop_Send, "m_flTeamCapTime", time * float(reqCappers * 2), pointIndex + 8 * team);
+						int teamReqCappers = GetEntProp(objResource, Prop_Send, "m_iTeamReqCappers", _, pointIndex + 8 * team);
+						SetEntPropFloat(objResource, Prop_Send, "m_flTeamCapTime", (time * 2) * teamReqCappers, pointIndex + 8 * team);
 					}
 					else
 					{
