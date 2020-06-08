@@ -560,6 +560,8 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 		char capPointName[256];
 		if (GetEntPropString(area, Prop_Data, "m_iszCapPointName", capPointName, sizeof(capPointName)) > 0 && StrEqual(capPointName, targetname))
 		{
+			DispatchKeyValue(area, "team_numcap_2", "1");
+			DispatchKeyValue(area, "team_numcap_3", "1");
 			TF2_SetAreaTimeToCap(area, BOMB_DEFUSE_TIME);
 			break;
 		}
