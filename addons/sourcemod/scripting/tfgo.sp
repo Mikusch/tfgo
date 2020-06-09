@@ -18,6 +18,9 @@
 
 #define TF_MAXPLAYERS	33
 
+#define CAPHUD_PARITY_BITS	6
+#define CAPHUD_PARITY_MASK	((1 << CAPHUD_PARITY_BITS) - 1)
+
 #define ATTRIB_MAX_HEALTH_ADDITIVE_BONUS	26
 
 #define MODEL_BOMB	"models/props_td/atom_bomb.mdl"
@@ -30,6 +33,9 @@
 #define GAMESOUND_PLAYER_PURCHASE			"MVM.PlayerUpgraded"
 #define GAMESOUND_ANNOUNCER_BOMB_PLANTED	"Announcer.SecurityAlert"
 #define GAMESOUND_ANNOUNCER_TEAM_SCRAMBLE	"Announcer.AM_TeamScrambleRandom"
+
+#define BOMB_PLANT_TIME		3.0
+#define BOMB_DEFUSE_TIME	10.0
 
 #define BOMB_EXPLOSION_DAMAGE	500.0
 #define BOMB_EXPLOSION_RADIUS	800.0
@@ -528,11 +534,15 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	while ((timer = FindEntityByClassname(timer, "team_round_timer")) > -1)
 		RemoveEntity(timer);
 	
+	char targetname[256];
 	int cp = MaxClients + 1;
 	while ((cp = FindEntityByClassname(cp, "team_control_point")) > -1)
 	{
 		if (GetEntProp(cp, Prop_Data, "m_iPointIndex") == cpIndex)
 		{
+			// Remember bomb site targetname
+			GetEntPropString(cp, Prop_Data, "m_iName", targetname, sizeof(targetname));
+			
 			// Remember the active bomb site
 			g_BombSiteRef = EntIndexToEntRef(cp);
 		}
@@ -541,6 +551,19 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 			// Lock every other control point in the map
 			SetVariantInt(1);
 			AcceptEntityInput(cp, "SetLocked");
+		}
+	}
+	
+	int area = MaxClients + 1;
+	while ((area = FindEntityByClassname(area, "trigger_capture_area")) > -1)
+	{
+		char capPointName[256];
+		if (GetEntPropString(area, Prop_Data, "m_iszCapPointName", capPointName, sizeof(capPointName)) > 0 && StrEqual(capPointName, targetname))
+		{
+			DispatchKeyValue(area, "team_numcap_2", "1");
+			DispatchKeyValue(area, "team_numcap_3", "1");
+			TF2_SetAreaTimeToCap(area, BOMB_DEFUSE_TIME);
+			break;
 		}
 	}
 	

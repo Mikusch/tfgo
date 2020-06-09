@@ -9,11 +9,6 @@
 				"linux" 	"6"
 				"windows" 	"5"
 			}
-			"CTFGameRules::GetCaptureValueForPlayer"
-			{
-				"linux"		"154"
-				"windows"	"153"
-			}
 			"CTFGameRules::SetWinningTeam"
 			{
 				"linux"		"161"
@@ -90,20 +85,6 @@
 		}
 		"Functions"
 		{
-			"CTFGameRules::GetCaptureValueForPlayer"
-			{
-				"offset"	"CTFGameRules::GetCaptureValueForPlayer"
-				"hooktype"	"gamerules"
-				"return"	"int"
-				"this"		"ignore"
-				"arguments"
-				{
-					"pPlayer"
-					{
-						"type"	"cbaseentity"
-					}
-				}
-			}
 			"CTFGameRules::SetWinningTeam"
 			{
 				"offset"	"CTFGameRules::SetWinningTeam"

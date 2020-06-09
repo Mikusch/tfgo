@@ -36,7 +36,9 @@ void ConVar_Init()
 	
 	ConVars = new ArrayList(sizeof(ConVarInfo));
 	
+	ConVar_Add("mp_blockstyle", 0.0);
 	ConVar_Add("mp_bonusroundtime", 7.0);
+	ConVar_Add("mp_capstyle", 0.0);
 	ConVar_Add("mp_maxrounds", 30.0);
 	ConVar_Add("tf_arena_first_blood", 0.0);
 	ConVar_Add("tf_arena_override_cap_enable_time", -1.0);
