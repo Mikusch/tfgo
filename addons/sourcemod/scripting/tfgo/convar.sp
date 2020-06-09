@@ -3,6 +3,7 @@ enum struct ConVarInfo
 	ConVar convar;
 	float value;
 	float defaultValue;
+	bool enforce;
 }
 
 static ArrayList ConVars;
@@ -38,20 +39,22 @@ void ConVar_Init()
 	ConVar_Add("mp_blockstyle", 0.0);
 	ConVar_Add("mp_bonusroundtime", 7.0);
 	ConVar_Add("mp_capstyle", 0.0);
-	ConVar_Add("mp_maxrounds", 15.0);
+	ConVar_Add("mp_maxrounds", 30.0);
 	ConVar_Add("tf_arena_first_blood", 0.0);
 	ConVar_Add("tf_arena_override_cap_enable_time", -1.0);
 	ConVar_Add("tf_arena_preround_time", 15.0);
 	ConVar_Add("tf_arena_round_time", 115.0);
 	ConVar_Add("tf_arena_use_queue", 0.0);
 	ConVar_Add("tf_weapon_criticals", 0.0);
+	ConVar_Add("tf_weapon_criticals_distance_falloff", 1.0);
 }
 
-void ConVar_Add(const char[] name, float value)
+void ConVar_Add(const char[] name, float value, bool enforce = false)
 {
 	ConVarInfo info;
 	info.convar = FindConVar(name);
 	info.value = value;
+	info.enforce = enforce;
 	ConVars.PushArray(info);
 }
 
@@ -90,7 +93,7 @@ void ConVar_OnChanged(ConVar convar, const char[] oldValue, const char[] newValu
 		ConVars.GetArray(index, info);
 		float value = StringToFloat(newValue);
 		
-		if (value != info.value)
+		if (info.enforce && value != info.value)
 			info.convar.SetFloat(info.value);
 	}
 }
