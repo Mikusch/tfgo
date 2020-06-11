@@ -170,6 +170,9 @@ methodmap TFGOPlayer
 					SDKCall_CreateDroppedWeapon(currentWeapon, this.Client, position, angles);
 				}
 				
+				// Buying while taunting causes civilian pose
+				TF2_RemoveCondition(this.Client, TFCond_Taunting);
+				
 				TF2_RemoveItemInSlot(this.Client, slot);
 				int weapon = TF2_CreateAndEquipWeapon(this.Client, defindex);
 				
