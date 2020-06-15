@@ -99,6 +99,21 @@ enum
 	WINREASON_CUSTOM_OUT_OF_TIME
 };
 
+enum ETFGameType
+{
+	TF_GAMETYPE_UNDEFINED = 0,
+	TF_GAMETYPE_CTF,
+	TF_GAMETYPE_CP,
+	TF_GAMETYPE_ESCORT,
+	TF_GAMETYPE_ARENA,
+	TF_GAMETYPE_MVM,
+	TF_GAMETYPE_RD,
+	TF_GAMETYPE_PASSTIME,
+	TF_GAMETYPE_PD,
+	
+	TF_GAMETYPE_COUNT
+};
+
 // TF2 weapon loadout slots
 enum
 {
@@ -316,6 +331,10 @@ public void OnMapStart()
 	// Allow players to buy stuff on the first round
 	g_IsBuyTimeActive = true;
 	
+	// Enable waiting for players
+	if (GameRules_GetRoundState() == RoundState_Pregame)
+		GameRules_SetProp("m_nGameType", TF_GAMETYPE_UNDEFINED);
+	
 	DHook_HookGamerules();
 	ResetRoundState();
 	
@@ -426,6 +445,12 @@ public void OnEntityCreated(int entity, const char[] classname)
 		SDKHook_HookTriggerCaptureArea(entity);
 	else if (StrEqual(classname, "team_control_point_master"))
 		SDKHook_HookTeamControlPointMaster(entity);
+}
+
+public void TF2_OnWaitingForPlayersStart()
+{
+	// Set game type back to arena after waiting for players calculations are done
+	GameRules_SetProp("m_nGameType", TF_GAMETYPE_ARENA);
 }
 
 public Action TF2_OnGiveNamedItem(int client, char[] classname, int defindex)
