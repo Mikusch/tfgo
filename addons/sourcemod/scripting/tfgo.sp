@@ -185,8 +185,6 @@ bool g_IsBombTicking;
 
 // Game state
 bool g_IsBuyTimeActive;
-bool g_IsMainRoundActive;
-bool g_IsBonusRoundActive;
 bool g_IsBombPlanted;
 bool g_SkipGiveNamedItemHook;
 int g_MVP;
@@ -471,7 +469,7 @@ Action Timer_OnBuyTimeExpire(Handle timer)
 
 Action Timer_OnBombTenSecCount(Handle timer)
 {
-	if (g_TenSecondBombTimer != timer || !g_IsMainRoundActive) return;
+	if (g_TenSecondBombTimer != timer || GameRules_GetRoundState() == RoundState_RoundRunning) return;
 	
 	MusicKit_PlayAllClientMusicKits(Music_BombTenSecCount);
 }
@@ -497,7 +495,7 @@ Action Timer_OnBombExplode(Handle timer)
 	
 	g_IsBombPlanted = false;
 	
-	if (g_IsMainRoundActive)
+	if (GameRules_GetRoundState() == RoundState_RoundRunning)
 		TF2_ForceRoundWin(g_BombPlantingTeam, WINREASON_ALL_POINTS_CAPTURED);
 	
 	float origin[3];

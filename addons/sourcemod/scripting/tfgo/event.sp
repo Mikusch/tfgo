@@ -55,7 +55,7 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 		{
 			if (attacker == victim) // Suicide
 			{
-				if (g_IsMainRoundActive)
+				if (GameRules_GetRoundState() == RoundState_RoundRunning)
 				{
 					g_HasPlayerSuicided[victim.Client] = true;
 					
@@ -131,7 +131,7 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 		}
 	}
 	
-	if (g_IsMainRoundActive || g_IsBonusRoundActive)
+	if (GameRules_GetRoundState() != RoundState_Preround)
 		victim.RemoveAllItems(true);
 	
 	if (victim.ActiveBuyMenu != null)
@@ -162,16 +162,12 @@ Action Event_PostInventoryApplication(Event event, const char[] name, bool dontB
 
 Action Event_ArenaRoundStart(Event event, const char[] name, bool dontBroadcast)
 {
-	g_IsMainRoundActive = true;
 	g_IsBuyTimeActive = true;
 	g_BuyTimeTimer = CreateTimer(tfgo_buytime.FloatValue, Timer_OnBuyTimeExpire, _, TIMER_FLAG_NO_MAPCHANGE);
 }
 
 Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 {
-	g_IsMainRoundActive = false;
-	g_IsBonusRoundActive = true;
-	
 	int winreason = event.GetInt("winreason");
 	
 	if (winreason == WINREASON_STALEMATE)
@@ -281,9 +277,6 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 Action Event_TeamplayRoundStart(Event event, const char[] name, bool dontBroadcast)
 {
 	ResetRoundState();
-	
-	g_IsBonusRoundActive = false;
-	g_IsMainRoundActive = false;
 	
 	MusicKit_PlayAllClientMusicKits(Music_StartRound);
 	
