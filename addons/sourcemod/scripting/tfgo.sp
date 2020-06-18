@@ -469,7 +469,7 @@ Action Timer_OnBuyTimeExpire(Handle timer)
 
 Action Timer_OnBombTenSecCount(Handle timer)
 {
-	if (g_TenSecondBombTimer != timer || GameRules_GetRoundState() == RoundState_RoundRunning) return;
+	if (g_TenSecondBombTimer != timer || GameRules_GetRoundState() != RoundState_Stalemate) return;
 	
 	MusicKit_PlayAllClientMusicKits(Music_BombTenSecCount);
 }

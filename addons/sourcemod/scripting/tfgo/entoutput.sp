@@ -5,6 +5,6 @@ void EntOutput_Init()
 
 void EntOutput_On10SecRemain(const char[] output, int caller, int activator, float delay)
 {
-	if (GameRules_GetRoundState() == RoundState_RoundRunning)
+	if (GameRules_GetRoundState() == RoundState_Stalemate)
 		MusicKit_PlayAllClientMusicKits(Music_TenSecCount);
 }

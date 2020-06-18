@@ -55,7 +55,7 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 		{
 			if (attacker == victim) // Suicide
 			{
-				if (GameRules_GetRoundState() == RoundState_RoundRunning)
+				if (GameRules_GetRoundState() == RoundState_Stalemate)
 				{
 					g_HasPlayerSuicided[victim.Client] = true;
 					
