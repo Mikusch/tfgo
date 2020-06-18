@@ -39,7 +39,7 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 	GetClientName2(victim.Client, victimName, sizeof(victimName));
 	
 	// Grant kill award to attacker/assister
-	if (IsValidClient(attacker.Client))
+	if (IsValidClient(attacker.Client) && attacker != victim)
 	{
 		float factor = tfgo_cash_player_killed_enemy_factor.FloatValue;
 		int killAward = RoundFloat(tfgo_cash_player_killed_enemy_default.IntValue * factor);
