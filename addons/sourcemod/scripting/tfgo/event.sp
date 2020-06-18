@@ -53,7 +53,7 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 		}
 		else
 		{
-			if (attacker == victim) // Suicide
+			if (event.GetInt("customkill") == TF_CUSTOM_SUICIDE) // Suicide
 			{
 				if (GameRules_GetRoundState() == RoundState_Stalemate)
 				{
@@ -95,7 +95,7 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 					delete enemies;
 				}
 			}
-			else // Weapon kill
+			else if (attacker != victim) // Weapon kill
 			{
 				// TODO: Localized text for all weapons, not just the original (UserMessage SayText2?)
 				int defindex = Config_GetOriginalItemDefIndex(event.GetInt("weapon_def_index"));
