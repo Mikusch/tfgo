@@ -100,6 +100,36 @@ stock int GetAlivePlayerCount()
 	return count;
 }
 
+stock int TF2_SpawnParticle(char[] name, float origin[3] = NULL_VECTOR, float angles[3] = NULL_VECTOR, bool activate = true, int entity = 0, int controlPoint = 0)
+{
+	int particle = CreateEntityByName("info_particle_system");
+	TeleportEntity(particle, origin, angles, NULL_VECTOR);
+	DispatchKeyValue(particle, "effect_name", name);
+	DispatchSpawn(particle);
+	
+	if (0 < entity && IsValidEntity(entity))
+	{
+		SetVariantString("!activator");
+		AcceptEntityInput(particle, "SetParent", entity);
+	}
+	
+	if (0 < controlPoint && IsValidEntity(controlPoint))
+	{
+		// Array netprop, but we only need element 0
+		SetEntPropEnt(particle, Prop_Send, "m_hControlPointEnts", controlPoint, 0);
+		SetEntProp(particle, Prop_Send, "m_iControlPointParents", controlPoint, _, 0);
+	}
+	
+	if (activate)
+	{
+		ActivateEntity(particle);
+		AcceptEntityInput(particle, "Start");
+	}
+	
+	// Return ref of entity
+	return EntIndexToEntRef(particle);
+}
+
 stock TFTeam TF2_GetEnemyTeam(TFTeam team)
 {
 	switch (team)
@@ -173,23 +203,6 @@ stock void TF2_ForceRoundWin(TFTeam team, int winReason, bool forceMapReset = tr
 		}
 		RemoveEntity(entity);
 	}
-}
-
-stock void TF2_Explode(int attacker = -1, float origin[3], float damage, float radius, const char[] particle = NULL_STRING, const char[] sound = NULL_STRING)
-{
-	int bomb = CreateEntityByName("tf_generic_bomb");
-	DispatchKeyValueVector(bomb, "origin", origin);
-	DispatchKeyValueFloat(bomb, "damage", damage);
-	DispatchKeyValueFloat(bomb, "radius", radius);
-	DispatchKeyValue(bomb, "health", "1");
-	DispatchKeyValue(bomb, "explode_particle", particle);
-	DispatchKeyValue(bomb, "sound", sound);
-	DispatchSpawn(bomb);
-	
-	if (attacker == -1)
-		AcceptEntityInput(bomb, "Detonate");
-	else
-		SDKHooks_TakeDamage(bomb, 0, attacker, 9999.0);
 }
 
 stock void TF2_SetActiveWeapon(int client, int weapon)

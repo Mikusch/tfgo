@@ -38,7 +38,7 @@
 #define BOMB_DEFUSE_TIME	10.0
 
 #define BOMB_EXPLOSION_DAMAGE	500.0
-#define BOMB_EXPLOSION_RADIUS	800.0
+#define BOMB_EXPLOSION_RADIUS	1750.0
 
 #define MIN_CONSECUTIVE_LOSSES		0
 #define STARTING_CONSECUTIVE_LOSSES	1
@@ -495,12 +495,27 @@ Action Timer_OnBombExplode(Handle timer)
 	
 	g_IsBombPlanted = false;
 	
-	if (GameRules_GetRoundState() == RoundState_RoundRunning)
+	if (GameRules_GetRoundState() == RoundState_Stalemate)
 		TF2_ForceRoundWin(g_BombPlantingTeam, WINREASON_ALL_POINTS_CAPTURED);
 	
-	float origin[3];
-	GetEntPropVector(g_BombRef, Prop_Send, "m_vecOrigin", origin);
-	TF2_Explode(_, origin, BOMB_EXPLOSION_DAMAGE, BOMB_EXPLOSION_RADIUS, PARTICLE_BOMB_EXPLOSION);
+	float bombOrigin[3], bombAngles[3];
+	GetEntPropVector(g_BombRef, Prop_Send, "m_vecOrigin", bombOrigin);
+	GetEntPropVector(g_BombRef, Prop_Send, "m_angRotation", bombAngles);
+	
+	// Deal blast damage to clients in range of the bomb
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientInGame(client) && IsPlayerAlive(client))
+		{
+			float clientOrigin[3];
+			GetClientAbsOrigin(client, clientOrigin);
+			float distance = GetVectorDistance(clientOrigin, bombOrigin);
+			if (distance < BOMB_EXPLOSION_RADIUS)
+				SDKHooks_TakeDamage(client, g_BombRef, g_BombRef, (BOMB_EXPLOSION_DAMAGE / BOMB_EXPLOSION_RADIUS) * (BOMB_EXPLOSION_RADIUS - distance), DMG_BLAST, _, bombOrigin);
+		}
+	}
+	
+	TF2_SpawnParticle(PARTICLE_BOMB_EXPLOSION, bombOrigin, bombAngles);
 	EmitGameSoundToAll(GAMESOUND_BOMB_EXPLOSION, g_BombRef);
 	RemoveEntity(g_BombRef);
 	
