@@ -1,6 +1,7 @@
 void Event_Init()
 {
 	HookEvent("player_team", Event_PlayerTeam);
+	HookEvent("player_spawn", Event_PlayerSpawn);
 	HookEvent("player_death", Event_PlayerDeath);
 	HookEvent("post_inventory_application", Event_PostInventoryApplication);
 	HookEvent("arena_round_start", Event_ArenaRoundStart);
@@ -28,6 +29,16 @@ Action Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
 		player.Account = highestAccount;
 	
 	player.RemoveAllItems(true);
+}
+
+
+Action Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(event.GetInt("userid"));
+	
+	//Prevent latespawn
+	if (GameRules_GetRoundState() != RoundState_Preround)
+		ForcePlayerSuicide(client);
 }
 
 Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
