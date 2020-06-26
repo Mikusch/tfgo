@@ -99,6 +99,21 @@ enum
 	WINREASON_CUSTOM_OUT_OF_TIME
 };
 
+enum ETFGameType
+{
+	TF_GAMETYPE_UNDEFINED = 0,
+	TF_GAMETYPE_CTF,
+	TF_GAMETYPE_CP,
+	TF_GAMETYPE_ESCORT,
+	TF_GAMETYPE_ARENA,
+	TF_GAMETYPE_MVM,
+	TF_GAMETYPE_RD,
+	TF_GAMETYPE_PASSTIME,
+	TF_GAMETYPE_PD,
+
+	TF_GAMETYPE_COUNT
+};
+
 // TF2 weapon loadout slots
 enum
 {
@@ -184,6 +199,7 @@ float g_BombNextBeep;
 bool g_IsBombTicking;
 
 // Game state
+bool g_ArenaGameType;
 bool g_IsBuyTimeActive;
 bool g_IsBombPlanted;
 bool g_SkipGiveNamedItemHook;
@@ -307,12 +323,23 @@ public void OnPluginEnd()
 	
 	if (g_PickupWeaponPatch != null)
 		g_PickupWeaponPatch.Disable();
+	
+	//Restore arena if needed
+	if (g_ArenaGameType)
+		GameRules_SetProp("m_nGameType", TF_GAMETYPE_ARENA);
 }
 
 public void OnMapStart()
 {
 	// Allow players to buy stuff on the first round
 	g_IsBuyTimeActive = true;
+	
+	if (GameRules_GetRoundState() == RoundState_Pregame && view_as<ETFGameType>(GameRules_GetProp("m_nGameType")) == TF_GAMETYPE_ARENA)
+	{
+		// Enable waiting for players
+		g_ArenaGameType = true;
+		GameRules_SetProp("m_nGameType", TF_GAMETYPE_UNDEFINED);
+	}
 	
 	DHook_HookGamerules();
 	ResetRoundState();
@@ -400,6 +427,10 @@ public void OnClientDisconnect(int client)
 
 public void OnGameFrame()
 {
+	//Make sure other plugins is not overriding gamerules prop
+	if (g_ArenaGameType && view_as<ETFGameType>(GameRules_GetProp("m_nGameType")) != TF_GAMETYPE_UNDEFINED)
+		GameRules_SetProp("m_nGameType", TF_GAMETYPE_UNDEFINED);
+	
 	if (!g_IsBombTicking) return;
 	
 	if (GetGameTime() > g_BombNextBeep)
@@ -424,6 +455,13 @@ public void OnEntityCreated(int entity, const char[] classname)
 		SDKHook_HookTriggerCaptureArea(entity);
 	else if (StrEqual(classname, "team_control_point_master"))
 		SDKHook_HookTeamControlPointMaster(entity);
+}
+
+public void TF2_OnWaitingForPlayersStart()
+{
+	// Set game type back to arena after waiting for players calculations are done
+	g_ArenaGameType = false;
+	GameRules_SetProp("m_nGameType", TF_GAMETYPE_ARENA);
 }
 
 public Action TF2_OnGiveNamedItem(int client, char[] classname, int defindex)
