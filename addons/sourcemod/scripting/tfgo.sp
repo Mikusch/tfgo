@@ -334,7 +334,7 @@ public void OnMapStart()
 	// Allow players to buy stuff on the first round
 	g_IsBuyTimeActive = true;
 	
-	if (GameRules_GetRoundState() == RoundState_Pregame)
+	if (GameRules_GetRoundState() == RoundState_Pregame && view_as<ETFGameType>(GameRules_GetProp("m_nGameType")) == TF_GAMETYPE_ARENA)
 	{
 		// Enable waiting for players
 		g_ArenaGameType = true;
