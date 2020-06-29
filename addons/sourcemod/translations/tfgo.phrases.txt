@@ -165,7 +165,8 @@
 	}
 	"BuyMenu_OutOfTime"
 	{
-		"en"	"The %d second buy period has expired"
+		"#format"	"{1:d}"
+		"en"		"The {1} second buy period has expired"
 	}
 	
 	// Item Names
@@ -185,7 +186,8 @@
 	// Alerts
 	"Bomb_Planted"
 	{
-		"en"	"The bomb has been planted.\n%d seconds to detonation."
+		"#format"	"{1:d}"
+		"en"		"The bomb has been planted.\n{1} seconds to detonation."
 	}
 	
 	// Misc. Info Text
@@ -221,65 +223,80 @@
 	// Player Cash Awards
 	"Player_Cash_Award_Killed_Enemy_Generic"
 	{
-		"en"	"{positive}+$%d{default}: Award for neutralizing an enemy."
+		"#format"	"{1:d}"
+		"en"		"{positive}+${1}{default}: Award for neutralizing an enemy."
 	}
 	"Player_Cash_Award_Killed_Enemy"
 	{
-		"en"	"{positive}+$%d{default}: Award for neutralizing an enemy with %s."
+		"#format"	"{1:d},{2:s}"
+		"en"		"{positive}+${1}{default}: Award for neutralizing an enemy with {2}."
 	}
 	"Player_Cash_Award_Assist_Enemy"
 	{
-		"en"	"{positive}+$%d{default}: Award for assisting in neutralizing %s."
+		"#format"	"{1:d},{2:s}"
+		"en"		"{positive}+${1}{default}: Award for assisting in neutralizing {2}."
 	}
 	"Player_Cash_Award_Bomb_Planted"
 	{
-		"en"	"{positive}+$%d{default}: Award for planting the bomb."
+		"#format"	"{1:d}"
+		"en"		"{positive}+${1}{default}: Award for planting the bomb."
 	}
 	"Player_Cash_Award_Bomb_Defused"
 	{
-		"en"	"{positive}+$%d{default}: Award for defusing the bomb."
+		"#format"	"{1:d}"
+		"en"		"{positive}+${1}{default}: Award for defusing the bomb."
 	}
 	"Player_Cash_Award_ExplainSuicide_YouGotCash"
 	{
-		"en"	"(You were awarded +$%d compensation for the suicide of %s)"
+		"#format"	"{1:d},{2:s}"
+		"en"		"(You were awarded +${1} compensation for the suicide of {2})"
 	}
 	"Player_Cash_Award_ExplainSuicide_TeammateGotCash"
 	{
-		"en"	"Your teammate %s was awarded {positive}+$%d{default} compensation for the suicide of %s."
+		"#format"	"{1:s},{2:d},{3:s}"
+		"en"		"Your teammate {1} was awarded {positive}+${2}{default} compensation for the suicide of {3}."
 	}
 	"Player_Cash_Award_ExplainSuicide_EnemyGotCash"
 	{
-		"en"	"An enemy player was awarded compensation for the suicide of %s."
+		"#format"	"{1:s}"
+		"en"		"An enemy player was awarded compensation for the suicide of {1}."
 	}
 	"Player_Cash_Award_ExplainSuicide_Spectators"
 	{
-		"en"	"%s was awarded +$%d compensation for the suicide of %s."
+		"#format"	"{1:s},{2:d},{3:s}"
+		"en"		"{1} was awarded +${2} compensation for the suicide of {3}."
 	}
 	
 	// Team Cash Awards
 	"Team_Cash_Award_T_Win_Bomb"
 	{
-		"en"	"{positive}+$%d{default}: Team award for detonating bomb."
+		"#format"	"{1:d}"
+		"en"		"{positive}+${1}{default}: Team award for detonating bomb."
 	}
 	"Team_Cash_Award_Elim_Bomb"
 	{
-		"en"	"{positive}+$%d{default}: Team award for eliminating the enemy team."
+		"#format"	"{1:d}"
+		"en"		"{positive}+${1}{default}: Team award for eliminating the enemy team."
 	}
 	"Team_Cash_Award_Win_Time"
 	{
-		"en"	"{positive}+$%d{default}: Team award for winning by running down the clock."
+		"#format"	"{1:d}"
+		"en"		"{positive}+${1}{default}: Team award for winning by running down the clock."
 	}
 	"Team_Cash_Award_Win_Defuse_Bomb"
 	{
-		"en"	"{positive}+$%d{default}: Team award for winning by defusing the bomb."
+		"#format"	"{1:d}"
+		"en"		"{positive}+${1}{default}: Team award for winning by defusing the bomb."
 	}
 	"Team_Cash_Award_Loser_Bonus"
 	{
-		"en"	"{positive}+$%d{default}: Income for losing."
+		"#format"	"{1:d}"
+		"en"		"{positive}+${1}{default}: Income for losing."
 	}
 	"Team_Cash_Award_Planted_Bomb_But_Defused"
 	{
-		"en"	"{positive}+$%d{default}: Team award for planting the bomb."
+		"#format"	"{1:d}"
+		"en"		"{positive}+${1}{default}: Team award for planting the bomb."
 	}
 	"Team_Cash_Award_no_income_stalemate"
 	{
@@ -297,7 +314,8 @@
 	// Music Kits
 	"Playing_MVP_MusicKit"
 	{
-		"en"	"Playing %s's MVP Anthem from their %s."
+		"#format"	"{1:s},{2:s}"
+		"en"		"Playing {1}'s MVP Anthem from their {2}."
 	}
 	"Playing_MVP_MusicKit_Yours"
 	{
@@ -307,7 +325,8 @@
 	// HUD Text
 	"HUD_Armor"
 	{
-		"en"	"Armor: %d"
+		"#format"	"{1:d}"
+		"en"		"Kevlar: {1}"
 	}
 	
 	"TF_TeamsScrambled"

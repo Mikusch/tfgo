@@ -229,7 +229,7 @@ stock void TF2_GetItemName(int defindex, char[] buffer, int maxlength)
 	{
 		char localizedName[PLATFORM_MAX_PATH];
 		TF2Econ_GetLocalizedItemName(defindex, localizedName, sizeof(localizedName));
-		Format(buffer, maxlength, "%T", localizedName, LANG_SERVER);
+		Format(buffer, maxlength, "%t", localizedName);
 	}
 }
 

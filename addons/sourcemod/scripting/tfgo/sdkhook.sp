@@ -37,7 +37,7 @@ Action SDKHook_Client_PreThink(int client)
 	if (player.ArmorValue > 0)
 	{
 		SetHudTextParams(-1.0, 0.85, 0.1, 255, 255, 255, 255, _, 0.0, 0.0, 0.0);
-		ShowHudText(client, -1, "%T", "HUD_Armor", LANG_SERVER, player.ArmorValue);
+		ShowHudText(client, -1, "%t", "HUD_Armor", player.ArmorValue);
 	}
 	
 	if (!g_MapHasRespawnRoom && g_IsBuyTimeActive)
@@ -114,7 +114,7 @@ Action SDKHook_FuncRespawnRoom_EndTouch(int entity, int client)
 		if (player.ActiveBuyMenu != null)
 		{
 			player.ActiveBuyMenu.Cancel();
-			PrintHintText(client, "%T", "BuyMenu_NotInBuyZone", LANG_SERVER);
+			PrintHintText(client, "%t", "BuyMenu_NotInBuyZone");
 		}
 	}
 }
