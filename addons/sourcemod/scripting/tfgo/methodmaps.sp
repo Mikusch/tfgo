@@ -123,6 +123,7 @@ methodmap TFGOPlayer
 		{
 			if (!IsNullString(format))
 			{
+				SetGlobalTransTarget(this.Client);
 				char message[PLATFORM_MAX_PATH];
 				VFormat(message, sizeof(message), format, 4);
 				CPrintToChat(this.Client, message);
@@ -486,25 +487,29 @@ methodmap TFGOTeam
 	
 	public void AddToClientAccounts(int val, const char[] format, any...)
 	{
-		char message[PLATFORM_MAX_PATH];
-		VFormat(message, sizeof(message), format, 4);
-		
 		for (int client = 1; client <= MaxClients; client++)
 		{
 			if (IsClientInGame(client) && TF2_GetClientTeam(client) == this.Team)
+			{
+				SetGlobalTransTarget(client);
+				char message[PLATFORM_MAX_PATH];
+				VFormat(message, sizeof(message), format, 4);
 				TFGOPlayer(client).AddToAccount(val, message);
+			}
 		}
 	}
 	
 	public void PrintToChat(const char[] format, any...)
 	{
-		char message[PLATFORM_MAX_PATH];
-		VFormat(message, sizeof(message), format, 3);
-		
 		for (int client = 1; client <= MaxClients; client++)
 		{
 			if (IsClientInGame(client) && TF2_GetClientTeam(client) == this.Team)
+			{
+				SetGlobalTransTarget(client);
+				char message[PLATFORM_MAX_PATH];
+				VFormat(message, sizeof(message), format, 3);
 				CPrintToChat(client, message);
+			}
 		}
 	}
 }

@@ -300,7 +300,6 @@
 	}
 	"Team_Cash_Award_no_income_stalemate"
 	{
-		"#format"	"{1:d}"
 		"en"		"{negative}0{default}: No income for triggering a stalemate."
 	}
 	"Team_Cash_Award_no_income_out_of_time"

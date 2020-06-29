@@ -6,7 +6,7 @@
 bool BuyMenu_DisplayMainBuyMenu(int client)
 {
 	Menu menu = new Menu(MenuHandler_MainBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DisplayItem);
-	menu.SetTitle("%t\n%t", "BuyMenu_Title", "BuyMenu_SelectSlot");
+	menu.SetTitle("%T\n%T", "BuyMenu_Title", client, "BuyMenu_SelectSlot", client);
 	menu.ExitButton = true;
 	
 	switch (TF2_GetPlayerClass(client))
@@ -42,7 +42,7 @@ bool BuyMenu_DisplayMainBuyMenu(int client)
 bool BuyMenu_DisplayWeaponBuyMenu(int client, ArrayList slots)
 {
 	Menu menu = new Menu(MenuHandler_WeaponBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DrawItem | MenuAction_DisplayItem);
-	menu.SetTitle("%t\n%t", "BuyMenu_Title", "BuyMenu_SelectWeapon");
+	menu.SetTitle("%T\n%T", "BuyMenu_Title", client, "BuyMenu_SelectWeapon", client);
 	menu.ExitButton = true;
 	menu.ExitBackButton = true;
 	
@@ -73,7 +73,7 @@ bool BuyMenu_DisplayWeaponBuyMenu(int client, ArrayList slots)
 bool BuyMenu_DisplayEquipmentBuyMenu(int client)
 {
 	Menu menu = new Menu(MenuHandler_EquipmentBuyMenu, MenuAction_Display | MenuAction_Select | MenuAction_Cancel | MenuAction_End | MenuAction_DrawItem | MenuAction_DisplayItem);
-	menu.SetTitle("%t\n%t", "BuyMenu_Title", "BuyMenu_SelectEquipment");
+	menu.SetTitle("%T\n%T", "BuyMenu_Title", client, "BuyMenu_SelectEquipment", client);
 	menu.ExitButton = true;
 	menu.ExitBackButton = true;
 	
@@ -136,7 +136,7 @@ int MenuHandler_MainBuyMenu(Menu menu, MenuAction action, int param1, int param2
 			char info[32];
 			char display[PLATFORM_MAX_PATH];
 			menu.GetItem(param2, info, sizeof(info), _, display, sizeof(display));
-			Format(display, sizeof(display), "%t", display);
+			Format(display, sizeof(display), "%T", display, param1);
 			return RedrawMenuItem(display);
 		}
 	}
@@ -211,6 +211,8 @@ int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, int para
 				TFGOPlayer player = TFGOPlayer(param1);
 				TFClassType class = TF2_GetPlayerClass(param1);
 				int slot = TF2_GetItemSlot(weapon.defindex, class);
+				
+				SetGlobalTransTarget(param1);
 				
 				if (player.GetWeaponFromLoadout(class, slot) == weapon.defindex)
 					Format(display, sizeof(display), "%s (%t)", display, "BuyMenu_AlreadyCarrying");
@@ -308,6 +310,8 @@ int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1, int p
 			
 			TFGOPlayer player = TFGOPlayer(param1);
 			bool fullArmor = player.ArmorValue >= TF2_GetMaxHealth(param1);
+			
+			SetGlobalTransTarget(param1);
 			
 			if (StrEqual(info, INFO_KEVLAR))
 			{
