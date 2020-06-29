@@ -131,7 +131,7 @@ public MRESReturn DHook_HandleScrambleTeams()
 	Event alert = CreateEvent("teamplay_alert");
 	alert.SetInt("alert_type", 0);
 	alert.Fire();
-	PrintToChatAll("%T", "TF_TeamsScrambled", LANG_SERVER);
+	PrintToChatAll("%t", "TF_TeamsScrambled");
 	EmitGameSoundToAll(GAMESOUND_ANNOUNCER_TEAM_SCRAMBLE);
 }
 

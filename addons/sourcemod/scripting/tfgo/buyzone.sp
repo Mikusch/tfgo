@@ -87,7 +87,7 @@ void DisplayMenuInDynamicBuyZone(int client)
 			if (player.ActiveBuyMenu != null)
 			{
 				player.ActiveBuyMenu.Cancel();
-				PrintHintText(client, "%T", "BuyMenu_NotInBuyZone", LANG_SERVER);
+				PrintHintText(client, "%t", "BuyMenu_NotInBuyZone");
 			}
 		}
 	}

@@ -461,7 +461,7 @@ Action Timer_OnBuyTimeExpire(Handle timer)
 			if (player.ActiveBuyMenu != null)
 			{
 				player.ActiveBuyMenu.Cancel();
-				PrintHintText(client, "%T", "BuyMenu_OutOfTime", LANG_SERVER, tfgo_buytime.IntValue);
+				PrintHintText(client, "%t", "BuyMenu_OutOfTime", tfgo_buytime.IntValue);
 			}
 		}
 	}
@@ -539,7 +539,7 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	for (int i = 0; i < cappers.Length; i++)
 	{
 		int capper = cappers.Get(i);
-		TFGOPlayer(capper).AddToAccount(tfgo_cash_player_bomb_planted.IntValue, "%T", "Player_Cash_Award_Bomb_Planted", LANG_SERVER, tfgo_cash_player_bomb_planted.IntValue);
+		TFGOPlayer(capper).AddToAccount(tfgo_cash_player_bomb_planted.IntValue, "%t", "Player_Cash_Award_Bomb_Planted", tfgo_cash_player_bomb_planted.IntValue);
 	}
 	
 	// Cancel arena timer
@@ -608,7 +608,7 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	
 	// Show text on screen
 	char message[PLATFORM_MAX_PATH];
-	Format(message, sizeof(message), "%T", "Bomb_Planted", LANG_SERVER, tfgo_bombtimer.IntValue);
+	Format(message, sizeof(message), "%t", "Bomb_Planted", tfgo_bombtimer.IntValue);
 	TF2_ShowGameMessage(message, "ico_notify_sixty_seconds");
 	
 	Forward_OnBombPlanted(team, cappers);
@@ -624,7 +624,7 @@ void DefuseBomb(TFTeam team, ArrayList cappers)
 	for (int i = 0; i < cappers.Length; i++)
 	{
 		int capper = cappers.Get(i);
-		TFGOPlayer(capper).AddToAccount(tfgo_cash_player_bomb_defused.IntValue, "%T", "Player_Cash_Award_Bomb_Defused", LANG_SERVER, tfgo_cash_player_bomb_defused.IntValue);
+		TFGOPlayer(capper).AddToAccount(tfgo_cash_player_bomb_defused.IntValue, "%t", "Player_Cash_Award_Bomb_Defused", tfgo_cash_player_bomb_defused.IntValue);
 	}
 	
 	TF2_ForceRoundWin(team, WINREASON_ALL_POINTS_CAPTURED);
