@@ -1,14 +1,12 @@
-static Handle DHookGetCaptureValueForPlayer;
 static Handle DHookSetWinningTeam;
 static Handle DHookHandleSwitchTeams;
 static Handle DHookHandleScrambleTeams;
 static Handle DHookGiveNamedItem;
 
-static int HookIdsGiveNamedItem[TF_MAXPLAYERS + 1] =  { -1, ... };
+static int HookIdsGiveNamedItem[TF_MAXPLAYERS] =  { -1, ... };
 
 void DHook_Init(GameData gamedata)
 {
-	DHookGetCaptureValueForPlayer = DHook_CreateVirtual(gamedata, "CTFGameRules::GetCaptureValueForPlayer");
 	DHookSetWinningTeam = DHook_CreateVirtual(gamedata, "CTFGameRules::SetWinningTeam");
 	DHookGiveNamedItem = DHook_CreateVirtual(gamedata, "CTFPlayer::GiveNamedItem");
 	DHookHandleSwitchTeams = DHook_CreateVirtual(gamedata, "CTFGameRules::HandleSwitchTeams");
@@ -49,7 +47,6 @@ static void DHook_CreateDetour(GameData gamedata, const char[] name, DHookCallba
 
 void DHook_HookGamerules()
 {
-	DHookGamerules(DHookGetCaptureValueForPlayer, true, _, DHook_GetCaptureValueForPlayer);
 	DHookGamerules(DHookSetWinningTeam, false, _, DHook_SetWinningTeam);
 	DHookGamerules(DHookHandleSwitchTeams, false, _, DHook_HandleSwitchTeams);
 	DHookGamerules(DHookHandleScrambleTeams, false, _, DHook_HandleScrambleTeams);
@@ -77,29 +74,17 @@ public MRESReturn Detour_PickupWeaponFromOther(int client, Handle returnVal, Han
 	Forward_OnClientPickupWeapon(client, defindex);
 }
 
-public MRESReturn DHook_GetCaptureValueForPlayer(Handle returnVal, Handle params)
-{
-	int client = DHookGetParam(params, 1);
-	if (TFGOPlayer(client).HasDefuseKit && g_IsBombPlanted) // Defuse kit only takes effect when the bomb is planted
-	{
-		DHookSetReturn(returnVal, DHookGetReturn(returnVal) + 1);
-		return MRES_Supercede;
-	}
-	
-	return MRES_Ignored;
-}
-
 public MRESReturn DHook_SetWinningTeam(Handle params)
 {
 	TFTeam team = DHookGetParam(params, 1);
-	WinReason winReason = DHookGetParam(params, 2);
+	int winReason = DHookGetParam(params, 2);
 	
 	// Allow planting team to die
-	if (g_IsBombPlanted && team != g_BombPlantingTeam && winReason == WinReason_Opponents_Dead)
+	if (g_IsBombPlanted && team != g_BombPlantingTeam && winReason == WINREASON_OPPONENTS_DEAD)
 	{
 		return MRES_Supercede;
 	}
-	else if (winReason == WinReason_Stalemate)
+	else if (winReason == WINREASON_STALEMATE)
 	{
 		for (int i = view_as<int>(TFTeam_Red); i <= view_as<int>(TFTeam_Blue); i++)
 		{
@@ -107,7 +92,7 @@ public MRESReturn DHook_SetWinningTeam(Handle params)
 			if (!TFGOTeam(view_as<TFTeam>(i)).IsAttacking && GetAlivePlayerCount() > 0)
 			{
 				DHookSetParam(params, 1, i);
-				DHookSetParam(params, 2, WinReason_Custom_Out_Of_Time);
+				DHookSetParam(params, 2, WINREASON_CUSTOM_OUT_OF_TIME);
 				return MRES_ChangedOverride;
 			}
 		}
@@ -146,20 +131,26 @@ public MRESReturn DHook_HandleScrambleTeams()
 	Event alert = CreateEvent("teamplay_alert");
 	alert.SetInt("alert_type", 0);
 	alert.Fire();
-	PrintToChatAll("%T", "TF_TeamsScrambled", LANG_SERVER);
+	PrintToChatAll("%t", "TF_TeamsScrambled");
 	EmitGameSoundToAll(GAMESOUND_ANNOUNCER_TEAM_SCRAMBLE);
 }
 
 public MRESReturn DHook_GiveNamedItem(int client, Handle returnVal, Handle params)
 {
+	// Block if one of the pointers is null
 	if (DHookIsNullParam(params, 1) || DHookIsNullParam(params, 3))
-		return MRES_Ignored;
+	{
+		DHookSetReturn(returnVal, 0);
+		return MRES_Supercede;
+	}
 	
+	char classname[256];
+	DHookGetParamString(params, 1, classname, sizeof(classname));
 	int defindex = DHookGetParamObjectPtrVar(params, 3, 4, ObjectValueType_Int) & 0xFFFF;
-	int slot = TF2_GetItemSlot(defindex, TF2_GetPlayerClass(client));
-	TFClassType class = TF2_GetPlayerClass(client);
 	
-	if (0 <= slot <= WeaponSlot_BuilderEngie && TFGOPlayer(client).GetWeaponFromLoadout(class, slot) != defindex)
+	Action action = TF2_OnGiveNamedItem(client, classname, defindex);
+	
+	if (action == Plugin_Handled)
 	{
 		DHookSetReturn(returnVal, 0);
 		return MRES_Supercede;

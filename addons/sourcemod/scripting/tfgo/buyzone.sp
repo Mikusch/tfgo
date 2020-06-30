@@ -1,6 +1,6 @@
 static float DynamicBuyZoneCenters[view_as<int>(TFTeam_Blue) + 1][3];
 static float DynamicBuyzoneRadii[view_as<int>(TFTeam_Blue) + 1];
-static bool IsPlayerInDynamicBuyZone[TF_MAXPLAYERS + 1];
+static bool IsPlayerInDynamicBuyZone[TF_MAXPLAYERS];
 
 void ClearDynamicBuyZones()
 {
@@ -87,7 +87,7 @@ void DisplayMenuInDynamicBuyZone(int client)
 			if (player.ActiveBuyMenu != null)
 			{
 				player.ActiveBuyMenu.Cancel();
-				PrintHintText(client, "%T", "BuyMenu_NotInBuyZone", LANG_SERVER);
+				PrintHintText(client, "%t", "BuyMenu_NotInBuyZone");
 			}
 		}
 	}

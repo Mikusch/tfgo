@@ -1,9 +1,11 @@
-static int PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][WeaponSlot_BuilderEngie + 1];
-static int PlayerAccounts[TF_MAXPLAYERS + 1];
-static int PlayerArmorValues[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
-static bool PlayerHelmets[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
-static bool PlayerDefuseKits[TF_MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
-static Menu ActiveBuyMenus[TF_MAXPLAYERS + 1];
+static int PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS][view_as<int>(TFClass_Engineer) + 1][WeaponSlot_BuilderEngie + 1];
+static int PlayerAccounts[TF_MAXPLAYERS];
+static int PlayerArmorValues[TF_MAXPLAYERS][view_as<int>(TFClass_Engineer) + 1];
+static bool PlayerHelmets[TF_MAXPLAYERS][view_as<int>(TFClass_Engineer) + 1];
+static bool PlayerDefuseKits[TF_MAXPLAYERS][view_as<int>(TFClass_Engineer) + 1];
+static Menu ActiveBuyMenus[TF_MAXPLAYERS];
+static char PlayerMusicKits[TF_MAXPLAYERS][PLATFORM_MAX_PATH];
+static char PlayerPreviousMusicKitSounds[TF_MAXPLAYERS][PLATFORM_MAX_PATH];
 
 static int TeamConsecutiveLosses[view_as<int>(TFTeam_Blue) + 1] =  { STARTING_CONSECUTIVE_LOSSES, ... };
 static bool IsTeamAttacking[view_as<int>(TFTeam_Blue) + 1];
@@ -89,7 +91,27 @@ methodmap TFGOPlayer
 		}
 	}
 	
-	public void AddToAccount(int val, const char[] format, any...)
+	public int GetMusicKit(char[] buffer, int maxlen)
+	{
+		return strcopy(buffer, maxlen, PlayerMusicKits[this]);
+	}
+	
+	public int SetMusicKit(const char[] name)
+	{
+		return strcopy(PlayerMusicKits[this], sizeof(PlayerMusicKits[]), name);
+	}
+	
+	public int GetPreviousPlayedSound(char[] buffer, int maxlen)
+	{
+		return strcopy(buffer, maxlen, PlayerPreviousMusicKitSounds[this]);
+	}
+	
+	public int SetPreviousPlayedSound(const char[] sound)
+	{
+		return strcopy(PlayerPreviousMusicKitSounds[this], sizeof(PlayerPreviousMusicKitSounds[]), sound);
+	}
+	
+	public void AddToAccount(int val, const char[] format = NULL_STRING, any...)
 	{
 		int temp = val;
 		Action action = Forward_OnClientAccountChange(this.Client, temp);
@@ -99,13 +121,24 @@ methodmap TFGOPlayer
 		
 		if (action < Plugin_Handled)
 		{
-			char message[PLATFORM_MAX_PATH];
-			VFormat(message, sizeof(message), format, 4);
-			CPrintToChat(this.Client, message);
+			if (!IsNullString(format))
+			{
+				SetGlobalTransTarget(this.Client);
+				char message[PLATFORM_MAX_PATH];
+				VFormat(message, sizeof(message), format, 4);
+				CPrintToChat(this.Client, message);
+			}
 			
 			this.Account += val;
 			Forward_OnClientAccountChanged(this.Client, val);
 		}
+	}
+	
+	public void AddToLoadout(int defindex)
+	{
+		TFClassType class = TF2_GetPlayerClass(this.Client);
+		int slot = TF2_GetItemSlot(defindex, class);
+		PlayerLoadoutWeaponIndexes[this][class][slot] = defindex;
 	}
 	
 	public BuyResult AttemptToBuyWeapon(int defindex)
@@ -115,31 +148,76 @@ methodmap TFGOPlayer
 		{
 			TFClassType class = TF2_GetPlayerClass(this.Client);
 			int slot = TF2_GetItemSlot(defindex, class);
-			int weapon = GetPlayerWeaponSlot(this.Client, slot);
+			int currentWeapon = GetPlayerWeaponSlot(this.Client, slot);
 			
-			if (weapon > -1 && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") == defindex)
+			if (currentWeapon > -1 && GetEntProp(currentWeapon, Prop_Send, "m_iItemDefinitionIndex") == defindex)
 			{
-				PrintCenterText(this.Client, "%T", "Already_Have_One", LANG_SERVER);
+				PrintCenterText(this.Client, "%t", "Already_Have_One");
 				return BUY_ALREADY_HAVE;
 			}
 			else if (this.Account < config.price)
 			{
-				PrintCenterText(this.Client, "%T", "Not_Enough_Money", LANG_SERVER);
+				PrintCenterText(this.Client, "%t", "Not_Enough_Money");
 				return BUY_CANT_AFFORD;
 			}
 			else
 			{
-				if (weapon > -1) // Drop old weapon, if present
+				// Drop current weapon if one exists
+				if (currentWeapon > -1)
 				{
-					float position[3];
+					float position[3], angles[3];
 					GetClientEyePosition(this.Client, position);
-					float angles[3];
 					GetClientEyeAngles(this.Client, angles);
-					SDK_CreateDroppedWeapon(weapon, this.Client, position, angles);
+					SDKCall_CreateDroppedWeapon(currentWeapon, this.Client, position, angles);
 				}
 				
-				TF2_CreateAndEquipWeapon(this.Client, defindex, TFQual_Unique, GetRandomInt(1, 100));
-				PlayerLoadoutWeaponIndexes[this][class][slot] = defindex;
+				// Buying while taunting causes civilian pose
+				TF2_RemoveCondition(this.Client, TFCond_Taunting);
+				
+				TF2_RemoveItemInSlot(this.Client, slot);
+				int weapon = TF2_CreateAndEquipWeapon(this.Client, defindex);
+				
+				char classname[256];
+				TF2Econ_GetItemClassName(defindex, classname, sizeof(classname));
+				if (StrContains(classname, "tf_wearable") == 0 || StrContains(classname, "tf_weapon_parachute") == 0)
+				{
+					if (GetEntPropEnt(this.Client, Prop_Send, "m_hActiveWeapon") <= MaxClients)
+					{
+						// Looks like player's new active weapon is a wearable, fix that by switching to melee
+						int melee = GetPlayerWeaponSlot(this.Client, TFWeaponSlot_Melee);
+						if (melee > MaxClients)
+							TF2_SetActiveWeapon(this.Client, melee);
+					}
+				}
+				else
+				{
+					int ammoType = GetEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType");
+					if (ammoType > -1)
+					{
+						// Reset ammo before GivePlayerAmmo gives the correct amount
+						SetEntProp(this.Client, Prop_Send, "m_iAmmo", 0, _, ammoType);
+						GivePlayerAmmo(this.Client, 9999, ammoType, true);
+					}
+					
+					TF2_SetActiveWeapon(this.Client, weapon);
+				}
+				
+				// Reset item charge meter to default value
+				SetEntPropFloat(this.Client, Prop_Send, "m_flItemChargeMeter", SDKCall_GetDefaultItemChargeMeterValue(weapon), slot);
+				
+				// This fixes HUD meters
+				Event event = CreateEvent("localplayer_pickup_weapon", true);
+				event.FireToClient(this.Client);
+				event.Cancel();
+				
+				// Add health to player if needed
+				ArrayList attribs = TF2Econ_GetItemStaticAttributes(defindex);
+				int index = attribs.FindValue(ATTRIB_MAX_HEALTH_ADDITIVE_BONUS);
+				if (index > -1)
+					SetEntityHealth(this.Client, GetClientHealth(this.Client) + RoundFloat(attribs.Get(index, 1)));
+				delete attribs;
+				
+				this.AddToLoadout(defindex);
 				this.Account -= config.price;
 				return BUY_BOUGHT;
 			}
@@ -164,8 +242,7 @@ methodmap TFGOPlayer
 			if (weapon.isDefault && TF2_GetItemSlot(weapon.defindex, class) == slot)
 			{
 				char classname[PLATFORM_MAX_PATH];
-				TF2Econ_GetItemClassName(weapon.defindex, classname, sizeof(classname));
-				if (TF2Econ_TranslateWeaponEntForClass(classname, sizeof(classname), class))
+				if (TF2Econ_GetItemClassName(weapon.defindex, classname, sizeof(classname)) && TF2Econ_TranslateWeaponEntForClass(classname, sizeof(classname), class))
 					return weapon.defindex;
 			}
 		}
@@ -179,17 +256,10 @@ methodmap TFGOPlayer
 		
 		for (int slot = sizeof(PlayerLoadoutWeaponIndexes[][]) - 1; slot >= 0; slot--)
 		{
-			int defIndex = this.GetWeaponFromLoadout(class, slot);
-			if (defIndex > -1)
-				TF2_CreateAndEquipWeapon(this.Client, defIndex, TFQual_Unique, GetRandomInt(1, 100));
+			int defindex = this.GetWeaponFromLoadout(class, slot);
+			if (defindex > -1 && (GetPlayerWeaponSlot(this.Client, slot) == -1 && SDKCall_GetEquippedWearableForLoadoutSlot(this.Client, slot) == -1))
+				TF2_CreateAndEquipWeapon(this.Client, defindex);
 		}
-	}
-	
-	public void AddToLoadout(int defIndex)
-	{
-		TFClassType class = TF2_GetPlayerClass(this.Client);
-		int slot = TF2_GetItemSlot(defIndex, class);
-		PlayerLoadoutWeaponIndexes[this][class][slot] = defIndex;
 	}
 	
 	public void RemoveAllItems(bool removeArmor)
@@ -250,23 +320,23 @@ methodmap TFGOPlayer
 	{
 		if (tfgo_max_armor.IntValue < 1)
 		{
-			PrintCenterText(this.Client, "%T", "Cannot_Buy_This", LANG_SERVER);
+			PrintCenterText(this.Client, "%t", "Cannot_Buy_This");
 			return BUY_NOT_ALLOWED;
 		}
 		if (this.ArmorValue >= TF2_GetMaxHealth(this.Client))
 		{
-			PrintCenterText(this.Client, "%T", "Already_Have_Kevlar", LANG_SERVER);
+			PrintCenterText(this.Client, "%t", "Already_Have_Kevlar");
 			return BUY_ALREADY_HAVE;
 		}
 		else if (this.Account < KEVLAR_PRICE)
 		{
-			PrintCenterText(this.Client, "%T", "Not_Enough_Money", LANG_SERVER);
+			PrintCenterText(this.Client, "%t", "Not_Enough_Money");
 			return BUY_CANT_AFFORD;
 		}
 		else
 		{
 			if (this.HasHelmet)
-				PrintCenterText(this.Client, "%T", "Already_Have_Helmet_Bought_Kevlar", LANG_SERVER);
+				PrintCenterText(this.Client, "%t", "Already_Have_Helmet_Bought_Kevlar");
 			
 			this.ArmorValue = TF2_GetMaxHealth(this.Client);
 			this.Account -= KEVLAR_PRICE;
@@ -283,25 +353,25 @@ methodmap TFGOPlayer
 		
 		if (tfgo_max_armor.IntValue < 2)
 		{
-			PrintCenterText(this.Client, "%T", "Cannot_Buy_This", LANG_SERVER);
+			PrintCenterText(this.Client, "%t", "Cannot_Buy_This");
 			return BUY_NOT_ALLOWED;
 		}
 		else if (fullArmor && this.HasHelmet)
 		{
-			PrintCenterText(this.Client, "%T", "Already_Have_Kevlar_Helmet", LANG_SERVER);
+			PrintCenterText(this.Client, "%t", "Already_Have_Kevlar_Helmet");
 			return BUY_ALREADY_HAVE;
 		}
 		else if (fullArmor && !this.HasHelmet && this.Account >= HELMET_PRICE)
 		{
 			enoughMoney = true;
 			price = HELMET_PRICE;
-			PrintCenterText(this.Client, "%T", "Already_Have_Kevlar_Bought_Helmet", LANG_SERVER);
+			PrintCenterText(this.Client, "%t", "Already_Have_Kevlar_Bought_Helmet");
 		}
 		else if (!fullArmor && this.HasHelmet && this.Account >= KEVLAR_PRICE)
 		{
 			enoughMoney = true;
 			price = KEVLAR_PRICE;
-			PrintCenterText(this.Client, "%T", "Already_Have_Helmet_Bought_Kevlar", LANG_SERVER);
+			PrintCenterText(this.Client, "%t", "Already_Have_Helmet_Bought_Kevlar");
 		}
 		else if (this.Account >= ASSAULTSUIT_PRICE)
 		{
@@ -312,7 +382,7 @@ methodmap TFGOPlayer
 		// Process the result
 		if (!enoughMoney)
 		{
-			PrintCenterText(this.Client, "%T", "Not_Enough_Money", LANG_SERVER);
+			PrintCenterText(this.Client, "%t", "Not_Enough_Money");
 			return BUY_CANT_AFFORD;
 		}
 		else
@@ -328,17 +398,17 @@ methodmap TFGOPlayer
 	{
 		if (!IsTeamDefending[GetClientTeam(this.Client)])
 		{
-			PrintCenterText(this.Client, "%T", "Cannot_Buy_This", LANG_SERVER);
+			PrintCenterText(this.Client, "%t", "Cannot_Buy_This");
 			return BUY_NOT_ALLOWED;
 		}
 		else if (this.HasDefuseKit)
 		{
-			PrintCenterText(this.Client, "%T", "Already_Have_One", LANG_SERVER);
+			PrintCenterText(this.Client, "%t", "Already_Have_One");
 			return BUY_ALREADY_HAVE;
 		}
 		else if (this.Account < DEFUSEKIT_PRICE)
 		{
-			PrintCenterText(this.Client, "%T", "Not_Enough_Money", LANG_SERVER);
+			PrintCenterText(this.Client, "%t", "Not_Enough_Money");
 			return BUY_CANT_AFFORD;
 		}
 		else
@@ -417,25 +487,29 @@ methodmap TFGOTeam
 	
 	public void AddToClientAccounts(int val, const char[] format, any...)
 	{
-		char message[PLATFORM_MAX_PATH];
-		VFormat(message, sizeof(message), format, 4);
-		
 		for (int client = 1; client <= MaxClients; client++)
 		{
 			if (IsClientInGame(client) && TF2_GetClientTeam(client) == this.Team)
+			{
+				SetGlobalTransTarget(client);
+				char message[PLATFORM_MAX_PATH];
+				VFormat(message, sizeof(message), format, 4);
 				TFGOPlayer(client).AddToAccount(val, message);
+			}
 		}
 	}
 	
 	public void PrintToChat(const char[] format, any...)
 	{
-		char message[PLATFORM_MAX_PATH];
-		VFormat(message, sizeof(message), format, 3);
-		
 		for (int client = 1; client <= MaxClients; client++)
 		{
 			if (IsClientInGame(client) && TF2_GetClientTeam(client) == this.Team)
+			{
+				SetGlobalTransTarget(client);
+				char message[PLATFORM_MAX_PATH];
+				VFormat(message, sizeof(message), format, 3);
 				CPrintToChat(client, message);
+			}
 		}
 	}
 }

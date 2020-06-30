@@ -18,6 +18,8 @@ void SDKHook_HookTFLogicArena(int entity)
 void SDKHook_HookTriggerCaptureArea(int entity)
 {
 	SDKHook(entity, SDKHook_Spawn, SDKHook_TriggerCaptureArea_Spawn);
+	SDKHook(entity, SDKHook_StartTouch, SDKHook_TriggerCaptureArea_StartTouch);
+	SDKHook(entity, SDKHook_EndTouch, SDKHook_TriggerCaptureArea_EndTouch);
 }
 
 void SDKHook_HookTeamControlPointMaster(int entity)
@@ -35,7 +37,7 @@ Action SDKHook_Client_PreThink(int client)
 	if (player.ArmorValue > 0)
 	{
 		SetHudTextParams(-1.0, 0.85, 0.1, 255, 255, 255, 255, _, 0.0, 0.0, 0.0);
-		ShowHudText(client, -1, "%T", "HUD_Armor", LANG_SERVER, player.ArmorValue);
+		ShowHudText(client, -1, "%t", "HUD_Armor", player.ArmorValue);
 	}
 	
 	if (!g_MapHasRespawnRoom && g_IsBuyTimeActive)
@@ -112,7 +114,7 @@ Action SDKHook_FuncRespawnRoom_EndTouch(int entity, int client)
 		if (player.ActiveBuyMenu != null)
 		{
 			player.ActiveBuyMenu.Cancel();
-			PrintHintText(client, "%T", "BuyMenu_NotInBuyZone", LANG_SERVER);
+			PrintHintText(client, "%t", "BuyMenu_NotInBuyZone");
 		}
 	}
 }
@@ -124,9 +126,34 @@ Action SDKHook_TFLogicArena_Spawn(int entity)
 
 Action SDKHook_TriggerCaptureArea_Spawn(int entity)
 {
-	DispatchKeyValueFloat(entity, "area_time_to_cap", GetEntPropFloat(entity, Prop_Data, "m_flCapTime") / 2);
+	DispatchKeyValueFloat(entity, "area_time_to_cap", BOMB_PLANT_TIME);
 	DispatchKeyValue(entity, "team_cancap_2", "1");
 	DispatchKeyValue(entity, "team_cancap_3", "1");
+}
+
+Action SDKHook_TriggerCaptureArea_StartTouch(int entity, int other)
+{
+	if (IsValidClient(other) && CanDefuse(other) && TFGOPlayer(other).HasDefuseKit)
+	{
+		// Player with a defuse kit has entered the point, reduce cap time
+		TF2_SetAreaTimeToCap(entity, BOMB_DEFUSE_TIME / 2);
+	}
+}
+
+Action SDKHook_TriggerCaptureArea_EndTouch(int entity, int other)
+{
+	if (IsValidClient(other) && CanDefuse(other) && TFGOPlayer(other).HasDefuseKit)
+	{
+		// Player with a defuse kit has left the point, we need to check if anyone else still on the point has one
+		for (int client = 1; client <= MaxClients; client++)
+		{
+			if (IsClientInGame(client) && client != other && CanDefuse(client) && TFGOPlayer(client).HasDefuseKit)
+				return;
+		}
+		
+		// No one else on the point has a defuse kit, reset the cap time
+		TF2_SetAreaTimeToCap(entity, BOMB_DEFUSE_TIME);
+	}
 }
 
 Action SDKHook_TeamControlPointMaster_Spawn(int entity)

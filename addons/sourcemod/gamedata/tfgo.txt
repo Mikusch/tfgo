@@ -4,10 +4,10 @@
 	{
 		"Offsets"
 		{
-			"CTFGameRules::GetCaptureValueForPlayer"
+			"CBaseEntity::GetBaseEntity"
 			{
-				"linux"		"154"
-				"windows"	"153"
+				"linux" 	"6"
+				"windows" 	"5"
 			}
 			"CTFGameRules::SetWinningTeam"
 			{
@@ -34,6 +34,11 @@
 				"linux"		"168"
 				"windows"	"167"
 			}
+			"CBaseEntity::GetDefaultItemChargeMeterValue"
+			{
+				"linux"		"191"
+				"windows"	"190"
+			}
 			"CBasePlayer::EquipWearable"
 			{
 				"linux"		"431"
@@ -41,8 +46,8 @@
 			}
 			"CTFPlayer::GiveNamedItem"
 			{
-				"windows"	"475"
-				"linux"		"482"
+				"linux"		"483"
+				"windows"	"476"
 			}
 		}
 		"Signatures"
@@ -53,11 +58,11 @@
 				"linux"		"@_ZN9CTFPlayer33GetEquippedWearableForLoadoutSlotEi"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x2A\x8B\xC1\x53\x56\x33\xF6\x89\x45\xF8\x8B\x88\x2A\x2A\x2A\x2A\x57\x89\x4D\xFC"
 			}
-			"CTFPlayer::GetMaxAmmo"
+			"CTFPlayer::GetLoadoutItem"
 			{
 				"library"	"server"
-				"linux"		"@_ZN9CTFPlayer10GetMaxAmmoEii"
-				"windows"	"\x55\x8B\xEC\x8B\x45\x0C\x56\x57\x8B\xF9\x83\xF8\xFF\x75\x2A\xFF\xB7\x2A\x2A\x2A\x2A\xEB\x01\x50\xE8"
+				"linux"		"@_ZN9CTFPlayer14GetLoadoutItemEiib"
+				"windows"	"\x55\x8B\xEC\x51\x53\x56\x8B\xF1\x8B\x0D\x2A\x2A\x2A\x2A\x57\x89\x75\xFC"
 			}
 			"CTFPlayer::PickupWeaponFromOther"
 			{
@@ -80,20 +85,6 @@
 		}
 		"Functions"
 		{
-			"CTFGameRules::GetCaptureValueForPlayer"
-			{
-				"offset"	"CTFGameRules::GetCaptureValueForPlayer"
-				"hooktype"	"gamerules"
-				"return"	"int"
-				"this"		"ignore"
-				"arguments"
-				{
-					"pPlayer"
-					{
-						"type"	"cbaseentity"
-					}
-				}
-			}
 			"CTFGameRules::SetWinningTeam"
 			{
 				"offset"	"CTFGameRules::SetWinningTeam"
@@ -158,11 +149,11 @@
 					{
 						"type"	"int"
 					}
-					"pItem"
+					"pScriptItem"
 					{
 						"type"	"objectptr"
 					}
-					"bUnknown"
+					"bForce"
 					{
 						"type"	"bool"
 					}

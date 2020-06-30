@@ -7,8 +7,9 @@ Many new gameplay features such as universal headshots, armor, and defuse kits h
 
 ## Dependencies
 * SourceMod 1.10
-* [DHooks with Detour Support](https://forums.alliedmods.net/showpost.php?p=2588686&postcount=589)
+* [DHooks with Detour Support](https://github.com/peace-maker/DHooks2/tree/dynhooks)
 * [TF2 Econ Data](https://forums.alliedmods.net/showthread.php?t=315011)
+* [LoadSoundScript](https://github.com/haxtonsale/LoadSoundScript)
 * [More Colors](https://forums.alliedmods.net/showthread.php?t=185016) (recompile only)
 * [MemoryPatch](https://github.com/Kenzzer/MemoryPatch) (recompile only)
 

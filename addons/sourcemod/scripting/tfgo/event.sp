@@ -1,6 +1,7 @@
 void Event_Init()
 {
 	HookEvent("player_team", Event_PlayerTeam);
+	HookEvent("player_spawn", Event_PlayerSpawn);
 	HookEvent("player_death", Event_PlayerDeath);
 	HookEvent("post_inventory_application", Event_PostInventoryApplication);
 	HookEvent("arena_round_start", Event_ArenaRoundStart);
@@ -30,16 +31,26 @@ Action Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
 	player.RemoveAllItems(true);
 }
 
+
+Action Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(event.GetInt("userid"));
+	
+	//Prevent latespawn
+	if (GameRules_GetRoundState() != RoundState_Preround)
+		ForcePlayerSuicide(client);
+}
+
 Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
 	TFGOPlayer attacker = TFGOPlayer(GetClientOfUserId(event.GetInt("attacker")));
 	TFGOPlayer victim = TFGOPlayer(GetClientOfUserId(event.GetInt("userid")));
 	
 	char victimName[PLATFORM_MAX_PATH];
-	GetClientName(victim.Client, victimName, sizeof(victimName));
+	GetClientName2(victim.Client, victimName, sizeof(victimName));
 	
 	// Grant kill award to attacker/assister
-	if (IsValidClient(attacker.Client))
+	if (IsValidClient(attacker.Client) && attacker != victim)
 	{
 		float factor = tfgo_cash_player_killed_enemy_factor.FloatValue;
 		int killAward = RoundFloat(tfgo_cash_player_killed_enemy_default.IntValue * factor);
@@ -49,13 +60,13 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 		if (IsValidEntity(inflictorEntindex) && GetEntityClassname(inflictorEntindex, classname, sizeof(classname)) && StrEqual(classname, "obj_sentrygun"))
 		{
 			// We do this so sentry guns kills don't report as kills with the Engineer's held weapon
-			attacker.AddToAccount(killAward, "%T", "Player_Cash_Award_Killed_Enemy_Generic", LANG_SERVER, killAward);
+			attacker.AddToAccount(killAward, "%t", "Player_Cash_Award_Killed_Enemy_Generic", killAward);
 		}
 		else
 		{
-			if (attacker == victim) // Suicide
+			if (event.GetInt("customkill") == TF_CUSTOM_SUICIDE) // Suicide
 			{
-				if (g_IsMainRoundActive)
+				if (GameRules_GetRoundState() == RoundState_Stalemate)
 				{
 					g_HasPlayerSuicided[victim.Client] = true;
 					
@@ -72,7 +83,7 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 						attacker = TFGOPlayer(enemies.Get(GetRandomInt(0, enemies.Length - 1)));
 						
 						char attackerName[PLATFORM_MAX_PATH];
-						GetClientName(attacker.Client, attackerName, sizeof(attackerName));
+						GetClientName2(attacker.Client, attackerName, sizeof(attackerName));
 						
 						// CS:GO does special chat messages for suicides
 						for (int client = 1; client <= MaxClients; client++)
@@ -81,23 +92,23 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 								continue;
 							
 							if (TF2_GetClientTeam(client) <= TFTeam_Spectator)
-								PrintToChat(client, "%T", "Player_Cash_Award_ExplainSuicide_Spectators", LANG_SERVER, attackerName, killAward, victimName);
+								CPrintToChat(client, "%t", "Player_Cash_Award_ExplainSuicide_Spectators", attackerName, killAward, victimName);
 							else if (GetClientTeam(client) == GetClientTeam(victim.Client))
-								PrintToChat(client, "%T", "Player_Cash_Award_ExplainSuicide_EnemyGotCash", LANG_SERVER, victimName);
+								CPrintToChat(client, "%t", "Player_Cash_Award_ExplainSuicide_EnemyGotCash", victimName);
 							else if (attacker.Client != client)
-								CPrintToChat(client, "%T", "Player_Cash_Award_ExplainSuicide_TeammateGotCash", LANG_SERVER, attackerName, killAward, victimName);
+								CPrintToChat(client, "%t", "Player_Cash_Award_ExplainSuicide_TeammateGotCash", attackerName, killAward, victimName);
 						}
 						
-						attacker.AddToAccount(killAward, "%T", "Player_Cash_Award_Killed_Enemy_Generic", LANG_SERVER, killAward);
-						PrintToChat(attacker.Client, "%T", "Player_Cash_Award_ExplainSuicide_YouGotCash", LANG_SERVER, killAward, victimName);
+						attacker.AddToAccount(killAward, "%t", "Player_Cash_Award_Killed_Enemy_Generic", killAward);
+						CPrintToChat(attacker.Client, "%t", "Player_Cash_Award_ExplainSuicide_YouGotCash", killAward, victimName);
 					}
 					
 					delete enemies;
 				}
 			}
-			else // Weapon kill
+			else if (attacker != victim) // Weapon kill
 			{
-				int defindex = event.GetInt("weapon_def_index");
+				int defindex = Config_GetOriginalItemDefIndex(event.GetInt("weapon_def_index"));
 				
 				char weaponName[PLATFORM_MAX_PATH];
 				TF2_GetItemName(defindex, weaponName, sizeof(weaponName));
@@ -106,7 +117,9 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 				if (g_AvailableWeapons.GetByDefIndex(defindex, weapon) > 0 && weapon.killAward != 0)
 					killAward = RoundFloat(weapon.killAward * factor);
 				
-				attacker.AddToAccount(killAward, "%T", "Player_Cash_Award_Killed_Enemy", LANG_SERVER, killAward, weaponName);
+				attacker.AddToAccount(killAward, "%t", "Player_Cash_Award_Killed_Enemy", killAward, weaponName);
+				
+				MusicKit_PlayClientMusicKit(victim.Client, Music_DeathCam, false);
 			}
 		}
 		
@@ -124,11 +137,11 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 					killAward = RoundFloat(weapon.killAward * factor);
 			}
 			
-			assister.AddToAccount(killAward / 2, "%T", "Player_Cash_Award_Assist_Enemy", LANG_SERVER, killAward / 2, victimName);
+			assister.AddToAccount(killAward / 2, "%t", "Player_Cash_Award_Assist_Enemy", killAward / 2, victimName);
 		}
 	}
 	
-	if (g_IsMainRoundActive || g_IsBonusRoundActive)
+	if (GameRules_GetRoundState() != RoundState_Preround)
 		victim.RemoveAllItems(true);
 	
 	if (victim.ActiveBuyMenu != null)
@@ -138,46 +151,41 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 Action Event_PostInventoryApplication(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
-	if (IsValidClient(client))
-	{
-		TFGOPlayer player = TFGOPlayer(client);
-		player.ApplyLoadout();
-		
-		if (tfgo_free_armor.IntValue >= 1)
-			player.ArmorValue = TF2_GetMaxHealth(client);
-		if (tfgo_free_armor.IntValue >= 2)
-			player.HasHelmet = true;
-		
-		if (player.ActiveBuyMenu != null)
-			player.ActiveBuyMenu.Cancel();
-		
-		// Open buy menu on respawn
-		BuyMenu_DisplayMainBuyMenu(client);
-	}
+	
+	// Remove any weapons they shouldn't have
+	TF2_CheckClientWeapons(client);
+	
+	TFGOPlayer player = TFGOPlayer(client);
+	player.ApplyLoadout();
+	
+	if (tfgo_free_armor.IntValue >= 1)
+		player.ArmorValue = TF2_GetMaxHealth(client);
+	if (tfgo_free_armor.IntValue >= 2)
+		player.HasHelmet = true;
+	
+	if (player.ActiveBuyMenu != null)
+		player.ActiveBuyMenu.Cancel();
+	
+	// Open buy menu on respawn
+	BuyMenu_DisplayMainBuyMenu(client);
 }
 
 Action Event_ArenaRoundStart(Event event, const char[] name, bool dontBroadcast)
 {
-	g_IsMainRoundActive = true;
 	g_IsBuyTimeActive = true;
 	g_BuyTimeTimer = CreateTimer(tfgo_buytime.FloatValue, Timer_OnBuyTimeExpire, _, TIMER_FLAG_NO_MAPCHANGE);
-	g_TenSecondRoundTimer = CreateTimer(tf_arena_round_time.FloatValue - 10.0, Timer_OnRoundTenSecCount, _, TIMER_FLAG_NO_MAPCHANGE);
 }
 
 Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 {
-	g_IsMainRoundActive = false;
-	g_IsBonusRoundActive = true;
-	g_TenSecondRoundTimer = null;
+	int winreason = event.GetInt("winreason");
 	
-	WinReason winreason = view_as<WinReason>(event.GetInt("winreason"));
-	
-	if (winreason == WinReason_Stalemate)
+	if (winreason == WINREASON_STALEMATE)
 	{
 		TFGOTeam red = TFGOTeam(TFTeam_Red);
 		TFGOTeam blue = TFGOTeam(TFTeam_Blue);
-		red.PrintToChat("%T", "Team_Cash_Award_no_income_stalemate", LANG_SERVER);
-		blue.PrintToChat("%T", "Team_Cash_Award_no_income_stalemate", LANG_SERVER);
+		red.PrintToChat("%t", "Team_Cash_Award_no_income_stalemate");
+		blue.PrintToChat("%t", "Team_Cash_Award_no_income_stalemate");
 		red.ConsecutiveLosses++;
 		blue.ConsecutiveLosses++;
 	}
@@ -187,28 +195,28 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 		TFGOTeam winningTeam = TFGOTeam(view_as<TFTeam>(event.GetInt("winning_team")));
 		TFGOTeam losingTeam = TFGOTeam(TF2_GetEnemyTeam(winningTeam.Team));
 		
-		if (winreason == WinReason_Custom_Out_Of_Time) // Attackers ran out of time
+		if (winreason == WINREASON_CUSTOM_OUT_OF_TIME) // Attackers ran out of time
 		{
-			winningTeam.AddToClientAccounts(tfgo_cash_team_win_by_time_running_out_bomb.IntValue, "%T", "Team_Cash_Award_Win_Time", LANG_SERVER, tfgo_cash_team_win_by_time_running_out_bomb.IntValue);
-			losingTeam.PrintToChat("%T", "Team_Cash_Award_no_income_out_of_time", LANG_SERVER);
+			winningTeam.AddToClientAccounts(tfgo_cash_team_win_by_time_running_out_bomb.IntValue, "%t", "Team_Cash_Award_Win_Time", tfgo_cash_team_win_by_time_running_out_bomb.IntValue);
+			losingTeam.PrintToChat("%t", "Team_Cash_Award_no_income_out_of_time");
 		}
 		else
 		{
-			if (winreason == WinReason_All_Points_Captured || winreason == WinReason_Defend_Until_Time_Limit) // Bomb detonated or defused
+			if (winreason == WINREASON_ALL_POINTS_CAPTURED || winreason == WINREASON_DEFEND_UNTIL_TIME_LIMIT) // Bomb detonated or defused
 			{
 				if (g_BombPlantingTeam == winningTeam.Team)
 				{
-					winningTeam.AddToClientAccounts(tfgo_cash_team_terrorist_win_bomb.IntValue, "%T", "Team_Cash_Award_T_Win_Bomb", LANG_SERVER, tfgo_cash_team_terrorist_win_bomb.IntValue);
+					winningTeam.AddToClientAccounts(tfgo_cash_team_terrorist_win_bomb.IntValue, "%t", "Team_Cash_Award_T_Win_Bomb", tfgo_cash_team_terrorist_win_bomb.IntValue);
 				}
 				else
 				{
-					winningTeam.AddToClientAccounts(tfgo_cash_team_win_by_defusing_bomb.IntValue, "%T", "Team_Cash_Award_Win_Defuse_Bomb", LANG_SERVER, tfgo_cash_team_win_by_defusing_bomb.IntValue);
-					losingTeam.AddToClientAccounts(tfgo_cash_team_planted_bomb_but_defused.IntValue, "%T", "Team_Cash_Award_Planted_Bomb_But_Defused", LANG_SERVER, tfgo_cash_team_planted_bomb_but_defused.IntValue);
+					winningTeam.AddToClientAccounts(tfgo_cash_team_win_by_defusing_bomb.IntValue, "%t", "Team_Cash_Award_Win_Defuse_Bomb", tfgo_cash_team_win_by_defusing_bomb.IntValue);
+					losingTeam.AddToClientAccounts(tfgo_cash_team_planted_bomb_but_defused.IntValue, "%t", "Team_Cash_Award_Planted_Bomb_But_Defused", tfgo_cash_team_planted_bomb_but_defused.IntValue);
 				}
 			}
-			else if (winreason == WinReason_Opponents_Dead) // All enemies eliminated
+			else if (winreason == WINREASON_OPPONENTS_DEAD) // All enemies eliminated
 			{
-				winningTeam.AddToClientAccounts(tfgo_cash_team_elimination.IntValue, "%T", "Team_Cash_Award_Elim_Bomb", LANG_SERVER, tfgo_cash_team_elimination.IntValue);
+				winningTeam.AddToClientAccounts(tfgo_cash_team_elimination.IntValue, "%t", "Team_Cash_Award_Elim_Bomb", tfgo_cash_team_elimination.IntValue);
 			}
 			
 			for (int client = 1; client <= MaxClients; client++)
@@ -217,9 +225,9 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 				{
 					// Do not give losing bonus to players that deliberately suicided
 					if (g_HasPlayerSuicided[client])
-						CPrintToChat(client, "%T", "Team_Cash_Award_no_income_suicide", LANG_SERVER);
+						CPrintToChat(client, "%t", "Team_Cash_Award_no_income_suicide");
 					else
-						TFGOPlayer(client).AddToAccount(losingTeam.LoseIncome, "%T", "Team_Cash_Award_Loser_Bonus", LANG_SERVER, losingTeam.LoseIncome);
+						TFGOPlayer(client).AddToAccount(losingTeam.LoseIncome, "%t", "Team_Cash_Award_Loser_Bonus", losingTeam.LoseIncome);
 				}
 			}
 		}
@@ -227,19 +235,51 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 		// Adjust consecutive loss count for each team
 		losingTeam.ConsecutiveLosses++;
 		winningTeam.ConsecutiveLosses--;
+		
+		// Play MVP anthem
+		g_MVP = event.GetInt("player_1");
+		if (IsValidClient(g_MVP) && MusicKit_HasCustomMusicKit(g_MVP))
+		{
+			MusicKit_PlayMVPAnthem(g_MVP);
+			
+			char mvpName[MAX_NAME_LENGTH];
+			GetClientName2(g_MVP, mvpName, sizeof(mvpName));
+			
+			char kit[PLATFORM_MAX_PATH];
+			Forward_GetMusicKitName(g_MVP, kit, sizeof(kit));
+			
+			// Use internal name as fallback
+			if (kit[0] == '\0')
+				TFGOPlayer(g_MVP).GetMusicKit(kit, sizeof(kit));
+			
+			for (int client = 1; client <= MaxClients; client++)
+			{
+				if (IsClientInGame(client))
+				{
+					if (client == g_MVP)
+						PrintToChat(client, "%t", "Playing_MVP_MusicKit_Yours");
+					else
+						CPrintToChat(client, "%t", "Playing_MVP_MusicKit", mvpName, kit);
+				}
+			}
+		}
 	}
 	
 	static int roundsPlayed;
 	roundsPlayed++;
-	if (tfgo_halftime.BoolValue && roundsPlayed == tfgo_maxrounds.IntValue / 2)
+	
+	ConVar mp_maxrounds = FindConVar("mp_maxrounds");
+	if (tfgo_halftime.BoolValue && roundsPlayed == mp_maxrounds.IntValue / 2)
 	{
-		SDKCall_SetSwitchTeams(true);
+		if (g_ShouldScramble)
+			SDKCall_SetScrambleTeams(true);
+		else
+			SDKCall_SetSwitchTeams(true);
+		
 		Forward_OnHalfTime();
 	}
-	else if (roundsPlayed == tfgo_maxrounds.IntValue)
+	else if (roundsPlayed == mp_maxrounds.IntValue)
 	{
-		roundsPlayed = 0;
-		SDKCall_SetScrambleTeams(true);
 		Forward_OnMaxRounds();
 	}
 }
@@ -248,12 +288,7 @@ Action Event_TeamplayRoundStart(Event event, const char[] name, bool dontBroadca
 {
 	ResetRoundState();
 	
-	g_IsBonusRoundActive = false;
-	g_IsMainRoundActive = false;
-	
-	g_CurrentMusicKit.StopMusicForAll(Music_WonRound);
-	g_CurrentMusicKit.StopMusicForAll(Music_LostRound);
-	g_CurrentMusicKit.PlayMusicToAll(Music_StartRound);
+	MusicKit_PlayAllClientMusicKits(Music_StartRound);
 	
 	// Bomb can freely tick and explode through the bonus time and we cancel it here
 	g_IsBombTicking = false;

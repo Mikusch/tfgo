@@ -15,3 +15,4 @@ wget "https://bitbucket.org/Peace_Maker/dhooks2/raw/dfe13dde99547a5c6c7815d84380
 wget "https://raw.githubusercontent.com/nosoop/SM-TFEconData/master/scripting/include/tf_econ_data.inc" -O include/tf_econ_data.inc
 wget "https://raw.githubusercontent.com/Kenzzer/MemoryPatch/master/addons/sourcemod/scripting/include/memorypatch.inc" -O include/memorypatch.inc
 wget "https://www.doctormckay.com/download/scripting/include/morecolors.inc" -O include/morecolors.inc
+wget "https://raw.githubusercontent.com/haxtonsale/LoadSoundScript/master/sourcepawn/loadsoundscript.inc" -O include/loadsoundscript.inc

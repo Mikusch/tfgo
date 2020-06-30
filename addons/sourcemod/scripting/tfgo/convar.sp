@@ -1,20 +1,24 @@
-ConVar tf_arena_first_blood;
-ConVar tf_arena_override_cap_enable_time;
-ConVar tf_arena_preround_time;
-ConVar tf_arena_round_time;
-ConVar tf_arena_use_queue;
-ConVar mp_bonusroundtime;
-ConVar tf_weapon_criticals;
-ConVar tf_weapon_criticals_melee;
+enum struct ConVarInfo
+{
+	ConVar convar;
+	float value;
+	float defaultValue;
+	bool enforce;
+}
+
+static ArrayList ConVars;
 
 void ConVar_Init()
 {
+	char value[32];
+	Format(value, sizeof(value), "%s.%s", PLUGIN_VERSION, PLUGIN_VERSION_REVISION);
+	CreateConVar("tfgo_version", value, "The current TF:GO version", FCVAR_NOTIFY | FCVAR_DONTRECORD | FCVAR_SPONLY);
+	
 	tfgo_free_armor = CreateConVar("tfgo_free_armor", "0", "Determines whether kevlar (1+) and/or helmet (2+) are given automatically", _, true, 0.0, true, 2.0);
 	tfgo_max_armor = CreateConVar("tfgo_max_armor", "2", "Determines the highest level of armor allowed to be purchased. (0) None, (1) Kevlar, (2) Helmet", _, true, 0.0, true, 2.0);
 	tfgo_buytime = CreateConVar("tfgo_buytime", "20", "How many seconds after spawning players can buy items for", _, true, 15.0);
 	tfgo_consecutive_loss_max = CreateConVar("tfgo_consecutive_loss_max", "4", "The maximum of consecutive losses for each team that will be kept track of", _, true, float(STARTING_CONSECUTIVE_LOSSES));
 	tfgo_bombtimer = CreateConVar("tfgo_bombtimer", "40", "How long from when the bomb is planted until it blows", _, true, 10.0);
-	tfgo_maxrounds = CreateConVar("tfgo_maxrounds", "15", "Maximum number of rounds to play before a team scramble occurs", _, true, 0.0);
 	tfgo_halftime = CreateConVar("tfgo_halftime", "1", "Determines whether the match switches sides in a halftime event");
 	tfgo_startmoney = CreateConVar("tfgo_startmoney", "800", "Amount of money each player gets when they reset", _, true, 0.0);
 	tfgo_maxmoney = CreateConVar("tfgo_maxmoney", "16000", "Maximum amount of money allowed in a player's account", _, true, 0.0);
@@ -30,36 +34,66 @@ void ConVar_Init()
 	tfgo_cash_team_win_by_defusing_bomb = CreateConVar("tfgo_cash_team_win_by_defusing_bomb", "3500", "Team cash award for winning by defusing the bomb");
 	tfgo_cash_team_planted_bomb_but_defused = CreateConVar("tfgo_cash_team_planted_bomb_but_defused", "800", "Team cash bonus for planting the bomb and losing");
 	
-	tf_arena_first_blood = FindConVar("tf_arena_first_blood");
-	tf_arena_override_cap_enable_time = FindConVar("tf_arena_override_cap_enable_time");
-	tf_arena_preround_time = FindConVar("tf_arena_preround_time");
-	tf_arena_round_time = FindConVar("tf_arena_round_time");
-	tf_arena_use_queue = FindConVar("tf_arena_use_queue");
-	mp_bonusroundtime = FindConVar("mp_bonusroundtime");
-	tf_weapon_criticals = FindConVar("tf_weapon_criticals");
-	tf_weapon_criticals_melee = FindConVar("tf_weapon_criticals_melee");
+	ConVars = new ArrayList(sizeof(ConVarInfo));
+	
+	ConVar_Add("mp_blockstyle", 0.0);
+	ConVar_Add("mp_bonusroundtime", 7.0);
+	ConVar_Add("mp_capstyle", 0.0);
+	ConVar_Add("mp_maxrounds", 30.0);
+	ConVar_Add("tf_arena_first_blood", 0.0);
+	ConVar_Add("tf_arena_override_cap_enable_time", -1.0);
+	ConVar_Add("tf_arena_preround_time", 15.0);
+	ConVar_Add("tf_arena_round_time", 115.0);
+	ConVar_Add("tf_arena_use_queue", 0.0);
+	ConVar_Add("tf_weapon_criticals", 0.0);
+	ConVar_Add("tf_weapon_criticals_distance_falloff", 1.0);
+}
+
+void ConVar_Add(const char[] name, float value, bool enforce = false)
+{
+	ConVarInfo info;
+	info.convar = FindConVar(name);
+	info.value = value;
+	info.enforce = enforce;
+	ConVars.PushArray(info);
 }
 
 void ConVar_Enable()
 {
-	tf_arena_first_blood.SetBool(false);
-	tf_arena_override_cap_enable_time.SetInt(-1);
-	tf_arena_preround_time.SetInt(15);
-	tf_arena_round_time.SetInt(115);
-	tf_arena_use_queue.SetBool(false);
-	mp_bonusroundtime.SetInt(7);
-	tf_weapon_criticals.SetBool(false);
-	tf_weapon_criticals_melee.SetBool(false);
+	for (int i = 0; i < ConVars.Length; i++)
+	{
+		ConVarInfo info;
+		ConVars.GetArray(i, info);
+		info.defaultValue = info.convar.FloatValue;
+		ConVars.SetArray(i, info);
+		
+		info.convar.SetFloat(info.value);
+		info.convar.AddChangeHook(ConVar_OnChanged);
+	}
 }
 
 void ConVar_Disable()
 {
-	tf_arena_first_blood.RestoreDefault();
-	tf_arena_override_cap_enable_time.RestoreDefault();
-	tf_arena_preround_time.RestoreDefault();
-	tf_arena_round_time.RestoreDefault();
-	tf_arena_use_queue.RestoreDefault();
-	mp_bonusroundtime.RestoreDefault();
-	tf_weapon_criticals.RestoreDefault();
-	tf_weapon_criticals_melee.RestoreDefault();
+	for (int i = 0; i < ConVars.Length; i++)
+	{
+		ConVarInfo info;
+		ConVars.GetArray(i, info);
+		
+		info.convar.RemoveChangeHook(ConVar_OnChanged);
+		info.convar.SetFloat(info.defaultValue);
+	}
+}
+
+void ConVar_OnChanged(ConVar convar, const char[] oldValue, const char[] newValue)
+{
+	int index = ConVars.FindValue(convar, ConVarInfo::convar);
+	if (index != -1)
+	{
+		ConVarInfo info;
+		ConVars.GetArray(index, info);
+		float value = StringToFloat(newValue);
+		
+		if (info.enforce && value != info.value)
+			info.convar.SetFloat(info.value);
+	}
 }
