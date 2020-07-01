@@ -165,7 +165,6 @@
 	}
 	"BuyMenu_OutOfTime"
 	{
-	    "#format"	"{1:d}"
 		"ru"	"Период покупки в {1} сек. истек"
 	}
 	
@@ -222,79 +221,64 @@
 	// Player Cash Awards
 	"Player_Cash_Award_Killed_Enemy_Generic"
 	{
-	    "#format"	"{1:d}"
 		"ru"	"{positive}+${1}{default}: Награда за нейтрализацию врага."
 	}
 	"Player_Cash_Award_Killed_Enemy"
 	{
-	    "#format"	"{1:d},{2:s}"
 		"ru"	"{positive}+${1}{default}: Награда за нейтрализацию врага ({2})."
 	}
 	"Player_Cash_Award_Assist_Enemy"
 	{
-	    "#format"	"{1:d},{2:s}"
-		"ru"	"{positive}+${1}{default}: Награда за помощь в нейтрализации врага (%s)."
+		"ru"	"{positive}+${1}{default}: Награда за помощь в нейтрализации врага ({2})."
 	}
 	"Player_Cash_Award_Bomb_Planted"
 	{
-	    "#format"	"{1:d}"
 		"ru"	"{positive}+${1}{default}: Награда за установку бомбы."
 	}
 	"Player_Cash_Award_Bomb_Defused"
 	{
-	    "#format"	"{1:d}"
 		"ru"	"{positive}+${1}{default}: Награда за обезвреживание бомбы."
 	}
 	"Player_Cash_Award_ExplainSuicide_YouGotCash"
 	{
-	    "#format"	"{1:d},{2:s}"
 		"ru"	"(вы получаете компенсацию за самоубийство {2}: +${1})"
 	}
 	"Player_Cash_Award_ExplainSuicide_TeammateGotCash"
 	{
-	    "#format"	"{1:s},{2:d},{3:s}"
 		"ru"	"Ваш союзник {1} получает компенсацию за самоубийство {3}: {positive}+${2}{default}"
 	}
 	"Player_Cash_Award_ExplainSuicide_EnemyGotCash"
 	{
-	    "#format"	"{1:s}"
 		"ru"	"Вражеский игрок получает компенсацию за самоубийство {1}."
 	}
 	"Player_Cash_Award_ExplainSuicide_Spectators"
 	{
-	    "#format"	"{1:s},{2:d},{3:s}"
 		"ru"	"{1} получает компенсацию за самоубийство {3}: +${2}"
 	}
 	
 	// Team Cash Awards
 	"Team_Cash_Award_T_Win_Bomb"
 	{
-	    "#format"	"{1:d}"
 		"ru"	"{positive}+${1}{default}: Командная награда за подрыв бомбы."
 	}
 	"Team_Cash_Award_Elim_Bomb"
 	{
-	    "#format"	"{1:d}"
 		"ru"	"{positive}+${1}{default}: Командная награда за уничтожение вражеской команды."
 	}
 	"Team_Cash_Award_Win_Time"
 	{
-	    "#format"	"{1:d}"
 		"ru"	"{positive}+${1}{default}: Командная награда по истечении времени раунда."
 	}
 	"Team_Cash_Award_Win_Defuse_Bomb"
 	{
-	    "#format"	"{1:d}"
 		"ru"	"{positive}+${1}{default}: Командная награда за победу с обезвреживанием бомбы."
 	}
 	"Team_Cash_Award_Loser_Bonus"
 	{
-	    "#format"	"{1:d}"
 		"ru"	"{positive}+${1}{default}: Денег за проигрыш."
 	}
 	"Team_Cash_Award_Planted_Bomb_But_Defused"
 	{
-	    "#format"	"{1:d}"
 		"ru"	"{positive}+${1}{default}: Командная награда за установку бомбы."
 	}
 	"Team_Cash_Award_no_income_stalemate"
@@ -313,7 +297,6 @@
 	// Music Kits
 	"Playing_MVP_MusicKit"
 	{
-		"#format"	"{1:s},{2:s}"
 		"ru"		"Проигрываем Гимн MVP игрока {1} из его {2}."
 	}
 	"Playing_MVP_MusicKit_Yours"
@@ -324,7 +307,7 @@
 	// HUD Text
 	"HUD_Armor"
 	{
-		"ru"	"Кевлар: %d"
+		"ru"	"Кевлар: {1}"
 	}
 	
 	"TF_TeamsScrambled"
