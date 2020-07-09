@@ -101,16 +101,16 @@ enum
 
 enum ETFGameType
 {
-	TF_GAMETYPE_UNDEFINED = 0,
-	TF_GAMETYPE_CTF,
-	TF_GAMETYPE_CP,
-	TF_GAMETYPE_ESCORT,
-	TF_GAMETYPE_ARENA,
-	TF_GAMETYPE_MVM,
-	TF_GAMETYPE_RD,
-	TF_GAMETYPE_PASSTIME,
-	TF_GAMETYPE_PD,
-
+	TF_GAMETYPE_UNDEFINED = 0, 
+	TF_GAMETYPE_CTF, 
+	TF_GAMETYPE_CP, 
+	TF_GAMETYPE_ESCORT, 
+	TF_GAMETYPE_ARENA, 
+	TF_GAMETYPE_MVM, 
+	TF_GAMETYPE_RD, 
+	TF_GAMETYPE_PASSTIME, 
+	TF_GAMETYPE_PD, 
+	
 	TF_GAMETYPE_COUNT
 };
 
@@ -165,6 +165,7 @@ methodmap TFGOWeaponList < ArrayList
 
 enum MusicType
 {
+	Music_HalfTime, 
 	Music_StartRound, 
 	Music_StartAction, 
 	Music_BombPlanted, 
@@ -203,6 +204,7 @@ bool g_ArenaGameType;
 bool g_IsBuyTimeActive;
 bool g_IsBombPlanted;
 bool g_SkipGiveNamedItemHook;
+int g_RoundsPlayed;
 int g_MVP;
 
 TFTeam g_BombPlantingTeam;
@@ -215,6 +217,7 @@ ConVar tfgo_buytime;
 ConVar tfgo_consecutive_loss_max;
 ConVar tfgo_bombtimer;
 ConVar tfgo_halftime;
+ConVar tfgo_halftime_duration;
 ConVar tfgo_startmoney;
 ConVar tfgo_maxmoney;
 ConVar tfgo_cash_player_bomb_planted;

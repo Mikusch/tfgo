@@ -13,6 +13,7 @@ void DHook_Init(GameData gamedata)
 	DHookHandleScrambleTeams = DHook_CreateVirtual(gamedata, "CTFGameRules::HandleScrambleTeams");
 	
 	DHook_CreateDetour(gamedata, "CTFPlayer::PickupWeaponFromOther", Detour_PickupWeaponFromOther);
+	DHook_CreateDetour(gamedata, "CTeamplayRoundBasedRules::State_Enter", Detour_StateEnter);
 }
 
 static Handle DHook_CreateVirtual(GameData gamedata, const char[] name)
@@ -72,6 +73,52 @@ public MRESReturn Detour_PickupWeaponFromOther(int client, Handle returnVal, Han
 	int defindex = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
 	TFGOPlayer(client).AddToLoadout(defindex);
 	Forward_OnClientPickupWeapon(client, defindex);
+}
+
+public MRESReturn Detour_StateEnter(Handle params)
+{
+	RoundState newState = view_as<RoundState>(DHookGetParam(params, 1));
+	
+	//Check if we are in half-time
+	if (tfgo_halftime.BoolValue && g_RoundsPlayed == FindConVar("mp_maxrounds").IntValue / 2 && newState == RoundState_Preround)
+	{
+		static float halfTimeEnd;
+		
+		if (halfTimeEnd == 0.0)
+		{
+			// Show scoreboard and play music kits
+			for (int client = 1; client <= MaxClients; client++)
+			{
+				if (IsClientInGame(client))
+				{
+					TF2_AddCondition(client, TFCond_FreezeInput, TFCondDuration_Infinite);
+					ShowVGUIPanel(client, "scores");
+					MusicKit_PlayClientMusicKit(client, Music_HalfTime);
+				}
+			}
+			
+			halfTimeEnd = GetGameTime() + tfgo_halftime_duration.FloatValue;
+		}
+		
+		if (halfTimeEnd > GetGameTime())
+		{
+			// Do not allow TF2 to transition to preround
+			return MRES_Supercede;
+		}
+		else
+		{
+			// Hide scoreboard
+			for (int client = 1; client <= MaxClients; client++)
+			{
+				if (IsClientInGame(client))
+					ShowVGUIPanel(client, "scores", _, false);
+			}
+			
+			halfTimeEnd = 0.0;
+		}
+	}
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_SetWinningTeam(Handle params)
