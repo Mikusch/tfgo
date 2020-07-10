@@ -87,7 +87,7 @@ public MRESReturn Detour_StateEnter(Handle params)
 		// Handle half-time
 		case RoundState_Preround:
 		{
-			if (tfgo_halftime.BoolValue && g_RoundsPlayed == mp_maxrounds.IntValue / 2)
+			if (tfgo_halftime.BoolValue && roundsPlayed == mp_maxrounds.IntValue / 2)
 			{
 				static float halfTimeEndTime;
 				
@@ -107,7 +107,8 @@ public MRESReturn Detour_StateEnter(Handle params)
 					halfTimeEndTime = GetGameTime() + tfgo_halftime_duration.FloatValue;
 					Forward_OnHalfTimeStarted();
 				}
-				else if (halfTimeEndTime > GetGameTime() && Forward_HasHalfTimeEnded())
+				
+				if (halfTimeEndTime <= GetGameTime() && Forward_HasHalfTimeEnded())
 				{
 					// Hide scoreboard
 					for (int client = 1; client <= MaxClients; client++)
@@ -132,7 +133,7 @@ public MRESReturn Detour_StateEnter(Handle params)
 			}
 		}
 		// Track number of rounds played
-		case RoundState_Bonus:
+		case RoundState_TeamWin:
 		{
 			roundsPlayed++;
 			

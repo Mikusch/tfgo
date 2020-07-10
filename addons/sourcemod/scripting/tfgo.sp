@@ -203,7 +203,6 @@ bool g_ArenaGameType;
 bool g_IsBuyTimeActive;
 bool g_IsBombPlanted;
 bool g_SkipGiveNamedItemHook;
-int g_RoundsPlayed;
 int g_MVP;
 
 TFTeam g_BombPlantingTeam;
