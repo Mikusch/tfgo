@@ -270,17 +270,15 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 	ConVar mp_maxrounds = FindConVar("mp_maxrounds");
 	if (tfgo_halftime.BoolValue && g_RoundsPlayed == mp_maxrounds.IntValue / 2)
 	{
-		if (g_ShouldScramble)
+		// Initiate side switch/team scramble
+		if (tfgo_halftime_scramble.BoolValue)
 			SDKCall_SetScrambleTeams(true);
 		else
 			SDKCall_SetSwitchTeams(true);
-		
-		Forward_OnHalfTime();
 	}
 	else if (g_RoundsPlayed == mp_maxrounds.IntValue)
 	{
 		g_RoundsPlayed = 0;
-		Forward_OnMaxRounds();
 	}
 }
 

@@ -74,12 +74,12 @@ static Handle PrepSDKCall_InitDroppedWeapon(GameData gamedata)
 static Handle PrepSDKCall_SetSwitchTeams(GameData gamedata)
 {
 	StartPrepSDKCall(SDKCall_GameRules);
-	PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "CTFGameRules::SetSwitchTeams");
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "CTeamplayRules::SetSwitchTeams");
 	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
 	
 	Handle call = EndPrepSDKCall();
 	if (!call)
-		LogMessage("Failed to create call: CTFGameRules::SetSwitchTeams");
+		LogMessage("Failed to create call: CTeamplayRules::SetSwitchTeams");
 	
 	return call;
 }
@@ -87,12 +87,12 @@ static Handle PrepSDKCall_SetSwitchTeams(GameData gamedata)
 static Handle PrepSDKCall_SetScrambleTeams(GameData gamedata)
 {
 	StartPrepSDKCall(SDKCall_GameRules);
-	PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "CTFGameRules::SetScrambleTeams");
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "CTeamplayRules::SetScrambleTeams");
 	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
 	
 	Handle call = EndPrepSDKCall();
 	if (!call)
-		LogMessage("Failed to create call: CTFGameRules::SetScrambleTeams");
+		LogMessage("Failed to create call: CTeamplayRules::SetScrambleTeams");
 	
 	return call;
 }

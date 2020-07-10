@@ -7,10 +7,10 @@ static int HookIdsGiveNamedItem[TF_MAXPLAYERS] =  { -1, ... };
 
 void DHook_Init(GameData gamedata)
 {
-	DHookSetWinningTeam = DHook_CreateVirtual(gamedata, "CTFGameRules::SetWinningTeam");
+	DHookSetWinningTeam = DHook_CreateVirtual(gamedata, "CTeamplayRules::SetWinningTeam");
+	DHookHandleSwitchTeams = DHook_CreateVirtual(gamedata, "CTeamplayRules::HandleSwitchTeams");
+	DHookHandleScrambleTeams = DHook_CreateVirtual(gamedata, "CTeamplayRules::HandleScrambleTeams");
 	DHookGiveNamedItem = DHook_CreateVirtual(gamedata, "CTFPlayer::GiveNamedItem");
-	DHookHandleSwitchTeams = DHook_CreateVirtual(gamedata, "CTFGameRules::HandleSwitchTeams");
-	DHookHandleScrambleTeams = DHook_CreateVirtual(gamedata, "CTFGameRules::HandleScrambleTeams");
 	
 	DHook_CreateDetour(gamedata, "CTFPlayer::PickupWeaponFromOther", Detour_PickupWeaponFromOther);
 	DHook_CreateDetour(gamedata, "CTeamplayRoundBasedRules::State_Enter", Detour_StateEnter);
@@ -78,15 +78,16 @@ public MRESReturn Detour_PickupWeaponFromOther(int client, Handle returnVal, Han
 public MRESReturn Detour_StateEnter(Handle params)
 {
 	RoundState newState = view_as<RoundState>(DHookGetParam(params, 1));
+	ConVar mp_maxrounds = FindConVar("mp_maxrounds");
 	
-	//Check if we are in half-time
-	if (tfgo_halftime.BoolValue && g_RoundsPlayed == FindConVar("mp_maxrounds").IntValue / 2 && newState == RoundState_Preround)
+	// Check if we should go into half-time
+	if (newState == RoundState_Preround && tfgo_halftime.BoolValue && g_RoundsPlayed == mp_maxrounds.IntValue / 2)
 	{
-		static float halfTimeEnd;
+		static float halfTimeEndTime;
 		
-		if (halfTimeEnd == 0.0)
+		if (halfTimeEndTime == 0.0)
 		{
-			// Show scoreboard and play music kits
+			// Show scoreboard, freeze input and play music kit to clients
 			for (int client = 1; client <= MaxClients; client++)
 			{
 				if (IsClientInGame(client))
@@ -97,15 +98,10 @@ public MRESReturn Detour_StateEnter(Handle params)
 				}
 			}
 			
-			halfTimeEnd = GetGameTime() + tfgo_halftime_duration.FloatValue;
+			halfTimeEndTime = GetGameTime() + tfgo_halftime_duration.FloatValue;
+			Forward_OnHalfTimeStarted();
 		}
-		
-		if (halfTimeEnd > GetGameTime())
-		{
-			// Do not allow TF2 to transition to preround
-			return MRES_Supercede;
-		}
-		else
+		else if (halfTimeEndTime > GetGameTime() && Forward_HasHalfTimeEnded())
 		{
 			// Hide scoreboard
 			for (int client = 1; client <= MaxClients; client++)
@@ -114,7 +110,12 @@ public MRESReturn Detour_StateEnter(Handle params)
 					ShowVGUIPanel(client, "scores", _, false);
 			}
 			
-			halfTimeEnd = 0.0;
+			halfTimeEndTime = 0.0;
+		}
+		else
+		{
+			// Do not allow TF2 to transition to preround
+			return MRES_Supercede;
 		}
 	}
 	

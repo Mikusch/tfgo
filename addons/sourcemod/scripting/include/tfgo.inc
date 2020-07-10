@@ -74,10 +74,22 @@ forward void TFGO_OnBombDefused(TFTeam team, ArrayList defusers, float timeLeft)
 
 /**
  * Called when the game has entered half-time.
+ * Intended to be used with map voting plugins to allow a vote to start.
  *
- * @note This will not call if tfgo_halftime has been set to 0.
+ * @note This forward does not get called if tfgo_halftime is set to 0.
  */
-forward void TFGO_OnHalfTime();
+forward void TFGO_OnHalfTimeStarted();
+
+/**
+ * Called repeatedly when the game is about to leave half-time.
+ * Intended to be used with map voting plugins, this forward should return false if a vote is still in progress.
+ *
+ * @note This forward does not get called until the initial half-time duration (tfgo_halftime_duration) has elapsed.
+ * @note This forward does not get called if tfgo_halftime is set to 0.
+ *
+ * @return	true if the half-time should end, false if it should keep going and call this forward again
+ */
+forward bool TFGO_HasHalfTimeEnded();
 
 /**
  * Called when all rounds have been played.
