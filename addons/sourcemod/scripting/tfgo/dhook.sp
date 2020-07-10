@@ -80,42 +80,65 @@ public MRESReturn Detour_StateEnter(Handle params)
 	RoundState newState = view_as<RoundState>(DHookGetParam(params, 1));
 	ConVar mp_maxrounds = FindConVar("mp_maxrounds");
 	
-	// Check if we should go into half-time
-	if (newState == RoundState_Preround && tfgo_halftime.BoolValue && g_RoundsPlayed == mp_maxrounds.IntValue / 2)
+	static int roundsPlayed;
+	
+	switch (newState)
 	{
-		static float halfTimeEndTime;
-		
-		if (halfTimeEndTime == 0.0)
+		// Handle half-time
+		case RoundState_Preround:
 		{
-			// Show scoreboard, freeze input and play music kit to clients
-			for (int client = 1; client <= MaxClients; client++)
+			if (tfgo_halftime.BoolValue && g_RoundsPlayed == mp_maxrounds.IntValue / 2)
 			{
-				if (IsClientInGame(client))
+				static float halfTimeEndTime;
+				
+				if (halfTimeEndTime == 0.0)
 				{
-					TF2_AddCondition(client, TFCond_FreezeInput, TFCondDuration_Infinite);
-					ShowVGUIPanel(client, "scores");
-					MusicKit_PlayClientMusicKit(client, Music_HalfTime);
+					// Show scoreboard, freeze input and play music kit to clients
+					for (int client = 1; client <= MaxClients; client++)
+					{
+						if (IsClientInGame(client))
+						{
+							TF2_AddCondition(client, TFCond_FreezeInput, TFCondDuration_Infinite);
+							ShowVGUIPanel(client, "scores");
+							MusicKit_PlayClientMusicKit(client, Music_HalfTime);
+						}
+					}
+					
+					halfTimeEndTime = GetGameTime() + tfgo_halftime_duration.FloatValue;
+					Forward_OnHalfTimeStarted();
+				}
+				else if (halfTimeEndTime > GetGameTime() && Forward_HasHalfTimeEnded())
+				{
+					// Hide scoreboard
+					for (int client = 1; client <= MaxClients; client++)
+					{
+						if (IsClientInGame(client))
+							ShowVGUIPanel(client, "scores", _, false);
+					}
+					
+					// Initiate side switch/team scramble
+					if (tfgo_halftime_scramble.BoolValue)
+						SDKCall_SetScrambleTeams(Forward_ShouldSwitchTeams());
+					else
+						SDKCall_SetSwitchTeams(Forward_ShouldSwitchTeams());
+					
+					halfTimeEndTime = 0.0;
+				}
+				else
+				{
+					// Do not allow TF2 to transition to preround
+					return MRES_Supercede;
 				}
 			}
-			
-			halfTimeEndTime = GetGameTime() + tfgo_halftime_duration.FloatValue;
-			Forward_OnHalfTimeStarted();
 		}
-		else if (halfTimeEndTime > GetGameTime() && Forward_HasHalfTimeEnded())
+		// Track number of rounds played
+		case RoundState_Bonus:
 		{
-			// Hide scoreboard
-			for (int client = 1; client <= MaxClients; client++)
-			{
-				if (IsClientInGame(client))
-					ShowVGUIPanel(client, "scores", _, false);
-			}
+			roundsPlayed++;
 			
-			halfTimeEndTime = 0.0;
-		}
-		else
-		{
-			// Do not allow TF2 to transition to preround
-			return MRES_Supercede;
+			// Reset it for the next map
+			if (roundsPlayed == mp_maxrounds.IntValue)
+				roundsPlayed = 0;
 		}
 	}
 	

@@ -3,6 +3,7 @@ static GlobalForward ForwardBombDetonated;
 static GlobalForward ForwardBombDefused;
 static GlobalForward ForwardHalfTimeStarted;
 static GlobalForward ForwardHasHalfTimeEnded;
+static GlobalForward ForwardShouldSwitchTeams;
 static GlobalForward ForwardClientAccountChange;
 static GlobalForward ForwardClientAccountChanged;
 static GlobalForward ForwardClientPurchaseWeapon;
@@ -17,6 +18,7 @@ void Forward_AskLoad()
 	ForwardBombDefused = new GlobalForward("TFGO_OnBombDefused", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
 	ForwardHalfTimeStarted = new GlobalForward("TFGO_OnHalfTimeStarted", ET_Ignore);
 	ForwardHasHalfTimeEnded = new GlobalForward("TFGO_HasHalfTimeEnded", ET_Single);
+	ForwardShouldSwitchTeams = new GlobalForward("TFGO_ShouldSwitchTeams", ET_Single);
 	ForwardClientAccountChange = new GlobalForward("TFGO_OnClientAccountChange", ET_Event, Param_Cell, Param_Cell);
 	ForwardClientAccountChanged = new GlobalForward("TFGO_OnClientAccountChanged", ET_Ignore, Param_Cell, Param_Cell);
 	ForwardClientPurchaseWeapon = new GlobalForward("TFGO_OnClientPurchaseWeapon", ET_Ignore, Param_Cell, Param_Cell);
@@ -57,9 +59,19 @@ void Forward_OnHalfTimeStarted()
 
 bool Forward_HasHalfTimeEnded()
 {
-	bool value;
+	bool value = true;
 	
 	Call_StartForward(ForwardHasHalfTimeEnded);
+	Call_Finish(value);
+	
+	return value;
+}
+
+bool Forward_ShouldSwitchTeams()
+{
+	bool value = true;
+	
+	Call_StartForward(ForwardShouldSwitchTeams);
 	Call_Finish(value);
 	
 	return value;

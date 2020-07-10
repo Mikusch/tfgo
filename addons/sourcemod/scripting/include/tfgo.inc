@@ -87,9 +87,18 @@ forward void TFGO_OnHalfTimeStarted();
  * @note This forward does not get called until the initial half-time duration (tfgo_halftime_duration) has elapsed.
  * @note This forward does not get called if tfgo_halftime is set to 0.
  *
- * @return	true if the half-time should end, false if it should keep going and call this forward again
+ * @return	true if the half-time should end, false if it shouldn't end and call this forward again.
  */
 forward bool TFGO_HasHalfTimeEnded();
+
+/**
+ * Called when the game is about to switch or scramble the teams after half-time.
+ * 
+ * @note This forward gets called regardless of the current value of the tfgo_halftime_scramble convar.
+ *
+ * @return	true if the teams should be switched or scrambled, false if not.
+ */
+forward bool TFGO_ShouldSwitchTeams();
 
 /**
  * Called when all rounds have been played.
