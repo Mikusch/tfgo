@@ -264,24 +264,6 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 			}
 		}
 	}
-	
-	static int roundsPlayed;
-	roundsPlayed++;
-	
-	ConVar mp_maxrounds = FindConVar("mp_maxrounds");
-	if (tfgo_halftime.BoolValue && roundsPlayed == mp_maxrounds.IntValue / 2)
-	{
-		if (g_ShouldScramble)
-			SDKCall_SetScrambleTeams(true);
-		else
-			SDKCall_SetSwitchTeams(true);
-		
-		Forward_OnHalfTime();
-	}
-	else if (roundsPlayed == mp_maxrounds.IntValue)
-	{
-		Forward_OnMaxRounds();
-	}
 }
 
 Action Event_TeamplayRoundStart(Event event, const char[] name, bool dontBroadcast)

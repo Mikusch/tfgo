@@ -1,3 +1,12 @@
+"Music.HalfTime.valve_csgo_01"
+{
+	"channel"	 "CHAN_STATIC"
+	"volume"	 "0.80"
+	"soundlevel" "SNDLVL_NONE"
+	"pitch"		 "PITCH_NORM"
+
+	"wave"  "#tfgo/music/valve_csgo_01/mainmenu.mp3"	
+}
 "Music.StartRound.valve_csgo_01"
 {
 	"channel"	 "CHAN_STATIC"

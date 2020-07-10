@@ -9,27 +9,27 @@
 				"linux" 	"6"
 				"windows" 	"5"
 			}
-			"CTFGameRules::SetWinningTeam"
+			"CTeamplayRules::SetWinningTeam"
 			{
 				"linux"		"161"
 				"windows"	"160"
 			}
-			"CTFGameRules::SetSwitchTeams"
+			"CTeamplayRules::SetSwitchTeams"
 			{
 				"linux"		"163"
 				"windows"	"162"
 			}
-			"CTFGameRules::HandleSwitchTeams"
+			"CTeamplayRules::HandleSwitchTeams"
 			{
 				"linux"		"165"
 				"windows"	"164"
 			}
-			"CTFGameRules::SetScrambleTeams"
+			"CTeamplayRules::SetScrambleTeams"
 			{
 				"linux"		"166"
 				"windows"	"165"
 			}
-			"CTFGameRules::HandleScrambleTeams"
+			"CTeamplayRules::HandleScrambleTeams"
 			{
 				"linux"		"168"
 				"windows"	"167"
@@ -82,12 +82,18 @@
 				"linux"		"@_ZN16CTFDroppedWeapon17InitDroppedWeaponEP9CTFPlayerP13CTFWeaponBasebb"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x24\x56\x57\x8B\xF9\x8B\x4D\x08"
 			}
+			"CTeamplayRoundBasedRules::State_Enter"
+			{
+				"library"	"server"
+				"linux"		"@_ZN24CTeamplayRoundBasedRules11State_EnterE22gamerules_roundstate_t"
+				"windows"	"\x55\x8B\xEC\x56\x8B\xF1\x8D\x4D\x08\x57"
+			}
 		}
 		"Functions"
 		{
-			"CTFGameRules::SetWinningTeam"
+			"CTeamplayRules::SetWinningTeam"
 			{
-				"offset"	"CTFGameRules::SetWinningTeam"
+				"offset"	"CTeamplayRules::SetWinningTeam"
 				"hooktype"	"gamerules"
 				"return"	"void"
 				"this"		"ignore"
@@ -119,16 +125,16 @@
 					}
 				}
 			}
-			"CTFGameRules::HandleSwitchTeams"
+			"CTeamplayRules::HandleSwitchTeams"
 			{
-				"offset"	"CTFGameRules::HandleSwitchTeams"
+				"offset"	"CTeamplayRules::HandleSwitchTeams"
 				"hooktype"	"gamerules"
 				"return"	"void"
 				"this"		"ignore"
 			}
-			"CTFGameRules::HandleScrambleTeams"
+			"CTeamplayRules::HandleScrambleTeams"
 			{
-				"offset"	"CTFGameRules::HandleScrambleTeams"
+				"offset"	"CTeamplayRules::HandleScrambleTeams"
 				"hooktype"	"gamerules"
 				"return"	"void"
 				"this"		"ignore"
@@ -170,6 +176,20 @@
 					"pWeapon"
 					{
 						"type"	"cbaseentity"
+					}
+				}
+			}
+			"CTeamplayRoundBasedRules::State_Enter"
+			{
+				"signature"	"CTeamplayRoundBasedRules::State_Enter"
+				"callconv"	"thiscall"
+				"return"	"void"
+				"this"		"ignore"
+				"arguments"
+				{
+					"newState"
+					{
+						"type"	"int"
 					}
 				}
 			}

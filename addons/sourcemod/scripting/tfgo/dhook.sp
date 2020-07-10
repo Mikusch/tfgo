@@ -7,12 +7,13 @@ static int HookIdsGiveNamedItem[TF_MAXPLAYERS] =  { -1, ... };
 
 void DHook_Init(GameData gamedata)
 {
-	DHookSetWinningTeam = DHook_CreateVirtual(gamedata, "CTFGameRules::SetWinningTeam");
+	DHookSetWinningTeam = DHook_CreateVirtual(gamedata, "CTeamplayRules::SetWinningTeam");
+	DHookHandleSwitchTeams = DHook_CreateVirtual(gamedata, "CTeamplayRules::HandleSwitchTeams");
+	DHookHandleScrambleTeams = DHook_CreateVirtual(gamedata, "CTeamplayRules::HandleScrambleTeams");
 	DHookGiveNamedItem = DHook_CreateVirtual(gamedata, "CTFPlayer::GiveNamedItem");
-	DHookHandleSwitchTeams = DHook_CreateVirtual(gamedata, "CTFGameRules::HandleSwitchTeams");
-	DHookHandleScrambleTeams = DHook_CreateVirtual(gamedata, "CTFGameRules::HandleScrambleTeams");
 	
 	DHook_CreateDetour(gamedata, "CTFPlayer::PickupWeaponFromOther", Detour_PickupWeaponFromOther);
+	DHook_CreateDetour(gamedata, "CTeamplayRoundBasedRules::State_Enter", Detour_StateEnter);
 }
 
 static Handle DHook_CreateVirtual(GameData gamedata, const char[] name)
@@ -72,6 +73,77 @@ public MRESReturn Detour_PickupWeaponFromOther(int client, Handle returnVal, Han
 	int defindex = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
 	TFGOPlayer(client).AddToLoadout(defindex);
 	Forward_OnClientPickupWeapon(client, defindex);
+}
+
+public MRESReturn Detour_StateEnter(Handle params)
+{
+	RoundState newState = view_as<RoundState>(DHookGetParam(params, 1));
+	ConVar mp_maxrounds = FindConVar("mp_maxrounds");
+	
+	static int roundsPlayed;
+	
+	switch (newState)
+	{
+		// Handle half-time
+		case RoundState_Preround:
+		{
+			if (tfgo_halftime.BoolValue && roundsPlayed == mp_maxrounds.IntValue / 2)
+			{
+				static float halfTimeEndTime;
+				
+				if (halfTimeEndTime == 0.0)
+				{
+					// Show scoreboard, freeze input and play music kit to clients
+					for (int client = 1; client <= MaxClients; client++)
+					{
+						if (IsClientInGame(client))
+						{
+							TF2_AddCondition(client, TFCond_FreezeInput, TFCondDuration_Infinite);
+							ShowVGUIPanel(client, "scores");
+							MusicKit_PlayClientMusicKit(client, Music_HalfTime);
+						}
+					}
+					
+					halfTimeEndTime = GetGameTime() + tfgo_halftime_duration.FloatValue;
+					Forward_OnHalfTimeStarted();
+				}
+				
+				if (halfTimeEndTime <= GetGameTime() && Forward_HasHalfTimeEnded())
+				{
+					// Hide scoreboard
+					for (int client = 1; client <= MaxClients; client++)
+					{
+						if (IsClientInGame(client))
+							ShowVGUIPanel(client, "scores", _, false);
+					}
+					
+					// Initiate side switch/team scramble
+					if (tfgo_halftime_scramble.BoolValue)
+						SDKCall_SetScrambleTeams(Forward_ShouldSwitchTeams());
+					else
+						SDKCall_SetSwitchTeams(Forward_ShouldSwitchTeams());
+					
+					halfTimeEndTime = 0.0;
+				}
+				else
+				{
+					// Do not allow TF2 to transition to preround
+					return MRES_Supercede;
+				}
+			}
+		}
+		// Track number of rounds played
+		case RoundState_TeamWin:
+		{
+			roundsPlayed++;
+			
+			// Reset it for the next map
+			if (roundsPlayed == mp_maxrounds.IntValue)
+				roundsPlayed = 0;
+		}
+	}
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_SetWinningTeam(Handle params)

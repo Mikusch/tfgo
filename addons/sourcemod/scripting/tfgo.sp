@@ -13,7 +13,7 @@
 #pragma newdecls required
 
 
-#define PLUGIN_VERSION			"1.2"
+#define PLUGIN_VERSION			"1.3.0"
 #define PLUGIN_VERSION_REVISION	"manual"
 
 #define TF_MAXPLAYERS	33
@@ -101,16 +101,16 @@ enum
 
 enum ETFGameType
 {
-	TF_GAMETYPE_UNDEFINED = 0,
-	TF_GAMETYPE_CTF,
-	TF_GAMETYPE_CP,
-	TF_GAMETYPE_ESCORT,
-	TF_GAMETYPE_ARENA,
-	TF_GAMETYPE_MVM,
-	TF_GAMETYPE_RD,
-	TF_GAMETYPE_PASSTIME,
-	TF_GAMETYPE_PD,
-
+	TF_GAMETYPE_UNDEFINED = 0, 
+	TF_GAMETYPE_CTF, 
+	TF_GAMETYPE_CP, 
+	TF_GAMETYPE_ESCORT, 
+	TF_GAMETYPE_ARENA, 
+	TF_GAMETYPE_MVM, 
+	TF_GAMETYPE_RD, 
+	TF_GAMETYPE_PASSTIME, 
+	TF_GAMETYPE_PD, 
+	
 	TF_GAMETYPE_COUNT
 };
 
@@ -165,6 +165,7 @@ methodmap TFGOWeaponList < ArrayList
 
 enum MusicType
 {
+	Music_HalfTime, 
 	Music_StartRound, 
 	Music_StartAction, 
 	Music_BombPlanted, 
@@ -188,7 +189,6 @@ MemoryPatch g_PickupWeaponPatch;
 TFGOWeaponList g_AvailableWeapons;
 
 // Map
-bool g_ShouldScramble;
 bool g_MapHasRespawnRoom;
 
 // Bomb & Bomb Site
@@ -215,6 +215,8 @@ ConVar tfgo_buytime;
 ConVar tfgo_consecutive_loss_max;
 ConVar tfgo_bombtimer;
 ConVar tfgo_halftime;
+ConVar tfgo_halftime_duration;
+ConVar tfgo_halftime_scramble;
 ConVar tfgo_startmoney;
 ConVar tfgo_maxmoney;
 ConVar tfgo_cash_player_bomb_planted;
@@ -367,8 +369,6 @@ public void OnMapStart()
 		CalculateDynamicBuyZones();
 	}
 	
-	g_ShouldScramble = false;
-	
 	// Clear attackers and defenders from previous map
 	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
 	{
@@ -384,8 +384,6 @@ public void OnMapStart()
 		TFTeam defaultOwner = view_as<TFTeam>(GetEntProp(cp, Prop_Data, "m_iDefaultOwner"));
 		if (defaultOwner == TFTeam_Unassigned)	// Neutral CP, both teams are attacking AND defending this point
 		{
-			g_ShouldScramble = true;
-			
 			for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
 			{
 				TFGOTeam tfgoTeam = TFGOTeam(view_as<TFTeam>(team));

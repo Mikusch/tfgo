@@ -139,7 +139,7 @@ void MusicKit_SetMusicKit(int client, const char[] name)
 	}
 	else
 	{
-		if (!IsNullString(name))
+		if (name[0] != '\0')
 			LogError("Invalid music kit %s, falling back to random default kit", name);
 		
 		MusicKit_SetRandomDefaultMusicKit(client);
@@ -211,6 +211,7 @@ int MusicKit_GetEntryNameForMusicType(MusicType type, char[] buffer, int maxlen)
 {
 	switch (type)
 	{
+		case Music_HalfTime: return strcopy(buffer, maxlen, "Music.HalfTime");
 		case Music_StartRound: return strcopy(buffer, maxlen, "Music.StartRound");
 		case Music_StartAction: return strcopy(buffer, maxlen, "Music.StartAction");
 		case Music_BombPlanted: return strcopy(buffer, maxlen, "Music.BombPlanted");
