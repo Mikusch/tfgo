@@ -101,11 +101,6 @@ forward bool TFGO_HasHalfTimeEnded();
 forward bool TFGO_ShouldSwitchTeams();
 
 /**
- * Called when all rounds have been played.
- */
-forward void TFGO_OnMaxRounds();
-
-/**
  * Called when a client's account changes due to them earning or losing money.
  *
  * @note This forward does not get called for weapon purchases, see TFGO_OnClientPurchaseWeapon instead.
