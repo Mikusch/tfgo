@@ -551,6 +551,20 @@ Action Timer_OnBombExplode(Handle timer)
 		}
 	}
 	
+	// Damage buildings in range
+	int obj = MaxClients + 1;
+	while ((obj = FindEntityByClassname(obj, "obj_*")) > -1)
+	{
+		float objOrigin[3];
+		GetEntPropVector(obj, Prop_Data, "m_vecAbsOrigin", objOrigin);
+		float distance = GetVectorDistance(objOrigin, bombOrigin);
+		if (distance < BOMB_EXPLOSION_RADIUS)
+		{
+			SetVariantInt(RoundFloat((BOMB_EXPLOSION_DAMAGE / BOMB_EXPLOSION_RADIUS) * (BOMB_EXPLOSION_RADIUS - distance)));
+			AcceptEntityInput(obj, "RemoveHealth", g_BombRef, g_BombRef);
+		}
+	}
+	
 	TF2_SpawnParticle(PARTICLE_BOMB_EXPLOSION, bombOrigin, bombAngles);
 	EmitGameSoundToAll(GAMESOUND_BOMB_EXPLOSION, g_BombRef);
 	RemoveEntity(g_BombRef);
@@ -640,8 +654,19 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	// Play Sounds
 	MusicKit_PlayAllClientMusicKits(Music_BombPlanted);
 	EmitGameSoundToAll(GAMESOUND_ANNOUNCER_BOMB_PLANTED);
-	EmitBombSeeGameSounds();
 	
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientInGame(client) && IsPlayerAlive(client) && TF2_GetClientTeam(client) != g_BombPlantingTeam)
+		{
+			SetVariantString("IsMvMDefender:1");
+			AcceptEntityInput(client, "AddContext");
+			SetVariantString("TLK_MVM_BOMB_PICKUP");
+			AcceptEntityInput(client, "SpeakResponseConcept");
+			AcceptEntityInput(client, "ClearContext");
+		}
+	}
+
 	// Show text on screen
 	char message[PLATFORM_MAX_PATH];
 	Format(message, sizeof(message), "%T", "Bomb_Planted", LANG_SERVER, tfgo_bombtimer.IntValue);

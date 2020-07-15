@@ -6,70 +6,38 @@ static char MinigunShootCritSounds[][] = {
 	")weapons/tomislav_shoot_crit.wav"
 };
 
-static char EngineerBombSeeGameSounds[][] =  {
-	"engineer_mvm_bomb_see01", 
-	"engineer_mvm_bomb_see02", 
-	"engineer_mvm_bomb_see03"
-};
-
-static char HeavyBombSeeGameSounds[][] =  {
-	"heavy_mvm_bomb_see01"
-};
-
-static char MedicBombSeeGameSounds[][] =  {
-	"medic_mvm_bomb_see01", 
-	"medic_mvm_bomb_see02", 
-	"medic_mvm_bomb_see03"
-};
-
-static char SoldierBombSeeGameSounds[][] =  {
-	"soldier_mvm_bomb_see01", 
-	"soldier_mvm_bomb_see02", 
-	"soldier_mvm_bomb_see03"
+static char FlameThrowerLoopCritSounds[][] = {
+	")weapons/flame_thrower_bb_loop_crit.wav",
+	")weapons/flame_thrower_dg_loop_crit.wav",
+	")weapons/flame_thrower_loop_crit.wav",
+	")weapons/phlog_loop_crit.wav",
 };
 
 void Sound_Precache()
 {
 	PrecacheSound(SOUND_BOMB_BEEPING);
-	PrecacheSound("mvm/mvm_bomb_explode.wav");
 	
 	PrecacheScriptSound(GAMESOUND_BOMB_EXPLOSION);
 	PrecacheScriptSound(GAMESOUND_BOMB_WARNING);
 	PrecacheScriptSound(GAMESOUND_PLAYER_PURCHASE);
 	PrecacheScriptSound(GAMESOUND_ANNOUNCER_BOMB_PLANTED);
 	PrecacheScriptSound(GAMESOUND_ANNOUNCER_TEAM_SCRAMBLE);
-	
-	for (int i = 0; i < sizeof(EngineerBombSeeGameSounds); i++) PrecacheScriptSound(EngineerBombSeeGameSounds[i]);
-	for (int i = 0; i < sizeof(HeavyBombSeeGameSounds); i++) PrecacheScriptSound(HeavyBombSeeGameSounds[i]);
-	for (int i = 0; i < sizeof(MedicBombSeeGameSounds); i++) PrecacheScriptSound(MedicBombSeeGameSounds[i]);
-	for (int i = 0; i < sizeof(SoldierBombSeeGameSounds); i++) PrecacheScriptSound(SoldierBombSeeGameSounds[i]);
-}
-
-void EmitBombSeeGameSounds()
-{
-	for (int client = 1; client <= MaxClients; client++)
-	{
-		if (IsClientInGame(client) && IsPlayerAlive(client) && TF2_GetClientTeam(client) != g_BombPlantingTeam)
-		{
-			switch (TF2_GetPlayerClass(client))
-			{
-				case TFClass_Engineer: EmitGameSoundToAll(EngineerBombSeeGameSounds[GetRandomInt(0, sizeof(EngineerBombSeeGameSounds) - 1)]);
-				case TFClass_Heavy: EmitGameSoundToAll(HeavyBombSeeGameSounds[GetRandomInt(0, sizeof(HeavyBombSeeGameSounds) - 1)]);
-				case TFClass_Medic: EmitGameSoundToAll(MedicBombSeeGameSounds[GetRandomInt(0, sizeof(MedicBombSeeGameSounds) - 1)]);
-				case TFClass_Soldier: EmitGameSoundToAll(SoldierBombSeeGameSounds[GetRandomInt(0, sizeof(SoldierBombSeeGameSounds) - 1)]);
-			}
-		}
-	}
 }
 
 Action NormalSoundHook(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &entity, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
 {
+	// Spatialized minigun and flame thrower crit sounds from headshots loop forever, block them entirely
 	if (strncmp(sample, ")weapons/", 9) == 0)
 	{
-		// Spatialized minigun crit sounds from headshots loop forever, block them entirely
 		for (int i = 0; i < sizeof(MinigunShootCritSounds); i++)
 		{
 			if (StrEqual(sample, MinigunShootCritSounds[i]))
+				return Plugin_Handled;
+		}
+		
+		for (int i = 0; i < sizeof(FlameThrowerLoopCritSounds); i++)
+		{
+			if (StrEqual(sample, FlameThrowerLoopCritSounds[i]))
 				return Plugin_Handled;
 		}
 	}
