@@ -87,11 +87,14 @@ public MRESReturn Detour_StateEnter(Handle params)
 		// Handle half-time
 		case RoundState_Preround:
 		{
+			ConVar sv_alltalk = FindConVar("sv_alltalk");
+			
 			static float halfTimeEndTime;
+			static bool alltalkToggled;
 			
 			if (halfTimeEndTime == 0.0 && tfgo_halftime.BoolValue && roundsPlayed == mp_maxrounds.IntValue / 2)
 			{
-				// Show scoreboard, freeze input and play music kit to clients
+				// Show scoreboard, freeze input, and play music kit to clients
 				for (int client = 1; client <= MaxClients; client++)
 				{
 					if (IsClientInGame(client))
@@ -100,6 +103,13 @@ public MRESReturn Detour_StateEnter(Handle params)
 						ShowVGUIPanel(client, "scores");
 						MusicKit_PlayClientMusicKit(client, Music_HalfTime);
 					}
+				}
+				
+				// Let opponents express their love for eachother
+				if (!sv_alltalk.BoolValue)
+				{
+					sv_alltalk.BoolValue = true;
+					alltalkToggled = true;
 				}
 				
 				halfTimeEndTime = GetGameTime() + tfgo_halftime_duration.FloatValue;
@@ -120,6 +130,12 @@ public MRESReturn Detour_StateEnter(Handle params)
 					SDKCall_SetScrambleTeams(Forward_ShouldSwitchTeams());
 				else
 					SDKCall_SetSwitchTeams(Forward_ShouldSwitchTeams());
+				
+				if (alltalkToggled)
+				{
+					sv_alltalk.BoolValue = false;
+					alltalkToggled = false;
+				}
 				
 				halfTimeEndTime = 0.0;
 			}
