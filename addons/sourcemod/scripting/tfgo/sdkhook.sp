@@ -32,12 +32,12 @@ Action SDKHook_Client_PreThink(int client)
 	TFGOPlayer player = TFGOPlayer(client);
 	
 	SetHudTextParams(0.05, 0.325, 0.1, 162, 255, 71, 255, _, 0.0, 0.0, 0.0);
-	ShowHudText(client, -1, "$%d", player.Account);
+	ShowSyncHudText(client, g_AccountHudSync, "$%d", player.Account);
 	
 	if (player.ArmorValue > 0)
 	{
 		SetHudTextParams(-1.0, 0.85, 0.1, 255, 255, 255, 255, _, 0.0, 0.0, 0.0);
-		ShowHudText(client, -1, "%t", "HUD_Armor", player.ArmorValue);
+		ShowSyncHudText(client, g_ArmorHudSync, "%t", "HUD_Armor", player.ArmorValue);
 	}
 	
 	if (!g_MapHasRespawnRoom && g_IsBuyTimeActive)

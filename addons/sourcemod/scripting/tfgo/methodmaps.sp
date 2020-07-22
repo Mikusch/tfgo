@@ -130,6 +130,18 @@ methodmap TFGOPlayer
 			}
 			
 			this.Account += val;
+			
+			if (val > 0)
+			{
+				SetHudTextParams(0.05, 0.29, 5.0, 162, 255, 71, 255);
+				ShowSyncHudText(this.Client, g_CashEarnedHudSync, "+$%d", val);
+			}
+			else if (val < 0)
+			{
+				SetHudTextParams(0.05, 0.29, 5.0, 234, 65, 65, 255);
+				ShowSyncHudText(this.Client, g_CashEarnedHudSync, "-$%d", val);
+			}
+			
 			Forward_OnClientAccountChanged(this.Client, val);
 		}
 	}

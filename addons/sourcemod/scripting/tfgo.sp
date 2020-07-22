@@ -185,6 +185,9 @@ Handle g_BombDetonationTimer;
 Handle g_BombExplosionTimer;
 
 // Other handles
+Handle g_CashEarnedHudSync;
+Handle g_AccountHudSync;
+Handle g_ArmorHudSync;
 MemoryPatch g_PickupWeaponPatch;
 TFGOWeaponList g_AvailableWeapons;
 
@@ -295,6 +298,10 @@ public void OnPluginStart()
 	else
 		LogMessage("Failed to create patch: Patch_PickupWeaponFromOther");
 	delete gamedata;
+	
+	g_CashEarnedHudSync = CreateHudSynchronizer();
+	g_AccountHudSync = CreateHudSynchronizer();
+	g_ArmorHudSync = CreateHudSynchronizer();
 	
 	ConVar_Enable();
 	
