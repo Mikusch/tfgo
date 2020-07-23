@@ -9,6 +9,7 @@ void Event_Init()
 	HookEvent("teamplay_round_start", Event_TeamplayRoundStart);
 	HookEvent("teamplay_point_captured", Event_TeamplayPointCaptured);
 	HookEvent("teamplay_broadcast_audio", Event_Pre_TeamplayBroadcastAudio, EventHookMode_Pre);
+	HookEvent("teamplay_game_over", Event_TeamplayGameOver);
 }
 
 Action Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
@@ -298,4 +299,9 @@ Action Event_TeamplayPointCaptured(Event event, const char[] name, bool dontBroa
 		PlantBomb(team, event.GetInt("cp"), capperList);
 	else
 		DefuseBomb(team, capperList);
+}
+
+Action Event_TeamplayGameOver(Event event, const char[] name, bool dontBroadcast)
+{
+	FindConVar("sv_alltalk").BoolValue = true;
 }
