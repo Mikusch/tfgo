@@ -112,6 +112,10 @@ public MRESReturn Detour_StateEnter(Handle params)
 					alltalkToggled = true;
 				}
 				
+				// Stop the bomb from exploding
+				g_IsBombTicking = false;
+				g_BombDetonationTimer = null;
+				
 				halfTimeEndTime = GetGameTime() + tfgo_halftime_duration.FloatValue;
 				Forward_OnHalfTimeStarted();
 			}
