@@ -304,12 +304,5 @@ Action Event_TeamplayPointCaptured(Event event, const char[] name, bool dontBroa
 Action Event_TeamplayGameOver(Event event, const char[] name, bool dontBroadcast)
 {
 	FindConVar("sv_alltalk").BoolValue = true;
-	
-	for (int client = 1; client <= MaxClients; client++)
-	{
-		if (IsClientInGame(client))
-		{
-			MusicKit_PlayClientMusicKit(client, Music_HalfTime);
-		}
-	}
+	MusicKit_PlayAllClientMusicKits(Music_HalfTime);
 }
