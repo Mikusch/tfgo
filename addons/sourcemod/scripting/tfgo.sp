@@ -209,7 +209,6 @@ bool g_SkipGiveNamedItemHook;
 int g_MVP;
 
 TFTeam g_BombPlantingTeam;
-bool g_HasPlayerSuicided[TF_MAXPLAYERS];
 
 // ConVars
 ConVar tfgo_free_armor;
@@ -251,7 +250,6 @@ ConVar tfgo_cash_team_planted_bomb_but_defused;
 #include "tfgo/native.sp"
 #include "tfgo/sdkcall.sp"
 #include "tfgo/sdkhook.sp"
-#include "tfgo/sound.sp"
 #include "tfgo/stocks.sp"
 
 
@@ -305,8 +303,6 @@ public void OnPluginStart()
 	
 	ConVar_Enable();
 	
-	AddNormalSoundHook(NormalSoundHook);
-	
 	CAddColor("negative", 0xEA4141);
 	CAddColor("positive", 0xA2FF47);
 	
@@ -353,12 +349,16 @@ public void OnMapStart()
 	DHook_HookGamerules();
 	ResetRoundState();
 	
-	Sound_Precache();
+	// Precache
 	MusicKit_Precache();
-	
 	PrecacheModel(MODEL_BOMB);
-	
 	PrecacheParticleSystem(PARTICLE_BOMB_EXPLOSION);
+	PrecacheSound(SOUND_BOMB_BEEPING);
+	PrecacheScriptSound(GAMESOUND_BOMB_EXPLOSION);
+	PrecacheScriptSound(GAMESOUND_BOMB_WARNING);
+	PrecacheScriptSound(GAMESOUND_PLAYER_PURCHASE);
+	PrecacheScriptSound(GAMESOUND_ANNOUNCER_BOMB_PLANTED);
+	PrecacheScriptSound(GAMESOUND_ANNOUNCER_TEAM_SCRAMBLE);
 	
 	// Pick a random music kit for everyone (sub-plugins can override this!)
 	for (int client = 1; client <= MaxClients; client++)
@@ -377,25 +377,25 @@ public void OnMapStart()
 	}
 	
 	// Clear attackers and defenders from previous map
-	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
+	for (int i = view_as<int>(TFTeam_Red); i <= view_as<int>(TFTeam_Blue); i++)
 	{
-		TFGOTeam tfgoTeam = TFGOTeam(view_as<TFTeam>(team));
-		tfgoTeam.IsAttacking = false;
-		tfgoTeam.IsDefending = false;
+		TFGOTeam team = TFGOTeam(view_as<TFTeam>(i));
+		team.IsAttacking = false;
+		team.IsDefending = false;
 	}
 	
-	// Determine attacking and defending team(s)
+	// Determine attacking and defending team(s) based on default control point owners
 	int cp = MaxClients + 1;
 	while ((cp = FindEntityByClassname(cp, "team_control_point")) > -1)
 	{
 		TFTeam defaultOwner = view_as<TFTeam>(GetEntProp(cp, Prop_Data, "m_iDefaultOwner"));
 		if (defaultOwner == TFTeam_Unassigned)	// Neutral CP, both teams are attacking AND defending this point
 		{
-			for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
+			for (int i = view_as<int>(TFTeam_Red); i <= view_as<int>(TFTeam_Blue); i++)
 			{
-				TFGOTeam tfgoTeam = TFGOTeam(view_as<TFTeam>(team));
-				tfgoTeam.IsAttacking = true;
-				tfgoTeam.IsDefending = true;
+				TFGOTeam team = TFGOTeam(view_as<TFTeam>(i));
+				team.IsAttacking = true;
+				team.IsDefending = true;
 			}
 		}
 		else	// CP owned by RED or BLU, enemy is attacking
@@ -482,7 +482,7 @@ public Action TF2_OnGiveNamedItem(int client, char[] classname, int defindex)
 	
 	if (0 <= slot <= WeaponSlot_BuilderEngie && TFGOPlayer(client).GetWeaponFromLoadout(class, slot) != Config_GetOriginalItemDefIndex(defindex))
 		return Plugin_Handled;
-		
+	
 	return Plugin_Continue;
 }
 
@@ -673,7 +673,7 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 			AcceptEntityInput(client, "ClearContext");
 		}
 	}
-
+	
 	// Show text on screen
 	char message[PLATFORM_MAX_PATH];
 	Format(message, sizeof(message), "%T", "Bomb_Planted", LANG_SERVER, tfgo_bombtimer.IntValue);
@@ -706,9 +706,9 @@ void ResetRoundState()
 	g_IsBombPlanted = false;
 	g_BombPlantingTeam = TFTeam_Unassigned;
 	
-	for (int i = 0; i < sizeof(g_HasPlayerSuicided); i++)
+	for (int client = 1; client <= MaxClients; client++)
 	{
-		g_HasPlayerSuicided[i] = false;
+		TFGOPlayer(client).HasSuicided = false;
 	}
 	
 	ResetPlayerBuyZoneStates();
