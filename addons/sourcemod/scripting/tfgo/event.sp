@@ -40,6 +40,29 @@ Action Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 	//Prevent latespawn
 	if (GameRules_GetRoundState() != RoundState_Preround)
 		ForcePlayerSuicide(client);
+	
+	int bomb = CreateEntityByName("item_teamflag");
+	if (IsValidEntity(bomb))
+	{
+		DispatchKeyValue(bomb, "ReturnTime", "-1");
+		DispatchKeyValue(bomb, "flag_model", "models/props_td/atom_bomb.mdl");
+		DispatchKeyValue(bomb, "GameType", "2");
+		
+		// Teleport the bomb before spawning so the spawn location is its reset point
+		float origin[3], angles[3];
+		GetClientAbsOrigin(client, origin);
+		GetClientAbsAngles(client, angles);
+		TeleportEntity(bomb, origin, angles, NULL_VECTOR);
+		
+		if (DispatchSpawn(bomb))
+		{
+			SetVariantInt(GetClientTeam(client));
+			AcceptEntityInput(bomb, "SetTeam");
+			AcceptEntityInput(bomb, "Enable");
+			
+			HookSingleEntityOutput(bomb, "OnDrop", EntOutput_OnBombDrop);
+		}
+	}
 }
 
 Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)

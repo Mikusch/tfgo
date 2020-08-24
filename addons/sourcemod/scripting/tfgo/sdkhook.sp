@@ -27,6 +27,11 @@ void SDKHook_HookTeamControlPointMaster(int entity)
 	SDKHook(entity, SDKHook_Spawn, SDKHook_TeamControlPointMaster_Spawn);
 }
 
+void SDKHook_HookGameRules(int entity)
+{
+	SDKHook(entity, SDKHook_Spawn, SDKHook_GameRules_Spawn);
+}
+
 Action SDKHook_Client_PreThink(int client)
 {
 	TFGOPlayer player = TFGOPlayer(client);
@@ -159,4 +164,9 @@ Action SDKHook_TriggerCaptureArea_EndTouch(int entity, int other)
 Action SDKHook_TeamControlPointMaster_Spawn(int entity)
 {
 	DispatchKeyValue(entity, "cpm_restrict_team_cap_win", "1");
+}
+
+Action SDKHook_GameRules_Spawn(int entity)
+{
+	DispatchKeyValue(entity, "ctf_overtime", "0");
 }

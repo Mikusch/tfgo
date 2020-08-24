@@ -23,8 +23,6 @@
 
 #define ATTRIB_MAX_HEALTH_ADDITIVE_BONUS	26
 
-#define MODEL_BOMB	"models/props_td/atom_bomb.mdl"
-
 #define PARTICLE_BOMB_EXPLOSION	"mvm_hatch_destroy"
 
 #define SOUND_BOMB_BEEPING					")misc/rd_finale_beep01.wav"
@@ -243,7 +241,6 @@ ConVar tfgo_cash_team_planted_bomb_but_defused;
 #include "tfgo/console.sp"
 #include "tfgo/convar.sp"
 #include "tfgo/dhook.sp"
-#include "tfgo/entoutput.sp"
 #include "tfgo/event.sp"
 #include "tfgo/forward.sp"
 #include "tfgo/musickits.sp"
@@ -282,7 +279,6 @@ public void OnPluginStart()
 	Config_Init();
 	Console_Init();
 	ConVar_Init();
-	EntOutput_Init();
 	Event_Init();
 	MusicKit_Init();
 	
@@ -296,6 +292,8 @@ public void OnPluginStart()
 	else
 		LogMessage("Failed to create patch: Patch_PickupWeaponFromOther");
 	delete gamedata;
+	
+	HookEntityOutput("team_round_timer", "On10SecRemain", EntOutput_On10SecRemain);
 	
 	g_CashEarnedHudSync = CreateHudSynchronizer();
 	g_AccountHudSync = CreateHudSynchronizer();
@@ -351,7 +349,6 @@ public void OnMapStart()
 	
 	// Precache
 	MusicKit_Precache();
-	PrecacheModel(MODEL_BOMB);
 	PrecacheParticleSystem(PARTICLE_BOMB_EXPLOSION);
 	PrecacheSound(SOUND_BOMB_BEEPING);
 	PrecacheScriptSound(GAMESOUND_BOMB_EXPLOSION);
@@ -460,6 +457,8 @@ public void OnEntityCreated(int entity, const char[] classname)
 		SDKHook_HookTriggerCaptureArea(entity);
 	else if (StrEqual(classname, "team_control_point_master"))
 		SDKHook_HookTeamControlPointMaster(entity);
+	else if (StrEqual(classname, "tf_gamerules"))
+		SDKHook_HookGameRules(entity);
 }
 
 public void TF2_OnWaitingForPlayersStart()
@@ -580,6 +579,22 @@ Action Timer_OnBombExplode(Handle timer)
 }
 
 //-----------------------------------------------------------------------------
+// Entity Output Callbacks
+//-----------------------------------------------------------------------------
+
+void EntOutput_On10SecRemain(const char[] output, int caller, int activator, float delay)
+{
+	if (GameRules_GetRoundState() == RoundState_Stalemate)
+		MusicKit_PlayAllClientMusicKits(Music_TenSecCount);
+}
+
+void EntOutput_OnBombDrop(const char[] output, int caller, int activator, float delay)
+{
+	// Prevent the bomb from resetting instantly
+	SetEntPropFloat(caller, Prop_Send, "m_flResetTime", 0.0);
+}
+
+//-----------------------------------------------------------------------------
 // Plugin Functions
 //-----------------------------------------------------------------------------
 
@@ -637,23 +652,7 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 		}
 	}
 	
-	// Create a new bomb
-	int prop = CreateEntityByName("prop_dynamic_override");
-	if (IsValidEntity(prop))
-	{
-		g_BombRef = EntIndexToEntRef(prop);
-		SetEntityModel(prop, MODEL_BOMB);
-		
-		if (DispatchSpawn(prop))
-		{
-			int capper = cappers.Get(0);
-			float origin[3], angles[3];
-			GetEntPropVector(capper, Prop_Send, "m_vecOrigin", origin);
-			GetEntPropVector(capper, Prop_Send, "m_angRotation", angles);
-			
-			TeleportEntity(prop, origin, angles, NULL_VECTOR);
-		}
-	}
+	// TODO: Make the first capper drop the tfgo_bomb and set g_BombRef to that
 	
 	g_TenSecondBombTimer = CreateTimer(tfgo_bombtimer.FloatValue - 10.0, Timer_OnBombTenSecCount, _, TIMER_FLAG_NO_MAPCHANGE);
 	g_BombDetonationTimer = CreateTimer(tfgo_bombtimer.FloatValue, Timer_OnBombTimerExpire, _, TIMER_FLAG_NO_MAPCHANGE);
