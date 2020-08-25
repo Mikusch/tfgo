@@ -27,6 +27,11 @@ void SDKHook_HookTriggerHurt(int entity)
 	SDKHook(entity, SDKHook_StartTouch, SDKHook_TriggerHurt_StartTouch);
 }
 
+void SDKHook_HookTeamControlPoint(int entity)
+{
+	SDKHook(entity, SDKHook_Spawn, SDKHook_TeamControlPoint_Spawn);
+}
+
 void SDKHook_HookTeamControlPointMaster(int entity)
 {
 	SDKHook(entity, SDKHook_Spawn, SDKHook_TeamControlPointMaster_Spawn);
@@ -196,6 +201,11 @@ Action SDKHook_TriggerHurt_StartTouch(int entity, int other)
 			}
 		}
 	}
+}
+
+Action SDKHook_TeamControlPoint_Spawn(int entity)
+{
+	SetEntProp(entity, Prop_Data, "m_spawnflags", GetEntProp(entity, Prop_Data, "m_spawnflags") | 1 << 0);
 }
 
 Action SDKHook_TeamControlPointMaster_Spawn(int entity)

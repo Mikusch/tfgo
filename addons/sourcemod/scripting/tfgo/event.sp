@@ -47,6 +47,7 @@ Action Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 		DispatchKeyValue(bomb, "targetname", BOMB_TARGETNAME);
 		DispatchKeyValue(bomb, "ReturnTime", "0");
 		DispatchKeyValue(bomb, "flag_model", "models/props_td/atom_bomb.mdl");
+		DispatchKeyValue(bomb, "trail_effect", "3");
 		DispatchKeyValue(bomb, "GameType", "2");
 		
 		// Teleport the bomb before spawning so the spawn location is its reset point

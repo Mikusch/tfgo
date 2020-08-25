@@ -461,6 +461,8 @@ public void OnEntityCreated(int entity, const char[] classname)
 		SDKHook_HookTriggerCaptureArea(entity);
 	else if (StrEqual(classname, "trigger_hurt"))
 		SDKHook_HookTriggerHurt(entity);
+	else if (StrEqual(classname, "team_control_point"))
+		SDKHook_HookTeamControlPoint(entity);
 	else if (StrEqual(classname, "team_control_point_master"))
 		SDKHook_HookTeamControlPointMaster(entity);
 	else if (StrEqual(classname, "tf_gamerules"))
