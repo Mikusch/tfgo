@@ -39,6 +39,11 @@
 				"linux"		"191"
 				"windows"	"190"
 			}
+			"CTFGameRules::FlagsMayBeCapped"
+			{
+				"linux"		"241"
+				"windows"	"239"
+			}
 			"CBasePlayer::EquipWearable"
 			{
 				"linux"		"431"
@@ -138,6 +143,24 @@
 				"hooktype"	"gamerules"
 				"return"	"void"
 				"this"		"ignore"
+			}
+			"CTFGameRules::FlagsMayBeCapped"
+			{
+				"offset"	"CTFGameRules::FlagsMayBeCapped"
+				"hooktype"	"gamerules"
+				"return"	"bool"
+				"this"		"ignore"
+				"arguments"
+				{
+					"pPlayer"
+					{
+						"type"	"cbaseentity"
+					}
+					"bInvisible"
+					{
+						"type"	"bool"
+					}
+				}
 			}
 			"CTFPlayer::GiveNamedItem"
 			{

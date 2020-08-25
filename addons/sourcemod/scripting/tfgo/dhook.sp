@@ -1,6 +1,7 @@
 static Handle DHookSetWinningTeam;
 static Handle DHookHandleSwitchTeams;
 static Handle DHookHandleScrambleTeams;
+static Handle DHookFlagsMayBeCapped;
 static Handle DHookGiveNamedItem;
 
 static int HookIdsGiveNamedItem[TF_MAXPLAYERS] =  { -1, ... };
@@ -51,6 +52,7 @@ void DHook_HookGamerules()
 	DHookGamerules(DHookSetWinningTeam, false, _, DHook_SetWinningTeam);
 	DHookGamerules(DHookHandleSwitchTeams, false, _, DHook_HandleSwitchTeams);
 	DHookGamerules(DHookHandleScrambleTeams, false, _, DHook_HandleScrambleTeams);
+	DHookGamerules(DHookFlagsMayBeCapped, false, _, DHook_FlagsMayBeCapped);
 }
 
 void DHook_HookClientEntity(int client)
@@ -218,6 +220,12 @@ public MRESReturn DHook_HandleScrambleTeams()
 	alert.Fire();
 	PrintToChatAll("%t", "TF_TeamsScrambled");
 	EmitGameSoundToAll(GAMESOUND_ANNOUNCER_TEAM_SCRAMBLE);
+}
+
+public MRESReturn DHook_FlagsMayBeCapped(Handle returnVal, Handle params)
+{
+	DHookSetReturn(returnVal, true);
+	return MRES_Supercede;
 }
 
 public MRESReturn DHook_GiveNamedItem(int client, Handle returnVal, Handle params)
