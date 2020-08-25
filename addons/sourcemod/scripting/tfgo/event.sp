@@ -62,6 +62,7 @@ Action Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 			AcceptEntityInput(bomb, "Enable");
 			
 			HookSingleEntityOutput(bomb, "OnDrop", EntOutput_OnBombDrop);
+			SDKHook_HookBomb(bomb);
 		}
 	}
 }

@@ -37,6 +37,11 @@ void SDKHook_HookGameRules(int entity)
 	SDKHook(entity, SDKHook_Spawn, SDKHook_GameRules_Spawn);
 }
 
+void SDKHook_HookBomb(int entity)
+{
+	SDKHook(entity, SDKHook_Touch, SDKHook_Bomb_Touch);
+}
+
 Action SDKHook_Client_PreThink(int client)
 {
 	TFGOPlayer player = TFGOPlayer(client);
@@ -166,10 +171,10 @@ Action SDKHook_TriggerCaptureArea_EndTouch(int entity, int other)
 	}
 }
 
-Action SDKHook_TriggerHurt_Touch(int trigger, int other)
+Action SDKHook_TriggerHurt_Touch(int entity, int other)
 {
 	// Reset the bomb if it lands in a lethal trigger_hurt
-	if (GetEntPropFloat(trigger, Prop_Data, "m_flDamage") >= 300.0)
+	if (GetEntPropFloat(entity, Prop_Data, "m_flDamage") >= 300.0)
 	{
 		char classname[256];
 		if (GetEntityClassname(other, classname, sizeof(classname) && StrEqual(classname, "item_teamflag")))
@@ -177,7 +182,7 @@ Action SDKHook_TriggerHurt_Touch(int trigger, int other)
 			char targetname[256];
 			if (GetEntPropString(other, Prop_Data, "m_iName", targetname, sizeof(targetname)) > 0 && StrEqual(targetname, BOMB_TARGETNAME))
 			{
-				AcceptEntityInput(trigger, "ForceReset", other, trigger);
+				AcceptEntityInput(entity, "ForceReset", other, entity);
 				
 				for (int client = 0; client <= MaxClients; client++)
 				{
@@ -199,4 +204,10 @@ Action SDKHook_TeamControlPointMaster_Spawn(int entity)
 Action SDKHook_GameRules_Spawn(int entity)
 {
 	DispatchKeyValue(entity, "ctf_overtime", "0");
+}
+
+Action SDKHook_Bomb_Touch(int entity, int other)
+{
+	// Planted bombs can't be picked up
+	return g_IsBombPlanted ? Plugin_Handled : Plugin_Continue;
 }
