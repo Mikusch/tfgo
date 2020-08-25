@@ -3,11 +3,6 @@ stock bool IsValidClient(int client)
 	return 0 < client <= MaxClients && IsClientInGame(client);
 }
 
-stock bool CanDefuse(int client)
-{
-	return g_IsBombPlanted && TF2_GetClientTeam(client) != g_BombPlantingTeam;
-}
-
 stock bool IsBomb(int entity)
 {
 	char targetname[256];

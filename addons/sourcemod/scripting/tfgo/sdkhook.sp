@@ -18,14 +18,13 @@ void SDKHook_HookTFLogicArena(int entity)
 void SDKHook_HookTriggerCaptureArea(int entity)
 {
 	SDKHook(entity, SDKHook_Spawn, SDKHook_TriggerCaptureArea_Spawn);
-	SDKHook(entity, SDKHook_Touch, SDKHook_TriggerCaptureArea_Touch);
 	SDKHook(entity, SDKHook_StartTouch, SDKHook_TriggerCaptureArea_StartTouch);
 	SDKHook(entity, SDKHook_EndTouch, SDKHook_TriggerCaptureArea_EndTouch);
 }
 
 void SDKHook_HookTriggerHurt(int entity)
 {
-	SDKHook(entity, SDKHook_Touch, SDKHook_TriggerHurt_Touch);
+	SDKHook(entity, SDKHook_StartTouch, SDKHook_TriggerHurt_StartTouch);
 }
 
 void SDKHook_HookTeamControlPointMaster(int entity)
@@ -149,18 +148,9 @@ Action SDKHook_TriggerCaptureArea_Spawn(int entity)
 	DispatchKeyValue(entity, "team_numcap_3", "1");
 }
 
-Action SDKHook_TriggerCaptureArea_Touch(int entity, int other)
-{
-	// Attackers need to carry a bomb to plant
-	if (!g_IsBombPlanted && IsValidClient(other) && TFGOTeam(TF2_GetClientTeam(other)).IsAttacking)
-		return IsBomb(GetEntPropEnt(other, Prop_Send, "m_hItem")) ? Plugin_Continue : Plugin_Handled;
-	
-	return Plugin_Continue;
-}
-
 Action SDKHook_TriggerCaptureArea_StartTouch(int entity, int other)
 {
-	if (IsValidClient(other) && CanDefuse(other) && TFGOPlayer(other).HasDefuseKit)
+	if (IsValidClient(other) && TFGOPlayer(other).CanDefuse() && TFGOPlayer(other).HasDefuseKit)
 	{
 		// Player with a defuse kit has entered the point, reduce cap time
 		TF2_SetAreaTimeToCap(entity, BOMB_DEFUSE_TIME / 2);
@@ -169,12 +159,12 @@ Action SDKHook_TriggerCaptureArea_StartTouch(int entity, int other)
 
 Action SDKHook_TriggerCaptureArea_EndTouch(int entity, int other)
 {
-	if (IsValidClient(other) && CanDefuse(other) && TFGOPlayer(other).HasDefuseKit)
+	if (IsValidClient(other) && TFGOPlayer(other).CanDefuse() && TFGOPlayer(other).HasDefuseKit)
 	{
 		// Player with a defuse kit has left the point, we need to check if anyone else still on the point has one
 		for (int client = 1; client <= MaxClients; client++)
 		{
-			if (IsClientInGame(client) && client != other && CanDefuse(client) && TFGOPlayer(client).HasDefuseKit)
+			if (IsClientInGame(client) && client != other && TFGOPlayer(client).CanDefuse() && TFGOPlayer(client).HasDefuseKit)
 				return;
 		}
 		
@@ -183,7 +173,7 @@ Action SDKHook_TriggerCaptureArea_EndTouch(int entity, int other)
 	}
 }
 
-Action SDKHook_TriggerHurt_Touch(int entity, int other)
+Action SDKHook_TriggerHurt_StartTouch(int entity, int other)
 {
 	// Reset the bomb if it lands in a lethal trigger_hurt
 	if (GetEntPropFloat(entity, Prop_Data, "m_flDamage") >= 300.0)

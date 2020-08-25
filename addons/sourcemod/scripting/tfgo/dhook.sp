@@ -1,3 +1,4 @@
+static Handle DHookPlayerMayCapturePoint;
 static Handle DHookSetWinningTeam;
 static Handle DHookHandleSwitchTeams;
 static Handle DHookHandleScrambleTeams;
@@ -8,9 +9,11 @@ static int HookIdsGiveNamedItem[TF_MAXPLAYERS] =  { -1, ... };
 
 void DHook_Init(GameData gamedata)
 {
+	DHookPlayerMayCapturePoint = DHook_CreateVirtual(gamedata, "CTeamplayRules::PlayerMayCapturePoint");
 	DHookSetWinningTeam = DHook_CreateVirtual(gamedata, "CTeamplayRules::SetWinningTeam");
 	DHookHandleSwitchTeams = DHook_CreateVirtual(gamedata, "CTeamplayRules::HandleSwitchTeams");
 	DHookHandleScrambleTeams = DHook_CreateVirtual(gamedata, "CTeamplayRules::HandleScrambleTeams");
+	DHookFlagsMayBeCapped = DHook_CreateVirtual(gamedata, "CTFGameRules::FlagsMayBeCapped");
 	DHookGiveNamedItem = DHook_CreateVirtual(gamedata, "CTFPlayer::GiveNamedItem");
 	
 	DHook_CreateDetour(gamedata, "CTFPlayer::PickupWeaponFromOther", Detour_PickupWeaponFromOther);
@@ -49,10 +52,11 @@ static void DHook_CreateDetour(GameData gamedata, const char[] name, DHookCallba
 
 void DHook_HookGamerules()
 {
+	DHookGamerules(DHookPlayerMayCapturePoint, true, _, DHook_PlayerMayCapturePoint_Post);
 	DHookGamerules(DHookSetWinningTeam, false, _, DHook_SetWinningTeam);
 	DHookGamerules(DHookHandleSwitchTeams, false, _, DHook_HandleSwitchTeams);
 	DHookGamerules(DHookHandleScrambleTeams, false, _, DHook_HandleScrambleTeams);
-	DHookGamerules(DHookFlagsMayBeCapped, false, _, DHook_FlagsMayBeCapped);
+	DHookGamerules(DHookFlagsMayBeCapped, true, _, DHook_FlagsMayBeCapped_Post);
 }
 
 void DHook_HookClientEntity(int client)
@@ -161,6 +165,21 @@ public MRESReturn Detour_StateEnter(Handle params)
 	return MRES_Ignored;
 }
 
+public MRESReturn DHook_PlayerMayCapturePoint_Post(Handle returnVal, Handle params)
+{
+	int client = DHookGetParam(params, 1);
+	if (DHookGetReturn(returnVal))
+	{
+		if (!g_IsBombPlanted && IsValidClient(client) && TFGOTeam(TF2_GetClientTeam(client)).IsAttacking)
+		{
+			DHookSetReturn(returnVal, IsBomb(GetEntPropEnt(client, Prop_Send, "m_hItem")));
+			return MRES_Supercede;
+		}
+	}
+	
+	return MRES_Ignored;
+}
+
 public MRESReturn DHook_SetWinningTeam(Handle params)
 {
 	TFTeam team = DHookGetParam(params, 1);
@@ -222,7 +241,7 @@ public MRESReturn DHook_HandleScrambleTeams()
 	EmitGameSoundToAll(GAMESOUND_ANNOUNCER_TEAM_SCRAMBLE);
 }
 
-public MRESReturn DHook_FlagsMayBeCapped(Handle returnVal, Handle params)
+public MRESReturn DHook_FlagsMayBeCapped_Post(Handle returnVal, Handle params)
 {
 	DHookSetReturn(returnVal, true);
 	return MRES_Supercede;

@@ -621,14 +621,11 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 		TFGOPlayer(capper).AddToAccount(tfgo_cash_player_bomb_planted.IntValue, "%t", "Player_Cash_Award_Bomb_Planted", tfgo_cash_player_bomb_planted.IntValue);
 		
 		// If no bomb was dropped yet, look for the first capper with a bomb
-		if (!IsValidEntity(g_BombRef))
+		int item = GetEntPropEnt(capper, Prop_Send, "m_hItem");
+		if (IsBomb(item))
 		{
-			int item = GetEntPropEnt(capper, Prop_Send, "m_hItem");
-			if (IsBomb(item))
-			{
-				AcceptEntityInput(item, "ForceDrop");
-				g_BombRef = EntIndexToEntRef(item);
-			}
+			AcceptEntityInput(item, "ForceDrop");
+			g_BombRef = EntIndexToEntRef(item);
 		}
 	}
 	
@@ -674,7 +671,10 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	while ((teamflag = FindEntityByClassname(teamflag, "item_teamflag")) > -1)
 	{
 		if (teamflag != EntRefToEntIndex(g_BombRef) && IsBomb(teamflag))
+		{
+			AcceptEntityInput(teamflag, "ForceDrop");	// Gets rid of the player glow
 			RemoveEntity(teamflag);
+		}
 	}
 	
 	g_TenSecondBombTimer = CreateTimer(tfgo_bombtimer.FloatValue - 10.0, Timer_OnBombTenSecCount, _, TIMER_FLAG_NO_MAPCHANGE);

@@ -314,6 +314,11 @@ methodmap TFGOPlayer
 		this.Account = tfgo_startmoney.IntValue;
 	}
 	
+	public bool CanDefuse()
+	{
+		return g_IsBombPlanted && TF2_GetClientTeam(view_as<int>(this)) != g_BombPlantingTeam;
+	}
+	
 	public bool IsArmored(int hitgroup)
 	{
 		switch (hitgroup)

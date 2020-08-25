@@ -9,6 +9,11 @@
 				"linux" 	"6"
 				"windows" 	"5"
 			}
+			"CTeamplayRules::PlayerMayCapturePoint"
+			{
+				"linux"		"156"
+				"windows"	"155"
+			}
 			"CTeamplayRules::SetWinningTeam"
 			{
 				"linux"		"161"
@@ -96,6 +101,32 @@
 		}
 		"Functions"
 		{
+			"CTeamplayRules::PlayerMayCapturePoint"
+			{
+				"offset"	"CTeamplayRules::PlayerMayCapturePoint"
+				"hooktype"	"gamerules"
+				"return"	"bool"
+				"this"		"ignore"
+				"arguments"
+				{
+					"pPlayer"
+					{
+						"type"	"cbaseentity"
+					}
+					"iPointIndex"
+					{
+						"type"	"int"
+					}
+					"pszReason"
+					{
+						"type"	"charptr"
+					}
+					"iMaxReasonLength"
+					{
+						"type"	"int"
+					}
+				}
+			}
 			"CTeamplayRules::SetWinningTeam"
 			{
 				"offset"	"CTeamplayRules::SetWinningTeam"
@@ -150,17 +181,6 @@
 				"hooktype"	"gamerules"
 				"return"	"bool"
 				"this"		"ignore"
-				"arguments"
-				{
-					"pPlayer"
-					{
-						"type"	"cbaseentity"
-					}
-					"bInvisible"
-					{
-						"type"	"bool"
-					}
-				}
 			}
 			"CTFPlayer::GiveNamedItem"
 			{
