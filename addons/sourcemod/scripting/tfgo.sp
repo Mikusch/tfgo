@@ -671,7 +671,7 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	
 	// Remove every other bomb still in the map
 	int teamflag = MaxClients + 1;
-	while ((teamflag = FindEntityByClassname(area, "item_teamflag")) > -1)
+	while ((teamflag = FindEntityByClassname(teamflag, "item_teamflag")) > -1)
 	{
 		if (teamflag != EntRefToEntIndex(g_BombRef) && IsBomb(teamflag))
 			RemoveEntity(teamflag);
