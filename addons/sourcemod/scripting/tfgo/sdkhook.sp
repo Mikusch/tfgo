@@ -22,6 +22,11 @@ void SDKHook_HookTriggerCaptureArea(int entity)
 	SDKHook(entity, SDKHook_EndTouch, SDKHook_TriggerCaptureArea_EndTouch);
 }
 
+void SDKHook_HookTriggerHurt(int entity)
+{
+	SDKHook(entity, SDKHook_Touch, SDKHook_TriggerHurt_Touch);
+}
+
 void SDKHook_HookTeamControlPointMaster(int entity)
 {
 	SDKHook(entity, SDKHook_Spawn, SDKHook_TeamControlPointMaster_Spawn);
@@ -158,6 +163,31 @@ Action SDKHook_TriggerCaptureArea_EndTouch(int entity, int other)
 		
 		// No one else on the point has a defuse kit, reset the cap time
 		TF2_SetAreaTimeToCap(entity, BOMB_DEFUSE_TIME);
+	}
+}
+
+Action SDKHook_TriggerHurt_Touch(int trigger, int other)
+{
+	// Reset the bomb if it lands in a lethal trigger_hurt
+	if (GetEntPropFloat(trigger, Prop_Data, "m_flDamage") >= 300.0)
+	{
+		char classname[256];
+		if (GetEntityClassname(other, classname, sizeof(classname) && StrEqual(classname, "item_teamflag")))
+		{
+			char targetname[256];
+			if (GetEntPropString(other, Prop_Data, "m_iName", targetname, sizeof(targetname)) > 0 && StrEqual(targetname, BOMB_TARGETNAME))
+			{
+				AcceptEntityInput(trigger, "ForceReset", other, trigger);
+				
+				for (int client = 0; client <= MaxClients; client++)
+				{
+					if (GetClientTeam(client) != GetEntProp(other, Prop_Data, "m_iTeamNum"))
+					{
+						EmitGameSoundToClient(client, GAMESOUND_BOMB_ENEMYRETURNED);
+					}
+				}
+			}
+		}
 	}
 }
 

@@ -26,11 +26,14 @@
 #define PARTICLE_BOMB_EXPLOSION	"mvm_hatch_destroy"
 
 #define SOUND_BOMB_BEEPING					")misc/rd_finale_beep01.wav"
+#define GAMESOUND_BOMB_ENEMYRETURNED		"MVM.AttackDefend.EnemyReturned"
 #define GAMESOUND_BOMB_EXPLOSION			"MVM.BombExplodes"
 #define GAMESOUND_BOMB_WARNING				"MVM.BombWarning"
 #define GAMESOUND_PLAYER_PURCHASE			"MVM.PlayerUpgraded"
 #define GAMESOUND_ANNOUNCER_BOMB_PLANTED	"Announcer.SecurityAlert"
 #define GAMESOUND_ANNOUNCER_TEAM_SCRAMBLE	"Announcer.AM_TeamScrambleRandom"
+
+#define BOMB_TARGETNAME	"tfgo_bomb"
 
 #define BOMB_PLANT_TIME		3.0
 #define BOMB_DEFUSE_TIME	10.0
@@ -351,6 +354,7 @@ public void OnMapStart()
 	MusicKit_Precache();
 	PrecacheParticleSystem(PARTICLE_BOMB_EXPLOSION);
 	PrecacheSound(SOUND_BOMB_BEEPING);
+	PrecacheScriptSound(GAMESOUND_BOMB_ENEMYRETURNED);
 	PrecacheScriptSound(GAMESOUND_BOMB_EXPLOSION);
 	PrecacheScriptSound(GAMESOUND_BOMB_WARNING);
 	PrecacheScriptSound(GAMESOUND_PLAYER_PURCHASE);
@@ -455,6 +459,8 @@ public void OnEntityCreated(int entity, const char[] classname)
 		SDKHook_HookTFLogicArena(entity);
 	else if (StrEqual(classname, "trigger_capture_area"))
 		SDKHook_HookTriggerCaptureArea(entity);
+	else if (StrEqual(classname, "trigger_hurt"))
+		SDKHook_HookTriggerHurt(entity);
 	else if (StrEqual(classname, "team_control_point_master"))
 		SDKHook_HookTeamControlPointMaster(entity);
 	else if (StrEqual(classname, "tf_gamerules"))

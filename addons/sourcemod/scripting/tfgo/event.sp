@@ -44,7 +44,8 @@ Action Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 	int bomb = CreateEntityByName("item_teamflag");
 	if (IsValidEntity(bomb))
 	{
-		DispatchKeyValue(bomb, "ReturnTime", "-1");
+		DispatchKeyValue(bomb, "targetname", BOMB_TARGETNAME);
+		DispatchKeyValue(bomb, "ReturnTime", "0");
 		DispatchKeyValue(bomb, "flag_model", "models/props_td/atom_bomb.mdl");
 		DispatchKeyValue(bomb, "GameType", "2");
 		
