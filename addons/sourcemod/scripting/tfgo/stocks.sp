@@ -8,6 +8,12 @@ stock bool CanDefuse(int client)
 	return g_IsBombPlanted && TF2_GetClientTeam(client) != g_BombPlantingTeam;
 }
 
+stock bool IsBomb(int entity)
+{
+	char targetname[256];
+	return IsValidEntity(entity) && GetEntPropString(entity, Prop_Data, "m_iName", targetname, sizeof(targetname)) > 0 && StrEqual(targetname, BOMB_TARGETNAME);
+}
+
 stock void GetClientName2(int client, char[] name, int maxlen)
 {
 	Forward_GetClientName(client, name, maxlen);

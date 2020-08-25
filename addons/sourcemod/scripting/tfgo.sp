@@ -613,11 +613,23 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	// Don't beep right away, leave time for the planting sound
 	g_BombNextBeep = GetGameTime() + 1.0;
 	
-	// Award capture bonus to cappers
 	for (int i = 0; i < cappers.Length; i++)
 	{
 		int capper = cappers.Get(i);
+		
+		// Award bonus to cappers
 		TFGOPlayer(capper).AddToAccount(tfgo_cash_player_bomb_planted.IntValue, "%t", "Player_Cash_Award_Bomb_Planted", tfgo_cash_player_bomb_planted.IntValue);
+		
+		// If no bomb was dropped yet, look for the first capper with a bomb
+		if (!IsValidEntity(g_BombRef))
+		{
+			int item = GetEntPropEnt(capper, Prop_Send, "m_hItem");
+			if (IsBomb(item))
+			{
+				AcceptEntityInput(item, "ForceDrop");
+				g_BombRef = EntIndexToEntRef(item);
+			}
+		}
 	}
 	
 	// Cancel arena timer
@@ -625,14 +637,15 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	while ((timer = FindEntityByClassname(timer, "team_round_timer")) > -1)
 		RemoveEntity(timer);
 	
-	char targetname[256];
+	char bombSiteTargetname[256];
+	
 	int cp = MaxClients + 1;
 	while ((cp = FindEntityByClassname(cp, "team_control_point")) > -1)
 	{
 		if (GetEntProp(cp, Prop_Data, "m_iPointIndex") == cpIndex)
 		{
 			// Remember bomb site targetname
-			GetEntPropString(cp, Prop_Data, "m_iName", targetname, sizeof(targetname));
+			GetEntPropString(cp, Prop_Data, "m_iName", bombSiteTargetname, sizeof(bombSiteTargetname));
 			
 			// Remember the active bomb site
 			g_BombSiteRef = EntIndexToEntRef(cp);
@@ -649,16 +662,20 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	while ((area = FindEntityByClassname(area, "trigger_capture_area")) > -1)
 	{
 		char capPointName[256];
-		if (GetEntPropString(area, Prop_Data, "m_iszCapPointName", capPointName, sizeof(capPointName)) > 0 && StrEqual(capPointName, targetname))
+		if (GetEntPropString(area, Prop_Data, "m_iszCapPointName", capPointName, sizeof(capPointName)) > 0 && StrEqual(capPointName, bombSiteTargetname))
 		{
-			DispatchKeyValue(area, "team_numcap_2", "1");
-			DispatchKeyValue(area, "team_numcap_3", "1");
 			TF2_SetAreaTimeToCap(area, BOMB_DEFUSE_TIME);
 			break;
 		}
 	}
 	
-	// TODO: Make the first capper drop the tfgo_bomb and set g_BombRef to that
+	// Remove every other bomb still in the map
+	int teamflag = MaxClients + 1;
+	while ((teamflag = FindEntityByClassname(area, "item_teamflag")) > -1)
+	{
+		if (teamflag != EntRefToEntIndex(g_BombRef) && IsBomb(teamflag))
+			RemoveEntity(teamflag);
+	}
 	
 	g_TenSecondBombTimer = CreateTimer(tfgo_bombtimer.FloatValue - 10.0, Timer_OnBombTenSecCount, _, TIMER_FLAG_NO_MAPCHANGE);
 	g_BombDetonationTimer = CreateTimer(tfgo_bombtimer.FloatValue, Timer_OnBombTimerExpire, _, TIMER_FLAG_NO_MAPCHANGE);

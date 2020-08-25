@@ -18,6 +18,7 @@ void SDKHook_HookTFLogicArena(int entity)
 void SDKHook_HookTriggerCaptureArea(int entity)
 {
 	SDKHook(entity, SDKHook_Spawn, SDKHook_TriggerCaptureArea_Spawn);
+	SDKHook(entity, SDKHook_Touch, SDKHook_TriggerCaptureArea_Touch);
 	SDKHook(entity, SDKHook_StartTouch, SDKHook_TriggerCaptureArea_StartTouch);
 	SDKHook(entity, SDKHook_EndTouch, SDKHook_TriggerCaptureArea_EndTouch);
 }
@@ -144,6 +145,17 @@ Action SDKHook_TriggerCaptureArea_Spawn(int entity)
 	DispatchKeyValueFloat(entity, "area_time_to_cap", BOMB_PLANT_TIME);
 	DispatchKeyValue(entity, "team_cancap_2", "1");
 	DispatchKeyValue(entity, "team_cancap_3", "1");
+	DispatchKeyValue(entity, "team_numcap_2", "1");
+	DispatchKeyValue(entity, "team_numcap_3", "1");
+}
+
+Action SDKHook_TriggerCaptureArea_Touch(int entity, int other)
+{
+	// Attackers need to carry a bomb to plant
+	if (!g_IsBombPlanted && IsValidClient(other) && TFGOTeam(TF2_GetClientTeam(other)).IsAttacking)
+		return IsBomb(GetEntPropEnt(other, Prop_Send, "m_hItem")) ? Plugin_Continue : Plugin_Handled;
+	
+	return Plugin_Continue;
 }
 
 Action SDKHook_TriggerCaptureArea_StartTouch(int entity, int other)
