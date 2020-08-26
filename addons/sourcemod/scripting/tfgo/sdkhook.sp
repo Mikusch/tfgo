@@ -175,7 +175,7 @@ Action SDKHook_TriggerCaptureArea_EndTouch(int entity, int other)
 
 Action SDKHook_TeamControlPoint_Spawn(int entity)
 {
-	SetEntProp(entity, Prop_Data, "m_spawnflags", GetEntProp(entity, Prop_Data, "m_spawnflags") | 1 << 0);
+	SetEntProp(entity, Prop_Data, "m_spawnflags", GetEntProp(entity, Prop_Data, "m_spawnflags") | SF_CAP_POINT_HIDEFLAG);
 }
 
 Action SDKHook_TeamControlPointMaster_Spawn(int entity)
