@@ -103,6 +103,12 @@
 				"linux"		"@_ZN24CTeamplayRoundBasedRules11State_EnterE22gamerules_roundstate_t"
 				"windows"	"\x55\x8B\xEC\x56\x8B\xF1\x8D\x4D\x08\x57"
 			}
+			"CCaptureFlag::FlagTouch"
+			{
+				"library"	"shared"
+				"linux"		"@_ZN12CCaptureFlag9FlagTouchEP11CBaseEntity"
+				"windows"	""	//TODO
+			}
 		}
 		"Functions"
 		{
@@ -244,6 +250,19 @@
 		}
 		"Addresses"
 		{
+			"Patch_FlagTouch"
+			{
+				"linux"
+				{
+					"signature"	"CCaptureFlag::FlagTouch"
+					"offset"	"486"	// 0x1E6
+				}
+				"windows"
+				{
+					"signature"	"CCaptureFlag::FlagTouch"
+					"offset"	""	//TODO
+				}
+			}
 			"Patch_PickupWeaponFromOther"
 			{
 				"linux"
@@ -260,6 +279,11 @@
 		}
 		"Keys"
 		{
+			"Patch_FlagTouch"
+			{
+				"linux"		"\x90\x90\x90\x90\x90\x90\x90\x90"
+				"windows"	"\xEB"
+			}
 			"Patch_PickupWeaponFromOther"
 			{
 				"linux"		"\x90\x90\x90\x90\x90\x90\x90\x90"

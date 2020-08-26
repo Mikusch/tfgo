@@ -189,6 +189,7 @@ Handle g_BombExplosionTimer;
 Handle g_CashEarnedHudSync;
 Handle g_AccountHudSync;
 Handle g_ArmorHudSync;
+MemoryPatch g_FlagTouchPatch;
 MemoryPatch g_PickupWeaponPatch;
 TFGOWeaponList g_AvailableWeapons;
 
@@ -286,14 +287,23 @@ public void OnPluginStart()
 	MusicKit_Init();
 	
 	GameData gamedata = new GameData("tfgo");
+	
 	DHook_Init(gamedata);
 	SDKCall_Init(gamedata);
 	MemoryPatch.SetGameData(gamedata);
+	
 	g_PickupWeaponPatch = new MemoryPatch("Patch_PickupWeaponFromOther");
 	if (g_PickupWeaponPatch != null)
 		g_PickupWeaponPatch.Enable();
 	else
 		LogMessage("Failed to create patch: Patch_PickupWeaponFromOther");
+	
+	g_FlagTouchPatch = new MemoryPatch("Patch_FlagTouch");
+	if (g_FlagTouchPatch != null)
+		g_FlagTouchPatch.Enable();
+	else
+		LogMessage("Failed to create patch: Patch_FlagTouch");
+	
 	delete gamedata;
 	
 	HookEntityOutput("team_round_timer", "On10SecRemain", EntOutput_On10SecRemain);
