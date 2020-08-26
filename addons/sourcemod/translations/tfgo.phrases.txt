@@ -189,6 +189,10 @@
 		"#format"	"{1:d}"
 		"en"		"The bomb has been planted.\n{1} seconds to detonation."
 	}
+	"Bomb_YoursReturned"
+	{
+		"en"	"Your bomb has been set back to the start!"
+	}
 	
 	// Misc. Info Text
 	"Already_Have_Kevlar"

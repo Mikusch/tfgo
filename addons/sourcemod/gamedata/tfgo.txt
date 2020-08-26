@@ -105,7 +105,7 @@
 			}
 			"CCaptureFlag::FlagTouch"
 			{
-				"library"	"shared"
+				"library"	"server"
 				"linux"		"@_ZN12CCaptureFlag9FlagTouchEP11CBaseEntity"
 				"windows"	""	//TODO
 			}

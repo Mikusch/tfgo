@@ -21,6 +21,8 @@
 #define CAPHUD_PARITY_BITS	6
 #define CAPHUD_PARITY_MASK	((1 << CAPHUD_PARITY_BITS) - 1)
 
+#define SF_HIDEONHUD	1 << 0
+
 #define ATTRIB_MAX_HEALTH_ADDITIVE_BONUS	26
 
 #define PARTICLE_BOMB_EXPLOSION	"mvm_hatch_destroy"
@@ -625,8 +627,16 @@ void EntOutput_OnBombDrop(const char[] output, int caller, int activator, float 
 			
 			for (int client = 1; client <= MaxClients; client++)
 			{
-				if (GetClientTeam(client) != GetEntProp(caller, Prop_Data, "m_iTeamNum"))
+				if (IsClientInGame(client) && GetClientTeam(client) == GetEntProp(caller, Prop_Data, "m_iTeamNum"))
+				{
+					char message[256];
+					Format(message, sizeof(message), "%t", "Bomb_YoursReturned", client);
+					TF2_ShowAnnotationToClient(client, caller, message, _, "mvm/mvm_warning.wav");
+				}
+				else
+				{
 					EmitGameSoundToClient(client, GAMESOUND_BOMB_ENEMYRETURNED);
+				}
 			}
 			
 			break;
