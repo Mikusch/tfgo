@@ -7,6 +7,7 @@ static Handle SDKCallInitDroppedWeapon;
 static Handle SDKCallSetSwitchTeams;
 static Handle SDKCallSetScrambleTeams;
 static Handle SDKCallGetDefaultItemChargeMeterValue;
+static Handle SDKCallPickUp;
 static Handle SDKCallEquipWearable;
 
 void SDKCall_Init(GameData gamedata)
@@ -20,6 +21,7 @@ void SDKCall_Init(GameData gamedata)
 	SDKCallSetSwitchTeams = PrepSDKCall_SetSwitchTeams(gamedata);
 	SDKCallSetScrambleTeams = PrepSDKCall_SetScrambleTeams(gamedata);
 	SDKCallGetDefaultItemChargeMeterValue = PrepSDKCall_GetDefaultItemChargeMeterValue(gamedata);
+	SDKCallPickUp = PrepSDKCall_PickUp(gamedata);
 	SDKCallEquipWearable = PrepSDKCall_EquipWearable(gamedata);
 }
 
@@ -110,6 +112,20 @@ static Handle PrepSDKCall_GetDefaultItemChargeMeterValue(GameData gamedata)
 	return call;
 }
 
+static Handle PrepSDKCall_PickUp(GameData gamedata)
+{
+	StartPrepSDKCall(SDKCall_Entity);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "CCaptureFlag::PickUp");
+	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
+	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
+	
+	Handle call = EndPrepSDKCall();
+	if (!call)
+		LogError("Failed to create SDKCall: CCaptureFlag::PickUp");
+	
+	return call;
+}
+
 static Handle PrepSDKCall_EquipWearable(GameData gamedata)
 {
 	StartPrepSDKCall(SDKCall_Player);
@@ -182,6 +198,11 @@ stock void SDKCall_SetScrambleTeams(bool shouldScramble)
 stock float SDKCall_GetDefaultItemChargeMeterValue(int weapon)
 {
 	return SDKCall(SDKCallGetDefaultItemChargeMeterValue, weapon);
+}
+
+stock void SDKCall_PickUp(int teamflag, int client)
+{
+	SDKCall(SDKCallPickUp, teamflag, client, true);
 }
 
 stock void SDKCall_EquipWearable(int client, int wearable)

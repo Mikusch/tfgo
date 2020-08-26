@@ -214,9 +214,9 @@ public MRESReturn DHook_HandleSwitchTeams()
 		TFGOPlayer(client).Reset();
 	}
 	
-	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
+	for (TFTeam team = TFTeam_Red; team <= TFTeam_Blue; team++)
 	{
-		TFGOTeam(view_as<TFTeam>(team)).ConsecutiveLosses = STARTING_CONSECUTIVE_LOSSES;
+		TFGOTeam(team).ConsecutiveLosses = STARTING_CONSECUTIVE_LOSSES;
 	}
 }
 

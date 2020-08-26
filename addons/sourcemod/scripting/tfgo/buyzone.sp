@@ -22,7 +22,7 @@ void CalculateDynamicBuyZones()
 {
 	ClearDynamicBuyZones();
 	
-	for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
+	for (TFTeam team = TFTeam_Red; team <= TFTeam_Blue; team++)
 	{
 		ArrayList teamspawns = new ArrayList(view_as<int>(TFTeam_Blue));
 		
@@ -30,8 +30,8 @@ void CalculateDynamicBuyZones()
 		int teamspawn = MaxClients + 1;
 		while ((teamspawn = FindEntityByClassname(teamspawn, "info_player_teamspawn")) > -1)
 		{
-			int initialTeamNum = GetEntProp(teamspawn, Prop_Data, "m_iInitialTeamNum");
-			if (team == initialTeamNum)
+			TFTeam initialTeam = view_as<TFTeam>(GetEntProp(teamspawn, Prop_Data, "m_iInitialTeamNum"));
+			if (team == initialTeam)
 			{
 				float origin[3];
 				GetEntPropVector(teamspawn, Prop_Send, "m_vecOrigin", origin);

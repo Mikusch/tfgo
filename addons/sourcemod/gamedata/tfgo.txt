@@ -49,6 +49,11 @@
 				"linux"		"241"
 				"windows"	"239"
 			}
+			"CCaptureFlag::PickUp"
+			{
+				"linux"		"262"
+				"windows"	"224"
+			}
 			"CBasePlayer::EquipWearable"
 			{
 				"linux"		"431"
