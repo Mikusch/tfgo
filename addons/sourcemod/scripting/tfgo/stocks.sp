@@ -9,6 +9,14 @@ stock bool IsBomb(int entity)
 	return IsValidEntity(entity) && GetEntPropString(entity, Prop_Data, "m_iName", targetname, sizeof(targetname)) > 0 && StrEqual(targetname, BOMB_TARGETNAME);
 }
 
+stock bool PointIsWithin(int entity, const float pos[3])
+{
+	Handle trace = TR_ClipRayToEntityEx(pos, pos, MASK_ALL, RayType_EndPoint, entity);
+	bool didHit = TR_DidHit(trace);
+	delete trace;
+	return didHit;
+}
+
 stock void GetClientName2(int client, char[] name, int maxlen)
 {
 	Forward_GetClientName(client, name, maxlen);

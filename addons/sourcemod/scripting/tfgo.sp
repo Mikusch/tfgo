@@ -469,8 +469,6 @@ public void OnEntityCreated(int entity, const char[] classname)
 		SDKHook_HookTFLogicArena(entity);
 	else if (StrEqual(classname, "trigger_capture_area"))
 		SDKHook_HookTriggerCaptureArea(entity);
-	else if (StrEqual(classname, "trigger_hurt"))
-		SDKHook_HookTriggerHurt(entity);
 	else if (StrEqual(classname, "team_control_point"))
 		SDKHook_HookTeamControlPoint(entity);
 	else if (StrEqual(classname, "team_control_point_master"))
@@ -610,6 +608,30 @@ void EntOutput_OnBombDrop(const char[] output, int caller, int activator, float 
 {
 	// Prevent the bomb from resetting instantly
 	SetEntPropFloat(caller, Prop_Send, "m_flResetTime", 0.0);
+	
+	// Reset the bomb if it comes in contact with a lethal trigger_hurt
+	int trigger = MaxClients + 1;
+	while ((trigger = FindEntityByClassname(trigger, "trigger_hurt")) > -1)
+	{
+		if (GetEntProp(trigger, Prop_Data, "m_bDisabled") || GetEntPropFloat(trigger, Prop_Data, "m_flDamage") < 300.0)
+			continue;
+		
+		float origin[3];
+		GetEntPropVector(caller, Prop_Data, "m_vecAbsOrigin", origin);
+		
+		if (PointIsWithin(trigger, origin))
+		{
+			AcceptEntityInput(caller, "ForceReset", trigger);
+			
+			for (int client = 1; client <= MaxClients; client++)
+			{
+				if (GetClientTeam(client) != GetEntProp(caller, Prop_Data, "m_iTeamNum"))
+					EmitGameSoundToClient(client, GAMESOUND_BOMB_ENEMYRETURNED);
+			}
+			
+			break;
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------
