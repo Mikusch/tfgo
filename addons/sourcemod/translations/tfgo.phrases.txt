@@ -326,13 +326,6 @@
 		"en"	"Playing your MVP Anthem for everyone."
 	}
 	
-	// HUD Text
-	"HUD_Armor"
-	{
-		"#format"	"{1:d}"
-		"en"		"Kevlar: {1}"
-	}
-	
 	"TF_TeamsScrambled"
 	{
 		"en"	"Teams have been scrambled."
