@@ -546,7 +546,7 @@ Action Timer_DistributeBombs(Handle timer)
 			if (IsValidEntity(bomb))
 			{
 				DispatchKeyValue(bomb, "targetname", BOMB_TARGETNAME);
-				DispatchKeyValue(bomb, "ReturnTime", "30");
+				DispatchKeyValue(bomb, "ReturnTime", "0");
 				DispatchKeyValue(bomb, "flag_model", "models/props_td/atom_bomb.mdl");
 				DispatchKeyValue(bomb, "trail_effect", "3");
 				DispatchKeyValue(bomb, "GameType", "2");
