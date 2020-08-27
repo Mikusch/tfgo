@@ -282,6 +282,9 @@ Action Event_TeamplayRoundStart(Event event, const char[] name, bool dontBroadca
 	g_BombDetonationTimer = null;
 	g_BombExplosionTimer = null;
 	
+	// Shows the bomb in HUD
+	GameRules_SetProp("m_bPlayingHybrid_CTF_CP", true);
+	
 	// Create a bomb for each attacking team
 	for (TFTeam team = TFTeam_Red; team <= TFTeam_Blue; team++)
 	{

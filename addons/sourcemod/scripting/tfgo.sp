@@ -758,6 +758,9 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	Format(message, sizeof(message), "%T", "Bomb_Planted", LANG_SERVER, tfgo_bombtimer.IntValue);
 	TF2_ShowGameMessage(message, "ico_notify_sixty_seconds");
 	
+	// Hides the bomb in HUD
+	GameRules_SetProp("m_bPlayingHybrid_CTF_CP", false);
+	
 	Forward_OnBombPlanted(team, cappers);
 	delete cappers;
 }
