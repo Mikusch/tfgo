@@ -808,7 +808,7 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	// Show text on screen
 	char message[PLATFORM_MAX_PATH];
 	Format(message, sizeof(message), "%T", "Bomb_Planted", LANG_SERVER, tfgo_bombtimer.IntValue);
-	TF2_ShowGameMessage(message, "ico_notify_sixty_seconds");
+	TF2_ShowGameMessage(message, "ico_notify_sixty_seconds", .teamColor = view_as<int>(team));
 	
 	// Hides the bomb in HUD
 	GameRules_SetProp("m_bPlayingHybrid_CTF_CP", false);
