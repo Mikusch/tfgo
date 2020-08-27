@@ -52,7 +52,7 @@ Action SDKHook_Client_PreThink(int client)
 	if (player.ArmorValue > 0)
 	{
 		SetHudTextParams(-1.0, 0.95, 0.1, 255, 255, 255, 255, _, 0.0, 0.0, 0.0);
-		ShowSyncHudText(client, g_ArmorHudSync, "%s %d", player.HasHelmet ? "⛨" : "🔧", player.ArmorValue);
+		ShowSyncHudText(client, g_ArmorHudSync, "%s %d", player.HasHelmet ? "⛨" : "⛉", player.ArmorValue);
 	}
 	
 	if (!g_MapHasRespawnRoom && g_IsBuyTimeActive)
