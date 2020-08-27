@@ -79,12 +79,6 @@
 				"linux"		"@_ZN9CTFPlayer14GetLoadoutItemEiib"
 				"windows"	"\x55\x8B\xEC\x51\x53\x56\x8B\xF1\x8B\x0D\x2A\x2A\x2A\x2A\x57\x89\x75\xFC"
 			}
-			"CTFPlayer::PickupWeaponFromOther"
-			{
-				"library"	"server"
-				"linux"		"@_ZN9CTFPlayer21PickupWeaponFromOtherEP16CTFDroppedWeapon"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x2A\x56\x8B\x75\x08\x57\x8B\xF9\x81\xC6\x2A\x2A\x2A\x2A\x75\x2A\x5F\x32\xC0\x5E"
-			}
 			"CTFDroppedWeapon::Create"
 			{
 				"library"	"server"
@@ -103,11 +97,23 @@
 				"linux"		"@_ZN24CTeamplayRoundBasedRules11State_EnterE22gamerules_roundstate_t"
 				"windows"	"\x55\x8B\xEC\x56\x8B\xF1\x8D\x4D\x08\x57"
 			}
+			"CTFPlayer::PickupWeaponFromOther"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer21PickupWeaponFromOtherEP16CTFDroppedWeapon"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x2A\x56\x8B\x75\x08\x57\x8B\xF9\x81\xC6\x2A\x2A\x2A\x2A\x75\x2A\x5F\x32\xC0\x5E"
+			}
+			"CFuncRespawnRoom::RespawnRoomTouch"
+			{
+				"library"	"server"
+				"linux"		"@_ZN16CFuncRespawnRoom16RespawnRoomTouchEP11CBaseEntity"
+				"windows"	""	// TODO
+			}
 			"CCaptureFlag::FlagTouch"
 			{
 				"library"	"server"
 				"linux"		"@_ZN12CCaptureFlag9FlagTouchEP11CBaseEntity"
-				"windows"	""	//TODO
+				"windows"	""	// TODO
 			}
 		}
 		"Functions"
@@ -250,19 +256,6 @@
 		}
 		"Addresses"
 		{
-			"Patch_FlagTouch"
-			{
-				"linux"
-				{
-					"signature"	"CCaptureFlag::FlagTouch"
-					"offset"	"486"	// 0x1E6
-				}
-				"windows"
-				{
-					"signature"	"CCaptureFlag::FlagTouch"
-					"offset"	""	//TODO
-				}
-			}
 			"Patch_PickupWeaponFromOther"
 			{
 				"linux"
@@ -276,18 +269,49 @@
 					"offset" 	"282" // 0x11A
 				}
 			}
+			"Patch_RespawnRoomTouch"
+			{
+				"linux"
+				{
+					"signature"	"CFuncRespawnRoom::RespawnRoomTouch"
+					"offset"	"145"	// 0x91
+				}
+				"windows"
+				{
+					"signature"	"CFuncRespawnRoom::RespawnRoomTouch"
+					"offset"	""	// TODO
+				}
+			}
+			"Patch_FlagTouch"
+			{
+				"linux"
+				{
+					"signature"	"CCaptureFlag::FlagTouch"
+					"offset"	"486"	// 0x1E6
+				}
+				"windows"
+				{
+					"signature"	"CCaptureFlag::FlagTouch"
+					"offset"	""	// TODO
+				}
+			}
 		}
 		"Keys"
 		{
-			"Patch_FlagTouch"
-			{
-				"linux"		"\x90\x90\x90\x90\x90\x90\x90\x90"
-				"windows"	"\xEB"
-			}
 			"Patch_PickupWeaponFromOther"
 			{
 				"linux"		"\x90\x90\x90\x90\x90\x90\x90\x90"
 				"windows"	"\xEB"
+			}
+			"Patch_RespawnRoomTouch"
+			{
+				"linux"		"\x90\x90\x90\x90"
+				"windows"	""	// TODO
+			}
+			"Patch_FlagTouch"
+			{
+				"linux"		"\x90\x90\x90\x90\x90\x90\x90\x90"
+				"windows"	""	// TODO
 			}
 		} 
 	}

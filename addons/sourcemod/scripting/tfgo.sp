@@ -191,8 +191,9 @@ Handle g_BombExplosionTimer;
 Handle g_CashEarnedHudSync;
 Handle g_AccountHudSync;
 Handle g_ArmorHudSync;
-MemoryPatch g_FlagTouchPatch;
 MemoryPatch g_PickupWeaponPatch;
+MemoryPatch g_RespawnRoomTouchPatch;
+MemoryPatch g_FlagTouchPatch;
 TFGOWeaponList g_AvailableWeapons;
 
 // Map
@@ -300,6 +301,12 @@ public void OnPluginStart()
 	else
 		LogMessage("Failed to create patch: Patch_PickupWeaponFromOther");
 	
+	g_RespawnRoomTouchPatch = new MemoryPatch("Patch_RespawnRoomTouch");
+	if (g_RespawnRoomTouchPatch != null)
+		g_RespawnRoomTouchPatch.Enable();
+	else
+		LogMessage("Failed to create patch: Patch_RespawnRoomTouch");
+	
 	g_FlagTouchPatch = new MemoryPatch("Patch_FlagTouch");
 	if (g_FlagTouchPatch != null)
 		g_FlagTouchPatch.Enable();
@@ -341,6 +348,12 @@ public void OnPluginEnd()
 	
 	if (g_PickupWeaponPatch != null)
 		g_PickupWeaponPatch.Disable();
+	
+	if (g_RespawnRoomTouchPatch != null)
+		g_RespawnRoomTouchPatch.Disable();
+	
+	if (g_FlagTouchPatch != null)
+		g_FlagTouchPatch.Disable();
 	
 	//Restore arena if needed
 	if (g_ArenaGameType)
