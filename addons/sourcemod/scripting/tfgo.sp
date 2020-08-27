@@ -520,6 +520,58 @@ public Action TF2_OnGiveNamedItem(int client, char[] classname, int defindex)
 // Timer Callbacks
 //-----------------------------------------------------------------------------
 
+Action Timer_DistributeBombs(Handle timer)
+{
+	for (TFTeam team = TFTeam_Red; team <= TFTeam_Blue; team++)
+	{
+		if (!TFGOTeam(team).IsAttacking)
+			continue;
+		
+		int[] clients = new int[MaxClients];
+		int total;
+		
+		for (int client = 1; client <= MaxClients; client++)
+		{
+			if (IsValidClient(client) && IsPlayerAlive(client) && TF2_GetClientTeam(client) == team)
+			{
+				clients[total++] = client;
+			}
+		}
+		
+		if (total)
+		{
+			int client = clients[GetRandomInt(0, total - 1)];
+			
+			int bomb = CreateEntityByName("item_teamflag");
+			if (IsValidEntity(bomb))
+			{
+				DispatchKeyValue(bomb, "targetname", BOMB_TARGETNAME);
+				DispatchKeyValue(bomb, "ReturnTime", "30");
+				DispatchKeyValue(bomb, "flag_model", "models/props_td/atom_bomb.mdl");
+				DispatchKeyValue(bomb, "trail_effect", "3");
+				DispatchKeyValue(bomb, "GameType", "2");
+				
+				float origin[3], angles[3];
+				GetClientAbsOrigin(client, origin);
+				GetClientAbsAngles(client, angles);
+				TeleportEntity(bomb, origin, angles, NULL_VECTOR); // Needs to be done before DispatchSpawn to set its reset point
+				
+				if (DispatchSpawn(bomb))
+				{
+					SetVariantInt(view_as<int>(team));
+					AcceptEntityInput(bomb, "SetTeam");
+					AcceptEntityInput(bomb, "Enable");
+					
+					HookSingleEntityOutput(bomb, "OnDrop", EntOutput_OnBombDrop);
+					SDKHook_HookBomb(bomb);
+					
+					SDKCall_PickUp(bomb, client);
+				}
+			}
+		}
+	}
+}
+
 Action Timer_OnBuyTimeExpire(Handle timer)
 {
 	if (g_BuyTimeTimer != timer) return;
