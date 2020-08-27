@@ -75,13 +75,13 @@ void DisplayMenuInDynamicBuyZone(int client)
 		GetClientAbsOrigin(client, origin);
 		
 		float distance = GetVectorDistance(DynamicBuyZoneCenters[team], origin);
-		if (!IsPlayerInDynamicBuyZone[client] && distance <= DynamicBuyzoneRadii[team]) // Player has entered buy zone
+		if (!IsPlayerInDynamicBuyZone[client] && distance <= DynamicBuyzoneRadii[team])	// Player has entered buy zone
 		{
 			IsPlayerInDynamicBuyZone[client] = true;
 			if (player.ActiveBuyMenu == null)
 				BuyMenu_DisplayMainBuyMenu(client);
 		}
-		else if (IsPlayerInDynamicBuyZone[client] && distance > DynamicBuyzoneRadii[team]) // Player has left buy zone
+		else if (IsPlayerInDynamicBuyZone[client] && distance > DynamicBuyzoneRadii[team])	// Player has left buy zone
 		{
 			IsPlayerInDynamicBuyZone[client] = false;
 			if (player.ActiveBuyMenu != null)

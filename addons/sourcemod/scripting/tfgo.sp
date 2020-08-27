@@ -554,7 +554,7 @@ Action Timer_DistributeBombs(Handle timer)
 				float origin[3], angles[3];
 				GetClientAbsOrigin(client, origin);
 				GetClientAbsAngles(client, angles);
-				TeleportEntity(bomb, origin, angles, NULL_VECTOR); // Needs to be done before DispatchSpawn to set its reset point
+				TeleportEntity(bomb, origin, angles, NULL_VECTOR);	// Needs to be done before DispatchSpawn to set its reset point
 				
 				if (DispatchSpawn(bomb))
 				{
@@ -748,13 +748,28 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	int cp = MaxClients + 1;
 	while ((cp = FindEntityByClassname(cp, "team_control_point")) > -1)
 	{
-		if (GetEntProp(cp, Prop_Data, "m_iPointIndex") == cpIndex)
+		int pointIndex = GetEntProp(cp, Prop_Data, "m_iPointIndex");
+		if (pointIndex == cpIndex)
 		{
-			// Remember bomb site targetname
+			// Remember active bomb site
+			g_BombSiteRef = EntIndexToEntRef(cp);
 			GetEntPropString(cp, Prop_Data, "m_iName", bombSiteTargetname, sizeof(bombSiteTargetname));
 			
-			// Remember the active bomb site
-			g_BombSiteRef = EntIndexToEntRef(cp);
+			// Show active bomb site on HUD
+			int objResource = FindEntityByClassname(MaxClients + 1, "tf_objective_resource");
+			if (objResource != -1)
+			{
+				int size = GetEntPropArraySize(objResource, Prop_Send, "m_bCPIsVisible");
+				for (int i = 0; i < size; i++)
+				{
+					if (pointIndex == i)
+					{
+						SetEntProp(objResource, Prop_Send, "m_bCPIsVisible", true, _, i);
+						SetEntProp(objResource, Prop_Send, "m_bControlPointsReset", true);
+						break;
+					}
+				}
+			}
 		}
 		else
 		{
