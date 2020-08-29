@@ -624,8 +624,8 @@ Action Timer_OnBombExplode(Handle timer)
 		TF2_ForceRoundWin(g_BombPlantingTeam, WINREASON_ALL_POINTS_CAPTURED);
 	
 	float bombOrigin[3], bombAngles[3];
-	GetEntPropVector(g_BombRef, Prop_Send, "m_vecOrigin", bombOrigin);
-	GetEntPropVector(g_BombRef, Prop_Send, "m_angRotation", bombAngles);
+	GetEntPropVector(g_BombRef, Prop_Send, "m_vecAbsOrigin", bombOrigin);
+	GetEntPropVector(g_BombRef, Prop_Send, "m_angAbsRotation", bombAngles);
 	
 	// Deal blast damage to clients in range of the bomb
 	for (int client = 1; client <= MaxClients; client++)
