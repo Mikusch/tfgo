@@ -692,15 +692,18 @@ void EntOutput_OnBombDrop(const char[] output, int caller, int activator, float 
 			
 			for (int client = 1; client <= MaxClients; client++)
 			{
-				if (IsClientInGame(client) && GetClientTeam(client) == GetEntProp(caller, Prop_Data, "m_iTeamNum"))
+				if (IsClientInGame(client))
 				{
-					char message[256];
-					Format(message, sizeof(message), "%t", "Bomb_YoursReturned", client);
-					TF2_ShowAnnotationToClient(client, caller, message, _, "mvm/mvm_warning.wav");
-				}
-				else
-				{
-					EmitGameSoundToClient(client, GAMESOUND_BOMB_ENEMYRETURNED);
+					if (GetClientTeam(client) == GetEntProp(caller, Prop_Data, "m_iTeamNum"))
+					{
+						char message[256];
+						Format(message, sizeof(message), "%t", "Bomb_YoursReturned", client);
+						TF2_ShowAnnotationToClient(client, caller, message, _, "mvm/mvm_warning.wav");
+					}
+					else
+					{
+						EmitGameSoundToClient(client, GAMESOUND_BOMB_ENEMYRETURNED);
+					}
 				}
 			}
 			
