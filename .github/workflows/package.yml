@@ -36,5 +36,5 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@master
         with:
-          name: TFGO-Arena-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
+          name: tfgo-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
           path: ./build/package

@@ -13,7 +13,7 @@
 #pragma newdecls required
 
 
-#define PLUGIN_VERSION			"1.4"
+#define PLUGIN_VERSION			"1.4.0"
 #define PLUGIN_VERSION_REVISION	"manual"
 
 #define TF_MAXPLAYERS	33
