@@ -281,6 +281,11 @@ Action Event_TeamplayRoundStart(Event event, const char[] name, bool dontBroadca
 	g_TenSecondBombTimer = null;
 	g_BombDetonationTimer = null;
 	g_BombExplosionTimer = null;
+	
+	// Shows the bomb in HUD
+	GameRules_SetProp("m_bPlayingHybrid_CTF_CP", true);
+	
+	CreateTimer(0.2, Timer_DistributeBombs);
 }
 
 Action Event_TeamplayPointCaptured(Event event, const char[] name, bool dontBroadcast)

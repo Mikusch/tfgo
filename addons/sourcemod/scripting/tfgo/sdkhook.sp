@@ -22,9 +22,24 @@ void SDKHook_HookTriggerCaptureArea(int entity)
 	SDKHook(entity, SDKHook_EndTouch, SDKHook_TriggerCaptureArea_EndTouch);
 }
 
+void SDKHook_HookTeamControlPoint(int entity)
+{
+	SDKHook(entity, SDKHook_Spawn, SDKHook_TeamControlPoint_Spawn);
+}
+
 void SDKHook_HookTeamControlPointMaster(int entity)
 {
 	SDKHook(entity, SDKHook_Spawn, SDKHook_TeamControlPointMaster_Spawn);
+}
+
+void SDKHook_HookGameRules(int entity)
+{
+	SDKHook(entity, SDKHook_Spawn, SDKHook_GameRules_Spawn);
+}
+
+void SDKHook_HookBomb(int entity)
+{
+	SDKHook(entity, SDKHook_Touch, SDKHook_Bomb_Touch);
 }
 
 Action SDKHook_Client_PreThink(int client)
@@ -36,8 +51,8 @@ Action SDKHook_Client_PreThink(int client)
 	
 	if (player.ArmorValue > 0)
 	{
-		SetHudTextParams(-1.0, 0.85, 0.1, 255, 255, 255, 255, _, 0.0, 0.0, 0.0);
-		ShowSyncHudText(client, g_ArmorHudSync, "%t", "HUD_Armor", player.ArmorValue);
+		SetHudTextParams(-1.0, 0.95, 0.1, 255, 255, 255, 255, _, 0.0, 0.0, 0.0);
+		ShowSyncHudText(client, g_ArmorHudSync, "%s %d", player.HasHelmet ? "⛨" : "⛉", player.ArmorValue);
 	}
 	
 	if (!g_MapHasRespawnRoom && g_IsBuyTimeActive)
@@ -129,11 +144,13 @@ Action SDKHook_TriggerCaptureArea_Spawn(int entity)
 	DispatchKeyValueFloat(entity, "area_time_to_cap", BOMB_PLANT_TIME);
 	DispatchKeyValue(entity, "team_cancap_2", "1");
 	DispatchKeyValue(entity, "team_cancap_3", "1");
+	DispatchKeyValue(entity, "team_numcap_2", "1");
+	DispatchKeyValue(entity, "team_numcap_3", "1");
 }
 
 Action SDKHook_TriggerCaptureArea_StartTouch(int entity, int other)
 {
-	if (IsValidClient(other) && CanDefuse(other) && TFGOPlayer(other).HasDefuseKit)
+	if (IsValidClient(other) && TFGOPlayer(other).CanDefuse() && TFGOPlayer(other).HasDefuseKit)
 	{
 		// Player with a defuse kit has entered the point, reduce cap time
 		TF2_SetAreaTimeToCap(entity, BOMB_DEFUSE_TIME / 2);
@@ -142,12 +159,12 @@ Action SDKHook_TriggerCaptureArea_StartTouch(int entity, int other)
 
 Action SDKHook_TriggerCaptureArea_EndTouch(int entity, int other)
 {
-	if (IsValidClient(other) && CanDefuse(other) && TFGOPlayer(other).HasDefuseKit)
+	if (IsValidClient(other) && TFGOPlayer(other).CanDefuse() && TFGOPlayer(other).HasDefuseKit)
 	{
 		// Player with a defuse kit has left the point, we need to check if anyone else still on the point has one
 		for (int client = 1; client <= MaxClients; client++)
 		{
-			if (IsClientInGame(client) && client != other && CanDefuse(client) && TFGOPlayer(client).HasDefuseKit)
+			if (IsClientInGame(client) && client != other && TFGOPlayer(client).CanDefuse() && TFGOPlayer(client).HasDefuseKit)
 				return;
 		}
 		
@@ -156,7 +173,23 @@ Action SDKHook_TriggerCaptureArea_EndTouch(int entity, int other)
 	}
 }
 
+Action SDKHook_TeamControlPoint_Spawn(int entity)
+{
+	SetEntProp(entity, Prop_Data, "m_spawnflags", GetEntProp(entity, Prop_Data, "m_spawnflags") | SF_CAP_POINT_HIDEFLAG);
+}
+
 Action SDKHook_TeamControlPointMaster_Spawn(int entity)
 {
 	DispatchKeyValue(entity, "cpm_restrict_team_cap_win", "1");
+}
+
+Action SDKHook_GameRules_Spawn(int entity)
+{
+	DispatchKeyValue(entity, "ctf_overtime", "0");
+}
+
+Action SDKHook_Bomb_Touch(int entity, int other)
+{
+	// Planted bombs can't be picked up
+	return g_IsBombPlanted ? Plugin_Handled : Plugin_Continue;
 }

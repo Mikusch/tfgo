@@ -54,7 +54,7 @@ bool BuyMenu_DisplayWeaponBuyMenu(int client, ArrayList slots)
 		TFClassType class = TF2_GetPlayerClass(client);
 		int slot = TF2_GetItemSlot(weapon.defindex, class);
 		
-		if (slots.FindValue(slot) != -1 && !weapon.isDefault && weapon.price != 0)
+		if (slots.FindValue(slot) != -1 && weapon.price != 0)
 		{
 			char info[32];
 			IntToString(weapon.defindex, info, sizeof(info));

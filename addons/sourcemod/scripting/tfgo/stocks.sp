@@ -3,9 +3,18 @@ stock bool IsValidClient(int client)
 	return 0 < client <= MaxClients && IsClientInGame(client);
 }
 
-stock bool CanDefuse(int client)
+stock bool IsBomb(int entity)
 {
-	return g_IsBombPlanted && TF2_GetClientTeam(client) != g_BombPlantingTeam;
+	char targetname[256];
+	return IsValidEntity(entity) && GetEntPropString(entity, Prop_Data, "m_iName", targetname, sizeof(targetname)) > 0 && StrEqual(targetname, BOMB_TARGETNAME);
+}
+
+stock bool PointIsWithin(int entity, const float pos[3])
+{
+	Handle trace = TR_ClipRayToEntityEx(pos, pos, MASK_ALL, RayType_EndPoint, entity);
+	bool didHit = TR_DidHit(trace);
+	delete trace;
+	return didHit;
 }
 
 stock void GetClientName2(int client, char[] name, int maxlen)
@@ -98,6 +107,23 @@ stock int GetAlivePlayerCount()
 			count++;
 	}
 	return count;
+}
+
+stock void TF2_ShowAnnotationToClient(int client, int target, const char[] message, float duration = 5.0, const char[] sound = "misc/null.wav")
+{
+	// Create an annotation and show it to a specified array of clients
+	Event event = CreateEvent("show_annotation");
+	event.SetInt("id", target);				// Make its ID match the target, just so it's assigned to something unique
+	event.SetInt("follow_entindex", target);
+	event.SetFloat("lifetime", duration);
+	event.SetString("text", message);
+	event.SetString("play_sound", sound);	// If this is missing, it'll try to play a sound with an empty filepath
+	
+	// No point in showing the annotation to the target
+	if (client != target)
+		event.FireToClient(client);
+	
+	event.Cancel();
 }
 
 stock int TF2_SpawnParticle(char[] name, float origin[3] = NULL_VECTOR, float angles[3] = NULL_VECTOR, bool activate = true, int entity = 0, int controlPoint = 0)

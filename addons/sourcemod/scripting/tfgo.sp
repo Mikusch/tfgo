@@ -13,7 +13,7 @@
 #pragma newdecls required
 
 
-#define PLUGIN_VERSION			"1.3.1"
+#define PLUGIN_VERSION			"1.4"
 #define PLUGIN_VERSION_REVISION	"manual"
 
 #define TF_MAXPLAYERS	33
@@ -21,18 +21,21 @@
 #define CAPHUD_PARITY_BITS	6
 #define CAPHUD_PARITY_MASK	((1 << CAPHUD_PARITY_BITS) - 1)
 
-#define ATTRIB_MAX_HEALTH_ADDITIVE_BONUS	26
+#define SF_CAP_POINT_HIDEFLAG	(1 << 0)
 
-#define MODEL_BOMB	"models/props_td/atom_bomb.mdl"
+#define ATTRIB_MAX_HEALTH_ADDITIVE_BONUS	26
 
 #define PARTICLE_BOMB_EXPLOSION	"mvm_hatch_destroy"
 
 #define SOUND_BOMB_BEEPING					")misc/rd_finale_beep01.wav"
+#define GAMESOUND_BOMB_ENEMYRETURNED		"MVM.AttackDefend.EnemyReturned"
 #define GAMESOUND_BOMB_EXPLOSION			"MVM.BombExplodes"
 #define GAMESOUND_BOMB_WARNING				"MVM.BombWarning"
 #define GAMESOUND_PLAYER_PURCHASE			"MVM.PlayerUpgraded"
 #define GAMESOUND_ANNOUNCER_BOMB_PLANTED	"Announcer.SecurityAlert"
 #define GAMESOUND_ANNOUNCER_TEAM_SCRAMBLE	"Announcer.AM_TeamScrambleRandom"
+
+#define BOMB_TARGETNAME	"tfgo_bomb"
 
 #define BOMB_PLANT_TIME		3.0
 #define BOMB_DEFUSE_TIME	10.0
@@ -189,6 +192,8 @@ Handle g_CashEarnedHudSync;
 Handle g_AccountHudSync;
 Handle g_ArmorHudSync;
 MemoryPatch g_PickupWeaponPatch;
+MemoryPatch g_RespawnRoomTouchPatch;
+MemoryPatch g_FlagTouchPatch;
 TFGOWeaponList g_AvailableWeapons;
 
 // Map
@@ -243,7 +248,6 @@ ConVar tfgo_cash_team_planted_bomb_but_defused;
 #include "tfgo/console.sp"
 #include "tfgo/convar.sp"
 #include "tfgo/dhook.sp"
-#include "tfgo/entoutput.sp"
 #include "tfgo/event.sp"
 #include "tfgo/forward.sp"
 #include "tfgo/musickits.sp"
@@ -282,20 +286,36 @@ public void OnPluginStart()
 	Config_Init();
 	Console_Init();
 	ConVar_Init();
-	EntOutput_Init();
 	Event_Init();
 	MusicKit_Init();
 	
 	GameData gamedata = new GameData("tfgo");
+	
 	DHook_Init(gamedata);
 	SDKCall_Init(gamedata);
 	MemoryPatch.SetGameData(gamedata);
+	
 	g_PickupWeaponPatch = new MemoryPatch("Patch_PickupWeaponFromOther");
 	if (g_PickupWeaponPatch != null)
 		g_PickupWeaponPatch.Enable();
 	else
 		LogMessage("Failed to create patch: Patch_PickupWeaponFromOther");
+	
+	g_RespawnRoomTouchPatch = new MemoryPatch("Patch_RespawnRoomTouch");
+	if (g_RespawnRoomTouchPatch != null)
+		g_RespawnRoomTouchPatch.Enable();
+	else
+		LogMessage("Failed to create patch: Patch_RespawnRoomTouch");
+	
+	g_FlagTouchPatch = new MemoryPatch("Patch_FlagTouch");
+	if (g_FlagTouchPatch != null)
+		g_FlagTouchPatch.Enable();
+	else
+		LogMessage("Failed to create patch: Patch_FlagTouch");
+	
 	delete gamedata;
+	
+	HookEntityOutput("team_round_timer", "On10SecRemain", EntOutput_On10SecRemain);
 	
 	g_CashEarnedHudSync = CreateHudSynchronizer();
 	g_AccountHudSync = CreateHudSynchronizer();
@@ -329,6 +349,12 @@ public void OnPluginEnd()
 	if (g_PickupWeaponPatch != null)
 		g_PickupWeaponPatch.Disable();
 	
+	if (g_RespawnRoomTouchPatch != null)
+		g_RespawnRoomTouchPatch.Disable();
+	
+	if (g_FlagTouchPatch != null)
+		g_FlagTouchPatch.Disable();
+	
 	//Restore arena if needed
 	if (g_ArenaGameType)
 		GameRules_SetProp("m_nGameType", TF_GAMETYPE_ARENA);
@@ -351,9 +377,9 @@ public void OnMapStart()
 	
 	// Precache
 	MusicKit_Precache();
-	PrecacheModel(MODEL_BOMB);
 	PrecacheParticleSystem(PARTICLE_BOMB_EXPLOSION);
 	PrecacheSound(SOUND_BOMB_BEEPING);
+	PrecacheScriptSound(GAMESOUND_BOMB_ENEMYRETURNED);
 	PrecacheScriptSound(GAMESOUND_BOMB_EXPLOSION);
 	PrecacheScriptSound(GAMESOUND_BOMB_WARNING);
 	PrecacheScriptSound(GAMESOUND_PLAYER_PURCHASE);
@@ -458,8 +484,12 @@ public void OnEntityCreated(int entity, const char[] classname)
 		SDKHook_HookTFLogicArena(entity);
 	else if (StrEqual(classname, "trigger_capture_area"))
 		SDKHook_HookTriggerCaptureArea(entity);
+	else if (StrEqual(classname, "team_control_point"))
+		SDKHook_HookTeamControlPoint(entity);
 	else if (StrEqual(classname, "team_control_point_master"))
 		SDKHook_HookTeamControlPointMaster(entity);
+	else if (StrEqual(classname, "tf_gamerules"))
+		SDKHook_HookGameRules(entity);
 }
 
 public void TF2_OnWaitingForPlayersStart()
@@ -489,6 +519,58 @@ public Action TF2_OnGiveNamedItem(int client, char[] classname, int defindex)
 //-----------------------------------------------------------------------------
 // Timer Callbacks
 //-----------------------------------------------------------------------------
+
+Action Timer_DistributeBombs(Handle timer)
+{
+	for (TFTeam team = TFTeam_Red; team <= TFTeam_Blue; team++)
+	{
+		if (!TFGOTeam(team).IsAttacking)
+			continue;
+		
+		int[] clients = new int[MaxClients];
+		int total;
+		
+		for (int client = 1; client <= MaxClients; client++)
+		{
+			if (IsValidClient(client) && IsPlayerAlive(client) && TF2_GetClientTeam(client) == team)
+			{
+				clients[total++] = client;
+			}
+		}
+		
+		if (total)
+		{
+			int client = clients[GetRandomInt(0, total - 1)];
+			
+			int bomb = CreateEntityByName("item_teamflag");
+			if (IsValidEntity(bomb))
+			{
+				DispatchKeyValue(bomb, "targetname", BOMB_TARGETNAME);
+				DispatchKeyValue(bomb, "ReturnTime", "0");
+				DispatchKeyValue(bomb, "flag_model", "models/props_td/atom_bomb.mdl");
+				DispatchKeyValue(bomb, "trail_effect", "3");
+				DispatchKeyValue(bomb, "GameType", "2");
+				
+				float origin[3], angles[3];
+				GetClientAbsOrigin(client, origin);
+				GetClientAbsAngles(client, angles);
+				TeleportEntity(bomb, origin, angles, NULL_VECTOR);	// Needs to be done before DispatchSpawn to set its reset point
+				
+				if (DispatchSpawn(bomb))
+				{
+					SetVariantInt(view_as<int>(team));
+					AcceptEntityInput(bomb, "SetTeam");
+					AcceptEntityInput(bomb, "Enable");
+					
+					HookSingleEntityOutput(bomb, "OnDrop", EntOutput_OnBombDrop);
+					SDKHook_HookBomb(bomb);
+					
+					SDKCall_PickUp(bomb, client);
+				}
+			}
+		}
+	}
+}
 
 Action Timer_OnBuyTimeExpire(Handle timer)
 {
@@ -580,6 +662,57 @@ Action Timer_OnBombExplode(Handle timer)
 }
 
 //-----------------------------------------------------------------------------
+// Entity Output Callbacks
+//-----------------------------------------------------------------------------
+
+void EntOutput_On10SecRemain(const char[] output, int caller, int activator, float delay)
+{
+	if (GameRules_GetRoundState() == RoundState_Stalemate)
+		MusicKit_PlayAllClientMusicKits(Music_TenSecCount);
+}
+
+void EntOutput_OnBombDrop(const char[] output, int caller, int activator, float delay)
+{
+	// Prevent the bomb from resetting instantly
+	SetEntPropFloat(caller, Prop_Send, "m_flResetTime", 0.0);
+	
+	// Reset the bomb if it comes in contact with a lethal trigger_hurt
+	int trigger = MaxClients + 1;
+	while ((trigger = FindEntityByClassname(trigger, "trigger_hurt")) > -1)
+	{
+		if (GetEntProp(trigger, Prop_Data, "m_bDisabled") || GetEntPropFloat(trigger, Prop_Data, "m_flDamage") < 300.0)
+			continue;
+		
+		float origin[3];
+		GetEntPropVector(caller, Prop_Data, "m_vecAbsOrigin", origin);
+		
+		if (PointIsWithin(trigger, origin))
+		{
+			AcceptEntityInput(caller, "ForceReset", trigger);
+			
+			for (int client = 1; client <= MaxClients; client++)
+			{
+				if (IsClientInGame(client))
+				{
+					if (GetClientTeam(client) == GetEntProp(caller, Prop_Data, "m_iTeamNum"))
+					{
+						char message[256];
+						Format(message, sizeof(message), "%t", "Bomb_YoursReturned", client);
+						TF2_ShowAnnotationToClient(client, caller, message, _, "mvm/mvm_warning.wav");
+					}
+					else
+					{
+						EmitGameSoundToClient(client, GAMESOUND_BOMB_ENEMYRETURNED);
+					}
+				}
+			}
+			
+			break;
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
 // Plugin Functions
 //-----------------------------------------------------------------------------
 
@@ -592,11 +725,20 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	// Don't beep right away, leave time for the planting sound
 	g_BombNextBeep = GetGameTime() + 1.0;
 	
-	// Award capture bonus to cappers
 	for (int i = 0; i < cappers.Length; i++)
 	{
 		int capper = cappers.Get(i);
+		
+		// Award bonus to cappers
 		TFGOPlayer(capper).AddToAccount(tfgo_cash_player_bomb_planted.IntValue, "%t", "Player_Cash_Award_Bomb_Planted", tfgo_cash_player_bomb_planted.IntValue);
+		
+		// If no bomb was dropped yet, look for the first capper with a bomb
+		int item = GetEntPropEnt(capper, Prop_Send, "m_hItem");
+		if (IsBomb(item))
+		{
+			AcceptEntityInput(item, "ForceDrop");
+			g_BombRef = EntIndexToEntRef(item);
+		}
 	}
 	
 	// Cancel arena timer
@@ -604,17 +746,33 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	while ((timer = FindEntityByClassname(timer, "team_round_timer")) > -1)
 		RemoveEntity(timer);
 	
-	char targetname[256];
+	char bombSiteTargetname[256];
+	
 	int cp = MaxClients + 1;
 	while ((cp = FindEntityByClassname(cp, "team_control_point")) > -1)
 	{
-		if (GetEntProp(cp, Prop_Data, "m_iPointIndex") == cpIndex)
+		int pointIndex = GetEntProp(cp, Prop_Data, "m_iPointIndex");
+		if (pointIndex == cpIndex)
 		{
-			// Remember bomb site targetname
-			GetEntPropString(cp, Prop_Data, "m_iName", targetname, sizeof(targetname));
-			
-			// Remember the active bomb site
+			// Remember active bomb site
 			g_BombSiteRef = EntIndexToEntRef(cp);
+			GetEntPropString(cp, Prop_Data, "m_iName", bombSiteTargetname, sizeof(bombSiteTargetname));
+			
+			// Show active bomb site on HUD
+			int objResource = FindEntityByClassname(MaxClients + 1, "tf_objective_resource");
+			if (objResource != -1)
+			{
+				int size = GetEntPropArraySize(objResource, Prop_Send, "m_bCPIsVisible");
+				for (int i = 0; i < size; i++)
+				{
+					if (pointIndex == i)
+					{
+						SetEntProp(objResource, Prop_Send, "m_bCPIsVisible", true, _, i);
+						SetEntProp(objResource, Prop_Send, "m_bControlPointsReset", true);
+						break;
+					}
+				}
+			}
 		}
 		else
 		{
@@ -628,30 +786,21 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	while ((area = FindEntityByClassname(area, "trigger_capture_area")) > -1)
 	{
 		char capPointName[256];
-		if (GetEntPropString(area, Prop_Data, "m_iszCapPointName", capPointName, sizeof(capPointName)) > 0 && StrEqual(capPointName, targetname))
+		if (GetEntPropString(area, Prop_Data, "m_iszCapPointName", capPointName, sizeof(capPointName)) > 0 && StrEqual(capPointName, bombSiteTargetname))
 		{
-			DispatchKeyValue(area, "team_numcap_2", "1");
-			DispatchKeyValue(area, "team_numcap_3", "1");
 			TF2_SetAreaTimeToCap(area, BOMB_DEFUSE_TIME);
 			break;
 		}
 	}
 	
-	// Create a new bomb
-	int prop = CreateEntityByName("prop_dynamic_override");
-	if (IsValidEntity(prop))
+	// Remove every other bomb still in the map
+	int teamflag = MaxClients + 1;
+	while ((teamflag = FindEntityByClassname(teamflag, "item_teamflag")) > -1)
 	{
-		g_BombRef = EntIndexToEntRef(prop);
-		SetEntityModel(prop, MODEL_BOMB);
-		
-		if (DispatchSpawn(prop))
+		if (teamflag != EntRefToEntIndex(g_BombRef) && IsBomb(teamflag))
 		{
-			int capper = cappers.Get(0);
-			float origin[3], angles[3];
-			GetEntPropVector(capper, Prop_Send, "m_vecOrigin", origin);
-			GetEntPropVector(capper, Prop_Send, "m_angRotation", angles);
-			
-			TeleportEntity(prop, origin, angles, NULL_VECTOR);
+			AcceptEntityInput(teamflag, "ForceDrop");	// Gets rid of the player glow
+			RemoveEntity(teamflag);
 		}
 	}
 	
@@ -677,7 +826,10 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 	// Show text on screen
 	char message[PLATFORM_MAX_PATH];
 	Format(message, sizeof(message), "%T", "Bomb_Planted", LANG_SERVER, tfgo_bombtimer.IntValue);
-	TF2_ShowGameMessage(message, "ico_notify_sixty_seconds");
+	TF2_ShowGameMessage(message, "ico_notify_sixty_seconds", .teamColor = view_as<int>(team));
+	
+	// Hides the bomb in HUD
+	GameRules_SetProp("m_bPlayingHybrid_CTF_CP", false);
 	
 	Forward_OnBombPlanted(team, cappers);
 	delete cappers;
