@@ -80,20 +80,6 @@ static ArrayList AllMusicKits;
 void MusicKit_Init()
 {
 	AllMusicKits = new ArrayList(sizeof(MusicKit));
-	
-	// Register default music kits
-	MusicKit_Register("valve_csgo_01", "sound/tfgo/music/valve_csgo_01/game_sounds_music.txt", true);
-	MusicKit_Register("valve_csgo_02", "sound/tfgo/music/valve_csgo_02/game_sounds_music.txt", true);
-}
-
-void MusicKit_Precache()
-{
-	for (int i = 0; i < AllMusicKits.Length; i++)
-	{
-		MusicKit kit;
-		if (AllMusicKits.GetArray(i, kit, sizeof(kit)) > 0)
-			kit.Precache();
-	}
 }
 
 ArrayList MusicKit_GetDefaultKits()
@@ -117,7 +103,7 @@ int MusicKit_GetByName(const char[] name, MusicKit buffer)
 	return index != -1 ? AllMusicKits.GetArray(index, buffer, sizeof(buffer)) : 0;
 }
 
-int MusicKit_Register(const char[] name, const char[] path, bool isDefault = false, bool precache = false)
+int MusicKit_Register(const char[] name, const char[] path, bool isDefault, bool precache)
 {
 	MusicKit kit;
 	strcopy(kit.name, sizeof(kit.name), name);

@@ -375,8 +375,11 @@ public void OnMapStart()
 	DHook_HookGamerules();
 	ResetRoundState();
 	
+	// Music Kits
+	MusicKit_Register("valve_csgo_01", "sound/tfgo/music/valve_csgo_01/game_sounds_music.txt", true, true);
+	MusicKit_Register("valve_csgo_02", "sound/tfgo/music/valve_csgo_02/game_sounds_music.txt", true, true);
+	
 	// Precache
-	MusicKit_Precache();
 	PrecacheParticleSystem(PARTICLE_BOMB_EXPLOSION);
 	PrecacheSound(SOUND_BOMB_BEEPING);
 	PrecacheScriptSound(GAMESOUND_BOMB_ENEMYRETURNED);
