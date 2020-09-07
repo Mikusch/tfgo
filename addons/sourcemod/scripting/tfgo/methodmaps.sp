@@ -154,7 +154,7 @@ methodmap TFGOPlayer
 	public void AddToLoadout(int defindex)
 	{
 		TFClassType class = TF2_GetPlayerClass(view_as<int>(this));
-		int slot = TF2_GetItemSlot(defindex, class);
+		int slot = TF2_GetItemWeaponSlot(defindex, class);
 		PlayerLoadoutWeaponIndexes[this][class][slot] = defindex;
 	}
 	
@@ -164,7 +164,7 @@ methodmap TFGOPlayer
 		if (g_AvailableWeapons.GetByDefIndex(defindex, config) > 0)
 		{
 			TFClassType class = TF2_GetPlayerClass(view_as<int>(this));
-			int slot = TF2_GetItemSlot(defindex, class);
+			int slot = TF2_GetItemWeaponSlot(defindex, class);
 			int currentWeapon = GetPlayerWeaponSlot(view_as<int>(this), slot);
 			
 			if (currentWeapon > -1 && GetEntProp(currentWeapon, Prop_Send, "m_iItemDefinitionIndex") == defindex)
@@ -256,7 +256,7 @@ methodmap TFGOPlayer
 			g_AvailableWeapons.GetArray(i, weapon, sizeof(weapon));
 			
 			//Is this a default weapon and meant for this slot
-			if (weapon.isDefault && TF2_GetItemSlot(weapon.defindex, class) == slot)
+			if (weapon.isDefault && TF2_GetItemWeaponSlot(weapon.defindex, class) == slot)
 			{
 				char classname[PLATFORM_MAX_PATH];
 				if (TF2Econ_GetItemClassName(weapon.defindex, classname, sizeof(classname)) && TF2Econ_TranslateWeaponEntForClass(classname, sizeof(classname), class))

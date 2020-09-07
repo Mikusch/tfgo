@@ -52,7 +52,7 @@ bool BuyMenu_DisplayWeaponBuyMenu(int client, ArrayList slots)
 		g_AvailableWeapons.GetArray(i, weapon, sizeof(weapon));
 		
 		TFClassType class = TF2_GetPlayerClass(client);
-		int slot = TF2_GetItemSlot(weapon.defindex, class);
+		int slot = TF2_GetItemWeaponSlot(weapon.defindex, class);
 		
 		if (slots.FindValue(slot) != -1 && weapon.price != 0)
 		{
@@ -190,7 +190,7 @@ int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, int para
 			{
 				TFGOPlayer player = TFGOPlayer(param1);
 				TFClassType class = TF2_GetPlayerClass(param1);
-				int slot = TF2_GetItemSlot(weapon.defindex, class);
+				int slot = TF2_GetItemWeaponSlot(weapon.defindex, class);
 				
 				if (player.GetWeaponFromLoadout(class, slot) == weapon.defindex || weapon.price > player.Account)
 					return ITEMDRAW_DISABLED;
@@ -210,7 +210,7 @@ int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, int para
 			{
 				TFGOPlayer player = TFGOPlayer(param1);
 				TFClassType class = TF2_GetPlayerClass(param1);
-				int slot = TF2_GetItemSlot(weapon.defindex, class);
+				int slot = TF2_GetItemWeaponSlot(weapon.defindex, class);
 				
 				SetGlobalTransTarget(param1);
 				

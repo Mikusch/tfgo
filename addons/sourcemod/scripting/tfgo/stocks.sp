@@ -282,7 +282,7 @@ stock int TF2_CreateAndEquipWeapon(int client, int defindex, const char[] classn
 	}
 	
 	TFClassType class = TF2_GetPlayerClass(client);
-	int slot = TF2Econ_GetItemSlot(defindex, class);
+	int slot = TF2Econ_GetItemLoadoutSlot(defindex, class);
 	Address pItem = SDKCall_GetLoadoutItem(client, class, slot);
 	
 	int weapon;
@@ -322,22 +322,22 @@ stock int TF2_CreateAndEquipWeapon(int client, int defindex, const char[] classn
 	return weapon;
 }
 
-stock int TF2_GetItemSlot(int defindex, TFClassType class)
+stock int TF2_GetItemWeaponSlot(int defindex, TFClassType class)
 {
-	int slot = TF2Econ_GetItemSlot(defindex, class);
+	int slot = TF2Econ_GetItemLoadoutSlot(defindex, class);
 	if (slot >= 0)
 	{
-		// Econ reports wrong slots for Engineer and Spy
+		// Loadout slots differ from weapon slots for Spy and Engineer
 		switch (class)
 		{
 			case TFClass_Spy:
 			{
 				switch (slot)
 				{
-					case 1: slot = WeaponSlot_Primary; // Revolver
-					case 4: slot = WeaponSlot_Secondary; // Sapper
-					case 5: slot = WeaponSlot_PDADisguise; // Disguise Kit
-					case 6: slot = WeaponSlot_InvisWatch; // Invis Watch
+					case 1: slot = WeaponSlot_Primary;		// Revolver
+					case 4: slot = WeaponSlot_Secondary;	// Sapper
+					case 5: slot = WeaponSlot_PDADisguise;	// Disguise Kit
+					case 6: slot = WeaponSlot_InvisWatch;	// Invis Watch
 				}
 			}
 			
@@ -345,9 +345,9 @@ stock int TF2_GetItemSlot(int defindex, TFClassType class)
 			{
 				switch (slot)
 				{
-					case 4: slot = WeaponSlot_BuilderEngie; // Toolbox
-					case 5: slot = WeaponSlot_PDABuild; // Construction PDA
-					case 6: slot = WeaponSlot_PDADestroy; // Destruction PDA
+					case 4: slot = WeaponSlot_BuilderEngie;	// Toolbox
+					case 5: slot = WeaponSlot_PDABuild;		// Construction PDA
+					case 6: slot = WeaponSlot_PDADestroy;	// Destruction PDA
 				}
 			}
 		}

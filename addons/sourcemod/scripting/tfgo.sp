@@ -13,7 +13,7 @@
 #pragma newdecls required
 
 
-#define PLUGIN_VERSION			"1.4.0"
+#define PLUGIN_VERSION			"1.4.1"
 #define PLUGIN_VERSION_REVISION	"manual"
 
 #define TF_MAXPLAYERS	33
@@ -511,7 +511,7 @@ public Action TF2_OnGiveNamedItem(int client, char[] classname, int defindex)
 	}
 	
 	TFClassType class = TF2_GetPlayerClass(client);
-	int slot = TF2_GetItemSlot(defindex, class);
+	int slot = TF2_GetItemWeaponSlot(defindex, class);
 	
 	if (0 <= slot <= WeaponSlot_BuilderEngie && TFGOPlayer(client).GetWeaponFromLoadout(class, slot) != Config_GetOriginalItemDefIndex(defindex))
 		return Plugin_Handled;
