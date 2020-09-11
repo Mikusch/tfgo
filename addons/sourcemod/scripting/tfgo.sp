@@ -765,16 +765,8 @@ void PlantBomb(TFTeam team, int cpIndex, ArrayList cappers)
 			int objResource = FindEntityByClassname(MaxClients + 1, "tf_objective_resource");
 			if (objResource != -1)
 			{
-				int size = GetEntPropArraySize(objResource, Prop_Send, "m_bCPIsVisible");
-				for (int i = 0; i < size; i++)
-				{
-					if (pointIndex == i)
-					{
-						SetEntProp(objResource, Prop_Send, "m_bCPIsVisible", true, _, i);
-						SetEntProp(objResource, Prop_Send, "m_bControlPointsReset", true);
-						break;
-					}
-				}
+				SetEntProp(objResource, Prop_Send, "m_bCPIsVisible", true, _, pointIndex);
+				SetEntProp(objResource, Prop_Send, "m_bControlPointsReset", true);
 			}
 		}
 		else
