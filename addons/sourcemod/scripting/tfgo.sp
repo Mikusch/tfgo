@@ -13,10 +13,12 @@
 #pragma newdecls required
 
 
-#define PLUGIN_VERSION			"1.4.1"
+#define PLUGIN_VERSION			"1.4.2"
 #define PLUGIN_VERSION_REVISION	"manual"
 
 #define TF_MAXPLAYERS	33
+
+#define MAX_PREVIOUS_POINTS	3
 
 #define CAPHUD_PARITY_BITS	6
 #define CAPHUD_PARITY_MASK	((1 << CAPHUD_PARITY_BITS) - 1)

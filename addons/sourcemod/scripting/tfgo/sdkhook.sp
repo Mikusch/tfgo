@@ -176,6 +176,19 @@ Action SDKHook_TriggerCaptureArea_EndTouch(int entity, int other)
 Action SDKHook_TeamControlPoint_Spawn(int entity)
 {
 	SetEntProp(entity, Prop_Data, "m_spawnflags", GetEntProp(entity, Prop_Data, "m_spawnflags") | SF_CAP_POINT_HIDEFLAG);
+	
+	// The SetLocked input does not work at all if a previous point is set
+	for (int i = 0; i < MAX_PREVIOUS_POINTS; i++)
+	{
+		for (int team = view_as<int>(TFTeam_Red); team <= view_as<int>(TFTeam_Blue); team++)
+		{
+			char key[32];
+			Format(key, sizeof(key), "team_previouspoint_%d_%d", team, i);
+			DispatchKeyValue(entity, key, "");
+		}
+	}
+	
+	DispatchKeyValue(entity, "point_start_locked", "0");
 }
 
 Action SDKHook_TeamControlPointMaster_Spawn(int entity)
