@@ -49,6 +49,7 @@ void ConVar_Init()
 	ConVar_Add("tf_arena_preround_time", 15.0);
 	ConVar_Add("tf_arena_round_time", 115.0);
 	ConVar_Add("tf_arena_use_queue", 0.0);
+	ConVar_Add("tf_use_fixed_weaponspreads", 1.0);
 	ConVar_Add("tf_weapon_criticals", 0.0);
 	ConVar_Add("tf_weapon_criticals_distance_falloff", 1.0);
 }
