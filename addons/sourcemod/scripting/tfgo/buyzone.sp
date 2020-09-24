@@ -34,7 +34,7 @@ void CalculateDynamicBuyZones()
 			if (team == initialTeam)
 			{
 				float origin[3];
-				GetEntPropVector(teamspawn, Prop_Send, "m_vecOrigin", origin);
+				GetEntPropVector(teamspawn, Prop_Data, "m_vecAbsOrigin", origin);
 				teamspawns.PushArray(origin);
 			}
 		}
