@@ -13,7 +13,7 @@
 #pragma newdecls required
 
 
-#define PLUGIN_VERSION			"1.4.2"
+#define PLUGIN_VERSION			"1.4.3"
 #define PLUGIN_VERSION_REVISION	"manual"
 
 #define TF_MAXPLAYERS	33
@@ -343,11 +343,6 @@ public void OnPluginEnd()
 {
 	ConVar_Disable();
 	
-	for (int client = 1; client <= MaxClients; client++)
-	{
-		DHook_UnhookClientEntity(client);
-	}
-	
 	if (g_PickupWeaponPatch != null)
 		g_PickupWeaponPatch.Disable();
 	
@@ -450,8 +445,6 @@ public void OnClientPutInServer(int client)
 
 public void OnClientDisconnect(int client)
 {
-	DHook_UnhookClientEntity(client);
-	
 	// Force-end round if last client in team disconnects during active bomb
 	if (g_IsBombPlanted && IsValidClient(client))
 	{
