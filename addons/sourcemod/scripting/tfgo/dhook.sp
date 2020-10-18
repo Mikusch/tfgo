@@ -1,89 +1,74 @@
-static Handle DHookPlayerMayCapturePoint;
-static Handle DHookSetWinningTeam;
-static Handle DHookHandleSwitchTeams;
-static Handle DHookHandleScrambleTeams;
-static Handle DHookFlagsMayBeCapped;
-static Handle DHookGiveNamedItem;
-
-static int HookIdsGiveNamedItem[TF_MAXPLAYERS] =  { -1, ... };
+static DynamicHook DHookPlayerMayCapturePoint;
+static DynamicHook DHookSetWinningTeam;
+static DynamicHook DHookHandleSwitchTeams;
+static DynamicHook DHookHandleScrambleTeams;
+static DynamicHook DHookFlagsMayBeCapped;
+static DynamicHook DHookGiveNamedItem;
 
 void DHook_Init(GameData gamedata)
 {
-	DHookPlayerMayCapturePoint = DHook_CreateVirtual(gamedata, "CTeamplayRules::PlayerMayCapturePoint");
-	DHookSetWinningTeam = DHook_CreateVirtual(gamedata, "CTeamplayRules::SetWinningTeam");
-	DHookHandleSwitchTeams = DHook_CreateVirtual(gamedata, "CTeamplayRules::HandleSwitchTeams");
-	DHookHandleScrambleTeams = DHook_CreateVirtual(gamedata, "CTeamplayRules::HandleScrambleTeams");
-	DHookFlagsMayBeCapped = DHook_CreateVirtual(gamedata, "CTFGameRules::FlagsMayBeCapped");
-	DHookGiveNamedItem = DHook_CreateVirtual(gamedata, "CTFPlayer::GiveNamedItem");
+	DHookPlayerMayCapturePoint = DHook_CreateVirtualHook(gamedata, "CTeamplayRules::PlayerMayCapturePoint");
+	DHookSetWinningTeam = DHook_CreateVirtualHook(gamedata, "CTeamplayRules::SetWinningTeam");
+	DHookHandleSwitchTeams = DHook_CreateVirtualHook(gamedata, "CTeamplayRules::HandleSwitchTeams");
+	DHookHandleScrambleTeams = DHook_CreateVirtualHook(gamedata, "CTeamplayRules::HandleScrambleTeams");
+	DHookFlagsMayBeCapped = DHook_CreateVirtualHook(gamedata, "CTFGameRules::FlagsMayBeCapped");
+	DHookGiveNamedItem = DHook_CreateVirtualHook(gamedata, "CTFPlayer::GiveNamedItem");
 	
 	DHook_CreateDetour(gamedata, "CTFPlayer::PickupWeaponFromOther", Detour_PickupWeaponFromOther);
 	DHook_CreateDetour(gamedata, "CTeamplayRoundBasedRules::State_Enter", Detour_StateEnter);
 }
 
-static Handle DHook_CreateVirtual(GameData gamedata, const char[] name)
+static DynamicHook DHook_CreateVirtualHook(GameData gamedata, const char[] name)
 {
-	Handle hook = DHookCreateFromConf(gamedata, name);
+	DynamicHook hook = DynamicHook.FromConf(gamedata, name);
 	if (!hook)
-		LogError("Failed to create hook: %s", name);
+		LogError("Failed to create virtual hook: %s", name);
 	
 	return hook;
 }
 
-static void DHook_CreateDetour(GameData gamedata, const char[] name, DHookCallback preCallback = INVALID_FUNCTION, DHookCallback postCallback = INVALID_FUNCTION)
+static void DHook_CreateDetour(GameData gamedata, const char[] name, DHookCallback callbackPre = INVALID_FUNCTION, DHookCallback callbackPost = INVALID_FUNCTION)
 {
-	Handle detour = DHookCreateFromConf(gamedata, name);
+	DynamicDetour detour = DynamicDetour.FromConf(gamedata, name);
 	if (!detour)
 	{
 		LogError("Failed to create detour: %s", name);
 	}
 	else
 	{
-		if (preCallback != INVALID_FUNCTION)
-			if (!DHookEnableDetour(detour, false, preCallback))
-				LogError("Failed to enable pre detour: %s", name);
+		if (callbackPre != INVALID_FUNCTION)
+			detour.Enable(Hook_Pre, callbackPre);
 		
-		if (postCallback != INVALID_FUNCTION)
-			if (!DHookEnableDetour(detour, true, postCallback))
-				LogError("Failed to enable post detour: %s", name);
-		
-		delete detour;
+		if (callbackPost != INVALID_FUNCTION)
+			detour.Enable(Hook_Post, callbackPost);
 	}
 }
 
 void DHook_HookGamerules()
 {
-	DHookGamerules(DHookPlayerMayCapturePoint, true, _, DHook_PlayerMayCapturePoint_Post);
-	DHookGamerules(DHookSetWinningTeam, false, _, DHook_SetWinningTeam);
-	DHookGamerules(DHookHandleSwitchTeams, false, _, DHook_HandleSwitchTeams);
-	DHookGamerules(DHookHandleScrambleTeams, false, _, DHook_HandleScrambleTeams);
-	DHookGamerules(DHookFlagsMayBeCapped, true, _, DHook_FlagsMayBeCapped_Post);
+	DHookPlayerMayCapturePoint.HookGamerules(Hook_Post, DHook_PlayerMayCapturePoint_Post);
+	DHookSetWinningTeam.HookGamerules(Hook_Pre, DHook_SetWinningTeam);
+	DHookHandleSwitchTeams.HookGamerules(Hook_Pre, DHook_HandleSwitchTeams);
+	DHookHandleScrambleTeams.HookGamerules(Hook_Pre, DHook_HandleScrambleTeams);
+	DHookFlagsMayBeCapped.HookGamerules(Hook_Post, DHook_FlagsMayBeCapped_Post);
 }
 
 void DHook_HookClientEntity(int client)
 {
-	HookIdsGiveNamedItem[client] = DHookEntity(DHookGiveNamedItem, false, client, DHookRemoval_GiveNamedItem, DHook_GiveNamedItem);
+	DHookGiveNamedItem.HookEntity(Hook_Pre, client, DHook_GiveNamedItem);
 }
 
-void DHook_UnhookClientEntity(int client)
+public MRESReturn Detour_PickupWeaponFromOther(int client, DHookParam param)
 {
-	if (HookIdsGiveNamedItem[client] != -1)
-	{
-		DHookRemoveHookID(HookIdsGiveNamedItem[client]);
-		HookIdsGiveNamedItem[client] = -1;
-	}
-}
-
-public MRESReturn Detour_PickupWeaponFromOther(int client, Handle returnVal, Handle params)
-{
-	int weapon = DHookGetParam(params, 1); // tf_dropped_weapon
+	int weapon = param.Get(1); // tf_dropped_weapon
 	int defindex = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
 	TFGOPlayer(client).AddToLoadout(defindex);
 	Forward_OnClientPickupWeapon(client, defindex);
 }
 
-public MRESReturn Detour_StateEnter(Handle params)
+public MRESReturn Detour_StateEnter(DHookParam param)
 {
-	RoundState newState = view_as<RoundState>(DHookGetParam(params, 1));
+	RoundState newState = view_as<RoundState>(param.Get(1));
 	ConVar mp_maxrounds = FindConVar("mp_maxrounds");
 	
 	static int roundsPlayed;
@@ -165,14 +150,14 @@ public MRESReturn Detour_StateEnter(Handle params)
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_PlayerMayCapturePoint_Post(Handle returnVal, Handle params)
+public MRESReturn DHook_PlayerMayCapturePoint_Post(DHookReturn ret, DHookParam param)
 {
-	int client = DHookGetParam(params, 1);
-	if (DHookGetReturn(returnVal))
+	int client = param.Get(1);
+	if (ret.Value)
 	{
 		if (!g_IsBombPlanted && IsValidClient(client) && TFGOTeam(TF2_GetClientTeam(client)).IsAttacking)
 		{
-			DHookSetReturn(returnVal, IsBomb(GetEntPropEnt(client, Prop_Send, "m_hItem")));
+			ret.Value = IsBomb(GetEntPropEnt(client, Prop_Send, "m_hItem"));
 			return MRES_Supercede;
 		}
 	}
@@ -180,10 +165,10 @@ public MRESReturn DHook_PlayerMayCapturePoint_Post(Handle returnVal, Handle para
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_SetWinningTeam(Handle params)
+public MRESReturn DHook_SetWinningTeam(DHookParam param)
 {
-	TFTeam team = DHookGetParam(params, 1);
-	int winReason = DHookGetParam(params, 2);
+	TFTeam team = param.Get(1);
+	int winReason = param.Get(2);
 	
 	// Allow planting team to die
 	if (g_IsBombPlanted && team != g_BombPlantingTeam && winReason == WINREASON_OPPONENTS_DEAD)
@@ -197,8 +182,8 @@ public MRESReturn DHook_SetWinningTeam(Handle params)
 			// Only a non-attacking team can get the time win, and only if this stalemate is a result of the timer running out
 			if (!TFGOTeam(view_as<TFTeam>(i)).IsAttacking && GetAlivePlayerCount() > 0)
 			{
-				DHookSetParam(params, 1, i);
-				DHookSetParam(params, 2, WINREASON_CUSTOM_OUT_OF_TIME);
+				param.Set(1, i);
+				param.Set(2, WINREASON_CUSTOM_OUT_OF_TIME);
 				return MRES_ChangedOverride;
 			}
 		}
@@ -241,44 +226,32 @@ public MRESReturn DHook_HandleScrambleTeams()
 	EmitGameSoundToAll(GAMESOUND_ANNOUNCER_TEAM_SCRAMBLE);
 }
 
-public MRESReturn DHook_FlagsMayBeCapped_Post(Handle returnVal, Handle params)
+public MRESReturn DHook_FlagsMayBeCapped_Post(DHookReturn ret)
 {
-	DHookSetReturn(returnVal, true);
+	ret.Value = true;
 	return MRES_Supercede;
 }
 
-public MRESReturn DHook_GiveNamedItem(int client, Handle returnVal, Handle params)
+public MRESReturn DHook_GiveNamedItem(int client, DHookReturn ret, DHookParam param)
 {
 	// Block if one of the pointers is null
-	if (DHookIsNullParam(params, 1) || DHookIsNullParam(params, 3))
+	if (param.IsNull(1) || param.IsNull(3))
 	{
-		DHookSetReturn(returnVal, 0);
+		ret.Value = 0;
 		return MRES_Supercede;
 	}
 	
 	char classname[256];
-	DHookGetParamString(params, 1, classname, sizeof(classname));
-	int defindex = DHookGetParamObjectPtrVar(params, 3, 4, ObjectValueType_Int) & 0xFFFF;
+	param.GetString(1, classname, sizeof(classname));
+	int defindex = param.GetObjectVar(3, 4, ObjectValueType_Int) & 0xFFFF;
 	
 	Action action = TF2_OnGiveNamedItem(client, classname, defindex);
 	
 	if (action == Plugin_Handled)
 	{
-		DHookSetReturn(returnVal, 0);
+		ret.Value = 0;
 		return MRES_Supercede;
 	}
 	
 	return MRES_Ignored;
-}
-
-public void DHookRemoval_GiveNamedItem(int hookId)
-{
-	for (int client = 1; client <= MaxClients; client++)
-	{
-		if (HookIdsGiveNamedItem[client] == hookId)
-		{
-			HookIdsGiveNamedItem[client] = -1;
-			return;
-		}
-	}
 }
