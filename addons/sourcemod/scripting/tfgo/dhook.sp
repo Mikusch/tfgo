@@ -7,15 +7,41 @@ static DynamicHook DHookGiveNamedItem;
 
 void DHook_Init(GameData gamedata)
 {
-	DHookPlayerMayCapturePoint = DynamicHook.FromConf(gamedata, "CTeamplayRules::PlayerMayCapturePoint");
-	DHookSetWinningTeam = DynamicHook.FromConf(gamedata, "CTeamplayRules::SetWinningTeam");
-	DHookHandleSwitchTeams = DynamicHook.FromConf(gamedata, "CTeamplayRules::HandleSwitchTeams");
-	DHookHandleScrambleTeams = DynamicHook.FromConf(gamedata, "CTeamplayRules::HandleScrambleTeams");
-	DHookFlagsMayBeCapped = DynamicHook.FromConf(gamedata, "CTFGameRules::FlagsMayBeCapped");
-	DHookGiveNamedItem = DynamicHook.FromConf(gamedata, "CTFPlayer::GiveNamedItem");
+	DHookPlayerMayCapturePoint = DHook_CreateVirtualHook(gamedata, "CTeamplayRules::PlayerMayCapturePoint");
+	DHookSetWinningTeam = DHook_CreateVirtualHook(gamedata, "CTeamplayRules::SetWinningTeam");
+	DHookHandleSwitchTeams = DHook_CreateVirtualHook(gamedata, "CTeamplayRules::HandleSwitchTeams");
+	DHookHandleScrambleTeams = DHook_CreateVirtualHook(gamedata, "CTeamplayRules::HandleScrambleTeams");
+	DHookFlagsMayBeCapped = DHook_CreateVirtualHook(gamedata, "CTFGameRules::FlagsMayBeCapped");
+	DHookGiveNamedItem = DHook_CreateVirtualHook(gamedata, "CTFPlayer::GiveNamedItem");
 	
-	DynamicDetour.FromConf(gamedata, "CTFPlayer::PickupWeaponFromOther").Enable(Hook_Pre, Detour_PickupWeaponFromOther);
-	DynamicDetour.FromConf(gamedata, "CTeamplayRoundBasedRules::State_Enter").Enable(Hook_Pre, Detour_StateEnter);
+	DHook_CreateDetour(gamedata, "CTFPlayer::PickupWeaponFromOther", Detour_PickupWeaponFromOther);
+	DHook_CreateDetour(gamedata, "CTeamplayRoundBasedRules::State_Enter", Detour_StateEnter);
+}
+
+static DynamicHook DHook_CreateVirtualHook(GameData gamedata, const char[] name)
+{
+	DynamicHook hook = DynamicHook.FromConf(gamedata, name);
+	if (!hook)
+		LogError("Failed to create virtual hook: %s", name);
+	
+	return hook;
+}
+
+static void DHook_CreateDetour(GameData gamedata, const char[] name, DHookCallback callbackPre = INVALID_FUNCTION, DHookCallback callbackPost = INVALID_FUNCTION)
+{
+	DynamicDetour detour = DynamicDetour.FromConf(gamedata, name);
+	if (!detour)
+	{
+		LogError("Failed to create detour: %s", name);
+	}
+	else
+	{
+		if (callbackPre != INVALID_FUNCTION)
+			detour.Enable(Hook_Pre, callbackPre);
+		
+		if (callbackPost != INVALID_FUNCTION)
+			detour.Enable(Hook_Post, callbackPost);
+	}
 }
 
 void DHook_HookGamerules()
