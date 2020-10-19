@@ -851,7 +851,6 @@ void ResetRoundState()
 	for (int client = 1; client <= MaxClients; client++)
 	{
 		TFGOPlayer(client).HasSuicided = false;
+		TFGOPlayer(client).InBuyZone = false;
 	}
-	
-	ResetPlayerBuyZoneStates();
 }

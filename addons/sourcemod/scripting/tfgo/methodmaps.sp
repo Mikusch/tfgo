@@ -4,6 +4,7 @@ static int PlayerArmorValues[TF_MAXPLAYERS][view_as<int>(TFClass_Engineer) + 1];
 static bool PlayerHelmets[TF_MAXPLAYERS][view_as<int>(TFClass_Engineer) + 1];
 static bool PlayerDefuseKits[TF_MAXPLAYERS][view_as<int>(TFClass_Engineer) + 1];
 static bool PlayerHasSuicided[TF_MAXPLAYERS];
+static bool PlayerIsInBuyZone[TF_MAXPLAYERS];
 static Menu ActiveBuyMenus[TF_MAXPLAYERS];
 static char PlayerMusicKits[TF_MAXPLAYERS][PLATFORM_MAX_PATH];
 static char PlayerPreviousMusicKitSounds[TF_MAXPLAYERS][PLATFORM_MAX_PATH];
@@ -81,6 +82,18 @@ methodmap TFGOPlayer
 		public set(bool val)
 		{
 			PlayerHasSuicided[this] = val;
+		}
+	}
+	
+	property bool InBuyZone
+	{
+		public get()
+		{
+			return PlayerIsInBuyZone[this];
+		}
+		public set (bool val)
+		{
+			PlayerIsInBuyZone[this] = val;
 		}
 	}
 	

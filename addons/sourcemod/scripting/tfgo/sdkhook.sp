@@ -118,7 +118,10 @@ Action SDKHook_Client_TraceAttack(int victim, int &attacker, int &inflictor, flo
 Action SDKHook_FuncRespawnRoom_StartTouch(int entity, int client)
 {
 	if (g_IsBuyTimeActive && IsValidClient(client) && GetClientTeam(client) == GetEntProp(entity, Prop_Data, "m_iTeamNum"))
+	{
+		TFGOPlayer(client).InBuyZone = true;
 		BuyMenu_DisplayMainBuyMenu(client);
+	}
 }
 
 Action SDKHook_FuncRespawnRoom_EndTouch(int entity, int client)
@@ -126,6 +129,8 @@ Action SDKHook_FuncRespawnRoom_EndTouch(int entity, int client)
 	if (g_IsBuyTimeActive && IsValidClient(client) && GetClientTeam(client) == GetEntProp(entity, Prop_Data, "m_iTeamNum"))
 	{
 		TFGOPlayer player = TFGOPlayer(client);
+		player.InBuyZone = false;
+		
 		if (player.ActiveBuyMenu != null)
 		{
 			player.ActiveBuyMenu.Cancel();
