@@ -30,13 +30,13 @@ Action ConCmd_OpenBuyMenu(int client, int args)
 {
 	if (client == 0)
 	{
-		PrintHintText(client, "Command is in-game only");
+		ReplyToCommand(client, "%t", "Command is in-game only");
 		return Plugin_Handled;
 	}
 	
 	if (!IsPlayerAlive(client))
 	{
-		PrintHintText(client, "BuyMenu_CantBuy");
+		PrintHintText(client, "%t", "BuyMenu_CantBuy");
 		return Plugin_Handled;
 	}
 	
