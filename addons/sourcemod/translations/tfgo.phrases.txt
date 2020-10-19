@@ -168,6 +168,10 @@
 		"#format"	"{1:d}"
 		"en"		"The {1} second buy period has expired"
 	}
+	"BuyMenu_CantBuy"
+	{
+		"en"	"You cannot buy"
+	}
 	
 	// Item Names
 	"Kevlar"
