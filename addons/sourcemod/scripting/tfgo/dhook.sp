@@ -58,7 +58,7 @@ void DHook_HookClientEntity(int client)
 	DHookGiveNamedItem.HookEntity(Hook_Pre, client, DHook_GiveNamedItem);
 }
 
-public MRESReturn Detour_PickupWeaponFromOther(int client, DHookParam param)
+public MRESReturn Detour_PickupWeaponFromOther(int client, DHookReturn ret, DHookParam param)
 {
 	int weapon = param.Get(1); // tf_dropped_weapon
 	int defindex = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
