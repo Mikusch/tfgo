@@ -107,13 +107,13 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN16CFuncRespawnRoom16RespawnRoomTouchEP11CBaseEntity"
-				"windows"	""	// TODO
+				"windows"	"\x55\x8B\xEC\xA1\x2A\x2A\x2A\x2A\x56\x8B\xF1\x80\xB8\x66\x09\x00\x00\x00\x74\x2A\xE8\x2A\x2A\x2A\x2A\x83\xF8\x03"
 			}
 			"CCaptureFlag::FlagTouch"
 			{
 				"library"	"server"
 				"linux"		"@_ZN12CCaptureFlag9FlagTouchEP11CBaseEntity"
-				"windows"	""	// TODO
+				"windows"	"\x55\x8B\xEC\x57\x8B\xF9\x80\xBF\x58\x06\x00\x00\x00"
 			}
 		}
 		"Functions"
@@ -279,7 +279,7 @@
 				"windows"
 				{
 					"signature"	"CFuncRespawnRoom::RespawnRoomTouch"
-					"offset"	""	// TODO
+					"offset"	"127"	// 0x7F
 				}
 			}
 			"Patch_FlagTouch"
@@ -292,7 +292,7 @@
 				"windows"
 				{
 					"signature"	"CCaptureFlag::FlagTouch"
-					"offset"	""	// TODO
+					"offset"	"563"	// 0x233
 				}
 			}
 		}
@@ -306,12 +306,12 @@
 			"Patch_RespawnRoomTouch"
 			{
 				"linux"		"\x90\x90\x90\x90"
-				"windows"	""	// TODO
+				"windows"	"\xEB"
 			}
 			"Patch_FlagTouch"
 			{
 				"linux"		"\x90\x90\x90\x90\x90\x90\x90\x90"
-				"windows"	""	// TODO
+				"windows"	"\x90\x90\x90\x90"
 			}
 		} 
 	}
