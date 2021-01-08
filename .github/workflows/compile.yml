@@ -10,11 +10,11 @@ jobs:
     
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v1
       
       - name: Environments
         run: |
-          echo ::set-env name=SM_VERSION::1.10
+          echo "SM_VERSION=1.10" >> $GITHUB_ENV
       
       - name: Install
         run: |
