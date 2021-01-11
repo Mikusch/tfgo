@@ -15,20 +15,20 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-static int PlayerLoadoutWeaponIndexes[TF_MAXPLAYERS][view_as<int>(TFClass_Engineer) + 1][WeaponSlot_BuilderEngie + 1];
-static int PlayerAccounts[TF_MAXPLAYERS];
-static int PlayerArmorValues[TF_MAXPLAYERS][view_as<int>(TFClass_Engineer) + 1];
-static bool PlayerHelmets[TF_MAXPLAYERS][view_as<int>(TFClass_Engineer) + 1];
-static bool PlayerDefuseKits[TF_MAXPLAYERS][view_as<int>(TFClass_Engineer) + 1];
-static bool PlayerHasSuicided[TF_MAXPLAYERS];
-static bool PlayerIsInBuyZone[TF_MAXPLAYERS];
-static Menu ActiveBuyMenus[TF_MAXPLAYERS];
-static char PlayerMusicKits[TF_MAXPLAYERS][PLATFORM_MAX_PATH];
-static char PlayerPreviousMusicKitSounds[TF_MAXPLAYERS][PLATFORM_MAX_PATH];
+static int PlayerLoadoutWeaponIndexes[MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1][WeaponSlot_BuilderEngie + 1];
+static int PlayerAccounts[MAXPLAYERS + 1];
+static int PlayerArmorValues[MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
+static bool PlayerHelmets[MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
+static bool PlayerDefuseKits[MAXPLAYERS + 1][view_as<int>(TFClass_Engineer) + 1];
+static bool PlayerHasSuicided[MAXPLAYERS + 1];
+static bool PlayerIsInBuyZone[MAXPLAYERS + 1];
+static Menu PlayerActiveBuyMenus[MAXPLAYERS + 1];
+static char PlayerMusicKits[MAXPLAYERS + 1][PLATFORM_MAX_PATH];
+static char PlayerPreviousMusicKitSounds[MAXPLAYERS + 1][PLATFORM_MAX_PATH];
 
 static int TeamConsecutiveLosses[view_as<int>(TFTeam_Blue) + 1] =  { STARTING_CONSECUTIVE_LOSSES, ... };
-static bool IsTeamAttacking[view_as<int>(TFTeam_Blue) + 1];
-static bool IsTeamDefending[view_as<int>(TFTeam_Blue) + 1];
+static bool TeamIsAttacking[view_as<int>(TFTeam_Blue) + 1];
+static bool TeamIsDefending[view_as<int>(TFTeam_Blue) + 1];
 
 methodmap TFGOPlayer
 {
@@ -118,11 +118,11 @@ methodmap TFGOPlayer
 	{
 		public get()
 		{
-			return ActiveBuyMenus[this];
+			return PlayerActiveBuyMenus[this];
 		}
 		public set(Menu val)
 		{
-			ActiveBuyMenus[this] = val;
+			PlayerActiveBuyMenus[this] = val;
 		}
 	}
 	
@@ -448,7 +448,7 @@ methodmap TFGOPlayer
 	
 	public BuyResult AttemptToBuyDefuseKit()
 	{
-		if (!IsTeamDefending[GetClientTeam(view_as<int>(this))])
+		if (!TeamIsDefending[GetClientTeam(view_as<int>(this))])
 		{
 			PrintCenterText(view_as<int>(this), "%t", "Cannot_Buy_This");
 			return BUY_NOT_ALLOWED;
@@ -509,11 +509,11 @@ methodmap TFGOTeam
 	{
 		public get()
 		{
-			return IsTeamAttacking[this];
+			return TeamIsAttacking[this];
 		}
 		public set(bool val)
 		{
-			IsTeamAttacking[this] = val;
+			TeamIsAttacking[this] = val;
 		}
 	}
 	
@@ -521,11 +521,11 @@ methodmap TFGOTeam
 	{
 		public get()
 		{
-			return IsTeamDefending[this];
+			return TeamIsDefending[this];
 		}
 		public set(bool val)
 		{
-			IsTeamDefending[this] = val;
+			TeamIsDefending[this] = val;
 		}
 	}
 	

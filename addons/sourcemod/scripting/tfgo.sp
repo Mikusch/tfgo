@@ -33,8 +33,6 @@
 #define PLUGIN_VERSION			"1.4.4"
 #define PLUGIN_VERSION_REVISION	"manual"
 
-#define TF_MAXPLAYERS	33
-
 #define MAX_PREVIOUS_POINTS	3
 
 #define CAPHUD_PARITY_BITS	6
@@ -369,7 +367,7 @@ public void OnPluginEnd()
 	if (g_FlagTouchPatch != null)
 		g_FlagTouchPatch.Disable();
 	
-	//Restore arena if needed
+	// Restore arena if needed
 	if (g_ArenaGameType)
 		GameRules_SetProp("m_nGameType", TF_GAMETYPE_ARENA);
 }
