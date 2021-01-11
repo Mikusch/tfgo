@@ -30,7 +30,7 @@
 #pragma newdecls required
 
 
-#define PLUGIN_VERSION			"1.4.4"
+#define PLUGIN_VERSION			"1.4.5"
 #define PLUGIN_VERSION_REVISION	"manual"
 
 #define MAX_PREVIOUS_POINTS	3
@@ -501,8 +501,6 @@ public void OnEntityCreated(int entity, const char[] classname)
 		SDKHook_HookTeamControlPoint(entity);
 	else if (StrEqual(classname, "team_control_point_master"))
 		SDKHook_HookTeamControlPointMaster(entity);
-	else if (StrEqual(classname, "tf_gamerules"))
-		SDKHook_HookGameRules(entity);
 }
 
 public void TF2_OnWaitingForPlayersStart()

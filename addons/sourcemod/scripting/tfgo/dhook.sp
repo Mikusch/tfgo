@@ -16,6 +16,7 @@
  */
 
 static DynamicHook DHookPlayerMayCapturePoint;
+static DynamicHook DHookTimerMayExpire;
 static DynamicHook DHookSetWinningTeam;
 static DynamicHook DHookHandleSwitchTeams;
 static DynamicHook DHookHandleScrambleTeams;
@@ -25,6 +26,7 @@ static DynamicHook DHookGiveNamedItem;
 void DHook_Init(GameData gamedata)
 {
 	DHookPlayerMayCapturePoint = DHook_CreateVirtualHook(gamedata, "CTeamplayRules::PlayerMayCapturePoint");
+	DHookTimerMayExpire = DHook_CreateVirtualHook(gamedata, "CTeamplayRules::TimerMayExpire");
 	DHookSetWinningTeam = DHook_CreateVirtualHook(gamedata, "CTeamplayRules::SetWinningTeam");
 	DHookHandleSwitchTeams = DHook_CreateVirtualHook(gamedata, "CTeamplayRules::HandleSwitchTeams");
 	DHookHandleScrambleTeams = DHook_CreateVirtualHook(gamedata, "CTeamplayRules::HandleScrambleTeams");
@@ -64,6 +66,7 @@ static void DHook_CreateDetour(GameData gamedata, const char[] name, DHookCallba
 void DHook_HookGamerules()
 {
 	DHookPlayerMayCapturePoint.HookGamerules(Hook_Post, DHook_PlayerMayCapturePoint_Post);
+	DHookTimerMayExpire.HookGamerules(Hook_Post, DHook_TimerMayExpire_Post);
 	DHookSetWinningTeam.HookGamerules(Hook_Pre, DHook_SetWinningTeam);
 	DHookHandleSwitchTeams.HookGamerules(Hook_Pre, DHook_HandleSwitchTeams);
 	DHookHandleScrambleTeams.HookGamerules(Hook_Pre, DHook_HandleScrambleTeams);
@@ -180,6 +183,13 @@ public MRESReturn DHook_PlayerMayCapturePoint_Post(DHookReturn ret, DHookParam p
 	}
 	
 	return MRES_Ignored;
+}
+
+public MRESReturn DHook_TimerMayExpire_Post(DHookReturn ret)
+{
+	// Always allow the timer to expire
+	ret.Value = true;
+	return MRES_Supercede;
 }
 
 public MRESReturn DHook_SetWinningTeam(DHookParam param)

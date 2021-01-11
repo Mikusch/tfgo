@@ -14,6 +14,11 @@
 				"linux"		"156"
 				"windows"	"155"
 			}
+			"CTeamplayRules::TimerMayExpire"
+			{
+				"linux"		"160"
+				"windows"	"159"
+			}
 			"CTeamplayRules::SetWinningTeam"
 			{
 				"linux"		"161"
@@ -143,6 +148,13 @@
 						"type"	"int"
 					}
 				}
+			}
+			"CTeamplayRules::TimerMayExpire"
+			{
+				"offset"	"CTeamplayRules::TimerMayExpire"
+				"hooktype"	"gamerules"
+				"return"	"bool"
+				"this"		"ignore"
 			}
 			"CTeamplayRules::SetWinningTeam"
 			{

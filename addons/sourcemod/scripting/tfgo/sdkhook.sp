@@ -49,11 +49,6 @@ void SDKHook_HookTeamControlPointMaster(int entity)
 	SDKHook(entity, SDKHook_Spawn, SDKHook_TeamControlPointMaster_Spawn);
 }
 
-void SDKHook_HookGameRules(int entity)
-{
-	SDKHook(entity, SDKHook_Spawn, SDKHook_GameRules_Spawn);
-}
-
 void SDKHook_HookBomb(int entity)
 {
 	SDKHook(entity, SDKHook_Touch, SDKHook_Bomb_Touch);
@@ -216,11 +211,6 @@ Action SDKHook_TeamControlPoint_Spawn(int entity)
 Action SDKHook_TeamControlPointMaster_Spawn(int entity)
 {
 	DispatchKeyValue(entity, "cpm_restrict_team_cap_win", "1");
-}
-
-Action SDKHook_GameRules_Spawn(int entity)
-{
-	DispatchKeyValue(entity, "ctf_overtime", "0");
 }
 
 Action SDKHook_Bomb_Touch(int entity, int other)
