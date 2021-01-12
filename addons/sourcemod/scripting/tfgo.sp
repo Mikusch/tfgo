@@ -300,7 +300,6 @@ public void OnPluginStart()
 	LoadTranslations("common.phrases.txt");
 	LoadTranslations("tfgo.phrases.txt");
 	
-	Config_Init();
 	Console_Init();
 	ConVar_Init();
 	Event_Init();
@@ -370,6 +369,11 @@ public void OnPluginEnd()
 	// Restore arena if needed
 	if (g_ArenaGameType)
 		GameRules_SetProp("m_nGameType", TF_GAMETYPE_ARENA);
+}
+
+public void OnAllPluginsLoaded()
+{
+	Config_Init();
 }
 
 public void OnMapStart()
