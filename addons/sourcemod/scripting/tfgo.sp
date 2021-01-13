@@ -30,7 +30,7 @@
 #pragma newdecls required
 
 
-#define PLUGIN_VERSION			"1.4.5"
+#define PLUGIN_VERSION			"1.4.6"
 #define PLUGIN_VERSION_REVISION	"manual"
 
 #define MAX_PREVIOUS_POINTS	3
