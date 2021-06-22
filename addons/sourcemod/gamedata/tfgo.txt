@@ -56,18 +56,18 @@
 			}
 			"CCaptureFlag::PickUp"
 			{
-				"linux"		"262"
-				"windows"	"224"
+				"linux"		"263"
+				"windows"	"225"
 			}
 			"CBasePlayer::EquipWearable"
 			{
-				"linux"		"431"
-				"windows"	"430"
+				"linux"		"432"
+				"windows"	"431"
 			}
 			"CTFPlayer::GiveNamedItem"
 			{
-				"linux"		"484"
-				"windows"	"477"
+				"linux"		"485"
+				"windows"	"478"
 			}
 		}
 		"Signatures"
