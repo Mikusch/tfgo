@@ -273,7 +273,7 @@
 				"linux"
 				{
 					"signature"	"CTFPlayer::PickupWeaponFromOther"
-					"offset"	"405" // 0x195
+					"offset"	"412" // 0x19C
 				}
 				"windows"
 				{
@@ -299,7 +299,7 @@
 				"linux"
 				{
 					"signature"	"CCaptureFlag::FlagTouch"
-					"offset"	"486"	// 0x1E6
+					"offset"	"493"	// 0x1ED
 				}
 				"windows"
 				{
@@ -317,7 +317,7 @@
 			}
 			"Patch_RespawnRoomTouch"
 			{
-				"linux"		"\x90\x90\x90\x90"
+				"linux"		"\x90\x90\x90\x90\x90\x90\x90\x90"
 				"windows"	"\xEB"
 			}
 			"Patch_FlagTouch"
