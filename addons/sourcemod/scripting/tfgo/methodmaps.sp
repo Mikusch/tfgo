@@ -41,7 +41,7 @@ methodmap TFGOPlayer
 	{
 		public get()
 		{
-			return view_as<int>(this)
+			return view_as<int>(this);
 		}
 	}
 	
