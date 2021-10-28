@@ -106,7 +106,7 @@ void ConVar_Disable()
 	}
 }
 
-void ConVar_OnChanged(ConVar convar, const char[] oldValue, const char[] newValue)
+public void ConVar_OnChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	int index = ConVars.FindValue(convar, ConVarInfo::convar);
 	if (index != -1)

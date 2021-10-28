@@ -29,7 +29,7 @@ void Event_Init()
 	HookEvent("teamplay_game_over", Event_TeamplayGameOver);
 }
 
-Action Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
+public void Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
 {
 	TFTeam team = view_as<TFTeam>(event.GetInt("team"));
 	
@@ -50,7 +50,7 @@ Action Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
 }
 
 
-Action Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
+public void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	
@@ -59,7 +59,7 @@ Action Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 		ForcePlayerSuicide(client);
 }
 
-Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
+public void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
 	int attacker = GetClientOfUserId(event.GetInt("attacker"));
 	int victim = GetClientOfUserId(event.GetInt("userid"));
@@ -166,7 +166,7 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 		TFGOPlayer(victim).ActiveBuyMenu.Cancel();
 }
 
-Action Event_PostInventoryApplication(Event event, const char[] name, bool dontBroadcast)
+public void Event_PostInventoryApplication(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	
@@ -188,13 +188,13 @@ Action Event_PostInventoryApplication(Event event, const char[] name, bool dontB
 	BuyMenu_DisplayMainBuyMenu(client);
 }
 
-Action Event_ArenaRoundStart(Event event, const char[] name, bool dontBroadcast)
+public void Event_ArenaRoundStart(Event event, const char[] name, bool dontBroadcast)
 {
 	g_IsBuyTimeActive = true;
 	g_BuyTimeTimer = CreateTimer(tfgo_buytime.FloatValue, Timer_OnBuyTimeExpire, _, TIMER_FLAG_NO_MAPCHANGE);
 }
 
-Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
+public void Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 {
 	int winreason = event.GetInt("winreason");
 	
@@ -286,7 +286,7 @@ Action Event_ArenaWinPanel(Event event, const char[] name, bool dontBroadcast)
 	}
 }
 
-Action Event_TeamplayRoundStart(Event event, const char[] name, bool dontBroadcast)
+public void Event_TeamplayRoundStart(Event event, const char[] name, bool dontBroadcast)
 {
 	ResetRoundState();
 	
@@ -305,7 +305,7 @@ Action Event_TeamplayRoundStart(Event event, const char[] name, bool dontBroadca
 	CreateTimer(0.2, Timer_DistributeBombs);
 }
 
-Action Event_TeamplayPointCaptured(Event event, const char[] name, bool dontBroadcast)
+public void Event_TeamplayPointCaptured(Event event, const char[] name, bool dontBroadcast)
 {
 	TFTeam team = view_as<TFTeam>(event.GetInt("team"));
 	char[] cappers = new char[MaxClients];
@@ -325,7 +325,7 @@ Action Event_TeamplayPointCaptured(Event event, const char[] name, bool dontBroa
 		DefuseBomb(team, capperList);
 }
 
-Action Event_Pre_TeamplayBroadcastAudio(Event event, const char[] name, bool dontBroadcast)
+public Action Event_Pre_TeamplayBroadcastAudio(Event event, const char[] name, bool dontBroadcast)
 {
 	char sound[PLATFORM_MAX_PATH];
 	event.GetString("sound", sound, sizeof(sound));
@@ -356,7 +356,7 @@ Action Event_Pre_TeamplayBroadcastAudio(Event event, const char[] name, bool don
 	return Plugin_Continue;
 }
 
-Action Event_TeamplayGameOver(Event event, const char[] name, bool dontBroadcast)
+public void Event_TeamplayGameOver(Event event, const char[] name, bool dontBroadcast)
 {
 	FindConVar("sv_alltalk").BoolValue = true;
 	MusicKit_PlayAllClientMusicKits(Music_HalfTime);

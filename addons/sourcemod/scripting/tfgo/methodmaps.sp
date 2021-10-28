@@ -26,7 +26,7 @@ static Menu PlayerActiveBuyMenus[MAXPLAYERS + 1];
 static char PlayerMusicKits[MAXPLAYERS + 1][PLATFORM_MAX_PATH];
 static char PlayerPreviousMusicKitSounds[MAXPLAYERS + 1][PLATFORM_MAX_PATH];
 
-static int TeamConsecutiveLosses[view_as<int>(TFTeam_Blue) + 1] =  { STARTING_CONSECUTIVE_LOSSES, ... };
+static int TeamConsecutiveLosses[view_as<int>(TFTeam_Blue) + 1] = { STARTING_CONSECUTIVE_LOSSES, ... };
 static bool TeamIsAttacking[view_as<int>(TFTeam_Blue) + 1];
 static bool TeamIsDefending[view_as<int>(TFTeam_Blue) + 1];
 
@@ -37,20 +37,28 @@ methodmap TFGOPlayer
 		return view_as<TFGOPlayer>(client);
 	}
 	
+	property int Client
+	{
+		public get()
+		{
+			return view_as<int>(this)
+		}
+	}
+	
 	property int Account
 	{
 		public get()
 		{
-			return PlayerAccounts[this];
+			return PlayerAccounts[this.Client];
 		}
 		public set(int val)
 		{
 			if (val > tfgo_maxmoney.IntValue)
-				PlayerAccounts[this] = tfgo_maxmoney.IntValue;
+				PlayerAccounts[this.Client] = tfgo_maxmoney.IntValue;
 			else if (val < 0)
-				PlayerAccounts[this] = 0;
+				PlayerAccounts[this.Client] = 0;
 			else
-				PlayerAccounts[this] = val;
+				PlayerAccounts[this.Client] = val;
 		}
 	}
 	
@@ -58,11 +66,11 @@ methodmap TFGOPlayer
 	{
 		public get()
 		{
-			return PlayerArmorValues[this][TF2_GetPlayerClass(view_as<int>(this))];
+			return PlayerArmorValues[this.Client][TF2_GetPlayerClass(view_as<int>(this))];
 		}
 		public set(int val)
 		{
-			PlayerArmorValues[this][TF2_GetPlayerClass(view_as<int>(this))] = val;
+			PlayerArmorValues[this.Client][TF2_GetPlayerClass(view_as<int>(this))] = val;
 		}
 	}
 	
@@ -70,11 +78,11 @@ methodmap TFGOPlayer
 	{
 		public get()
 		{
-			return PlayerHelmets[this][TF2_GetPlayerClass(view_as<int>(this))];
+			return PlayerHelmets[this.Client][TF2_GetPlayerClass(view_as<int>(this))];
 		}
 		public set(bool val)
 		{
-			PlayerHelmets[this][TF2_GetPlayerClass(view_as<int>(this))] = val;
+			PlayerHelmets[this.Client][TF2_GetPlayerClass(view_as<int>(this))] = val;
 		}
 	}
 	
@@ -82,11 +90,11 @@ methodmap TFGOPlayer
 	{
 		public get()
 		{
-			return PlayerDefuseKits[this][TF2_GetPlayerClass(view_as<int>(this))];
+			return PlayerDefuseKits[this.Client][TF2_GetPlayerClass(view_as<int>(this))];
 		}
 		public set(bool val)
 		{
-			PlayerDefuseKits[this][TF2_GetPlayerClass(view_as<int>(this))] = val;
+			PlayerDefuseKits[this.Client][TF2_GetPlayerClass(view_as<int>(this))] = val;
 		}
 	}
 	
@@ -94,11 +102,11 @@ methodmap TFGOPlayer
 	{
 		public get()
 		{
-			return PlayerHasSuicided[this];
+			return PlayerHasSuicided[this.Client];
 		}
 		public set(bool val)
 		{
-			PlayerHasSuicided[this] = val;
+			PlayerHasSuicided[this.Client] = val;
 		}
 	}
 	
@@ -106,11 +114,11 @@ methodmap TFGOPlayer
 	{
 		public get()
 		{
-			return PlayerIsInBuyZone[this];
+			return PlayerIsInBuyZone[this.Client];
 		}
-		public set (bool val)
+		public set(bool val)
 		{
-			PlayerIsInBuyZone[this] = val;
+			PlayerIsInBuyZone[this.Client] = val;
 		}
 	}
 	
@@ -118,32 +126,32 @@ methodmap TFGOPlayer
 	{
 		public get()
 		{
-			return PlayerActiveBuyMenus[this];
+			return PlayerActiveBuyMenus[this.Client];
 		}
 		public set(Menu val)
 		{
-			PlayerActiveBuyMenus[this] = val;
+			PlayerActiveBuyMenus[this.Client] = val;
 		}
 	}
 	
 	public int GetMusicKit(char[] buffer, int maxlen)
 	{
-		return strcopy(buffer, maxlen, PlayerMusicKits[this]);
+		return strcopy(buffer, maxlen, PlayerMusicKits[this.Client]);
 	}
 	
 	public int SetMusicKit(const char[] name)
 	{
-		return strcopy(PlayerMusicKits[this], sizeof(PlayerMusicKits[]), name);
+		return strcopy(PlayerMusicKits[this.Client], sizeof(PlayerMusicKits[]), name);
 	}
 	
 	public int GetPreviousPlayedSound(char[] buffer, int maxlen)
 	{
-		return strcopy(buffer, maxlen, PlayerPreviousMusicKitSounds[this]);
+		return strcopy(buffer, maxlen, PlayerPreviousMusicKitSounds[this.Client]);
 	}
 	
 	public int SetPreviousPlayedSound(const char[] sound)
 	{
-		return strcopy(PlayerPreviousMusicKitSounds[this], sizeof(PlayerPreviousMusicKitSounds[]), sound);
+		return strcopy(PlayerPreviousMusicKitSounds[this.Client], sizeof(PlayerPreviousMusicKitSounds[]), sound);
 	}
 	
 	public void AddToAccount(int val, const char[] format = NULL_STRING, any...)
@@ -185,7 +193,7 @@ methodmap TFGOPlayer
 	{
 		TFClassType class = TF2_GetPlayerClass(view_as<int>(this));
 		int slot = TF2_GetItemWeaponSlot(defindex, class);
-		PlayerLoadoutWeaponIndexes[this][class][slot] = defindex;
+		PlayerLoadoutWeaponIndexes[this.Client][class][slot] = defindex;
 	}
 	
 	public BuyResult AttemptToBuyWeapon(int defindex)
@@ -275,7 +283,7 @@ methodmap TFGOPlayer
 	
 	public int GetWeaponFromLoadout(TFClassType class, int slot)
 	{
-		int defindex = PlayerLoadoutWeaponIndexes[this][class][slot];
+		int defindex = PlayerLoadoutWeaponIndexes[this.Client][class][slot];
 		if (defindex > -1)
 			return defindex;
 		
@@ -315,7 +323,7 @@ methodmap TFGOPlayer
 		{
 			for (int j = 0; j < sizeof(PlayerLoadoutWeaponIndexes[][]); j++)
 			{
-				PlayerLoadoutWeaponIndexes[this][i][j] = -1;
+				PlayerLoadoutWeaponIndexes[this.Client][i][j] = -1;
 			}
 		}
 		
@@ -323,18 +331,18 @@ methodmap TFGOPlayer
 		{
 			for (int i = 0; i < sizeof(PlayerHelmets[]); i++)
 			{
-				PlayerHelmets[this][i] = false;
+				PlayerHelmets[this.Client][i] = false;
 			}
 			
 			for (int i = 0; i < sizeof(PlayerArmorValues[]); i++)
 			{
-				PlayerArmorValues[this][i] = 0;
+				PlayerArmorValues[this.Client][i] = 0;
 			}
 		}
 		
 		for (int i = 0; i < sizeof(PlayerDefuseKits[]); i++)
 		{
-			PlayerDefuseKits[this][i] = false;
+			PlayerDefuseKits[this.Client][i] = false;
 		}
 	}
 	
@@ -479,21 +487,29 @@ methodmap TFGOTeam
 		return view_as<TFGOTeam>(team);
 	}
 	
+	property int TeamNum
+	{
+		public get()
+		{
+			return view_as<int>(this);
+		}
+	}
+	
 	property int ConsecutiveLosses
 	{
 		public get()
 		{
-			return TeamConsecutiveLosses[this];
+			return TeamConsecutiveLosses[this.TeamNum];
 		}
 		
 		public set(int val)
 		{
 			if (val > tfgo_consecutive_loss_max.IntValue)
-				TeamConsecutiveLosses[this] = tfgo_consecutive_loss_max.IntValue;
+				TeamConsecutiveLosses[this.TeamNum] = tfgo_consecutive_loss_max.IntValue;
 			else if (val < MIN_CONSECUTIVE_LOSSES)
-				TeamConsecutiveLosses[this] = MIN_CONSECUTIVE_LOSSES;
+				TeamConsecutiveLosses[this.TeamNum] = MIN_CONSECUTIVE_LOSSES;
 			else
-				TeamConsecutiveLosses[this] = val;
+				TeamConsecutiveLosses[this.TeamNum] = val;
 		}
 	}
 	
@@ -509,11 +525,11 @@ methodmap TFGOTeam
 	{
 		public get()
 		{
-			return TeamIsAttacking[this];
+			return TeamIsAttacking[this.TeamNum];
 		}
 		public set(bool val)
 		{
-			TeamIsAttacking[this] = val;
+			TeamIsAttacking[this.TeamNum] = val;
 		}
 	}
 	
@@ -521,11 +537,11 @@ methodmap TFGOTeam
 	{
 		public get()
 		{
-			return TeamIsDefending[this];
+			return TeamIsDefending[this.TeamNum];
 		}
 		public set(bool val)
 		{
-			TeamIsDefending[this] = val;
+			TeamIsDefending[this.TeamNum] = val;
 		}
 	}
 	

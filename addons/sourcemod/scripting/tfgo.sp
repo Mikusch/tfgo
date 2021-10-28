@@ -18,7 +18,7 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
-#include <tf2_stocks>
+#include <tf2>
 #include <dhooks>
 #include <memorypatch>
 #include <morecolors>
@@ -30,7 +30,7 @@
 #pragma newdecls required
 
 
-#define PLUGIN_VERSION			"1.4.6"
+#define PLUGIN_VERSION			"1.5.0"
 #define PLUGIN_VERSION_REVISION	"manual"
 
 #define MAX_PREVIOUS_POINTS	3
@@ -117,21 +117,6 @@ enum
 	
 	// Add custom win reasons below
 	WINREASON_CUSTOM_OUT_OF_TIME
-};
-
-enum ETFGameType
-{
-	TF_GAMETYPE_UNDEFINED = 0, 
-	TF_GAMETYPE_CTF, 
-	TF_GAMETYPE_CP, 
-	TF_GAMETYPE_ESCORT, 
-	TF_GAMETYPE_ARENA, 
-	TF_GAMETYPE_MVM, 
-	TF_GAMETYPE_RD, 
-	TF_GAMETYPE_PASSTIME, 
-	TF_GAMETYPE_PD, 
-	
-	TF_GAMETYPE_COUNT
 };
 
 // TF2 weapon loadout slots
@@ -224,7 +209,6 @@ float g_BombNextBeep;
 bool g_IsBombTicking;
 
 // Game state
-bool g_ArenaGameType;
 bool g_IsBuyTimeActive;
 bool g_IsBombPlanted;
 bool g_SkipGiveNamedItemHook;
@@ -365,10 +349,6 @@ public void OnPluginEnd()
 	
 	if (g_FlagTouchPatch != null)
 		g_FlagTouchPatch.Disable();
-	
-	// Restore arena if needed
-	if (g_ArenaGameType)
-		GameRules_SetProp("m_nGameType", TF_GAMETYPE_ARENA);
 }
 
 public void OnAllPluginsLoaded()
@@ -380,13 +360,6 @@ public void OnMapStart()
 {
 	// Allow players to buy stuff on the first round
 	g_IsBuyTimeActive = true;
-	
-	if (GameRules_GetRoundState() == RoundState_Pregame && view_as<ETFGameType>(GameRules_GetProp("m_nGameType")) == TF_GAMETYPE_ARENA)
-	{
-		// Enable waiting for players
-		g_ArenaGameType = true;
-		GameRules_SetProp("m_nGameType", TF_GAMETYPE_UNDEFINED);
-	}
 	
 	DHook_HookGamerules();
 	ResetRoundState();
@@ -475,10 +448,6 @@ public void OnClientDisconnect(int client)
 
 public void OnGameFrame()
 {
-	//Make sure other plugins is not overriding gamerules prop
-	if (g_ArenaGameType && view_as<ETFGameType>(GameRules_GetProp("m_nGameType")) != TF_GAMETYPE_UNDEFINED)
-		GameRules_SetProp("m_nGameType", TF_GAMETYPE_UNDEFINED);
-	
 	if (!g_IsBombTicking) return;
 	
 	if (GetGameTime() > g_BombNextBeep)
@@ -507,13 +476,6 @@ public void OnEntityCreated(int entity, const char[] classname)
 		SDKHook_HookTeamControlPointMaster(entity);
 }
 
-public void TF2_OnWaitingForPlayersStart()
-{
-	// Set game type back to arena after waiting for players calculations are done
-	g_ArenaGameType = false;
-	GameRules_SetProp("m_nGameType", TF_GAMETYPE_ARENA);
-}
-
 public Action TF2_OnGiveNamedItem(int client, char[] classname, int defindex)
 {
 	if (g_SkipGiveNamedItemHook)
@@ -535,7 +497,7 @@ public Action TF2_OnGiveNamedItem(int client, char[] classname, int defindex)
 // Timer Callbacks
 //-----------------------------------------------------------------------------
 
-Action Timer_DistributeBombs(Handle timer)
+public Action Timer_DistributeBombs(Handle timer)
 {
 	for (TFTeam team = TFTeam_Red; team <= TFTeam_Blue; team++)
 	{
@@ -585,11 +547,13 @@ Action Timer_DistributeBombs(Handle timer)
 			}
 		}
 	}
+	
+	return Plugin_Continue;
 }
 
-Action Timer_OnBuyTimeExpire(Handle timer)
+public Action Timer_OnBuyTimeExpire(Handle timer)
 {
-	if (g_BuyTimeTimer != timer) return;
+	if (g_BuyTimeTimer != timer) return Plugin_Continue;
 	
 	g_IsBuyTimeActive = false;
 	
@@ -605,18 +569,22 @@ Action Timer_OnBuyTimeExpire(Handle timer)
 			}
 		}
 	}
+	
+	return Plugin_Continue;
 }
 
-Action Timer_OnBombTenSecCount(Handle timer)
+public Action Timer_OnBombTenSecCount(Handle timer)
 {
-	if (g_TenSecondBombTimer != timer || GameRules_GetRoundState() != RoundState_Stalemate) return;
+	if (g_TenSecondBombTimer != timer || GameRules_GetRoundState() != RoundState_Stalemate) return Plugin_Continue;
 	
 	MusicKit_PlayAllClientMusicKits(Music_BombTenSecCount);
+	
+	return Plugin_Continue;
 }
 
-Action Timer_OnBombTimerExpire(Handle timer)
+public Action Timer_OnBombTimerExpire(Handle timer)
 {
-	if (g_BombDetonationTimer != timer) return;
+	if (g_BombDetonationTimer != timer) return Plugin_Continue;
 	
 	g_IsBombTicking = false;
 	EmitGameSoundToAll(GAMESOUND_BOMB_WARNING, g_BombRef);
@@ -627,11 +595,13 @@ Action Timer_OnBombTimerExpire(Handle timer)
 	
 	// For dramatic effect
 	g_BombExplosionTimer = CreateTimer(1.0, Timer_OnBombExplode, _, TIMER_FLAG_NO_MAPCHANGE);
+	
+	return Plugin_Continue;
 }
 
-Action Timer_OnBombExplode(Handle timer)
+public Action Timer_OnBombExplode(Handle timer)
 {
-	if (g_BombExplosionTimer != timer) return;
+	if (g_BombExplosionTimer != timer) return Plugin_Continue;
 	
 	g_IsBombPlanted = false;
 	
@@ -674,19 +644,21 @@ Action Timer_OnBombExplode(Handle timer)
 	RemoveEntity(g_BombRef);
 	
 	Forward_OnBombDetonated(g_BombPlantingTeam);
+	
+	return Plugin_Continue;
 }
 
 //-----------------------------------------------------------------------------
 // Entity Output Callbacks
 //-----------------------------------------------------------------------------
 
-void EntOutput_On10SecRemain(const char[] output, int caller, int activator, float delay)
+public void EntOutput_On10SecRemain(const char[] output, int caller, int activator, float delay)
 {
 	if (GameRules_GetRoundState() == RoundState_Stalemate)
 		MusicKit_PlayAllClientMusicKits(Music_TenSecCount);
 }
 
-void EntOutput_OnBombDrop(const char[] output, int caller, int activator, float delay)
+public void EntOutput_OnBombDrop(const char[] output, int caller, int activator, float delay)
 {
 	// Prevent the bomb from resetting instantly
 	SetEntPropFloat(caller, Prop_Send, "m_flResetTime", 0.0);

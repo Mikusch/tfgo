@@ -84,6 +84,8 @@ public MRESReturn Detour_PickupWeaponFromOther(int client, DHookReturn ret, DHoo
 	int defindex = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
 	TFGOPlayer(client).AddToLoadout(defindex);
 	Forward_OnClientPickupWeapon(client, defindex);
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn Detour_StateEnter(DHookParam param)
@@ -230,6 +232,8 @@ public MRESReturn DHook_HandleSwitchTeams()
 	{
 		TFGOTeam(team).ConsecutiveLosses = STARTING_CONSECUTIVE_LOSSES;
 	}
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_HandleScrambleTeams()
@@ -251,6 +255,8 @@ public MRESReturn DHook_HandleScrambleTeams()
 	alert.Fire();
 	PrintToChatAll("%t", "TF_TeamsScrambled");
 	EmitGameSoundToAll(GAMESOUND_ANNOUNCER_TEAM_SCRAMBLE);
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_FlagsMayBeCapped_Post(DHookReturn ret)

@@ -101,7 +101,7 @@ bool BuyMenu_DisplayEquipmentBuyMenu(int client)
 	return menu.Display(client, MENU_TIME_FOREVER);
 }
 
-int MenuHandler_MainBuyMenu(Menu menu, MenuAction action, int param1, int param2)
+public int MenuHandler_MainBuyMenu(Menu menu, MenuAction action, int param1, int param2)
 {
 	switch (action)
 	{
@@ -161,7 +161,7 @@ int MenuHandler_MainBuyMenu(Menu menu, MenuAction action, int param1, int param2
 	return 0;
 }
 
-int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, int param2)
+public int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, int param2)
 {
 	switch (action)
 	{
@@ -246,7 +246,7 @@ int MenuHandler_WeaponBuyMenu(Menu menu, MenuAction action, int param1, int para
 	return 0;
 }
 
-int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1, int param2)
+public int MenuHandler_EquipmentBuyMenu(Menu menu, MenuAction action, int param1, int param2)
 {
 	switch (action)
 	{
