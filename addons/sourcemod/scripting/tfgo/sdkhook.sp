@@ -54,7 +54,7 @@ void SDKHook_HookBomb(int entity)
 	SDKHook(entity, SDKHook_Touch, SDKHook_Bomb_Touch);
 }
 
-Action SDKHook_Client_PreThink(int client)
+public Action SDKHook_Client_PreThink(int client)
 {
 	TFGOPlayer player = TFGOPlayer(client);
 	
@@ -69,9 +69,11 @@ Action SDKHook_Client_PreThink(int client)
 	
 	if (!g_MapHasRespawnRoom && g_IsBuyTimeActive)
 		DisplayMenuInDynamicBuyZone(client);
+	
+	return Plugin_Continue;
 }
 
-Action SDKHook_Client_TraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
+public Action SDKHook_Client_TraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
 {
 	Action action = Plugin_Continue;
 	
@@ -127,16 +129,18 @@ Action SDKHook_Client_TraceAttack(int victim, int &attacker, int &inflictor, flo
 	return action;
 }
 
-Action SDKHook_FuncRespawnRoom_StartTouch(int entity, int client)
+public Action SDKHook_FuncRespawnRoom_StartTouch(int entity, int client)
 {
 	if (g_IsBuyTimeActive && IsValidClient(client) && GetClientTeam(client) == GetEntProp(entity, Prop_Data, "m_iTeamNum"))
 	{
 		TFGOPlayer(client).InBuyZone = true;
 		BuyMenu_DisplayMainBuyMenu(client);
 	}
+	
+	return Plugin_Continue;
 }
 
-Action SDKHook_FuncRespawnRoom_EndTouch(int entity, int client)
+public Action SDKHook_FuncRespawnRoom_EndTouch(int entity, int client)
 {
 	if (g_IsBuyTimeActive && IsValidClient(client) && GetClientTeam(client) == GetEntProp(entity, Prop_Data, "m_iTeamNum"))
 	{
@@ -149,32 +153,40 @@ Action SDKHook_FuncRespawnRoom_EndTouch(int entity, int client)
 			PrintHintText(client, "%t", "BuyMenu_NotInBuyZone");
 		}
 	}
+	
+	return Plugin_Continue;
 }
 
-Action SDKHook_TFLogicArena_Spawn(int entity)
+public Action SDKHook_TFLogicArena_Spawn(int entity)
 {
 	DispatchKeyValueFloat(entity, "CapEnableDelay", 0.0);
+	
+	return Plugin_Continue;
 }
 
-Action SDKHook_TriggerCaptureArea_Spawn(int entity)
+public Action SDKHook_TriggerCaptureArea_Spawn(int entity)
 {
 	DispatchKeyValueFloat(entity, "area_time_to_cap", BOMB_PLANT_TIME);
 	DispatchKeyValue(entity, "team_cancap_2", "1");
 	DispatchKeyValue(entity, "team_cancap_3", "1");
 	DispatchKeyValue(entity, "team_numcap_2", "1");
 	DispatchKeyValue(entity, "team_numcap_3", "1");
+	
+	return Plugin_Continue;
 }
 
-Action SDKHook_TriggerCaptureArea_StartTouch(int entity, int other)
+public Action SDKHook_TriggerCaptureArea_StartTouch(int entity, int other)
 {
 	if (IsValidClient(other) && TFGOPlayer(other).CanDefuse() && TFGOPlayer(other).HasDefuseKit)
 	{
 		// Player with a defuse kit has entered the point, reduce cap time
 		TF2_SetAreaTimeToCap(entity, BOMB_DEFUSE_TIME / 2);
 	}
+	
+	return Plugin_Continue;
 }
 
-Action SDKHook_TriggerCaptureArea_EndTouch(int entity, int other)
+public Action SDKHook_TriggerCaptureArea_EndTouch(int entity, int other)
 {
 	if (IsValidClient(other) && TFGOPlayer(other).CanDefuse() && TFGOPlayer(other).HasDefuseKit)
 	{
@@ -182,15 +194,17 @@ Action SDKHook_TriggerCaptureArea_EndTouch(int entity, int other)
 		for (int client = 1; client <= MaxClients; client++)
 		{
 			if (IsClientInGame(client) && client != other && TFGOPlayer(client).CanDefuse() && TFGOPlayer(client).HasDefuseKit)
-				return;
+				return Plugin_Continue;
 		}
 		
 		// No one else on the point has a defuse kit, reset the cap time
 		TF2_SetAreaTimeToCap(entity, BOMB_DEFUSE_TIME);
 	}
+	
+	return Plugin_Continue;
 }
 
-Action SDKHook_TeamControlPoint_Spawn(int entity)
+public Action SDKHook_TeamControlPoint_Spawn(int entity)
 {
 	SetEntProp(entity, Prop_Data, "m_spawnflags", GetEntProp(entity, Prop_Data, "m_spawnflags") | SF_CAP_POINT_HIDEFLAG);
 	
@@ -206,14 +220,18 @@ Action SDKHook_TeamControlPoint_Spawn(int entity)
 	}
 	
 	DispatchKeyValue(entity, "point_start_locked", "0");
+	
+	return Plugin_Continue;
 }
 
-Action SDKHook_TeamControlPointMaster_Spawn(int entity)
+public Action SDKHook_TeamControlPointMaster_Spawn(int entity)
 {
 	DispatchKeyValue(entity, "cpm_restrict_team_cap_win", "1");
+	
+	return Plugin_Continue;
 }
 
-Action SDKHook_Bomb_Touch(int entity, int other)
+public Action SDKHook_Bomb_Touch(int entity, int other)
 {
 	// Planted bombs can't be picked up
 	return g_IsBombPlanted ? Plugin_Handled : Plugin_Continue;

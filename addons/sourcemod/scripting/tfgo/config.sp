@@ -52,7 +52,7 @@ void Config_Init()
 	}
 }
 
-int SortFunc_SortAvailableWeaponsByName(int index1, int index2, Handle array, Handle hndl)
+public int SortFunc_SortAvailableWeaponsByName(int index1, int index2, Handle array, Handle hndl)
 {
 	ArrayList list = view_as<ArrayList>(array);
 	

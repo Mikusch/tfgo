@@ -23,7 +23,7 @@ void Console_Init()
 	RegConsoleCmd("buymenu", ConCmd_OpenBuyMenu, "Opens the buy menu");
 }
 
-Action CommandListener_Build(int client, const char[] command, int args)
+public Action CommandListener_Build(int client, const char[] command, int args)
 {
 	// Check if player owns Construction PDA
 	if (TFGOPlayer(client).GetWeaponFromLoadout(TFClass_Engineer, WeaponSlot_PDABuild) != -1)
@@ -33,7 +33,7 @@ Action CommandListener_Build(int client, const char[] command, int args)
 	return Plugin_Handled;
 }
 
-Action CommandListener_Destroy(int client, const char[] command, int args)
+public Action CommandListener_Destroy(int client, const char[] command, int args)
 {
 	// Check if player owns Destruction PDA
 	if (TFGOPlayer(client).GetWeaponFromLoadout(TFClass_Engineer, WeaponSlot_PDADestroy) != -1)
@@ -43,7 +43,7 @@ Action CommandListener_Destroy(int client, const char[] command, int args)
 	return Plugin_Handled;
 }
 
-Action ConCmd_OpenBuyMenu(int client, int args)
+public Action ConCmd_OpenBuyMenu(int client, int args)
 {
 	if (client == 0)
 	{
