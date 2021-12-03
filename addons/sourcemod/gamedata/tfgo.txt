@@ -51,8 +51,8 @@
 			}
 			"CTFGameRules::FlagsMayBeCapped"
 			{
-				"linux"		"241"
-				"windows"	"239"
+				"linux"		"242"
+				"windows"	"240"
 			}
 			"CCaptureFlag::PickUp"
 			{
