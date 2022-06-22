@@ -61,13 +61,13 @@
 			}
 			"CBasePlayer::EquipWearable"
 			{
-				"linux"		"435"
-				"windows"	"434"
+				"linux"		"436"
+				"windows"	"435"
 			}
 			"CTFPlayer::GiveNamedItem"
 			{
-				"linux"		"488"
-				"windows"	"481"
+				"linux"		"489"
+				"windows"	"482"
 			}
 		}
 		"Signatures"
