@@ -11,63 +11,63 @@
 			}
 			"CTeamplayRules::PlayerMayCapturePoint"
 			{
-				"linux"		"156"
-				"windows"	"155"
-			}
-			"CTeamplayRules::TimerMayExpire"
-			{
 				"linux"		"160"
 				"windows"	"159"
 			}
+			"CTeamplayRules::TimerMayExpire"
+			{
+				"linux"		"164"
+				"windows"	"163"
+			}
 			"CTeamplayRules::SetWinningTeam"
-			{
-				"linux"		"161"
-				"windows"	"160"
-			}
-			"CTeamplayRules::SetSwitchTeams"
-			{
-				"linux"		"163"
-				"windows"	"162"
-			}
-			"CTeamplayRules::HandleSwitchTeams"
 			{
 				"linux"		"165"
 				"windows"	"164"
 			}
+			"CTeamplayRules::SetSwitchTeams"
+			{
+				"linux"		"167"
+				"windows"	"166"
+			}
+			"CTeamplayRules::HandleSwitchTeams"
+			{
+				"linux"		"169"
+				"windows"	"168"
+			}
 			"CTeamplayRules::SetScrambleTeams"
 			{
-				"linux"		"166"
-				"windows"	"165"
+				"linux"		"170"
+				"windows"	"169"
 			}
 			"CTeamplayRules::HandleScrambleTeams"
 			{
-				"linux"		"168"
-				"windows"	"167"
+				"linux"		"172"
+				"windows"	"171"
 			}
 			"CBaseEntity::GetDefaultItemChargeMeterValue"
 			{
-				"linux"		"194"
-				"windows"	"193"
+				"linux"		"197"
+				"windows"	"196"
 			}
 			"CTFGameRules::FlagsMayBeCapped"
 			{
-				"linux"		"242"
-				"windows"	"240"
+				"linux"		"246"
+				"windows"	"244"
 			}
 			"CCaptureFlag::PickUp"
 			{
-				"linux"		"266"
-				"windows"	"228"
+				"linux"		"269"
+				"windows"	"231"
 			}
 			"CBasePlayer::EquipWearable"
 			{
-				"linux"		"436"
-				"windows"	"435"
+				"linux"		"439"
+				"windows"	"438"
 			}
 			"CTFPlayer::GiveNamedItem"
 			{
-				"linux"		"489"
-				"windows"	"482"
+				"linux"		"493"
+				"windows"	"486"
 			}
 		}
 		"Signatures"
@@ -112,13 +112,13 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN16CFuncRespawnRoom16RespawnRoomTouchEP11CBaseEntity"
-				"windows"	"\x55\x8B\xEC\xA1\x2A\x2A\x2A\x2A\x56\x8B\xF1\x80\xB8\x66\x09\x00\x00\x00\x74\x2A\xE8\x2A\x2A\x2A\x2A\x83\xF8\x03"
+				"windows"	"\x55\x8B\xEC\xA1\x2A\x2A\x2A\x2A\x56\x8B\xF1\x80\xB8\x2A\x2A\x00\x00\x00\x74\x2A\xE8\x2A\x2A\x2A\x2A\x83\xF8\x03"
 			}
 			"CCaptureFlag::FlagTouch"
 			{
 				"library"	"server"
 				"linux"		"@_ZN12CCaptureFlag9FlagTouchEP11CBaseEntity"
-				"windows"	"\x55\x8B\xEC\x57\x8B\xF9\x80\xBF\x58\x06\x00\x00\x00"
+				"windows"	"\x55\x8B\xEC\x57\x8B\xF9\x80\xBF\x2A\x2A\x00\x00\x00\x0F\x85\x2A\x2A\x00\x00\x83\xBF\x2A\x2A\x2A\x2A\x01"
 			}
 		}
 		"Functions"
@@ -273,12 +273,12 @@
 				"linux"
 				{
 					"signature"	"CTFPlayer::PickupWeaponFromOther"
-					"offset"	"412" // 0x19C
+					"offset"	"405" // 0x195
 				}
 				"windows"
 				{
 					"signature"	"CTFPlayer::PickupWeaponFromOther"
-					"offset" 	"282" // 0x11A
+					"offset" 	"281" // 0x119
 				}
 			}
 			"Patch_RespawnRoomTouch"
@@ -299,7 +299,7 @@
 				"linux"
 				{
 					"signature"	"CCaptureFlag::FlagTouch"
-					"offset"	"493"	// 0x1ED
+					"offset"	"499"	// 0x1F3
 				}
 				"windows"
 				{
