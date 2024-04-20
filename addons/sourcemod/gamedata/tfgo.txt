@@ -82,7 +82,7 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer14GetLoadoutItemEiib"
-				"windows"	"\x55\x8B\xEC\x51\x53\x56\x8B\xF1\x8B\x0D\x2A\x2A\x2A\x2A\x57\x89\x75\xFC"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x10\x53\x56\x8B\xF1\x8B\x0D\x2A\x2A\x2A\x2A"
 			}
 			"CTFDroppedWeapon::Create"
 			{
@@ -94,7 +94,7 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN16CTFDroppedWeapon17InitDroppedWeaponEP9CTFPlayerP13CTFWeaponBasebb"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x24\x56\x57\x8B\xF9\x8B\x4D\x08"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x30\x56\x57\x8B\xF9\x8B\x4D\x08"
 			}
 			"CTeamplayRoundBasedRules::State_Enter"
 			{
@@ -106,13 +106,13 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer21PickupWeaponFromOtherEP16CTFDroppedWeapon"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x2A\x56\x8B\x75\x08\x57\x8B\xF9\x81\xC6\x2A\x2A\x2A\x2A\x75\x2A\x5F\x32\xC0\x5E"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x24\x53\x56\x57\x8B\x7D\x08\x8B\xF1\x81\xC7\xB0\x04\x00\x00"
 			}
 			"CFuncRespawnRoom::RespawnRoomTouch"
 			{
 				"library"	"server"
 				"linux"		"@_ZN16CFuncRespawnRoom16RespawnRoomTouchEP11CBaseEntity"
-				"windows"	"\x55\x8B\xEC\xA1\x2A\x2A\x2A\x2A\x56\x8B\xF1\x80\xB8\x2A\x2A\x00\x00\x00\x74\x2A\xE8\x2A\x2A\x2A\x2A\x83\xF8\x03"
+				"windows"	"\x55\x8B\xEC\xA1\x2A\x2A\x2A\x2A\x56\x8B\x75\x08\x57\x80\xB8\x72\x0C\x00\x00\x00"
 			}
 			"CCaptureFlag::FlagTouch"
 			{
@@ -273,12 +273,12 @@
 				"linux"
 				{
 					"signature"	"CTFPlayer::PickupWeaponFromOther"
-					"offset"	"405" // 0x195
+					"offset"	"333" // 0x14D
 				}
 				"windows"
 				{
 					"signature"	"CTFPlayer::PickupWeaponFromOther"
-					"offset" 	"281" // 0x119
+					"offset" 	"277" // 0x115
 				}
 			}
 			"Patch_RespawnRoomTouch"
@@ -286,12 +286,12 @@
 				"linux"
 				{
 					"signature"	"CFuncRespawnRoom::RespawnRoomTouch"
-					"offset"	"145"	// 0x91
+					"offset"	"168"	// 0xA8
 				}
 				"windows"
 				{
 					"signature"	"CFuncRespawnRoom::RespawnRoomTouch"
-					"offset"	"127"	// 0x7F
+					"offset"	"125"	// 0x7D
 				}
 			}
 			"Patch_FlagTouch"
@@ -299,12 +299,12 @@
 				"linux"
 				{
 					"signature"	"CCaptureFlag::FlagTouch"
-					"offset"	"499"	// 0x1F3
+					"offset"	"498"	// 0x1F2
 				}
 				"windows"
 				{
 					"signature"	"CCaptureFlag::FlagTouch"
-					"offset"	"563"	// 0x233
+					"offset"	"564"	// 0x234
 				}
 			}
 		}
@@ -322,7 +322,7 @@
 			}
 			"Patch_FlagTouch"
 			{
-				"linux"		"\x90\x90\x90\x90\x90\x90\x90\x90"
+				"linux"		"\x90\x90\x90\x90"
 				"windows"	"\x90\x90\x90\x90"
 			}
 		} 
