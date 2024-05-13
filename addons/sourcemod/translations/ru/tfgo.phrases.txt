@@ -191,6 +191,10 @@
 	{
 		"ru"	"Бомба заложена.\nДо взрыва {1} сек."
 	}
+	"Bomb_YoursReturned"
+	{
+		"ru"	"Ваша бомба была отложена на начало!"
+	}
 	
 	// Misc. Info Text
 	"Already_Have_Kevlar"
@@ -203,11 +207,11 @@
 	}
 	"Already_Have_Kevlar_Bought_Helmet"
 	{
-		"ru"	"У вас уже есть бронежилет. Приобретен шлем."
+		"ru"	"У вас уже есть бронежилет; приобретён шлем."
 	}
 	"Already_Have_Helmet_Bought_Kevlar"
 	{
-		"ru"	"У вас уже есть шлем. Бронежилет восстановлен."
+		"ru"	"У вас уже есть шлем; бронежилет восстановлен."
 	}
 	"Already_Have_One"
 	{
@@ -225,65 +229,65 @@
 	// Player Cash Awards
 	"Player_Cash_Award_Killed_Enemy_Generic"
 	{
-		"ru"	"{positive}+${1}{default}: Награда за нейтрализацию врага."
+		"ru"	"{positive}+{1} ${default}: Награда за нейтрализацию врага."
 	}
 	"Player_Cash_Award_Killed_Enemy"
 	{
-		"ru"	"{positive}+${1}{default}: Награда за нейтрализацию врага ({2})."
+		"ru"	"{positive}+{1} ${default}: Награда за нейтрализацию врага ({2})."
 	}
 	"Player_Cash_Award_Assist_Enemy"
 	{
-		"ru"	"{positive}+${1}{default}: Награда за помощь в нейтрализации врага ({2})."
+		"ru"	"{positive}+{1} ${default}: Награда за помощь в нейтрализации врага ({2})."
 	}
 	"Player_Cash_Award_Bomb_Planted"
 	{
-		"ru"	"{positive}+${1}{default}: Награда за установку бомбы."
+		"ru"	"{positive}+{1} ${default}: Награда за закладку бомбы."
 	}
 	"Player_Cash_Award_Bomb_Defused"
 	{
-		"ru"	"{positive}+${1}{default}: Награда за обезвреживание бомбы."
+		"ru"	"{positive}+{1} ${default}: Награда за обезвреживание бомбы."
 	}
 	"Player_Cash_Award_ExplainSuicide_YouGotCash"
 	{
-		"ru"	"(вы получаете компенсацию за самоубийство {2}: +${1})"
+		"ru"	"Вы получили компенсацию за самоубийство {2}: +{1} $"
 	}
 	"Player_Cash_Award_ExplainSuicide_TeammateGotCash"
 	{
-		"ru"	"Ваш союзник {1} получает компенсацию за самоубийство {3}: {positive}+${2}{default}"
+		"ru"	"Ваш союзник {1} получил компенсацию за самоубийство {3}: {positive}+{2} ${default}"
 	}
 	"Player_Cash_Award_ExplainSuicide_EnemyGotCash"
 	{
-		"ru"	"Вражеский игрок получает компенсацию за самоубийство {1}."
+		"ru"	"Вражеский игрок получил компенсацию за самоубийство {1}."
 	}
 	"Player_Cash_Award_ExplainSuicide_Spectators"
 	{
-		"ru"	"{1} получает компенсацию за самоубийство {3}: +${2}"
+		"ru"	"{1} получает компенсацию за самоубийство {3}: +{2} $"
 	}
 	
 	// Team Cash Awards
 	"Team_Cash_Award_T_Win_Bomb"
 	{
-		"ru"	"{positive}+${1}{default}: Командная награда за подрыв бомбы."
+		"ru"	"{positive}+{1} ${default}: Команде за подрыв бомбы."
 	}
 	"Team_Cash_Award_Elim_Bomb"
 	{
-		"ru"	"{positive}+${1}{default}: Командная награда за уничтожение вражеской команды."
+		"ru"	"{positive}+{1} ${default}: Команде за уничтожение всех врагов."
 	}
 	"Team_Cash_Award_Win_Time"
 	{
-		"ru"	"{positive}+${1}{default}: Командная награда по истечении времени раунда."
+		"ru"	"{positive}+{1} ${default}: Команде за истечение времени."
 	}
 	"Team_Cash_Award_Win_Defuse_Bomb"
 	{
-		"ru"	"{positive}+${1}{default}: Командная награда за победу с обезвреживанием бомбы."
+		"ru"	"{positive}+{1} ${default}: Команде за обезвреживание бомбы."
 	}
 	"Team_Cash_Award_Loser_Bonus"
 	{
-		"ru"	"{positive}+${1}{default}: Денег за проигрыш."
+		"ru"	"{positive}+{1} ${default}: За поражение."
 	}
 	"Team_Cash_Award_Planted_Bomb_But_Defused"
 	{
-		"ru"	"{positive}+${1}{default}: Командная награда за установку бомбы."
+		"ru"	"{positive}+{1} ${default}: Команде за закладку бомбы."
 	}
 	"Team_Cash_Award_no_income_stalemate"
 	{
@@ -291,7 +295,7 @@
 	}
 	"Team_Cash_Award_no_income_out_of_time"
 	{
-		"ru"	"{negative}0{default}: Нет командной награды за выживание по истечении времени."
+		"ru"	"{negative}0{default}: Нет бонуса команде за выживание по истечении времени."
 	}
 	"Team_Cash_Award_no_income_suicide"
 	{
@@ -310,6 +314,6 @@
 	
 	"TF_TeamsScrambled"
 	{
-		"ru"	"Команды были перераспределены."
+		"ru"	"Команды были перемешаны."
 	}
 }
