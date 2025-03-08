@@ -11,38 +11,38 @@
 			}
 			"CTeamplayRules::PlayerMayCapturePoint"
 			{
-				"linux"		"160"
-				"windows"	"159"
+				"linux"		"161"
+				"windows"	"160"
 			}
 			"CTeamplayRules::TimerMayExpire"
-			{
-				"linux"		"164"
-				"windows"	"163"
-			}
-			"CTeamplayRules::SetWinningTeam"
 			{
 				"linux"		"165"
 				"windows"	"164"
 			}
+			"CTeamplayRules::SetWinningTeam"
+			{
+				"linux"		"166"
+				"windows"	"165"
+			}
 			"CTeamplayRules::SetSwitchTeams"
 			{
-				"linux"		"167"
-				"windows"	"166"
+				"linux"		"168"
+				"windows"	"167"
 			}
 			"CTeamplayRules::HandleSwitchTeams"
-			{
-				"linux"		"169"
-				"windows"	"168"
-			}
-			"CTeamplayRules::SetScrambleTeams"
 			{
 				"linux"		"170"
 				"windows"	"169"
 			}
+			"CTeamplayRules::SetScrambleTeams"
+			{
+				"linux"		"171"
+				"windows"	"170"
+			}
 			"CTeamplayRules::HandleScrambleTeams"
 			{
-				"linux"		"172"
-				"windows"	"171"
+				"linux"		"173"
+				"windows"	"172"
 			}
 			"CBaseEntity::GetDefaultItemChargeMeterValue"
 			{
@@ -51,8 +51,8 @@
 			}
 			"CTFGameRules::FlagsMayBeCapped"
 			{
-				"linux"		"246"
-				"windows"	"244"
+				"linux"		"247"
+				"windows"	"245"
 			}
 			"CCaptureFlag::PickUp"
 			{
@@ -94,19 +94,19 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN16CTFDroppedWeapon17InitDroppedWeaponEP9CTFPlayerP13CTFWeaponBasebb"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x30\x56\x57\x8B\xF9\x8B\x4D\x08"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x24\x56\x57\x8B\xF9\x8B\x4D\x08"
 			}
 			"CTeamplayRoundBasedRules::State_Enter"
 			{
 				"library"	"server"
 				"linux"		"@_ZN24CTeamplayRoundBasedRules11State_EnterE22gamerules_roundstate_t"
-				"windows"	"\x55\x8B\xEC\x56\x8B\xF1\x8D\x4D\x08\x57"
+				"windows"	"\x55\x8B\xEC\x56\x8B\xF1\x57\x8B\x7D\x08\x39\xBE\xCC\x03\x00\x00"
 			}
 			"CTFPlayer::PickupWeaponFromOther"
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer21PickupWeaponFromOtherEP16CTFDroppedWeapon"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x24\x53\x56\x57\x8B\x7D\x08\x8B\xF1\x81\xC7\xB0\x04\x00\x00"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x20\x53\x56\x57\x8B\x7D\x08\x8B\xF1"
 			}
 			"CFuncRespawnRoom::RespawnRoomTouch"
 			{
