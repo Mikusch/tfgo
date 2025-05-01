@@ -46,8 +46,8 @@
 			}
 			"CBaseEntity::GetDefaultItemChargeMeterValue"
 			{
-				"linux"		"197"
-				"windows"	"196"
+				"linux"		"198"
+				"windows"	"197"
 			}
 			"CTFGameRules::FlagsMayBeCapped"
 			{
@@ -56,18 +56,18 @@
 			}
 			"CCaptureFlag::PickUp"
 			{
-				"linux"		"269"
-				"windows"	"231"
+				"linux"		"270"
+				"windows"	"232"
 			}
 			"CBasePlayer::EquipWearable"
 			{
-				"linux"		"439"
-				"windows"	"438"
+				"linux"		"440"
+				"windows"	"439"
 			}
 			"CTFPlayer::GiveNamedItem"
 			{
-				"linux"		"493"
-				"windows"	"486"
+				"linux"		"494"
+				"windows"	"487"
 			}
 		}
 		"Signatures"
